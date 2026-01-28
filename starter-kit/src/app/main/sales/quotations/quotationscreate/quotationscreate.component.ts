@@ -26,7 +26,7 @@ type Customer = { id: number; name: string; countryId: number };
 type CurrencyRow = { id: number; name: string };
 type PaymentTermsRow = { id: number; name: string };
 type DiscountType = 'VALUE' | 'PERCENT';
-type LineSource = 'ITEM' | 'ITEMSET';
+type LineSourceId = 1 | 2; 
 type ItemSetHeaderRow = { id: number; setName: string; description?: string };
 
 type UiLine = Omit<QuotationLine, 'uom' | 'uomId'> & {
@@ -65,8 +65,9 @@ type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
   docDiscount: number;
   discountManual: boolean;
 
-  lineSource: LineSource;
+  lineSourceId: LineSourceId;
 };
+
 
 @Component({
   selector: 'app-quotationscreate',
@@ -114,7 +115,7 @@ export class QuotationscreateComponent implements OnInit {
     docDiscount: 0,
     discountManual: false,
 
-    lineSource: 'ITEM'
+    lineSourceId: 1
   };
 
   minDate = '';
@@ -140,6 +141,7 @@ export class QuotationscreateComponent implements OnInit {
 
   itemsList: SimpleItem[] = [];
   uomList: Array<{ id: number; name: string }> = [];
+
 
   // ✅ uomName -> uomId map
   private uomNameToId = new Map<string, number>();
@@ -330,17 +332,18 @@ export class QuotationscreateComponent implements OnInit {
   getUomName = (id?: number | null) => this.uomList.find(u => u.id === id)?.name ?? '';
 
   // switch source
-  onLineSourceChange() {
-    if (this.showModal) this.closeModal();
+ onLineSourceChange() {
+  if (this.showModal) this.closeModal();
 
-    if (this.header.lineSource === 'ITEM') {
-      this.selectedItemSets = [];
-      this.pendingItemSet = null;
-      this.itemSetSearch = '';
-      this.lines = this.lines.filter(l => !l.isFromSet && !l.isSetHeader);
-    }
-    this.computeTotals();
+  if (this.header.lineSourceId === 1) {
+    this.selectedItemSets = [];
+    this.pendingItemSet = null;
+    this.itemSetSearch = '';
+    this.lines = this.lines.filter(l => !l.isFromSet && !l.isSetHeader);
   }
+  this.computeTotals();
+}
+
 
   onLineChanged(i: number) {
     const l = this.lines[i];
@@ -730,7 +733,7 @@ export class QuotationscreateComponent implements OnInit {
   }
 
   private validateBeforeSave(): boolean {
-    if (this.header.lineSource === 'ITEMSET') {
+    if (this.header.lineSourceId === 2) {
       for (const l of this.lines) {
         if (l.isSetHeader) continue;
         const q = l.qty === null || l.qty === undefined ? 0 : +l.qty;
@@ -759,7 +762,7 @@ export class QuotationscreateComponent implements OnInit {
       deliveryTo: (this.header.deliveryTo || '').trim(),
       deliveryDate: this.header.deliveryDate,
       validityDate: this.header.deliveryDate,
-      lineSource: this.header.lineSource,
+      lineSource: this.header.lineSourceId,
  itemSetIds: (this.selectedItemSets || []).map(x => x.id),
       lines: this.lines
         .filter(l => !l.isSetHeader)
@@ -811,7 +814,7 @@ export class QuotationscreateComponent implements OnInit {
   trackByItemId = (_: number, it: SimpleItem) => it.id;
 
   openAdd() {
-    if (this.header.lineSource !== 'ITEM') return;
+    if (this.header.lineSourceId !== 1) return;
 
     this.editingIndex = null;
     this.modalPreview = null;
@@ -838,7 +841,7 @@ export class QuotationscreateComponent implements OnInit {
   }
 
   openEdit(i: number) {
-    if (this.header.lineSource !== 'ITEM') return;
+    if (this.header.lineSourceId !== 1) return;
 
     const l = this.lines[i];
     if (!l || l.isSetHeader || l.isFromSet) return;

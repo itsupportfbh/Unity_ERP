@@ -68,21 +68,23 @@ export class MaterialRequisitionListComponent implements OnInit {
  getStatusLabel(status?: number | null): string {
     // ✅ API status only
     if (status === 1) return 'Pending';
-    if (status === 2) return 'Partial Transfer Out';
-    if (status === 3) return 'Full Transfer Out';
-    if (status === 4) return 'Delivered';
+    if (status === 2) return 'Pending Partial Out';
+    if (status === 3) return 'Delivered Partial Out';
+    if (status === 4) return 'Pending Full Transfer Out';
+    if (status === 5) return 'Delivered';
     return '-';
   }
 
 
   // badge color
-  getStatusClass(status?: number | null): string {
-    if (status === 1) return 'badge-warning';  // pending
-    if (status === 2) return 'badge-info';
-     if (status === 3) return 'badge-info';     // out
-    if (status === 4) return 'badge-success';  // completed
-    return 'badge-light';
-  }
+getStatusClass(status?: number | null): string {
+  if (status === 1) return 'badge-warning'; // Pending
+  if (status === 2) return 'badge-info';    // Pending Partial Out
+  if (status === 3) return 'badge-primary'; // Delivered Partial Out
+  if (status === 4) return 'badge-success'; // Pending Full Transfer Out
+  if (status === 5) return 'badge-dark';    // Delivered
+  return 'badge-light';
+}
 
   applyFilter(): void {
     const q = (this.searchValue || '').trim().toLowerCase();

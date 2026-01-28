@@ -27,6 +27,13 @@
         <b>{{ selectedMrNo || ('MRQ-' + selectedMrId) }}</b>
       </div>
 
+      <!-- ✅ Shortage chip -->
+      <div class="uwso-chip soft" *ngIf="selectedMrId && shortageCount > 0" style="border-color:#f59e0b;">
+        <i class="fas fa-exclamation-triangle" aria-hidden="true" style="color:#f59e0b;"></i>
+        <span>Shortage</span>
+        <b>{{ shortageCount }}</b>
+      </div>
+
       <button
         type="button"
         class="uwso-transfer"
@@ -129,7 +136,6 @@
             From Outlet
           </label>
 
-          <!-- ✅ add appendTo="body" (optional but best) -->
           <ng-select
             class="uwso-ng"
             [items]="fromOutletOptions"
@@ -185,7 +191,13 @@
             readonly
             placeholder="Select From Outlet"/>
 
-          <div class="uwso-help">This outlet stock rows will be shown below.</div>
+          <div class="uwso-help">
+            This outlet stock rows will be shown below.
+            <span *ngIf="selectedFromOutletId && mrLines?.length" class="dot">•</span>
+            <span *ngIf="selectedFromOutletId && mrLines?.length">
+              Transferable Lines: <b>{{ transferableLineCount }}</b>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -193,6 +205,12 @@
       <div *ngIf="!loading && errorMsg" class="uwso-error">
         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
         <span>{{ errorMsg }}</span>
+      </div>
+
+      <!-- ✅ Transfer error text -->
+      <div *ngIf="!loading && transferErrorText" class="uwso-error" style="background:#fff7ed;border-color:#fdba74;color:#9a3412;">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        <span>{{ transferErrorText }}</span>
       </div>
     </div>
   </div>
@@ -239,7 +257,9 @@
             <i class="fas fa-list" aria-hidden="true"></i>
             <span>Material Requisition Lines</span>
           </div>
-          <div class="uwso-card-sub">Only remaining qty will be transferred</div>
+          <div class="uwso-card-sub">
+            Only available qty will be transferred. Shortage items will remain pending.
+          </div>
         </div>
 
         <span class="uwso-chip soft">
@@ -254,10 +274,16 @@
             <tr>
               <th>Item</th>
               <th>SKU</th>
-              <th class="t-end">Old Requested</th>
-              <th class="t-end">New Requested</th>
+
+              <th class="t-end">Old Req</th>
+              <th class="t-end">New Req</th>
               <th class="t-end">Received</th>
               <th class="t-end">Remaining</th>
+
+              <!-- ✅ NEW -->
+              <th class="t-end">Avail</th>
+              <th>Status</th>
+              <th class="t-end">Transfer Qty</th>
             </tr>
           </thead>
 
@@ -265,19 +291,66 @@
             <tr *ngFor="let l of mrLines; trackBy: trackByMrLine">
               <td class="t-strong">{{ l.itemName }}</td>
               <td class="t-muted">{{ l.sku }}</td>
+
               <td class="t-end t-num">{{ l.oldRequestedQty }}</td>
               <td class="t-end t-num t-strong">{{ l.requestedQty }}</td>
               <td class="t-end t-num">{{ l.receivedQty }}</td>
               <td class="t-end t-num">
                 <span class="uwso-badge-num">{{ l.remainingQty }}</span>
               </td>
+
+              <!-- ✅ NEW -->
+              <td class="t-end t-num">
+                <span
+                  class="uwso-badge-av"
+                  [ngStyle]="{opacity: l.availQty > 0 ? 1 : 0.55, borderColor: l.availQty > 0 ? '#2E5F73' : '#ef4444'}">
+                  {{ l.availQty }}
+                </span>
+              </td>
+
+              <td>
+                <span
+                  class="uwso-chip soft"
+                  [ngStyle]="l.status==='SHORT' ? {borderColor:'#ef4444', color:'#b91c1c'} :
+                             l.status==='PARTIAL' ? {borderColor:'#f59e0b', color:'#92400e'} :
+                             {borderColor:'#10b981', color:'#065f46'}">
+                  <i class="fas"
+                     [ngClass]="{
+                       'fa-check-circle': l.status==='READY',
+                       'fa-adjust': l.status==='PARTIAL',
+                       'fa-exclamation-triangle': l.status==='SHORT'
+                     }"
+                     aria-hidden="true"></i>
+                  <span style="margin-left:6px;">{{ l.status }}</span>
+                </span>
+              </td>
+
+              <td class="t-end">
+                <input
+                  class="uwso-input"
+                  style="max-width:120px;text-align:right;"
+                  type="number"
+                  [min]="0"
+                  [max]="l.maxTransferQty"
+                  [(ngModel)]="l.transferQty"
+                  (ngModelChange)="onTransferQtyChanged(l)"
+                  [readonly]="l.status==='SHORT'"
+                  [disabled]="l.status==='SHORT'">
+              </td>
             </tr>
 
             <tr *ngIf="!mrLines?.length">
-              <td colspan="6" class="uwso-empty">No remaining lines.</td>
+              <td colspan="9" class="uwso-empty">No remaining lines.</td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- ✅ Helper note -->
+      <div class="uwso-help" style="padding:10px 14px;">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        Transfer button will be enabled if <b>at least one line</b> has Transfer Qty &gt; 0.
+        Shortage lines will remain pending.
       </div>
     </div>
 

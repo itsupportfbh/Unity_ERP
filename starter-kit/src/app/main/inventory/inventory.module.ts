@@ -24,6 +24,8 @@ import { StockReorderPlanningCreateComponent } from './stock-reorder-planning/st
 import { StockReorderPlanningListComponent } from './stock-reorder-planning/stock-reorder-planning-list/stock-reorder-planning-list.component';
 import { MaterialRequisitionListComponent } from './material-requisation/material-requisition-list/material-requisition-list.component';
 import { MaterialRequisitionCreateComponent } from './material-requisation/material-requisition-create/material-requisition-create.component';
+import { ListStockTransferReceiptComponent } from './stock-transfer-receipt/list-stock-transfer-receipt/list-stock-transfer-receipt.component';
+
 const routes = [
   {
     path: 'Create-inventory',
@@ -126,6 +128,13 @@ const routes = [
     component: MaterialRequisitionCreateComponent,
     data: { animation: 'edit-stockreorderplanning' }
   },
+
+ 
+        {
+    path: 'list-stock-transfer-receipt',
+    component: ListStockTransferReceiptComponent,
+    data: { animation: 'list-stock-transfer-receipt' }
+  },
 ]
 
 @NgModule({
@@ -145,6 +154,7 @@ const routes = [
      StockReorderPlanningListComponent,
      MaterialRequisitionListComponent,
      MaterialRequisitionCreateComponent,
+     ListStockTransferReceiptComponent,
   ],
   imports: [
     CommonModule,

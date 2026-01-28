@@ -10,25 +10,21 @@ import { MaterialRequisitionService } from '../material-requisation/material-req
 interface ApiItemRow {
   id?: number | string;
 
-  // SKU variations
   sku?: string;
   Sku?: string;
   itemCode?: string;
   ItemCode?: string;
 
-  // Item name variations
   name?: string;
   itemName?: string;
   ItemName?: string;
 
-  // Warehouse / Bin name variations
   warehouseName?: string;
   WarehouseName?: string;
 
   binName?: string;
   BinName?: string;
 
-  // Qty fields variations
   onHand?: number;
   OnHand?: number;
 
@@ -38,7 +34,6 @@ interface ApiItemRow {
   available?: number;
   Available?: number;
 
-  // Id fields variations
   warehouseId?: number;
   WarehouseId?: number;
 
@@ -51,7 +46,6 @@ interface ApiItemRow {
   supplierName?: string | null;
   SupplierName?: string | null;
 
-  // real item id variations
   itemId?: number | string;
   ItemId?: number | string;
 }
@@ -86,16 +80,25 @@ interface MrLine {
   receivedQty?: number;  // Received
 }
 
+type MrLineStatus = 'READY' | 'PARTIAL' | 'SHORT';
+
 interface MrLineVM {
   itemId: number;
   sku: string;
   itemName: string;
   uomName: string;
 
-  oldRequestedQty: number;  // ✅ old qty from MR
-  requestedQty: number;     // ✅ NEW requested qty = (old - received)
+  oldRequestedQty: number;
+  requestedQty: number;  // NEW requested = old - received
   receivedQty: number;
-  remainingQty: number;     // ✅ same as requestedQty
+  remainingQty: number;
+
+  // ✅ NEW for shortage handling
+  availQty: number;         // total available in selected From outlet (MR sku)
+  maxTransferQty: number;   // min(remaining, availQty)
+  transferQty: number;      // user editable
+  shortageQty: number;      // remaining - avail (if positive)
+  status: MrLineStatus;     // READY / PARTIAL / SHORT
 }
 
 interface MrListItem {
@@ -111,8 +114,8 @@ interface FromOutletOption {
   id: number;
   name: string;
   label: string;
-  reqQty: number;   // total remaining
-  onHand: number;   // total onhand for MR SKUs in that outlet
+  reqQty: number;
+  onHand: number;
 }
 
 @Component({
@@ -150,6 +153,10 @@ export class StackOverviewComponent implements OnInit {
   // Stock
   rows: StockRow[] = [];
   filteredRows: StockRow[] = [];
+
+  // ✅ Summary counters
+  shortageCount: number = 0;
+  transferableLineCount: number = 0;
 
   loading = false;
   errorMsg: string | null = null;
@@ -245,6 +252,7 @@ export class StackOverviewComponent implements OnInit {
           this.rows = res.data.map((item: ApiItemRow) => this.toStockRow(item));
           this.applyGrid();
           this.rebuildFromOutletOptions();
+          this.recalcMrAvailability(); // ✅
         } else {
           this.errorMsg = 'No stock data found.';
         }
@@ -350,8 +358,7 @@ export class StackOverviewComponent implements OnInit {
   }
 
   /**
-   * ✅ IMPORTANT CHANGE:
-   * requestedQty (newRequestedQty) = oldQty - receivedQty
+   * ✅ requestedQty (newRequestedQty) = oldQty - receivedQty
    * remainingQty = requestedQty
    */
   private buildMrLines(dto: any): MrLineVM[] {
@@ -367,7 +374,7 @@ export class StackOverviewComponent implements OnInit {
       const oldReq = Number(l?.qty ?? 0);
       const rec = Number(l?.receivedQty ?? 0);
 
-      const newReq = Math.max(0, oldReq - rec); // ✅ newRequestedQty
+      const newReq = Math.max(0, oldReq - rec);
       if (!itemId || !sku || newReq <= 0) continue;
 
       out.push({
@@ -376,9 +383,16 @@ export class StackOverviewComponent implements OnInit {
         itemName: itemName || sku,
         uomName: uomName || '',
         oldRequestedQty: oldReq,
-        requestedQty: newReq,   // ✅ New requested qty
+        requestedQty: newReq,
         receivedQty: rec,
-        remainingQty: newReq    // ✅ same
+        remainingQty: newReq,
+
+        // ✅ init (will be recalculated when from outlet changes)
+        availQty: 0,
+        maxTransferQty: 0,
+        transferQty: 0,
+        shortageQty: newReq,
+        status: 'SHORT'
       });
     }
 
@@ -462,6 +476,7 @@ export class StackOverviewComponent implements OnInit {
 
         this.rebuildFromOutletOptions();
         this.applyGrid();
+        this.recalcMrAvailability(); // ✅
       },
       error: (err) => {
         console.error('Failed to load MRQ detail', err);
@@ -486,6 +501,15 @@ export class StackOverviewComponent implements OnInit {
 
     this.applyGrid();
     this.rebuildFromOutletOptions();
+    this.recalcMrAvailability(); // ✅
+  }
+
+  onTransferQtyChanged(line: MrLineVM): void {
+    const v = Number(line.transferQty ?? 0);
+    const safe = Number.isFinite(v) ? v : 0;
+
+    const capped = Math.max(0, Math.min(safe, Number(line.maxTransferQty ?? 0)));
+    line.transferQty = capped;
   }
 
   /* ===================== FROM OUTLET OPTIONS ===================== */
@@ -552,6 +576,59 @@ export class StackOverviewComponent implements OnInit {
     this.filteredRows = filtered;
   }
 
+  /* ===================== NEW: AVAILABILITY CALC ===================== */
+
+  private recalcMrAvailability(): void {
+    // if no MR lines, clear
+    if (!this.mrLines?.length) {
+      this.shortageCount = 0;
+      this.transferableLineCount = 0;
+      return;
+    }
+
+    // build map sku -> total available in selected from outlet
+    const availBySku = new Map<string, number>();
+
+    for (const r of (this.filteredRows || [])) {
+      const sku = (r.sku ?? '').toLowerCase().trim();
+      if (!sku) continue;
+      availBySku.set(sku, (availBySku.get(sku) ?? 0) + Number(r.available ?? 0));
+    }
+
+    let shortage = 0;
+    let transferable = 0;
+
+    for (const l of this.mrLines) {
+      const skuLower = (l.sku ?? '').toLowerCase().trim();
+      const avail = Number(availBySku.get(skuLower) ?? 0);
+
+      l.availQty = avail;
+
+      const remaining = Number(l.remainingQty ?? 0);
+      l.maxTransferQty = Math.max(0, Math.min(remaining, avail));
+
+      l.shortageQty = Math.max(0, remaining - avail);
+
+      if (avail <= 0) {
+        l.status = 'SHORT';
+        l.transferQty = 0;
+        shortage++;
+      } else if (avail >= remaining) {
+        l.status = 'READY';
+        // default transfer qty = full remaining (only if empty or too big)
+        if (!l.transferQty || l.transferQty > l.maxTransferQty) l.transferQty = l.maxTransferQty;
+        transferable++;
+      } else {
+        l.status = 'PARTIAL';
+        if (!l.transferQty || l.transferQty > l.maxTransferQty) l.transferQty = l.maxTransferQty;
+        transferable++;
+      }
+    }
+
+    this.shortageCount = shortage;
+    this.transferableLineCount = transferable;
+  }
+
   /* ===================== TRANSFER ===================== */
 
   canTransfer(): boolean {
@@ -565,7 +642,9 @@ export class StackOverviewComponent implements OnInit {
     if (!this.mrLines?.length) return (this.transferErrorText = 'No MR lines found.'), false;
     if (Number(this.totalRemainingQty ?? 0) <= 0) return (this.transferErrorText = 'No remaining qty to transfer.'), false;
 
-    if (!this.filteredRows?.length) return (this.transferErrorText = 'No stock rows available for selected outlet.'), false;
+    // ✅ key rule: allow if at least one line has transferQty > 0
+    const anyTransfer = (this.mrLines || []).some(l => Number(l.transferQty ?? 0) > 0);
+    if (!anyTransfer) return (this.transferErrorText = 'Enter Transfer Qty for at least one line.'), false;
 
     return true;
   }
@@ -582,12 +661,15 @@ export class StackOverviewComponent implements OnInit {
     const userId = 1001;
 
     const payload: any[] = [];
+    const shortageSkus: Array<{ sku: string; itemName: string; need: number; avail: number }> = [];
 
     for (const line of (this.mrLines || [])) {
-      const skuLower = (line.sku || '').toLowerCase().trim();
 
-      // ✅ transfer only balance qty
-      let remainingToAllocate = Number(line.remainingQty ?? 0);
+      const want = Number(line.transferQty ?? 0);
+      if (!want || want <= 0) continue; // ✅ skip shortage / zero lines
+
+      const skuLower = (line.sku || '').toLowerCase().trim();
+      let remainingToAllocate = want;
 
       const candidates = (this.filteredRows || [])
         .filter(r => ((r.sku ?? '').toLowerCase().trim() === skuLower))
@@ -597,21 +679,14 @@ export class StackOverviewComponent implements OnInit {
       const totalAvail = candidates.reduce((s, r) => s + Number(r.available ?? 0), 0);
 
       if (!candidates.length || totalAvail <= 0) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Stock Not Found',
-          text: `No available stock found in selected outlet for SKU: ${line.sku}`
-        });
-        return;
+        shortageSkus.push({ sku: line.sku, itemName: line.itemName, need: want, avail: 0 });
+        continue; // ✅ do NOT stop transfer
       }
 
       if (totalAvail < remainingToAllocate) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Insufficient Stock',
-          text: `SKU ${line.sku}: Required ${remainingToAllocate}, Available ${totalAvail}.`
-        });
-        return;
+        // user asked more than available (shouldn't happen due to maxTransferQty, but safe)
+        shortageSkus.push({ sku: line.sku, itemName: line.itemName, need: want, avail: totalAvail });
+        remainingToAllocate = totalAvail;
       }
 
       for (const match of candidates) {
@@ -635,12 +710,11 @@ export class StackOverviewComponent implements OnInit {
           Available: Number(match.available ?? 0),
           OnHand: Number(match.onHand ?? 0),
 
-          // ✅ Send NEW RequestedQty (balance)
-          RequestedQty: Number(line.requestedQty ?? 0),     // NEW requested = old - received
-          OldRequestedQty: Number(line.oldRequestedQty ?? 0), // optional (if backend ignore, remove)
+          RequestedQty: Number(line.requestedQty ?? 0),
+          OldRequestedQty: Number(line.oldRequestedQty ?? 0),
           ReceivedQty: Number(line.receivedQty ?? 0),
           TransferQty: Number(takeQty),
-
+          TransferNo:'',
           isApproved: true,
           CreatedBy: userId,
           CreatedDate: now,
@@ -656,19 +730,14 @@ export class StackOverviewComponent implements OnInit {
           IsSupplierBased: false
         });
       }
-
-      if (remainingToAllocate > 0) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Allocation Failed',
-          text: `SKU ${line.sku}: Could not allocate full quantity. Remaining ${remainingToAllocate}.`
-        });
-        return;
-      }
     }
 
     if (!payload.length) {
-      Swal.fire({ icon: 'warning', title: 'Nothing to Transfer', text: 'No valid payload rows found.' });
+      Swal.fire({
+        icon: 'warning',
+        title: 'Nothing to Transfer',
+        text: 'No transferable lines found (all lines shortage or Transfer Qty is 0).'
+      });
       return;
     }
 
@@ -678,10 +747,14 @@ export class StackOverviewComponent implements OnInit {
       next: (_res: any) => {
         this.loading = false;
 
+        const shortageMsg = shortageSkus.length
+          ? `\n\nShortage items kept pending: ${shortageSkus.map(x => x.sku).join(', ')}`
+          : '';
+
         Swal.fire({
           icon: 'success',
           title: 'Transfer Created',
-          text: `Transfer created for ${payload.length} row(s).`,
+          text: `Transfer created for ${payload.length} row(s).${shortageMsg}`,
           confirmButtonColor: '#2E5F73'
         }).then(() => {
           this.resetAll();
@@ -729,6 +802,9 @@ export class StackOverviewComponent implements OnInit {
 
     this.mrLines = [];
     this.totalRemainingQty = 0;
+
+    this.shortageCount = 0;
+    this.transferableLineCount = 0;
 
     this.rebuildFromOutletOptions();
     this.applyGrid();

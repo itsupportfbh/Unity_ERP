@@ -1,0 +1,262 @@
+<div class="rcx-page">
+
+  <div class="rcx-hero">
+    <div class="rcx-hero-left">
+      <div class="rcx-title">Receive Confirm</div>
+      <div class="rcx-sub">Destination outlet receives and confirms transfers.</div>
+    </div>
+
+    <div class="rcx-hero-right">
+
+      <!-- To Outlet -->
+      <div class="rcx-field">
+        <div class="rcx-lbl">To Outlet</div>
+        <div class="rcx-selectwrap">
+          <i class="fas fa-store rcx-ic"></i>
+
+          <select class="rcx-select"
+                  [(ngModel)]="selectedToOutletId"
+                  (ngModelChange)="onToOutletChange()">
+            <option [ngValue]="null">Select outlet</option>
+            <option *ngFor="let o of toOutletOptions" [ngValue]="o.id">
+              {{ o.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="rcx-field">
+        <div class="rcx-lbl">Search</div>
+        <div class="rcx-searchwrap">
+          <i class="fas fa-search rcx-ic"></i>
+          <input class="rcx-search"
+                 type="search"
+                 [(ngModel)]="searchValue"
+                 (input)="applyFilter()"
+                 placeholder="TransferNo / SKU / From / Reason" />
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="rcx-strip">
+    <div class="rcx-strip-left">
+      <span class="rcx-strip-dot"></span>
+      Showing <b>All</b> transfers for <b class="rcx-strong">{{ selectedOutletName }}</b>.
+    </div>
+
+    <div class="rcx-strip-right">
+      <span class="rcx-count">{{ pendingCount }} pending</span>
+    </div>
+  </div>
+
+  <div class="rcx-card">
+    <div class="rcx-card-hdr">
+      <div class="rcx-card-title">
+        <i class="fas fa-boxes"></i>
+         Receipts
+      </div>
+    </div>
+
+    <div class="rcx-tablewrap">
+
+      <!-- loading -->
+      <div class="rcx-empty" *ngIf="isLoading">
+        <div class="rcx-empty-ic"><i class="fas fa-spinner fa-spin"></i></div>
+        <div class="rcx-empty-h">Loading...</div>
+        <div class="rcx-empty-p">Fetching transfers for selected outlet.</div>
+      </div>
+
+      <!-- datatable -->
+      <ngx-datatable
+        class="bootstrap core-bootstrap rcx-table"
+        [rows]="filteredRows"
+        [rowHeight]="56"
+        [headerHeight]="46"
+        [footerHeight]="0"
+        [limit]="999"
+        [columnMode]="'standard'"
+        [scrollbarH]="true"
+        [reorderable]="false"
+        [rowIdentity]="rowIdentity"
+        [trackByProp]="'gridKey'">
+
+        <ngx-datatable-column name="TRANSFER NO" prop="transferNo" [width]="160"></ngx-datatable-column>
+        <ngx-datatable-column name="SKU" prop="sku" [width]="140"></ngx-datatable-column>
+        <ngx-datatable-column name="ITEM" prop="name" [width]="180"></ngx-datatable-column>
+        <ngx-datatable-column name="FROM OUTLET" prop="fromWarehouseName" [width]="200"></ngx-datatable-column>
+        <ngx-datatable-column name="REQUESTED QTY" prop="requestQty" [width]="170"></ngx-datatable-column>
+        <ngx-datatable-column name="RECEIVED QTY" prop="receivedQty" [width]="160"></ngx-datatable-column>
+
+      <ngx-datatable-column name="STATUS" [width]="180" [sortable]="false" [canAutoResize]="false">
+  <ng-template ngx-datatable-cell-template let-row="row">
+    <span class="st-badge"
+          [ngClass]="{
+            'st-in': row.status === 'IN_TRANSIT',
+            'st-rec': row.status === 'RECEIVED',
+            'st-can': row.status === 'CANCELLED'
+          }">
+
+      <i class="fas"
+         [ngClass]="row.status === 'IN_TRANSIT'
+           ? 'fa-truck'
+           : (row.status === 'RECEIVED' ? 'fa-check' : 'fa-ban')"></i>
+
+      <span class="st-text">{{ row.statusLabel }}</span>
+    </span>
+  </ng-template>
+</ngx-datatable-column>
+
+        <ngx-datatable-column name="ACTION" [width]="160" [sortable]="false" [canAutoResize]="false">
+          <ng-template ngx-datatable-cell-template let-row="row">
+            <button
+              type="button"
+              class="rcx-btn primary"
+              (click)="openReceiveModal(row)"
+              [disabled]="row.status !== 'IN_TRANSIT'"
+              [class.disabled]="row.status !== 'IN_TRANSIT'">
+              <i class="fas fa-box-open"></i>
+              Receive
+            </button>
+          </ng-template>
+        </ngx-datatable-column>
+
+      </ngx-datatable>
+
+      <!-- empty state -->
+      <div class="rcx-empty" *ngIf="!isLoading && selectedToOutletId && filteredRows.length === 0">
+        <div class="rcx-empty-ic"><i class="fas fa-inbox"></i></div>
+        <div class="rcx-empty-h">No transfers found</div>
+        <div class="rcx-empty-p">Try search keyword or different outlet.</div>
+      </div>
+
+      <div class="rcx-empty" *ngIf="!isLoading && !selectedToOutletId">
+        <div class="rcx-empty-ic"><i class="fas fa-store"></i></div>
+        <div class="rcx-empty-h">Select To Outlet</div>
+        <div class="rcx-empty-p">Choose destination outlet to load transfers.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ✅ COMPACT MODAL -->
+<div class="rcm-backdrop" *ngIf="showReceiveModal" (click)="closeReceiveModal()">
+  <div class="rcm-modal" (click)="$event.stopPropagation()">
+
+    <div class="rcm-hdr">
+      <div class="rcm-hleft">
+        <div class="rcm-kicker">Transfer No</div>
+        <div class="rcm-no">{{ receiveForm?.transferNo }}</div>
+      </div>
+
+      <div class="rcm-hright">
+        <span class="rcm-pill" [class.ok]="receiveForm?.status === 'RECEIVED'">
+          <i class="fas" [ngClass]="receiveForm?.status === 'RECEIVED' ? 'fa-check' : 'fa-truck'"></i>
+          {{ receiveForm?.statusLabel }}
+        </span>
+
+        <button class="rcm-x" type="button" (click)="closeReceiveModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="rcm-body" *ngIf="receiveForm as f">
+      <div class="rcm-grid">
+
+        <div class="rcm-field">
+          <label class="rcm-lbl">SKU</label>
+          <div class="rcm-inpwrap">
+            <i class="fas fa-barcode rcm-ic"></i>
+            <input class="rcm-inp" [value]="f.sku" disabled />
+          </div>
+        </div>
+
+        <div class="rcm-field">
+          <label class="rcm-lbl">Item Name</label>
+          <div class="rcm-inpwrap">
+            <i class="fas fa-tag rcm-ic"></i>
+            <input class="rcm-inp" [value]="f.name" disabled />
+          </div>
+        </div>
+
+        <div class="rcm-field">
+          <label class="rcm-lbl">From Outlet</label>
+          <div class="rcm-inpwrap">
+            <i class="fas fa-warehouse rcm-ic"></i>
+            <input class="rcm-inp" [value]="f.fromWarehouseName" disabled />
+          </div>
+        </div>
+
+        <div class="rcm-field">
+          <label class="rcm-lbl">To Outlet</label>
+          <div class="rcm-inpwrap">
+            <i class="fas fa-store rcm-ic"></i>
+            <input class="rcm-inp" [value]="f.toWarehouseName" disabled />
+          </div>
+        </div>
+
+        <div class="rcm-field">
+          <label class="rcm-lbl">Planned Qty</label>
+          <div class="rcm-inpwrap">
+            <i class="fas fa-clipboard-list rcm-ic"></i>
+            <input class="rcm-inp" [value]="f.plannedQty" disabled />
+          </div>
+        </div>
+
+        <!-- ✅ Receive Qty default 0 -->
+        <div class="rcm-field">
+          <label class="rcm-lbl">Receive Qty</label>
+          <div class="rcm-inpwrap">
+            <i class="fas fa-box-open rcm-ic"></i>
+            <input class="rcm-inp"
+                   type="number"
+                   min="0"
+                   [max]="f.plannedQty"
+                   [(ngModel)]="f.receiveQty"
+                   (input)="recalcVariance()"
+                   [disabled]="f.status !== 'IN_TRANSIT'" />
+          </div>
+
+          <div class="rcm-meta">
+            <span class="rcm-variance" [class.bad]="f.variance !== 0">
+              Variance: <b>{{ f.variance }}</b>
+            </span>
+
+            <div class="rcm-warn" *ngIf="f.receiveQty > f.plannedQty">
+              Receive qty cannot exceed planned qty.
+            </div>
+          </div>
+        </div>
+
+        <div class="rcm-field full">
+          <label class="rcm-lbl">Remarks</label>
+          <div class="rcm-inpwrap">
+            <i class="fas fa-comment-dots rcm-ic"></i>
+            <input class="rcm-inp"
+                   placeholder="Damage / Short / Excess notes"
+                   [(ngModel)]="f.remarks"
+                   [disabled]="f.status !== 'IN_TRANSIT'" />
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="rcm-ftr">
+      <button type="button" class="rcm-btn ghost" (click)="closeReceiveModal()">Back</button>
+
+      <button type="button"
+              class="rcm-btn primary"
+              (click)="confirmReceive()"
+              [disabled]="!canConfirmReceive()">
+        <i class="fas fa-check-circle"></i>
+        Confirm Receive
+      </button>
+    </div>
+
+  </div>
+</div>

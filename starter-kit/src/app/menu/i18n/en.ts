@@ -25,6 +25,7 @@ export const locale = {
         MATERIALREQUESITION: 'material-requisition',
         ITEMMASTER:'ItemMaster',
         STACKTRANSFER: 'STACKTRANSFER',
+        STOCKTRANSFERRECIPT:'list-stock-transfer-receipt',
         STOCKTAKE: 'STOCKTAKE',
         STOCKADJUSTMENT: 'StockAdjustment',
         STOCKREORDERPLANNING: 'StockReorderPlanning'

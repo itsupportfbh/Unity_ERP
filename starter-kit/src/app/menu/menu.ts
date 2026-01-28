@@ -83,8 +83,9 @@ export const menu: any[] = [
     children: [
       { id: 'ItemMaster', title: 'Item Master', type: 'item', icon: 'circle', url: '/Inventory/List-itemmaster', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
               { id: 'material-requisition', title: 'Material-Requisition', type: 'item', icon: 'circle', url: '/Inventory/list-material-requisition', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'StackOverview', title: 'Stock-Overview', type: 'item', icon: 'circle', url: '/Inventory/list-stackoverview', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'StackTransfer', title: 'Stock-Transfer', type: 'item', icon: 'circle', url: '/Inventory/list-stocktransfer', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      // { id: 'StackOverview', title: 'Stock-Overview', type: 'item', icon: 'circle', url: '/Inventory/list-stackoverview', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      // { id: 'StackTransfer', title: 'Stock-Transfer', type: 'item', icon: 'circle', url: '/Inventory/list-stocktransfer', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'list-stock-transfer-receipt', title: 'Stock-Transfer-Receipt', type: 'item', icon: 'circle', url: '/Inventory/list-stock-transfer-receipt', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
       { id: 'StockTake', title: 'Stock-Take', type: 'item', icon: 'circle', url: '/Inventory/list-stocktake', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
       { id: 'StockReorderPlanning', title: 'Stock-Reorder-Planning', type: 'item', icon: 'circle', url: '/Inventory/list-stockreorderplanning', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] }
     ]

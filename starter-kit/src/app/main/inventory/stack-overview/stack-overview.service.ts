@@ -69,4 +69,16 @@ export class StackOverviewService {
    GetMaterialTransferList(): Observable<any[]> {
         return this.http.get<any[]>(this.url + StockAPIUrls.GetMaterialTransferList);
     }
+
+    gettransferdetailsbyid(id: any): Observable<any[]> {
+        return this.http.get<any[]>(this.url + StockAPIUrls.gettransferdetailsbyid + id);
+    }
+    // confirmReceive(data){
+
+    // }
+
+confirmReceive(payload: any) {
+  return this.http.post(this.url+StockAPIUrls.confirmReceive, payload);
+}
+
 }

@@ -208,10 +208,42 @@
   font-weight: 800;
   font-size: 13px;
 }
-.mrq-status-pill.is-pending { background: #fff0c2; color: #b45309; }
-.mrq-status-pill.is-partial     { background: #dbeafe; color: #1d4ed8; }
-.mrq-status-pill.is-full     { background: #dbeafe; color: #1d4ed8; }
-.mrq-status-pill.is-done    { background: #dcfce7; color: #166534; }
+/* STATUS PILL */
+.mrq-status-pill.is-pending {
+  background: #fff0c2;
+  color: #b45309;
+}
+
+/* 2 = Pending Partial Out */
+.mrq-status-pill.is-pending-partial {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* 3 = Delivered Partial Out */
+.mrq-status-pill.is-delivered-partial {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+/* 4 = Pending Full Transfer Out */
+.mrq-status-pill.is-pending-full {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+/* 5 = Delivered */
+.mrq-status-pill.is-delivered {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* Optional: if disabled look */
+.mrq-status-pill.is-unknown {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
 
 .mrq-total {
   padding: 10px 2px 0 2px;
@@ -302,25 +334,30 @@
   border: 1px solid transparent;
 }
 .mrq-status-badge.is-pending {
-  background: #fff7d6;
-  color: #a16207;
-  border-color: #fde68a;
+  background: #fff0c2;
+  color: #b45309;
 }
-.mrq-status-badge.is-partial {
-  background: #eaf2ff;
+
+.mrq-status-badge.is-pending-partial {
+  background: #dbeafe;
   color: #1d4ed8;
-  border-color: #bfdbfe;
 }
-.mrq-status-badge.is-full {
-  background: #eaf2ff;
-  color: #1d4ed8;
-  border-color: #bfdbfe;
+
+.mrq-status-badge.is-delivered-partial {
+  background: #e0f2fe;
+  color: #0369a1;
 }
-.mrq-status-badge.is-done {
-  background: #eafff1;
+
+.mrq-status-badge.is-pending-full {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.mrq-status-badge.is-delivered {
+  background: #dcfce7;
   color: #166534;
-  border-color: #bbf7d0;
 }
+
 
 /* top close icon */
 .mrq-xbtn {

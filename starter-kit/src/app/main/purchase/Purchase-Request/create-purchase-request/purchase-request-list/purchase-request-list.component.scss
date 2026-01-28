@@ -1,0 +1,170 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import '@core/scss/angular/libs/sweet-alerts.component.scss';
+
+
+// .highlight-link {
+//     // color: blue !important;
+//     font-weight: bold;
+   
+// }
+
+.highlight-link:hover {
+    color: darkblue !important;
+}
+
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; /* Adjust as needed */
+    height: 40px; /* Adjust as needed */
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  .avatar-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // height: 100%;
+    width: 100%;
+  }
+  
+
+.avatar-blue {
+    background-color: #007bff; /* Blue color */
+  }
+  
+  .avatar-red {
+    background-color: #dc3545; /* Red color */
+  }
+  
+  .avatar-green {
+    background-color: #28a745; /* Green color */
+  }
+ .swal2-actions { gap: .5rem !important; }
+ .swal2-actions .swal2-styled { margin: 0 .5rem !important; };
+  :host ::ng-deep .swal2-popup.prlines-modal {
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+
+:host ::ng-deep .swal2-popup.prlines-modal .swal2-close {
+  color: #6b7280; /* gray-500 */
+}
+
+:host ::ng-deep .prlines-title {
+  display: block;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #374151; /* gray-700 */
+  text-align: center;
+  padding: 18px 24px 8px;
+}
+
+:host ::ng-deep .prlines-wrapper {
+  padding: 0 16px 16px;
+}
+
+:host ::ng-deep .c-table-wrap {
+  max-height: 55vh;          /* scroll if long */
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid #eef2f7;
+  background: #fff;
+}
+
+/* Table base */
+:host ::ng-deep .c-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  color: #111827; /* gray-900 */
+}
+
+/* Header */
+:host ::ng-deep .c-th {
+  position: sticky;
+  top: 0;
+  background: #f7fafc; /* light */
+  font-weight: 700;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 1;
+}
+
+:host ::ng-deep .c-left { text-align: left; }
+:host ::ng-deep .c-right { text-align: right; }
+
+/* Cells */
+:host ::ng-deep .c-cell {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+:host ::ng-deep .c-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Zebra rows */
+:host ::ng-deep tbody tr:nth-child(odd) .c-cell {
+  background: #fcfdff;
+}
+
+/* Item ellipsis for long names */
+:host ::ng-deep .c-item {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Empty state */
+:host ::ng-deep .c-empty {
+  padding: 14px 12px;
+  text-align: center;
+  color: #6b7280;
+}
+
+/* Footer total row */
+:host ::ng-deep tfoot .c-foot {
+  padding: 10px 12px;
+  font-weight: 700;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Button */
+:host ::ng-deep .swal2-actions {
+  padding: 14px 16px 20px;
+}
+:host ::ng-deep .prlines-btn {
+  background: #2E5F73 !important;     /* your brand */
+  border-radius: 10px !important;
+  padding: 10px 18px !important;
+  font-weight: 700 !important;
+}
+:host ::ng-deep .prlines-btn:hover {
+  filter: brightness(.95);
+}
+
+/* purchase-request-list.component.scss */
+
+.alerts-panel{
+  position:absolute; right:0; top:42px; z-index:1000; width:460px;
+  border-radius:14px; overflow:hidden;
+  box-shadow:0 16px 36px rgba(0,0,0,.18);
+}
+.alerts-head{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 12px; background:#2E5F73; color:#fff;
+}
+.alerts-body{ max-height:380px; overflow:auto; background:#fff; }
+.alert-card{
+  padding:12px 14px; border-bottom:1px solid #f1f5f9;
+}
+.alert-title{ font-weight:700; color:#111827; }
+.alert-sub{ font-size:12px; color:#6b7280; }

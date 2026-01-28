@@ -1,0 +1,106 @@
+<div class="row">
+    <div class="col-lg-6 col-md-6">
+        <div class="card card-transaction">
+            <div class="card-header">
+                <div>
+                    <h4 class="card-title title-pill">
+                        <span class="pill">
+                            <!-- inline GLOBE icon -->
+                            <svg viewBox="0 0 24 24" class="lvl-icon" fill="none" stroke="currentColor"
+                                aria-hidden="true">
+                                <g stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 0 20a15.3 15.3 0 0 1 0-20z"></path>
+                                </g>
+                            </svg>
+                        </span>
+                        Frequency List
+                    </h4>
+
+                </div>
+
+                <button (click)="createStrategy()"
+                    style="background-color:#2E5F73; color:white; border:none; padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+                    <i data-feather="plus-circle" class="w-4 h-4"></i>
+                    Create
+                </button>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center"
+                        *ngFor="let item of rows">
+                        <div class="avatar bg-light-primary mr-2 align-items-center avatar-lg">
+                            <div class="avatar-content"
+                                style="background-color: #2E5F73; color: white; width: 2.5rem; height: 2.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <!-- If you want to use an icon as avatar: -->
+                                <span data-feather="globe" style="width: 2rem; height: 2rem; font-size: 1.5rem;"></span>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center w-100">
+                            <div class="m-l-16 m-r-auto">
+                                <h6 class="mat-subtitle-1 f-s-16 f-w-600">{{ item.strategyName }}</h6>
+                            </div>
+                            <div class="mt-md-0 mt-1 d-flex justify-content-md-end">
+                                <!-- Edit Button -->
+                                <button type="button"
+                                    class="btn btn-outline-primary p-0 d-flex align-items-center justify-content-center"
+                                    style="width: 28px; height: 28px;" (click)="getStrategyDetails(item.id)">
+                                    <i data-feather="edit" style="width: 14px; height: 14px;"></i>
+                                </button>
+
+                                <!-- Delete Button -->
+                                <button type="button"
+                                    class="btn btn-outline-danger p-0 d-flex align-items-center justify-content-center ml-1"
+                                    style="width: 28px; height: 28px;" (click)="deleteStrategy(item.id, item.isUsed)"
+                                    [disabled]="isEditMode">
+                                    <i data-feather="trash" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </div>
+
+                        </div>
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-12 col-xs-12 col-lg-6 col-md-6 " *ngIf="isDisplay">
+        <div class="card ">
+            <div class="card-header">
+                <h4 class="card-title">{{modeHeader}}</h4>
+            </div>
+            <div class="card-body">
+                <form class="form" (ngSubmit)="strategyForm.form.valid" #strategyForm="ngForm">
+                    <div class="form-group">
+                        <label for="first-name-column">Frequency Name</label>
+                        <input type="text" id="first-name-column" class="form-control" placeholder="Frequency Name"
+                            name="fname-column" [(ngModel)]="strategyName" [maxlength]="50" required />
+                    </div>
+
+                    <div class="row justify-content-start p-1">
+                        <button type="submit" class="btn mr-1" [disabled]="!strategyForm.form.valid"
+                            (click)="saveStrategy()"
+                            style="background-color:#2E5F73; color:white; padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+                            <i data-feather="check-circle" class="w-4 h-4"></i>
+                            Submit
+                        </button>
+
+                        <button type="button" class="btn btn-danger mr-1" (click)="cancel()"
+                            style="padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+                            <i data-feather="x-circle" class="w-4 h-4"></i>
+                            Cancel
+                        </button>
+
+                        <button type="button" class="btn btn-secondary" *ngIf="resetButton" (click)="reset()"
+                            style="padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+                            <i data-feather="rotate-ccw" class="w-4 h-4"></i>
+                            Clear
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

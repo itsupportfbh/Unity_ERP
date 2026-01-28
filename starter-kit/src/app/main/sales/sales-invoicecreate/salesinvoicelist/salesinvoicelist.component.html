@@ -1,0 +1,207 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <div class="row">
+          <!-- Title + page size -->
+          <div class="col-md-6 col-12">
+            <h4 class="card-text page-title">
+              Sales Invoice List
+            </h4>
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center gap-1">
+                Show
+                <select class="form-control mx-25" (change)="onLimitChange($event)">
+                  <option [selected]="selectedOption===10" value="10">10</option>
+                  <option [selected]="selectedOption===25" value="25">25</option>
+                  <option [selected]="selectedOption===50" value="50">50</option>
+                  <option [selected]="selectedOption===100" value="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+             <div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+            </div>
+          </div>
+
+          <!-- Search + buttons -->
+          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+              <label class="d-flex align-items-center ml-1 ml-md-0">
+                Search:
+                <input
+                  [(ngModel)]="searchValue"
+                  name="searchValue"
+                  type="search"
+                  class="form-control ml-25"
+                  (keyup)="filterUpdate($event)"
+                  (search)="filterUpdate($event)"
+                  placeholder="Invoice no / source ref"
+                />
+              </label>
+
+              <!-- <button
+                (click)="goToCreate()"
+                class="btn m-1 d-inline-flex align-items-center"
+                style="background-color:#2E5F73;color:white;gap:6px;">
+                <i class="fas fa-file-invoice"></i>
+                <span>Add</span>
+              </button> -->
+               <button
+                  (click)="goToCreate()"
+                  class="btn m-1 d-inline-flex align-items-center"
+                  style="background-color:#2E5F73;color:white;gap:6px;"
+                  [disabled]="isPeriodLocked"
+                  [attr.title]="isPeriodLocked
+                    ? (currentPeriodName
+                        ? 'Period ' + currentPeriodName + ' is locked'
+                        : 'Accounting period is locked')
+                    : 'Create Purchase Request'">
+                  <i data-feather="plus-circle" class="w-4 h-4"></i>
+                  <span>Add</span>
+                </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main datatable -->
+        <ngx-datatable
+          class="bootstrap core-bootstrap"
+          [rows]="rows"
+          [rowHeight]="50"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="selectedOption"
+          [columnMode]="'force'"
+          [scrollbarH]="false"
+          [reorderable]="true">
+
+          <!-- View lines -->
+          <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false" [canAutoResize]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span (click)="openLinesModal(row)" title="View Details" class="eye">
+                <i class="fas fa-eye"></i>
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Invoice No" prop="invoiceNo" [width]="160"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Date" prop="invoiceDate" [width]="140">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.invoiceDate | date:'dd-MM-yyyy' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Source" [width]="100">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ sourceLabel(row.sourceType) }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Source Ref" prop="sourceRef"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Total" [width]="140">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="text-right">{{ row.total | number:'1.2-2' }}</div>
+            </ng-template>
+          </ngx-datatable-column>
+<ngx-datatable-column name="Action" [width]="170">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+
+    <!-- Edit/Delete : locked হলে disabled icon -->
+    <ng-container *ngIf="isPeriodLocked; else actionsEnabled">
+      <i class="fas fa-pen text-gray-300 mr-2" title="Period Locked"></i>
+      <i class="fas fa-trash text-gray-300 mr-2" title="Period Locked"></i>
+    </ng-container>
+
+    <!-- Edit/Delete : enabled -->
+    <ng-template #actionsEnabled>
+      <i
+        class="fas fa-pen text-primary mr-2"
+        style="cursor:pointer;"
+        (click)="edit(row.id)"
+        title="Edit">
+      </i>
+
+      <i
+        class="fas fa-trash text-danger mr-2"
+        style="cursor:pointer;"
+        (click)="delete(row.id)"
+        title="Delete">
+      </i>
+    </ng-template>
+
+    <!-- ✅ Print : ALWAYS enabled -->
+    <i
+      class="fas fa-print text-info"
+      style="cursor:pointer;"
+      (click)="printInvoice(row)"
+      title="Print">
+    </i>
+
+  </ng-template>
+</ngx-datatable-column>
+
+
+        </ngx-datatable>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- SI Lines Modal -->
+<div *ngIf="showLinesModal" (click)="closeLinesModal()" class="overlay">
+  <div (click)="$event.stopPropagation()" class="modal-card">
+    <div class="modal-head">
+      <h3>Invoice Lines — {{ activeSi?.invoiceNo || ('#' + activeSi?.id) }}</h3>
+      <button (click)="closeLinesModal()" aria-label="Close" class="close-btn">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="table-wrap">
+        <table class="lines-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Description</th>
+              <th>UOM</th>
+              <th class="ta-right">Qty</th>
+              <th class="ta-right">Unit Price</th>
+              <th class="ta-right">Disc %</th>
+              <th class="ta-right">Line Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of modalLines; let i = index" [class.zebra]="i % 2 === 0">
+              <td>{{ l.itemName || ('#' + (l.itemId || '')) }}</td>
+               <td>{{ l.description }}</td>
+              <td>{{ l.uom || '-' }}</td>
+              <td class="ta-right">{{ l.qty | number:'1.0-3' }}</td>
+              <td class="ta-right">{{ l.unitPrice | number:'1.2-2' }}</td>
+              <td class="ta-right">{{ (l.discountPct || 0) | number:'1.0-2' }}</td>
+              <td class="ta-right">{{ lineTotal(l) | number:'1.2-2' }}</td>
+            </tr>
+            <tr *ngIf="!modalLines?.length">
+              <td colspan="6" class="empty">No lines</td>
+            </tr>
+          </tbody>
+          <tfoot *ngIf="modalLines?.length">
+            <tr>
+              <td colspan="6" class="fw-800 ta-right">Total Amount</td>
+              <td class="ta-right fw-800">{{ modalGrand | number:'1.2-2' }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button (click)="closeLinesModal()" class="btn-primary">Close</button>
+    </div>
+  </div>
+</div>

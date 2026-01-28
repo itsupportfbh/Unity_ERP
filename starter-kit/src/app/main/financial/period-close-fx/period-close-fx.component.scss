@@ -1,0 +1,78 @@
+.period-card {
+  border-radius: 12px;
+}
+
+.period-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #2E5F73;
+}
+
+.period-select {
+  max-width: 260px;
+}
+
+/* Toggle switch (iOS style) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+}
+
+.switch input {
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #dcdfe3;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #2E5F73;
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.info-box {
+  border-radius: 10px;
+  border: 1px solid #e4e7ec;
+  padding: 0.75rem 1rem;
+  background-color: #fafbfc;
+}
+
+.info-title {
+  font-weight: 600;
+  color: #2E5F73;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.info-body {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+/* fonts */
+.fw-600 {
+  font-weight: 600;
+}

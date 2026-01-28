@@ -1,0 +1,167 @@
+<div class="row">
+  <!-- LEFT: LIST -->
+  <div class="col-lg-6 col-md-12">
+    <div class="card card-transaction">
+      <div class="card-header d-flex justify-content-between align-items-center"
+           style="background-color:#ffffff; padding:12px 20px;">
+
+        <h4 class="card-title"
+            style="display:flex; align-items:center; gap:10px; margin:0; font-size:1.25rem; font-weight:600; color:#2E5F73;">
+          <span
+            style="display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; background-color:#e5f0f3; border-radius:50%;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2E5F73" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
+              <path d="M4 4v16"></path>
+              <path d="M4 4h15l-3 5l3 5H4"></path>
+            </svg>
+          </span>
+          Item Set List
+        </h4>
+
+        <button (click)="createItemSet()"
+                style="background-color:#2E5F73; color:white; border:none; padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+          <i data-feather="plus-circle" class="w-4 h-4"></i>
+          Create
+        </button>
+      </div>
+
+      <div class="card-body">
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between align-items-center"
+              *ngFor="let set of itemSetList">
+
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center w-100">
+
+              <div style="display:flex; align-items:center; gap:8px; padding:4px 10px;">
+                <div class="avatar"
+                     style="background-color:#2E5F73; color:white; width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                  <i class="fas fa-layer-group"></i>
+                </div>
+
+                <div>
+                  <h6 style="margin:0; font-weight:600; font-size:1rem;">
+                    {{ set.setName }}
+                  </h6>
+
+                  <small style="color:#6b7280;">
+                    Items: {{ set.items?.length || 0 }}
+                  </small>
+                </div>
+              </div>
+
+              <div class="mt-md-0 mt-1 d-flex justify-content-md-end">
+                <button type="button"
+                        class="btn btn-outline-primary p-0 d-flex align-items-center justify-content-center"
+                        style="width:28px; height:28px;" (click)="editItemSet(set)">
+                  <i data-feather="edit" style="width:14px; height:14px;"></i>
+                </button>
+
+                <button type="button"
+                        class="btn btn-outline-danger p-0 d-flex align-items-center justify-content-center ml-1"
+                        style="width:28px; height:28px;"
+                        (click)="confirmDeleteItemSet(set)"
+                        [disabled]="isEditMode">
+                  <i data-feather="trash" style="width:14px; height:14px;"></i>
+                </button>
+              </div>
+
+            </div>
+
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: FORM -->
+  <div class="col-lg-6 col-md-12" *ngIf="isDisplay">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">{{ modeHeader }}</h4>
+      </div>
+
+      <div class="card-body">
+        <form class="form" #addForm="ngForm" novalidate>
+
+          <!-- Set Name -->
+          <div class="form-group">
+            <label>Set Name</label>
+            <input type="text"
+                   class="form-control"
+                   placeholder="Set Name"
+                   name="setName"
+                   [(ngModel)]="setName"
+                   [maxlength]="150"
+                   required />
+          </div>
+
+          <!-- Items Multi Select -->
+          <div class="form-group">
+            <label>Select Items (Multi)</label>
+
+            <ng-select
+              [items]="itemsMaster"
+              bindLabel="itemName"
+              bindValue="id"
+              [multiple]="true"
+              [closeOnSelect]="false"
+              [searchable]="true"
+              [clearable]="true"
+              [(ngModel)]="selectedItemIds"
+              name="selectedItemIds"
+              placeholder="Select items..."
+              notFoundText="No items found"
+              class="ngsel"
+              required>
+
+              <ng-template ng-option-tmp let-item="item">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span>{{ item.itemName }}</span>
+                  <small style="opacity:.7;">{{ item.itemCode }}</small>
+                </div>
+              </ng-template>
+
+              <ng-template ng-label-tmp let-item="item">
+                <span>{{ item.itemName }}</span>
+              </ng-template>
+
+            </ng-select>
+
+            <small class="text-muted d-block mt-50">
+              Selected: {{ selectedItemIds?.length || 0 }}
+            </small>
+          </div>
+
+          <!-- Buttons -->
+          <div class="row justify-content-start p-1">
+            <button type="button"
+                    class="btn mr-1"
+                    [disabled]="!addForm.form.valid"
+                    (click)="onSubmit(addForm)"
+                    style="background-color:#2E5F73; color:white; padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+              <i data-feather="check-circle" class="w-4 h-4"></i>
+              Submit
+            </button>
+
+            <button type="button"
+                    class="btn btn-danger mr-1"
+                    (click)="cancel()"
+                    style="padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+              <i data-feather="x-circle" class="w-4 h-4"></i>
+              Cancel
+            </button>
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    (click)="reset()"
+                    style="padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+              <i data-feather="rotate-ccw" class="w-4 h-4"></i>
+              Clear
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,93 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+
+
+// .highlight-link {
+//     // color: blue !important;
+//     font-weight: bold;
+   
+// }
+
+.highlight-link:hover {
+    color: darkblue !important;
+}
+
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; /* Adjust as needed */
+    height: 40px; /* Adjust as needed */
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  .avatar-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // height: 100%;
+    width: 100%;
+  }
+  
+
+.avatar-blue {
+    background-color: #007bff; /* Blue color */
+  }
+  
+  .avatar-red {
+    background-color: #dc3545; /* Red color */
+  }
+  
+  .avatar-green {
+    background-color: #28a745; /* Green color */
+  }
+ /* existing base (keep yours) */
+.title-pill{
+  margin:0; font-size:1.25rem; font-weight:600; color:#2E5F73;
+  display:flex; align-items:center; gap:10px;
+}
+.title-pill .pill{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:30px; height:30px; border-radius:999px;
+  background:#f2f7f9; border:1px solid #dfe7ec;
+}
+.title-pill .lvl-icon{ width:18px; height:18px; color:#2E5F73; }
+
+/* HEAVIER variant */
+.title-pill--heavy{
+  font-weight:800;                 /* thicker text */
+  font-size:1.35rem;               /* slightly larger */
+  letter-spacing:.1px;
+}
+.title-pill--heavy .pill{
+  border-width:2px;                /* thicker ring */
+  background:#ecf4f7;              /* a hair stronger */
+}
+.title-pill--heavy .lvl-icon{ width:20px; height:20px; }
+
+/* make the SVG strokes thicker */
+.title-pill--heavy .lvl-icon path,
+.title-pill--heavy .lvl-icon polyline,
+.title-pill--heavy .lvl-icon polygon{
+  stroke-width:2.6;
+}
+
+/* dark mode (optional) */
+.dark-layout .title-pill{ color:#E0EDF2; }
+.dark-layout .title-pill .pill{ background:#122029; border-color:#203542; }
+.dark-layout .title-pill--heavy .pill{ background:#0f1e27; border-color:#2a4150; }
+
+  /* existing base styles for title-pill/pill/lvl-icon stay the same */
+
+.title-text {
+  font-weight: 800;   /* thicker text */
+  /* keep size the same; change only thickness */
+}
+
+/* optional: ensure icon thickness stays unchanged */
+.title-pill .lvl-icon g {
+  stroke-width: 1.9;  /* same as your SVG */
+}

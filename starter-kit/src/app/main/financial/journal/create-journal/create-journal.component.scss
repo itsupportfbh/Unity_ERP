@@ -1,0 +1,263 @@
+:host {
+  display: block;
+}
+
+/* ===== Card & header ===== */
+.journal-card {
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+}
+
+.journal-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.journal-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ===== Inputs & ng-select ===== */
+.journal-input,
+.journal-select ::ng-deep .ng-select-container {
+  border-radius: 8px !important;
+  border: 1px solid #d1d5db !important;
+  font-size: 13px;
+  min-height: 36px;
+}
+
+.journal-select ::ng-deep .ng-select-container {
+  box-shadow: none !important;
+}
+
+/* ========================================= */
+/* GRID BLOCK – lines + totals + recurring   */
+/* ========================================= */
+
+/* Outer wrapper: only side + bottom padding */
+.journal-grid-block {
+  padding: 0 14px 14px;
+  background: transparent;
+}
+
+/* ===== Lines grid wrapper ===== */
+.journal-table-wrapper {
+  background: #f9fafb;
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+}
+
+/* ===== Table ===== */
+.journal-table {
+  font-size: 13px;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+/* Blue header bar */
+.journal-table thead tr {
+  background: #2E5F73;
+}
+
+.journal-table thead th {
+  background: #2E5F73 !important;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff !important;
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+
+/* Body cells */
+.journal-table tbody td {
+  padding: 8px 12px;
+  vertical-align: middle;
+  background: #ffffff;
+}
+
+/* "No lines yet" row */
+.jl-no-lines {
+  padding: 1.5rem 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  background: #f9fafb;
+}
+
+/* Column widths for layout */
+.col-desc    { width: 40%; }
+.col-ledger  { width: 34%; }
+.col-amount  { width: 13%; }
+.col-actions { width: 6%; }
+
+/* Debit & Credit same width */
+.amount-cell {
+  min-width: 120px;
+  max-width: 120px;
+}
+
+.amount-cell .journal-input {
+  width: 100%;
+  text-align: right;
+}
+
+/* ===== Add line footer & button ===== */
+
+.journal-add-footer {
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.journal-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #ffffff;
+
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.journal-add-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.journal-add-btn:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+/* Round red remove icon */
+.journal-remove-btn {
+  border-radius: 999px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: none;
+}
+
+/* ===== Totals strip – blue rounded bar ===== */
+.journal-totals-strip {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #eff6ff;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.totals-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-right: 4px;
+}
+
+.totals-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Balanced / not balanced badges */
+.badge-balanced,
+.badge-unbalanced {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-balanced {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.badge-unbalanced {
+  background: rgba(248, 113, 113, 0.12);
+  color: #b91c1c;
+}
+
+/* ===== Recurring section – separate card with gap ===== */
+.recurring-card {
+  margin-top: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.recurring-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.recurring-help {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ===== Buttons row ===== */
+.journal-action-row {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 14px 0;
+}
+
+.journal-submit-btn {
+  background: #2e5f73;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.45rem 1.2rem;
+  border: none;
+}
+
+.journal-submit-btn:hover {
+  background: #244856;
+}
+
+
+/* ====================================================== */
+/*  NEW: Fix ng-select long text (full hierarchy shown)   */
+/* ====================================================== */
+
+::ng-deep .ng-dropdown-panel .ng-dropdown-panel-items .ng-option {
+  white-space: normal !important;      /* allow wrapping */
+  overflow: visible !important;        /* remove hidden overflow */
+  text-overflow: unset !important;     /* remove ... */
+  height: auto !important;
+  line-height: 18px !important;
+  padding-right: 20px !important;
+    min-width: 500px !important;
+}
+
+::ng-deep .ng-dropdown-panel {
+   width: auto !important;
+    min-width: 500px !important;        /* adjust if needed */
+}
+
+/* Show full text in selected box also */
+::ng-deep .ng-select .ng-select-container {
+  white-space: normal !important;
+  height: auto !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}

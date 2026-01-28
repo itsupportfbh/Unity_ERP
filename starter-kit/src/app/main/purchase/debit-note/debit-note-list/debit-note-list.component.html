@@ -1,0 +1,213 @@
+<div class="content-wrapper p-0">
+    <div class="content-body">
+        <!-- User List -->
+        <section class="users-list-wrapper">
+            <div class="card">
+                <div class="row">
+                    <div class="col-md-6 col-12">
+                        <h4 class="card-text"
+                            style="margin-left: 0.85rem; margin-top: 0.75rem;font-size: 1.25rem;font-weight: 600; color: #2E5F73;">
+                            Debit Note List
+                        </h4>
+                        <div class="d-flex justify-content-between align-items-center m-1">
+                            <label class="d-flex align-items-center">
+                                Show
+                                <select class="form-control mx-25" [(ngModel)]="selectedOption">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                entries
+                            </label>
+                        </div>
+                         <div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+            </div>
+                    </div>
+
+                    <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+                        <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+                            <label class="d-flex align-items-center ml-1 ml-md-0">
+                                Search:
+                                <input [(ngModel)]="searchValue" name="searchValue" type="search"
+                                    class="form-control ml-25" (keyup)="filterUpdate($event)"
+                                    (search)="filterUpdate($event)" />
+                            </label>
+                            <!-- <button id="Add" class="btn m-1" (click)="openCreate()"
+                                style="background-color: #2E5F73; color: white;" rippleEffect>
+                                <i data-feather="plus" class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
+                                <span class="d-none d-sm-inline-block">Add</span>
+                            </button> -->
+                            <button
+                  (click)="openCreate()"
+                  class="btn m-1 d-inline-flex align-items-center"
+                  style="background-color:#2E5F73;color:white;gap:6px;"
+                  [disabled]="isPeriodLocked"
+                  [attr.title]="isPeriodLocked
+                    ? (currentPeriodName
+                        ? 'Period ' + currentPeriodName + ' is locked'
+                        : 'Accounting period is locked')
+                    : 'Create Purchase Request'">
+                  <i data-feather="plus-circle" class="w-4 h-4"></i>
+                  <span>Add</span>
+                </button>
+                        </div>
+                    </div>
+                </div>
+
+                <ngx-datatable class="bootstrap core-bootstrap" [rows]="rows" [rowHeight]="50" [headerHeight]="50"
+                    [footerHeight]="50" [limit]="selectedOption" [columnMode]="'force'" [scrollbarH]="true"
+                    [reorderable]="true">
+
+                    <!-- Eye column -->
+                    <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false"
+                        [canAutoResize]="false">
+                        <ng-template ngx-datatable-cell-template let-row="row">
+                            <span (click)="openLinesModal(row)" title="View Lines"
+                                style="cursor:pointer; font-size:18px; color:#2E5F73;">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </ng-template>
+                    </ngx-datatable-column>
+
+                    <!-- Supplier -->
+                    <ngx-datatable-column name="Supplier" prop="name" [width]="160"></ngx-datatable-column>
+
+                    <!-- Reason -->
+                    <ngx-datatable-column name="Reason" prop="reason" [width]="180"></ngx-datatable-column>
+
+                    <!-- Date -->
+                    <ngx-datatable-column name="Date" prop="poDate" [width]="140">
+                        <ng-template let-row="row" ngx-datatable-cell-template>
+                            {{ row.poDate | date:'dd-MM-yyyy' }}
+                        </ng-template>
+                    </ngx-datatable-column>
+                    <!-- Status -->
+                    <ngx-datatable-column name="Status" prop="status" [width]="120">
+                        <ng-template let-value="value" ngx-datatable-cell-template>
+                            <div class="badge badge-pill text-center" [ngClass]="{
+        'badge-secondary': value === 0,
+         'badge-info'     : value === 1,
+        'badge-success'  : value === 2
+      }">
+                                {{
+                                value === 0 ? 'Draft' :
+                                value === 1 ? 'In Progress' :
+                                value === 2 ? 'Posted' :
+                                'Unknown'
+                                }}
+                            </div>
+                        </ng-template>
+                    </ngx-datatable-column>
+
+
+                    <!-- Actions -->
+                    <ngx-datatable-column name="Action" [width]="120">
+                        <ng-template let-row="row" ngx-datatable-cell-template>
+
+                            <!-- Locked when status = 2 -->
+                            <ng-container
+                  *ngIf="+row.status === 2 || +row.status === 3 || +row.status === 4 || isPeriodLocked; else actionsEnabled">
+                  <i
+                    class="fas fa-pen text-gray-300 mr-2"
+                    [attr.title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
+                  <i
+                    class="fas fa-trash text-gray-300"
+                    [attr.title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
+                </ng-container>
+
+                            <!-- Normal state -->
+                            <ng-template #actionsEnabled>
+                                <i class="fas fa-pen text-success mr-2" style="cursor: pointer;"
+                                    (click)="editDetails(row)">
+                                </i>
+                                <i class="fas fa-trash text-danger" style="cursor: pointer;"
+                                    (click)="deleteDetails(row.id)">
+                                </i>
+                            </ng-template>
+
+                        </ng-template>
+                    </ngx-datatable-column>
+
+                </ngx-datatable>
+            </div>
+        </section>
+    </div>
+
+    <!-- ===== Centered MODAL for Debit Note Lines ===== -->
+    <div class="dn-overlay" *ngIf="showLinesModal" (click)="closeLinesModal()">
+
+        <div class="dn-modal" (click)="$event.stopPropagation()">
+            <!-- Modal header -->
+            <div class="dn-modal-header">
+                <h5 class="mb-0">Debit Note Lines</h5>
+                <button type="button" class="dn-modal-close" (click)="closeLinesModal()">
+                    &times;
+                </button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="dn-modal-body">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead class="dn-modal-thead">
+                            <tr style="background:#2E5F73;color:#fff;">
+                                <th style="background:#2E5F73;color:#fff;">Item</th>
+                                <th style="background:#2E5F73;color:#fff;" class="text-right">Qty</th>
+                                <th style="background:#2E5F73;color:#fff;" class="text-right">Price</th>
+                                <th style="background:#2E5F73;color:#fff;" class="text-right">Line Total</th>
+                                <th style="background:#2E5F73;color:#fff;">Remarks / DC Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let l of modalLines">
+                                <td>{{ l.item || '-' }}</td>
+                                <td class="text-right">{{ l.qty | number:'1.0-0' }}</td>
+                                <td class="text-right">{{ l.price | number:'1.2-2' }}</td>
+                                <td class="text-right">
+                                    {{
+                                    ((+l.qty || 0) * (+l.price || 0))
+                                    | number:'1.2-2'
+                                    }}
+                                </td>
+                                <td>{{ l.remarks || l.dcNoteNo || '-' }}</td>
+                            </tr>
+
+                            <tr *ngIf="!modalLines?.length">
+                                <td colspan="5" class="text-center text-muted py-3">
+                                    No lines.
+                                </td>
+                            </tr>
+                        </tbody>
+
+                        <tfoot *ngIf="modalLines?.length">
+                            <tr class="dn-modal-total-row">
+                                <td class="font-weight-bold">Total</td>
+                                <td></td>
+                                <td></td>
+                                <td class="text-right font-weight-bold">
+                                    {{ modalTotal | number:'1.2-2' }}
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+
+
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal footer -->
+            <div class="dn-modal-footer">
+                <button type="button" class="btn" style="background-color:#2E5F73; color:white;"
+                    (click)="closeLinesModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>

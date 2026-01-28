@@ -1,0 +1,179 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+
+$brand: #2E5F73;
+
+/* ---------- Title ---------- */
+.ar-title {
+  margin: 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: $brand;
+}
+
+/* ---------- Card ---------- */
+.ar-card {
+  margin-top: 0.5rem;
+
+  background: #f7f9fb;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  padding: 0.75rem 1.5rem;
+
+  .card-header {
+    padding-top: 0.5rem;
+    padding-bottom: 0;          // tight under title
+    border-bottom: none;
+    margin-bottom: 0.2rem;      // small gap before tabs
+  }
+
+  .ar-body {
+    padding-top: 0.4rem;        // small gap under tabs
+  }
+}
+
+/* ====== Fancy AR Tabs (same look as AP, slightly closer to header) ====== */
+.ar-card .ap-tabs {
+  margin-top: 0.3rem;           // smaller than AP (sits closer to header)
+  margin-bottom: 0.15rem;       // small gap before content
+  padding: 0.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f9fafb, #e5edf6);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  position: relative;
+  border-bottom: none;
+}
+
+/* subtle border around the whole chip group */
+.ar-card .ap-tabs::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  pointer-events: none;
+}
+
+/* Keep items compact and aligned */
+.ar-card .ap-tabs .nav-item {
+  margin: 0;
+}
+
+/* Base tab style */
+.ar-card .ap-tabs .nav-link {
+  position: relative;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
+}
+
+/* Small dot indicator on every tab */
+.ar-card .ap-tabs .nav-link::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  flex-shrink: 0;
+  transition:
+    background-color 0.18s ease,
+    transform 0.12s ease;
+}
+
+/* Hover state */
+.ar-card .ap-tabs .nav-link:hover {
+  color: $brand;
+  background-color: rgba(46, 95, 115, 0.06);
+  transform: translateY(-1px);
+}
+
+/* Active tab */
+.ar-card .ap-tabs .nav-link.active {
+  color: $brand;
+  background: #ffffff;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+  transform: translateY(-1px);
+}
+
+/* Active dot */
+.ar-card .ap-tabs .nav-link.active::before {
+  background: $brand;
+  transform: scale(1.4);
+}
+
+/* Tiny underline under active tab (inside the pill) */
+.ar-card .ap-tabs .nav-link.active::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 0.15rem;
+  height: 2px;
+  border-radius: 999px;
+  background-color: rgba(46, 95, 115, 0.3);
+}
+
+/* Ensure no default border from .ar-tabs */
+.ar-tabs {
+  border-bottom: none;
+}
+.ar-adv-header {
+  margin-bottom: 0.5rem;
+
+  .ar-adv-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2E5F73;
+  }
+}
+
+.ar-adv-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 13px;
+}
+
+/* Base pill */
+.ar-adv-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f3f4f6;           // light grey
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Balance pill – green tone */
+.ar-adv-pill-balance {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+/* Utilised pill – red tone */
+.ar-adv-pill-utilised {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}

@@ -1,0 +1,119 @@
+/* ===== Imports ===== */
+@import '@core/scss/angular/libs/form-wizard.component.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import "~@ng-select/ng-select/themes/default.theme.css";
+
+/* ===== Brand ===== */
+$brand: #2E5F73;
+
+/* ===== Wizard buttons ===== */
+.wizard-actions { padding-top: 1rem; }
+
+.btn-wiz {
+  display: inline-flex; align-items: center; gap: .5rem;
+  height: 48px; padding: 0 22px; border-radius: 12px;
+  font-weight: 600; border: 1px solid transparent;
+  box-shadow: 0 8px 20px rgba(2,8,23,.06);
+}
+.btn-prev-wiz { background:#fff; color:#8A94A6; border-color:#D6DBE1; }
+.btn-prev-wiz:disabled { color:#B4BCC7; background:#fff; border-color:#E2E8F0; box-shadow:none; }
+.btn-next-wiz { background:$brand; color:#fff; }
+.btn-submit-wiz { background:#16A34A; color:#fff; }
+
+/* ===== Stepper look ===== */
+.bs-stepper .bs-stepper-box { background:$brand; color:#fff; border:none; }
+.bs-stepper .step:not(.active) .bs-stepper-box { background:#EDF2F7; color:#94A3B8; }
+.bs-stepper .line { color:#CBD5E1; }
+
+/* Disabled step header (when you add .step-disabled) */
+.step-disabled .step-trigger,
+.bs-stepper .step .step-trigger[disabled] {
+  opacity:.5; cursor:not-allowed !important; filter:grayscale(1);
+  .bs-stepper-box { background:#E7EDF2; color:#6B7280; }
+  .bs-stepper-title, .bs-stepper-subtitle { color:#8B95A1 !important; }
+}
+
+/* ===== Upload cards ===== */
+.upload-card { margin-bottom: 20px; }
+.upload-label { font-weight: 600; margin-bottom: 6px; display: block; }
+
+.upload-box {
+  border: 2px dashed #6c757d; border-radius: 8px;
+  padding: 25px; text-align: center; cursor: pointer; transition:.2s;
+  background:#f8f9fa; position: relative;
+}
+.upload-box:hover { border-color:#007bff; background-color:#eef6ff; }
+.upload-icon { width: 30px; height: 30px; margin-bottom: 6px; color:#6c757d; }
+.preview-img { width: 100%; max-height: 150px; object-fit: contain; border-radius: 6px; }
+
+/* ===== KYC full-area lock ===== */
+.kyc-lock { position: relative; border-radius: 12px; padding: 8px; }
+.kyc-lock.locked { filter: grayscale(0.15); }
+
+/* Frosted + striped overlay that blocks the whole area visually */
+.lock-overlay {
+  position: absolute; inset: 0; border-radius: 12px; z-index: 5;
+  pointer-events: none;
+  background:
+    linear-gradient(0deg, rgba(255,255,255,.65), rgba(255,255,255,.65)),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(46,95,115,.10) 0px,
+      rgba(46,95,115,.10) 10px,
+      rgba(46,95,115,.05) 10px,
+      rgba(46,95,115,.05) 20px
+    );
+  backdrop-filter: blur(2px);
+  outline: 2px dashed rgba(46,95,115,.28);
+  outline-offset: -6px;
+}
+
+/* Center chip */
+.lock-chip {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 6; padding: .5rem .9rem; font-weight: 600; border-radius: 9999px;
+  background: rgba(46,95,115,.10); color: $brand; border: 1px solid rgba(46,95,115,.25);
+  box-shadow: 0 6px 16px rgba(2,8,23,.06);
+  display: inline-flex; align-items: center; gap: .4rem;
+}
+.lock-icon { font-size: .95rem; }
+
+/* Disabled contents (fieldset[disabled]) */
+#kyc-verification fieldset[disabled] {
+  pointer-events: none;
+
+  .form-control, .form-select {
+    background:#f5f7f9 !important; border-color:#d6dee6 !important;
+    color:#6b7280 !important; cursor:not-allowed !important;
+  }
+
+  .ng-select .ng-select-container {
+    background:#f5f7f9 !important; border-color:#d6dee6 !important;
+    color:#6b7280 !important; cursor:not-allowed !important;
+  }
+  .ng-select .ng-arrow-wrapper, .ng-select .ng-clear-wrapper { opacity:.5; }
+
+  .upload-card .upload-box {
+    background:#f9fbfd; border-color:#cdd6df; opacity:.9; filter: grayscale(1);
+    cursor:not-allowed;
+    &::after {
+      content:"Locked";
+      position:absolute; right:.5rem; top:.5rem;
+      font-size:.72rem; padding:.15rem .45rem; border-radius:.5rem;
+      background:rgba(46,95,115,.08); color:$brand; border:1px solid rgba(46,95,115,.22);
+    }
+  }
+  .upload-card .preview-img { filter: grayscale(1); opacity:.95; }
+}
+
+/* Active hover when NOT disabled */
+#kyc-verification .upload-card .upload-box:not(.readonly) {
+  transition: border-color .15s ease, box-shadow .15s ease;
+  &:hover { border-color:$brand; box-shadow:0 0 0 3px rgba(46,95,115,.08); }
+}
+
+/* Approved badge */
+.badge.bg-success {
+  background:#E6F6EC !important; color:#1B7A3F !important;
+  border:1px solid #BDE3CD; font-weight:600; padding:.25rem .5rem; border-radius:.5rem;
+}

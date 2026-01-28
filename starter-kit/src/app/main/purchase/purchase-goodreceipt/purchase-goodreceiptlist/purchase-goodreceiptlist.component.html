@@ -1,0 +1,321 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <!-- Header row -->
+        <div class="row">
+          <!-- Title + page size -->
+          <div class="col-md-6 col-12">
+            <h4 class="card-text ml-2 mt-2"
+                style="font-size:1.25rem;font-weight:600;color:#2E5F73">
+              GRN List
+            </h4>
+
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center">
+                Show
+                <select class="form-control mx-2" [(ngModel)]="selectedOption">
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="25">25</option>
+                  <option [ngValue]="50">50</option>
+                  <option [ngValue]="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+
+            <!-- optional lock info -->
+            <div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ periodName || 'current' }}</strong> is locked.
+            </div>
+          </div>
+
+          <!-- Search + Create GRN -->
+          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+              <label class="d-flex align-items-center ml-1 ml-md-0">
+                Search:
+                <input
+                  [(ngModel)]="searchValue"
+                  type="search"
+                  class="form-control ml-2"
+                  (keyup)="filterUpdate($event)" />
+              </label>
+
+              <button
+                (click)="goToCreateGRN()"
+                class="btn m-1 d-inline-flex align-items-center"
+                style="background-color:#2E5F73; color:white; gap:6px;"
+                [disabled]="isPeriodLocked"
+                [attr.title]="isPeriodLocked
+                               ? (periodName ? 'Period ' + periodName + ' is locked'
+                                             : 'Period is locked')
+                               : 'Create GRN'">
+                <i class="fas fa-plus-circle"></i>
+                <span>Create GRN</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NGX DATATABLE -->
+        <ngx-datatable
+          class="bootstrap core-bootstrap grn-table"
+          [rows]="rows"
+          [rowHeight]="50"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="selectedOption"
+          [columnMode]="ColumnMode.force"
+          [scrollbarH]="false"
+          [reorderable]="true">
+
+          <!-- Eye column -->
+          <ngx-datatable-column
+            [width]="60"
+            [resizeable]="false"
+            [sortable]="false"
+            [draggable]="false"
+            [canAutoResize]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span
+                (click)="openLinesModal(row)"
+                title="View Lines"
+                style="cursor:pointer; font-size:18px; color:#2E5F73;">
+                <i class="fas fa-eye"></i>
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="GRN No" prop="grnNo" [width]="140"></ngx-datatable-column>
+          <ngx-datatable-column name="PO No"  prop="pono"  [width]="160"></ngx-datatable-column>
+         
+
+ <ngx-datatable-column name="Items" prop="itemName" [width]="200">
+  <ng-template ngx-datatable-cell-template let-row="row">
+    <span class="truncate-20"
+          [title]="row.itemName">
+      {{ row.itemName?.slice(0, 20) }}{{ row.itemName?.length > 20 ? '...' : '' }}
+    </span>
+  </ng-template>
+</ngx-datatable-column>
+
+            <ngx-datatable-column name="Supplier Name" prop="name" [width]="200">
+  <ng-template ngx-datatable-cell-template let-row="row">
+    <span class="truncate-20"
+          [title]="row.name">
+      {{ row.name?.slice(0, 20) }}{{ row.name?.length > 20 ? '...' : '' }}
+    </span>
+  </ng-template>
+</ngx-datatable-column>
+
+
+          <!-- Status -->
+          <ngx-datatable-column name="Status" [width]="140" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span class="badge" [ngClass]="statusClass(row)">
+                {{ statusText(row) }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Action -->
+          <ngx-datatable-column
+            name="Action"
+            [width]="120"
+            [sortable]="false"
+            [canAutoResize]="false">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="d-flex justify-content-center align-items-center h-100">
+                <i class="fas fa-pen"
+                   [class.text-primary]="!row.isPostInventory && !isPeriodLocked"
+                   [class.icon-disabled]="row.isPostInventory || isPeriodLocked"
+                   [attr.title]="row.isPostInventory
+                                  ? 'Posted to Inventory (cannot edit)'
+                                  : (isPeriodLocked ? 'Period locked' : 'Edit')"
+                   style="cursor:pointer;"
+                   (click)="onEdit(row)">
+                </i>
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+        </ngx-datatable>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- LINES MODAL (Eye click) -->
+<div *ngIf="showLinesModal"
+     (click)="closeLinesModal()"
+     style="position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1050;
+            display:flex; align-items:center; justify-content:center;">
+  <div (click)="$event.stopPropagation()"
+       style="width:1000px; max-width:95vw; background:#fff; border-radius:14px;
+              overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <!-- Header -->
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                padding:16px 20px; border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0; font-size:20px; font-weight:700; color:#374151;">
+        GRN Lines – {{ modalHeader.grnNo }}
+      </h3>
+      <button (click)="closeLinesModal()" aria-label="Close"
+              style="border:0; background:transparent; font-size:22px; line-height:1;
+                     cursor:pointer; color:#6b7280;">×</button>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:16px 20px;">
+      <div style="max-height:65vh; overflow:auto; border:1px solid #d1d5db;
+                  border-radius:10px;">
+        <table style="width:100%; border-collapse:separate; border-spacing:0;
+                      font-size:14px; color:#111827;">
+          <thead>
+            <tr style="background:#0e3a4c; color:#fff;">
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;
+                         border-top-left-radius:12px;">Item Code / Name</th>
+
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Warehouse</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Bin</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Strategy</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Qty Received</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">QC Result</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Batch / Serial No.</th>
+
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Supplier</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Storage</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Surface Temp</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Expiry</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Pest</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Dry/Spill</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Odor</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Vehicle</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Defect</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Damaged</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Time</th>
+              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;
+                         border-top-right-radius:12px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of modalLines; let i = index"
+                [style.background]="i % 2 === 0 ? '#ffffff' : '#f9fafb'">
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;
+                         border-bottom-left-radius:12px;">
+                {{ l.itemName || l.itemCode || '—' }}
+              </td>
+
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.warehouseName || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.binName || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.strategyName || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.qtyReceived ?? 0 }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.qualityCheck || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.batchSerial || '—' }}
+              </td>
+
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.supplierName || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.storageType || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.surfaceTemp || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.expiry | date:'yyyy-MM-dd' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.pestSign || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.drySpillage || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.odor || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.plateNumber || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.defectLabels || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.damagedPackage || '—' }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
+                {{ l.timeText || (l.time | date:'HH:mm') }}
+              </td>
+              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;
+                         border-bottom-right-radius:12px;">
+                <span class="badge"
+                      [ngClass]="l.isFlagIssue
+                        ? 'badge-warning'
+                        : (l.isPostInventory ? 'badge-success' : 'badge-secondary')">
+                  {{ l.isFlagIssue ? 'Flagged' : (l.isPostInventory ? 'Posted' : 'Pending') }}
+                </span>
+              </td>
+            </tr>
+
+            <tr *ngIf="!modalLines?.length">
+              <td colspan="19"
+                  style="padding:14px 12px; text-align:center; color:#6b7280;">
+                No lines
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="display:flex; justify-content:flex-end; gap:8px;
+                padding:12px 20px; border-top:1px solid #eef2f7;">
+      <button
+        (click)="closeLinesModal()"
+        style="background:#2E5F73; color:#fff; border:0; border-radius:12px;
+               padding:10px 18px; font-weight:700; cursor:pointer;
+               display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-times-circle"></i>
+        <span>Close</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Image Viewer -->
+<div *ngIf="imageViewer.open" class="img-modal" (click)="closeImage()">
+  <div class="img-modal__backdrop"></div>
+  <div class="img-modal__dialog" (click)="$event.stopPropagation()">
+    <div class="img-modal__header">
+      <h5 class="m-0">Preview</h5>
+      <button type="button" class="btn btn-light btn-sm"
+              (click)="closeImage()" aria-label="Close">✕</button>
+    </div>
+    <div class="img-modal__body">
+      <img [src]="imageViewer.src"
+           alt="Preview"
+           class="img-fluid" />
+    </div>
+    <div class="img-modal__footer">
+      <button type="button"
+              class="btn btn-primary btn-sm"
+              (click)="closeImage()">Close</button>
+    </div>
+  </div>
+</div>

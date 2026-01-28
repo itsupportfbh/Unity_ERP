@@ -1,0 +1,81 @@
+<div class="content-wrapper p-0">
+    <div class="content-body">
+        <!-- User List -->
+        <section class="users-list-wrapper">
+            <div class="card">
+                <div class="row">
+                    <div class="col-md-6 col-12">
+                        <h4 class="card-text" style="margin-left: 0.85rem; margin-top: 0.75rem;">Warehouse List</h4>
+                        <div class="d-flex justify-content-between align-items-center m-1">
+                            <label class="d-flex align-items-center">Show
+                                <select class="form-control mx-25" [(ngModel)]="selectedOption">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                entries
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+                        <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+
+                            <label class="d-flex align-items-center ml-1 ml-md-0">Search:<input
+                                    [(ngModel)]="searchValue" name="searchValue" type="search"
+                                    class="form-control ml-25" (keyup)="filterUpdate($event)"
+                                    (search)="filterUpdate($event)" /></label>
+<button id="Add"
+  class="btn btn m-1"
+  style="background-color: #2E5F73; color: white; border: none;"
+  (click)="openCreate()"
+  rippleEffect>
+  <i data-feather="plus" class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
+  <span class="d-none d-sm-inline-block">Add</span>
+</button>
+
+
+                        </div>
+                    </div>
+                </div>
+                <ngx-datatable class="bootstrap core-bootstrap" [rows]="rows" [rowHeight]="50" [headerHeight]="50"
+                    [footerHeight]="50" [limit]="selectedOption" [columnMode]="'force'" [scrollbarH]="true"
+                    [reorderable]="true">
+
+
+                    <ngx-datatable-column name="Warehouse Name" prop="name" [width]="150"></ngx-datatable-column>
+
+
+                    <ngx-datatable-column name="Country Name" prop="countryName" [width]="150"></ngx-datatable-column>
+
+
+                    <ngx-datatable-column name="State Name" prop="stateName" [width]="150"></ngx-datatable-column>
+
+                    <ngx-datatable-column name="City Name" prop="cityName" [width]="150"></ngx-datatable-column>
+
+                    <ngx-datatable-column name="Phone" prop="phone" [width]="150"></ngx-datatable-column>
+
+
+                    <!-- Edit/Delete Actions -->
+                    <ngx-datatable-column name="Action" [width]="150">
+                        <ng-template let-row="row" ngx-datatable-cell-template>
+                            <i class="fas fa-pen text-blue-600 mr-2 cursor-pointer" style="cursor: pointer;"
+                                (click)="editWarehouse(row)"></i>
+                            <i class="fas fa-trash text-danger" style="cursor: pointer;"
+                                (click)="deleteWarehouse(row.id)"></i>
+                        </ng-template>
+                    </ngx-datatable-column>
+
+                </ngx-datatable>
+
+            </div>
+        </section>
+    </div>
+    <core-sidebar class="modal modal-slide-in sidebar-todo-modal fade" name="app-warehouse-create"
+        overlayClass="modal-backdrop">
+        <app-warehouse-create
+        [passData] = "passData"
+        (callList) = "loadRequests()"
+        ></app-warehouse-create>
+    </core-sidebar>
+</div>

@@ -1,0 +1,23 @@
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <h2 class="text-xl font-semibold">Collections (AR)</h2>
+    <div class="text-sm text-gray-500">Dunning: 0=none, 1=gentle, 2=final</div>
+  </div>
+
+  <div class="card space-y-2">
+    <div class="grid grid-cols-12 text-xs text-gray-600">
+      <div>Doc</div><div class="col-span-3">Customer</div><div class="col-span-2">Due</div><div class="col-span-2">Amount</div><div>Dunning</div><div class="col-span-4"></div>
+    </div>
+    <div *ngFor="let r of rows" class="grid grid-cols-12 items-center gap-2">
+      <div>{{r.docNo}}</div>
+      <div class="col-span-3">{{r.customer}}</div>
+      <div class="col-span-2">{{r.dueDate | date}}</div>
+      <div class="col-span-2">{{r.amount | number:'1.2-2'}}</div>
+      <div><span class="badge">{{r.dunning}}</span></div>
+      <div class="col-span-4 flex gap-2">
+        <button class="btn" (click)="sendPaymentLink(r)">WhatsApp payment link</button>
+        <button class="btn" (click)="matchBankFeed(r)">Match bank feed</button>
+      </div>
+    </div>
+  </div>
+</div>

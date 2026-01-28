@@ -1,0 +1,121 @@
+<!-- FULL-SCREEN LOADING OVERLAY -->
+<div class="loading-overlay" *ngIf="isSending">
+  <div class="loading-box text-center">
+    <div class="spinner-border mb-1" role="status"></div>
+    <div class="loading-text">Sending email...</div>
+  </div>
+</div>
+
+<div class="content-wrapper p-0" [class.page-blur]="isSending">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card shadow-sm p-2">
+
+        <!-- Top row: DocType + Invoice + Template -->
+        <!-- Top row: DocType + Invoice + Template -->
+<div class="row" *ngIf="!embeddedMode">
+
+  <!-- Document Type -->
+  <div class="col-md-3">
+    <label>Document Type</label>
+    <select class="form-control"
+            [(ngModel)]="docType"
+            (change)="onDocTypeChange()"
+            [disabled]="isSending">
+      <option [ngValue]="'SI'">Sales Invoice</option>
+      <option [ngValue]="'PIN'">Supplier Invoice</option>
+    </select>
+  </div>
+
+  <!-- Invoice dropdown (filtered by docType) -->
+  <div class="col-md-3">
+    <label>{{ docType === 'SI' ? 'Sales Invoice' : 'Supplier Invoice' }}</label>
+    <select class="form-control"
+            [(ngModel)]="selectedInvoiceId"
+            (change)="onInvoiceChange()"
+            [disabled]="isSending">
+      <option [ngValue]="null">
+        -- Select {{ docType === 'SI' ? 'Sales Invoice' : 'Supplier Invoice' }} --
+      </option>
+      <option *ngFor="let inv of invoiceList" [ngValue]="inv.id">
+        {{ inv.invoiceNo }} - {{ inv.partyName }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Template -->
+  <div class="col-md-3">
+    <label>Template</label>
+    <select class="form-control"
+            [(ngModel)]="selectedTemplate"
+            (change)="onTemplateChange()"
+            [disabled]="isSending">
+      <option [ngValue]="1">Standard</option>
+    </select>
+  </div>
+
+</div>
+
+
+        <!-- To / Cc -->
+        <div class="row mt-2">
+          <div class="col-md-6">
+            <label>To ({{ partyLabel }} Email)</label>
+            <input class="form-control"
+                   [(ngModel)]="toEmail"
+                   [readonly]="isSending" />
+          </div>
+          <div class="col-md-6">
+            <label>Cc</label>
+            <input class="form-control"
+                   [(ngModel)]="ccEmail"
+                   [readonly]="isSending" />
+          </div>
+        </div>
+
+        <!-- Subject -->
+        <div class="mt-2">
+          <label>Subject</label>
+          <input class="form-control"
+                 [(ngModel)]="subject"
+                 [readonly]="isSending" />
+        </div>
+
+        <!-- Body -->
+        <div class="mt-2">
+          <label>Email Body (from Template)</label>
+          <textarea class="form-control"
+                    rows="8"
+                    [(ngModel)]="body"
+                    [readonly]="isSending"></textarea>
+        </div>
+
+        <!-- Bottom buttons -->
+        <div class="d-flex justify-content-end mt-3">
+          <!-- <button class="btn btn-outline-secondary me-2"
+                  type="button"
+                  [disabled]="isSending">
+            <i class="far fa-paper-plane me-25"></i>
+            Send Test
+          </button> -->
+
+          <button class="btn btn-dark"
+                  type="button"
+                  (click)="send()"
+                  [disabled]="isSending">
+            <ng-container *ngIf="!isSending; else sendingTpl">
+              <i class="far fa-paper-plane me-25"></i>
+              Send via Email
+            </ng-container>
+
+            <ng-template #sendingTpl>
+              <span class="spinner-border spinner-border-sm me-25" role="status"></span>
+              Sending...
+            </ng-template>
+          </button>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>

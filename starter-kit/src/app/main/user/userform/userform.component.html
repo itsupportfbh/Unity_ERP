@@ -1,0 +1,130 @@
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-0" style="color:#2E5F73;font-weight:700;">
+        {{ isEdit ? 'Edit User' : 'New User' }}
+      </h4>
+      <small class="text-muted">Administration → Users</small>
+    </div>
+
+    <button class="btn btn-outline-secondary btn-sm" (click)="cancel()">
+      <i class="fas fa-arrow-left me-50"></i> Back
+    </button>
+  </div>
+
+  <div class="card-body">
+  <form [formGroup]="form" autocomplete="off">
+  <div class="row g-2">
+
+    <!-- USERNAME -->
+    <div class="col-md-4">
+      <label class="form-label small">Username</label>
+      <input
+        class="form-control"
+        formControlName="username"
+        name="new_username"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        inputmode="text"
+      />
+    </div>
+
+    <!-- EMAIL -->
+    <div class="col-md-4">
+      <label class="form-label small">Email</label>
+      <input
+        class="form-control"
+        formControlName="email"
+        name="new_email"
+        autocomplete="off"
+        [class.is-invalid]="form.get('email')?.touched && form.get('email')?.invalid"
+      />
+      <div class="invalid-feedback">Enter a valid email address</div>
+    </div>
+
+    <!-- PASSWORD -->
+    <div class="col-md-4">
+      <label class="form-label small d-flex justify-content-between align-items-center">
+        <span>Password</span>
+        <!-- <button
+          *ngIf="isEdit"
+          type="button"
+          class="btn btn-sm btn-outline-primary"
+          (click)="togglePasswordEdit()">
+          {{ canEditPassword ? 'Cancel' : 'Change Password' }}
+        </button> -->
+      </label>
+
+      <!-- dummy hidden fields (prevents chrome autofill strongly) -->
+      <input type="text" name="fake_user" style="display:none" autocomplete="username">
+      <input type="password" name="fake_pass" style="display:none" autocomplete="current-password">
+
+      <input
+        type="password"
+        class="form-control"
+        formControlName="password"
+        name="new_password"
+        [attr.autocomplete]="isEdit ? 'new-password' : 'new-password'"
+        [readonly]="isEdit && !canEditPassword"
+        [class.is-invalid]="(canEditPassword || !isEdit) && form.get('password')?.touched && form.get('password')?.invalid"
+      />
+
+      <small *ngIf="isEdit && !canEditPassword" class="text-muted">
+        Password hidden. Click <b>Edit Password</b> to update.
+      </small>
+
+      <div class="invalid-feedback">
+        Password must be 8+ chars with uppercase, lowercase, number & special char
+      </div>
+    </div>
+
+    <!-- DEPARTMENT -->
+    <div class="col-md-4 mt-1">
+      <label class="form-label small">Department (Team)</label>
+<ng-select
+  [items]="departments"
+  bindLabel="name"
+  bindValue="id"
+  formControlName="departmentId"
+  placeholder="Select Department">
+</ng-select>
+
+
+      <div *ngIf="form.get('departmentId')?.touched && form.get('departmentId')?.invalid"
+           class="text-danger small mt-25">
+        Department is required
+      </div>
+    </div>
+
+    <!-- ROLES -->
+    <div class="col-md-6 mt-1">
+      <label class="form-label small">Roles (Approval Levels)</label>
+
+      <ng-select
+        [items]="roles"
+        bindLabel="name"
+        bindValue="id"
+        [multiple]="true"
+        [closeOnSelect]="false"
+        placeholder="Select roles"
+        formControlName="approvalLevelIds">
+      </ng-select>
+    </div>
+
+  </div>
+</form>
+
+  </div>
+
+  <div class="card-footer text-end">
+    <button class="btn btn-outline-secondary me-1" (click)="cancel()">Cancel</button>
+    <button class="btn btn-brand"
+            style="background:#2E5F73;color:#fff;"
+            (click)="save()"
+            [disabled]="form.invalid">
+      Save
+    </button>
+  </div>
+</div>

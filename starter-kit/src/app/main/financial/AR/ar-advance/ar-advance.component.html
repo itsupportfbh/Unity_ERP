@@ -1,0 +1,162 @@
+<div class="ar-advance-wrapper">
+
+  <!-- HEADER -->
+  <div class="card shadow-sm p-2">
+
+  <!-- ===== HEADER ROW: TITLE + BACK BUTTON ===== -->
+  <div class="d-flex justify-content-between align-items-center mb-1">
+    <h5 class="mb-0" style="color:#2E5F73; font-weight:600;">
+      Customer Advance
+    </h5>
+
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm"
+      (click)="goBack()">
+      <i class="fas fa-arrow-left mr-25"></i>
+      Back
+    </button>
+  </div>
+
+  <!-- ===== ROW 1: CUSTOMER + ORDER TOGGLE ===== -->
+  <div class="row mb-1">
+    <div class="col-md-4 col-12 mb-1">
+      <label class="form-label small">Customer</label>
+      <ng-select
+        [(ngModel)]="model.customerId"
+        (change)="onCustomerChange()"
+        [items]="customers"
+        bindLabel="customerName"
+        bindValue="id"
+        placeholder="Select Customer">
+      </ng-select>
+    </div>
+
+    <div class="col-md-4 col-12 mb-1 d-flex align-items-end">
+      <div class="form-check">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          id="orderSpecific"
+          [(ngModel)]="isOrderSpecific"
+          (change)="onToggleOrderSpecific()">
+        <label class="form-check-label small" for="orderSpecific">
+          Link to Sales Order
+        </label>
+      </div>
+    </div>
+
+    <div class="col-md-4 col-12 mb-1" *ngIf="isOrderSpecific">
+      <label class="form-label small">Sales Order</label>
+      <ng-select
+        [(ngModel)]="model.salesOrderId"
+        [items]="orders"
+        bindLabel="salesOrderNo"
+        bindValue="id"
+        [loading]="loadingOrders"
+        (change)="loadOpenAdvances()"
+        placeholder="Select Sales Order">
+      </ng-select>
+    </div>
+  </div>
+
+  <!-- ===== ROW 2: DATE / AMOUNT / MODE / BANK ===== -->
+  <div class="row mb-1">
+    <div class="col-md-3 col-12 mb-1">
+      <label class="form-label small">Advance Date</label>
+      <input
+        type="date"
+        class="form-control"
+        [(ngModel)]="model.advanceDate">
+    </div>
+
+    <div class="col-md-3 col-12 mb-1">
+      <label class="form-label small">Amount</label>
+      <input
+        type="number"
+        class="form-control"
+        [(ngModel)]="model.amount"
+        min="0">
+    </div>
+
+    <div class="col-md-3 col-12 mb-1">
+      <label class="form-label small">Payment Mode</label>
+      <select class="form-control" [(ngModel)]="model.paymentMode">
+        <option value="Bank">Bank</option>
+        <option value="Cash">Cash</option>
+        <option value="UPI">UPI</option>
+      </select>
+    </div>
+
+    <!-- BANK DROPDOWN -->
+    <div class="col-md-3 col-12 mb-1">
+      <label class="form-label small">Bank Account</label>
+      <select
+        class="form-control"
+        [(ngModel)]="model.bankAccountId"
+        name="bankAccount"
+        (change)="onBankChange()">
+        <option [ngValue]="null">-- Select Bank --</option>
+        <option *ngFor="let b of bankAccounts" [ngValue]="b.id">
+          {{ b.headName }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ===== ROW 3: REMARKS + SAVE ===== -->
+  <div class="row mb-1">
+    <div class="col-md-8 col-12 mb-1">
+      <label class="form-label small">Remarks</label>
+      <textarea
+        rows="2"
+        class="form-control"
+        [(ngModel)]="model.remarks">
+      </textarea>
+    </div>
+
+    <div class="col-md-4 col-12 mb-1 d-flex align-items-end justify-content-end">
+      <button
+        class="btn btn-primary"
+        style="background-color:#2E5F73; border-color:#2E5F73;"
+        (click)="saveAdvance()"
+        [disabled]="saving">
+        Save Advance
+      </button>
+    </div>
+  </div>
+
+</div>
+
+
+  <!-- ===== OPEN ADVANCES LIST ===== -->
+  <div class="card shadow-sm p-2 mt-1" *ngIf="openAdvances?.length">
+    <h6 class="mb-1" style="font-weight:600;">
+      Open Advances for Customer
+    </h6>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Advance No</th>
+            <th>Date</th>
+            <th>Order</th>
+            <th class="text-end">Amount</th>
+            <th class="text-end">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of openAdvances">
+            <td>{{ a.advanceNo }}</td>
+            <td>{{ a.advanceDate | date:'dd-MMM-yyyy' }}</td>
+            <td>{{ a.orderNo || '-' }}</td>
+            <td class="text-end">{{ a.amount | number:'1.2-2' }}</td>
+            <td class="text-end">{{ a.balanceAmount | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

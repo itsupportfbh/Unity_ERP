@@ -1,0 +1,422 @@
+<div class="gst-wrapper" *ngIf="!isLoading; else loadingTpl">
+
+  <div class="gst-card">
+
+    <!-- HEADER -->
+    <div class="gst-header d-flex justify-content-between align-items-center"
+         style="color: #ffffff; padding: 0.75rem 1rem; border-radius: 0.5rem 0.5rem 0 0;">
+
+      <div class="gst-header-left d-flex align-items-center">
+        <i class="far fa-file-alt mr-50" style="font-size: 1.25rem;"></i>
+        <h2 class="gst-title mb-0" style="font-size: 1.25rem; font-weight: 600;">
+          GST F5 Summary vs Return
+        </h2>
+      </div>
+
+      <div class="gst-header-right d-flex flex-wrap align-items-center">
+
+        <!-- Year -->
+        <div class="gst-field mr-1 mb-50">
+          <label class="mb-25" style="font-size: 0.8rem;">Financial Year</label>
+          <select
+            class="form-control form-control-sm"
+            [(ngModel)]="selectedYear"
+            (ngModelChange)="onYearChange($event)">
+            <option [ngValue]="null">-- Select Year --</option>
+            <option *ngFor="let y of years" [ngValue]="y.fyStartYear">
+              {{ y.fyLabel }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Period / Quarter -->
+        <div class="gst-field mr-1 mb-50">
+          <label class="mb-25" style="font-size: 0.8rem;">Quarter / Period</label>
+          <select
+            class="form-control form-control-sm"
+            [(ngModel)]="selectedPeriodId"
+            (ngModelChange)="onPeriodChange($event)"
+            [disabled]="!selectedYear || !periods.length">
+            <option [ngValue]="null">-- Select Quarter --</option>
+            <option *ngFor="let p of periods" [ngValue]="p.id">
+              {{ p.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Boxes only when model loaded -->
+        <ng-container *ngIf="model">
+
+          <!-- Box 6 -->
+          <div class="gst-field mr-1 mb-50">
+            <label class="mb-25" style="font-size: 0.8rem;">Output Tax (F5)</label>
+            <input
+              class="form-control form-control-sm text-right"
+              type="number"
+              [readonly]="isLocked"
+              [(ngModel)]="model.box6OutputTax">
+          </div>
+
+          <!-- Box 7 -->
+          <div class="gst-field mr-1 mb-50">
+            <label class="mb-25" style="font-size: 0.8rem;">Input Tax (F5)</label>
+            <input
+              class="form-control form-control-sm text-right"
+              type="number"
+              [readonly]="isLocked"
+              [(ngModel)]="model.box7InputTax">
+          </div>
+
+          <!-- Box 8 -->
+          <div class="gst-field mb-50">
+            <label class="mb-25" style="font-size: 0.8rem;">Net Payable</label>
+            <input
+              class="form-control form-control-sm text-right"
+              type="number"
+              [value]="f5Net | number:'1.2-2'"
+              readonly>
+          </div>
+
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- BODY: SYSTEM SUMMARY + MATCH -->
+    <div class="gst-body p-1">
+
+      <div class="row mt-1" *ngIf="model">
+        <div class="col-md-5 mb-1">
+          <div class="gst-system-panel p-1 border rounded">
+            <div class="gst-system-title font-weight-bold mb-50">
+              {{ model.systemSummary.periodLabel }}
+            </div>
+            <div class="gst-system-row d-flex justify-content-between mb-25">
+              <span>Collected on Sales:</span>
+              <span class="font-weight-bold">
+                {{ model.systemSummary.collectedOnSales | number:'1.2-2' }}
+              </span>
+            </div>
+            <div class="gst-system-row d-flex justify-content-between mb-25">
+              <span>Paid on Purchases:</span>
+              <span class="font-weight-bold">
+                {{ model.systemSummary.paidOnPurchases | number:'1.2-2' }}
+              </span>
+            </div>
+            <div class="gst-system-row d-flex justify-content-between">
+              <span>Amount Due (current):</span>
+              <span class="font-weight-bold">
+                {{ model.systemSummary.amountDue | number:'1.2-2' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-7 mb-1">
+          <div
+            class="gst-match-panel p-1 border rounded"
+            [ngClass]="{ 'gst-match-ok': isMatched, 'gst-match-bad': !isMatched }">
+
+            <div class="d-flex align-items-center mb-50">
+              <span class="gst-status-icon mr-75" style="font-size: 1.25rem;">
+                <i *ngIf="isMatched" class="fas fa-check-circle text-success"></i>
+                <i *ngIf="!isMatched" class="fas fa-exclamation-triangle text-danger"></i>
+              </span>
+              <div>
+                <div class="gst-match-title font-weight-bold">
+                  {{ isMatched ? 'Matched' : 'Unmatched' }}
+                </div>
+                <div class="gst-match-subtitle small text-muted">
+                  F5 Net ({{ f5Net | number:'1.2-2' }})
+                  <span *ngIf="isMatched">&equals;</span>
+                  <span *ngIf="!isMatched">&ne;</span>
+                  System ({{ systemAmountDue | number:'1.2-2' }})
+                  <span *ngIf="diff !== 0">
+                    | Diff: {{ diff | number:'1.2-2' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <button
+                type="button"
+                class="btn btn-light btn-sm mr-50"
+                (click)="matchWithSystem()"
+                [disabled]="isLocked || !model">
+                <i class="fas fa-exchange-alt mr-25"></i>
+                Match with F5
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-light btn-sm"
+                (click)="openAdjustments()"
+                [disabled]="!model">
+                <i class="fas fa-sliders-h mr-25"></i>
+                Open Adjustments
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="gst-footer d-flex justify-content-between align-items-center p-1" *ngIf="model">
+      <small class="text-muted">
+        Use <strong>Adjustments</strong> or a GST Reclassification Journal if you accept the F5
+        summary for this period.
+      </small>
+
+      <button
+        type="button"
+        class="btn btn-brand btn-sm"
+        style="background-color: #2E5F73; border-color: #2E5F73;"
+        (click)="applyAndLock()"
+        [disabled]="isLocked || isSaving || !model">
+        <i class="fas fa-lock mr-25"></i>
+        {{ isLocked ? 'Return Locked' : 'Apply & Lock Return' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Loading template -->
+<ng-template #loadingTpl>
+  <div class="text-center p-3">
+    Loading GST summary...
+  </div>
+</ng-template>
+
+<!-- Adjustments modal (unchanged except doc tables) -->
+<!-- ... your existing modal HTML as you pasted ... -->
+<div class="modal fade show d-block" tabindex="-1" role="dialog" *ngIf="showAdjModal">
+  <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header"
+           >
+        <h5 class="modal-title mb-0">
+          GST Adjustments - {{ model?.systemSummary?.periodLabel || '' }}
+        </h5>
+        <button type="button" class="close text-white" (click)="closeAdjustments()">
+          <span>&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- ====== Docs tabs: Sales vs Supplier ====== -->
+        <div class="mb-2">
+          <h6 class="mb-1">GST Documents in this Period</h6>
+
+          <!-- Tabs -->
+          <ul class="nav nav-tabs small mb-1">
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                [class.active]="docsTab === 'SALES'"
+                (click)="docsTab = 'SALES'">
+                Sales Invoices
+                <span *ngIf="salesDocs?.length" class="badge badge-light ml-25">
+                  {{ salesDocs.length }}
+                </span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                [class.active]="docsTab === 'SUPPLIER'"
+                (click)="docsTab = 'SUPPLIER'">
+                Supplier Invoices
+                <span *ngIf="supplierDocs?.length" class="badge badge-light ml-25">
+                  {{ supplierDocs.length }}
+                </span>
+              </a>
+            </li>
+          </ul>
+
+          <!-- Sales tab -->
+          <div *ngIf="docsTab === 'SALES'">
+            <div class="table-responsive" *ngIf="salesDocs?.length; else noSalesTpl">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th style="background-color:#2E5F73;color:white;">Invoice No</th>
+                    <th style="background-color:#2E5F73;color:white;">Date</th>
+                    <th style="background-color:#2E5F73;color:white;">Customer</th>
+                    <th style="background-color:#2E5F73;color:white;">Tax Amount</th>
+                    <th style="background-color:#2E5F73;color:white;" class="text-right">Net Amount</th>
+                    <th style="background-color:#2E5F73;color:white;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let d of salesDocs">
+                    <td>{{ d.docNo }}</td>
+                    <td>{{ d.docDate | date:'dd-MMM-yyyy' }}</td>
+                    <td>{{ d.partyName }}</td>
+                    <td class="text-right">{{ d.taxAmount | number:'1.2-2' }}</td>
+                    <td class="text-right">{{ d.netAmount | number:'1.2-2' }}</td>
+                    <td class="text-right">
+                      <button
+                        class="btn btn-link btn-sm p-0"
+                        (click)="openDocument(d)">
+                        <i class="fas fa-external-link-alt mr-25"></i> Edit
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <ng-template #noSalesTpl>
+              <small class="text-muted">
+                No sales invoices found for this period.
+              </small>
+            </ng-template>
+          </div>
+
+          <!-- Supplier tab -->
+          <div *ngIf="docsTab === 'SUPPLIER'">
+            <div class="table-responsive" *ngIf="supplierDocs?.length; else noSupTpl">
+              <table class="table table-sm table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th style="background-color:#2E5F73;color:white;">Invoice No</th>
+                    <th style="background-color:#2E5F73;color:white;">Date</th>
+                    <th style="background-color:#2E5F73;color:white;">Supplier</th>
+                    <th style="background-color:#2E5F73;color:white;" class="text-right">Tax Amount</th>
+                    <th style="background-color:#2E5F73;color:white;" class="text-right">Net Amount</th>
+                    <th style="background-color:#2E5F73;color:white;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let d of supplierDocs">
+                    <td>{{ d.docNo }}</td>
+                    <td>{{ d.docDate | date:'dd-MMM-yyyy' }}</td>
+                    <td>{{ d.partyName }}</td>
+                    <td class="text-right">{{ d.taxAmount | number:'1.2-2' }}</td>
+                    <td class="text-right">{{ d.netAmount | number:'1.2-2' }}</td>
+                    <td class="text-right">
+                      <button
+                        class="btn btn-link btn-sm p-0"
+                        (click)="openDocument(d)">
+                        <i class="fas fa-external-link-alt mr-25"></i> Edit
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <ng-template #noSupTpl>
+              <small class="text-muted">
+                No supplier invoices found for this period.
+              </small>
+            </ng-template>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- ====== Adjustments list ====== -->
+        <div class="table-responsive mb-1" *ngIf="adjustments?.length; else noAdjRows">
+          <table class="table table-sm table-bordered mb-0">
+            <thead>
+              <tr>
+                <th style="width: 25%">Type</th>
+                <th style="width: 15%" class="text-right">Amount</th>
+                <th>Description</th>
+                <th style="width: 10%"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of adjustments">
+                <td>
+                  {{ a.lineType === 1 ? 'Increase Output'
+                    : a.lineType === 2 ? 'Decrease Output'
+                    : a.lineType === 3 ? 'Increase Input'
+                    : 'Decrease Input' }}
+                </td>
+                <td class="text-right">{{ a.amount | number:'1.2-2' }}</td>
+                <td>{{ a.description }}</td>
+                <td class="text-center">
+                  <button class="btn btn-link btn-sm p-0 mr-1" (click)="editAdjustment(a)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-link btn-sm text-danger p-0" (click)="deleteAdjustment(a)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ng-template #noAdjRows>
+          <p class="text-muted mb-1">
+            No adjustments for this period yet.
+          </p>
+        </ng-template>
+
+        <!-- ====== Adjustment editor ====== -->
+        <!-- <div class="border rounded p-2 mt-1">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <h6 class="mb-0">Adjustment Details</h6>
+            <button class="btn btn-sm btn-outline-primary" (click)="newAdjustment()">
+              <i class="fas fa-plus mr-25"></i> New
+            </button>
+          </div>
+
+          <div *ngIf="editAdj; else noAdjSelected">
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label>Type</label>
+                <select class="form-control" [(ngModel)]="editAdj.lineType">
+                  <option [ngValue]="1">Increase Output Tax (Box 6 +)</option>
+                  <option [ngValue]="2">Decrease Output Tax (Box 6 -)</option>
+                  <option [ngValue]="3">Increase Input Tax (Box 7 +)</option>
+                  <option [ngValue]="4">Decrease Input Tax (Box 7 -)</option>
+                </select>
+              </div>
+              <div class="form-group col-md-3">
+                <label>Amount</label>
+                <input type="number" class="form-control text-right"
+                       [(ngModel)]="editAdj.amount">
+              </div>
+              <div class="form-group col-md-5">
+                <label>Description</label>
+                <input type="text" class="form-control"
+                       [(ngModel)]="editAdj.description">
+              </div>
+            </div>
+
+            <div class="text-right">
+              <button class="btn btn-secondary btn-sm mr-50" (click)="editAdj = null">
+                Cancel
+              </button>
+              <button class="btn btn-primary btn-sm" (click)="saveAdjustment()">
+                Save
+              </button>
+            </div>
+          </div>
+
+          <ng-template #noAdjSelected>
+            <small class="text-muted">
+              Click <strong>New</strong> to add an adjustment, or select one from the list.
+            </small>
+          </ng-template>
+        </div> -->
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="closeAdjustments()">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

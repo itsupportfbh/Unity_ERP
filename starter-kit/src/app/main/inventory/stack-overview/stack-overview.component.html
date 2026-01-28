@@ -1,0 +1,342 @@
+<div class="uwso-page">
+
+  <!-- ===== Sticky Top Bar (Transfer button ALWAYS visible) ===== -->
+  <div class="uwso-topbar">
+    <div class="uwso-top-left">
+      <button class="uwso-back" type="button" (click)="goToStockOverviewList()">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        <span>Stock Overview List</span>
+      </button>
+
+      <div class="uwso-title">
+        <div class="uwso-h1">
+          <i class="fas fa-layer-group" aria-hidden="true"></i>
+          <span>Stock Overview</span>
+        </div>
+        <div class="uwso-h2">
+          <i class="fas fa-random" aria-hidden="true"></i>
+          <span>Material Requisition based transfer</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="uwso-top-right">
+      <div class="uwso-chip" *ngIf="selectedMrId">
+        <i class="fas fa-file-alt" aria-hidden="true"></i>
+        <span>MRQ</span>
+        <b>{{ selectedMrNo || ('MRQ-' + selectedMrId) }}</b>
+      </div>
+
+      <button
+        type="button"
+        class="uwso-transfer"
+        [disabled]="!canTransfer()"
+        (click)="submitTransfer()">
+        <i class="fas fa-exchange-alt" aria-hidden="true"></i>
+        <span>Transfer</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ✅ Options Card (dropdown cut fix => add uwso-card--open) -->
+  <div class="uwso-card uwso-card--open uwso-section">
+    <div class="uwso-card-head">
+      <div class="uwso-head-left">
+        <div class="uwso-card-title">
+          <i class="fas fa-sliders-h" aria-hidden="true"></i>
+          <span>Options</span>
+        </div>
+        <div class="uwso-card-sub">Select MRQ + Outlet, system will auto bind destination.</div>
+      </div>
+
+      <div class="uwso-head-right">
+        <span class="uwso-chip soft" *ngIf="loading">
+          <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
+          Loading…
+        </span>
+      </div>
+    </div>
+
+    <div class="uwso-card-body">
+
+      <!-- Row 1 -->
+      <div class="uwso-grid-3">
+        <!-- Material Requisition -->
+        <div class="uwso-field">
+          <label class="uwso-label">
+            <i class="fas fa-file-signature" aria-hidden="true"></i>
+            Material Requisition
+          </label>
+
+          <ng-select
+            class="uwso-ng"
+            [items]="mrList"
+            bindLabel="display"
+            bindValue="id"
+            placeholder="Select MRQ"
+            [(ngModel)]="selectedMrId"
+            (ngModelChange)="onMrChanged($event)">
+          </ng-select>
+
+          <div class="uwso-help" *ngIf="selectedMrId">
+            Auto bind MRQ id: <b>{{ selectedMrId }}</b>
+          </div>
+        </div>
+
+        <!-- Destination Outlet -->
+        <div class="uwso-field">
+          <label class="uwso-label">
+            <i class="fas fa-store" aria-hidden="true"></i>
+            Destination Outlet (MR Outlet)
+          </label>
+
+          <input
+            class="uwso-input"
+            [value]="destinationOutletName || ''"
+            readonly
+            placeholder="Auto from MRQ"/>
+
+          <div class="uwso-help" *ngIf="destinationOutletId">
+            Destination outlet excluded from From Outlet list.
+          </div>
+        </div>
+
+        <!-- Destination Bin -->
+        <div class="uwso-field">
+          <label class="uwso-label">
+            <i class="fas fa-box" aria-hidden="true"></i>
+            Destination Bin (MR Bin)
+          </label>
+
+          <input
+            class="uwso-input"
+            [value]="destinationBinName || ''"
+            readonly
+            placeholder="Auto from MRQ"/>
+
+          <div class="uwso-help" *ngIf="destinationBinId">
+            Auto bind BinId: <b>{{ destinationBinId }}</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="uwso-grid-2 uwso-mt16">
+        <!-- From Outlet -->
+        <div class="uwso-field">
+          <label class="uwso-label">
+            <i class="fas fa-warehouse" aria-hidden="true"></i>
+            From Outlet
+          </label>
+
+          <!-- ✅ add appendTo="body" (optional but best) -->
+          <ng-select
+            class="uwso-ng"
+            [items]="fromOutletOptions"
+            bindLabel="label"
+            bindValue="id"
+            [compareWith]="compareById"
+            placeholder="Select From Outlet"
+            [(ngModel)]="selectedFromOutletId"
+            (ngModelChange)="onFromOutletChanged($event)"
+            appendTo="body">
+
+            <ng-template ng-option-tmp let-item="item">
+              <div class="uwso-opt">
+                <div class="uwso-opt-name">{{ item.name }}</div>
+                <div class="uwso-opt-meta">
+                  <span class="uwso-mini">
+                    <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                    Req <b>{{ item.reqQty }}</b>
+                  </span>
+                  <span class="dot">•</span>
+                  <span class="uwso-mini">
+                    <i class="fas fa-cubes" aria-hidden="true"></i>
+                    OnHand <b>{{ item.onHand }}</b>
+                  </span>
+                </div>
+              </div>
+            </ng-template>
+
+            <ng-template ng-label-tmp let-item="item">
+              <div class="uwso-sel">
+                <span class="uwso-sel-name">{{ item.name }}</span>
+                <span class="uwso-sel-meta">
+                  Req {{ item.reqQty }} • OnHand {{ item.onHand }}
+                </span>
+              </div>
+            </ng-template>
+
+          </ng-select>
+
+          <div class="uwso-help">Transfer will use selected From Outlet.</div>
+        </div>
+
+        <!-- Selected From Outlet -->
+        <div class="uwso-field">
+          <label class="uwso-label">
+            <i class="fas fa-check-circle" aria-hidden="true"></i>
+            Selected From Outlet
+          </label>
+
+          <input
+            class="uwso-input"
+            [value]="selectedFromOutletName || ''"
+            readonly
+            placeholder="Select From Outlet"/>
+
+          <div class="uwso-help">This outlet stock rows will be shown below.</div>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="!loading && errorMsg" class="uwso-error">
+        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+        <span>{{ errorMsg }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Summary + MR Lines ===== -->
+  <div class="uwso-2col uwso-section" *ngIf="mrLines?.length">
+
+    <div class="uwso-card">
+      <div class="uwso-card-body uwso-summary">
+        <div class="uwso-sum-left">
+          <div class="uwso-sum-mrq">
+            <i class="fas fa-file-invoice" aria-hidden="true"></i>
+            <span>{{ selectedMrNo || ('MRQ-' + selectedMrId) }}</span>
+          </div>
+          <div class="uwso-sum-sub">MR Lines (Balance only)</div>
+        </div>
+
+        <div class="uwso-sum-right">
+          <div class="uwso-pill">
+            <i class="fas fa-balance-scale-right" aria-hidden="true"></i>
+            <span>Total Remaining</span>
+            <b>{{ totalRemainingQty }}</b>
+          </div>
+
+          <div class="uwso-meta">
+            <span class="uwso-mini">
+              <i class="fas fa-user" aria-hidden="true"></i>
+              Requester: <b>{{ requesterName || '-' }}</b>
+            </span>
+            <span class="dot">•</span>
+            <span class="uwso-mini">
+              <i class="far fa-calendar-alt" aria-hidden="true"></i>
+              Date: <b>{{ reqDate || '-' }}</b>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uwso-card">
+      <div class="uwso-card-head compact">
+        <div class="uwso-head-left">
+          <div class="uwso-card-title">
+            <i class="fas fa-list" aria-hidden="true"></i>
+            <span>Material Requisition Lines</span>
+          </div>
+          <div class="uwso-card-sub">Only remaining qty will be transferred</div>
+        </div>
+
+        <span class="uwso-chip soft">
+          <i class="fas fa-stream" aria-hidden="true"></i>
+          {{ mrLines.length }} line(s)
+        </span>
+      </div>
+
+      <div class="uwso-table-wrap">
+        <table class="uwso-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>SKU</th>
+              <th class="t-end">Old Requested</th>
+              <th class="t-end">New Requested</th>
+              <th class="t-end">Received</th>
+              <th class="t-end">Remaining</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let l of mrLines; trackBy: trackByMrLine">
+              <td class="t-strong">{{ l.itemName }}</td>
+              <td class="t-muted">{{ l.sku }}</td>
+              <td class="t-end t-num">{{ l.oldRequestedQty }}</td>
+              <td class="t-end t-num t-strong">{{ l.requestedQty }}</td>
+              <td class="t-end t-num">{{ l.receivedQty }}</td>
+              <td class="t-end t-num">
+                <span class="uwso-badge-num">{{ l.remainingQty }}</span>
+              </td>
+            </tr>
+
+            <tr *ngIf="!mrLines?.length">
+              <td colspan="6" class="uwso-empty">No remaining lines.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== Stock Table ===== -->
+  <div class="uwso-card uwso-section">
+    <div class="uwso-card-head">
+      <div class="uwso-head-left">
+        <div class="uwso-card-title">
+          <i class="fas fa-boxes" aria-hidden="true"></i>
+          <span>Stock in selected outlet (MR items)</span>
+        </div>
+        <div class="uwso-card-sub" *ngIf="selectedFromOutletName">
+          From Outlet: <b>{{ selectedFromOutletName }}</b>
+        </div>
+      </div>
+
+      <span class="uwso-chip soft" *ngIf="filteredRows?.length">
+        <i class="fas fa-database" aria-hidden="true"></i>
+        {{ filteredRows.length }} row(s)
+      </span>
+    </div>
+
+    <div class="uwso-table-wrap">
+      <table class="uwso-table uwso-table-wide">
+        <thead>
+          <tr>
+            <th>Outlet</th>
+            <th>SKU</th>
+            <th>Item</th>
+            <th>Supplier</th>
+            <th>Bin</th>
+            <th class="t-end">On Hand</th>
+            <th class="t-end">Available</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let r of filteredRows; trackBy: trackByRow">
+            <td class="t-strong">{{ r.warehouse }}</td>
+            <td class="t-muted">{{ r.sku || '-' }}</td>
+            <td>{{ r.item || '-' }}</td>
+            <td class="t-muted">{{ r.supplierName || '-' }}</td>
+            <td class="t-muted">{{ r.bin || '-' }}</td>
+            <td class="t-end t-num">{{ r.onHand }}</td>
+            <td class="t-end t-num">
+              <span class="uwso-badge-av">{{ r.available }}</span>
+            </td>
+          </tr>
+
+          <tr *ngIf="!filteredRows?.length">
+            <td colspan="7" class="uwso-empty">
+              No rows found for selected MR items / outlet.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

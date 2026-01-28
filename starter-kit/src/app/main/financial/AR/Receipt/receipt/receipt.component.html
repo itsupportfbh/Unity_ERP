@@ -1,0 +1,92 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <!-- Header -->
+        <div class="row align-items-center m-1">
+
+          <!-- Left: Search -->
+          <div class="col-md-6 col-6 pb-1 pb-md-0">
+            <label class="d-flex align-items-center mr-1 w-100">
+              <span class="mr-50">Search:</span>
+              <input
+                type="search"
+                class="form-control ml-25"
+                style="max-width: 260px;"
+                placeholder="Receipt / Customer"
+                (input)="onSearch($event.target.value)" />
+            </label>
+          </div>
+
+          <!-- Right: New Receipt button -->
+          <div class="col-md-6 col-12 d-flex justify-content-md-end justify-content-start pb-1 pb-md-0">
+            <button
+  class="btn btn-brand"
+  (click)="goCreate()"
+  [disabled]="isPeriodLocked"
+  [attr.title]="isPeriodLocked
+                 ? (periodName ? 'Period ' + periodName + ' is locked'
+                               : 'Period is locked') 
+                 : 'Create new receipt'">
+  <i class="fas fa-plus mr-25"></i> New Receipt
+</button>
+
+          </div>
+
+        </div>
+
+        <!-- Optional lock info -->
+        <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 m-1" style="font-size:0.8rem;">
+          Period <strong>{{ periodName || 'current' }}</strong> is locked.
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive mt-1">
+          <table class="table table-sm table-hover align-middle mb-0 receipt-table">
+            <thead>
+              <tr>
+                <th>Receipt</th>
+                <th>InvoiceNo</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Method</th>
+                <th class="text-end">Amount</th>
+                <th>Status</th>
+                <th class="text-center" style="width: 140px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of filtered">
+                <td>{{ r.receiptNo }}</td>
+                <td>{{ r.invoiceNos }}</td>
+                <td>{{ r.customerName }}</td>
+                <td>{{ r.receiptDate | date:'dd-MMM-yyyy' }}</td>
+                <td>{{ r.paymentMode }}</td>
+                <td class="text-end">{{ r.amountReceived | number:'1.2-2' }}</td>
+                <td>
+                  <span class="badge rounded-pill" style="background-color:#108c44;">
+                    {{ r.status || 'Posted' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="actions">
+                    <i class="fas fa-pen text-primary" title="Edit" (click)="edit(r.id)"></i>
+                    <i class="fas fa-trash text-danger" title="Delete" (click)="delete(r.id)"></i>
+                  </div>
+                </td>
+              </tr>
+
+              <tr *ngIf="!filtered.length">
+                <td colspan="8" class="text-center text-muted py-3">
+                  No receipts found
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>

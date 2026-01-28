@@ -1,0 +1,209 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import '@core/scss/angular/libs/sweet-alerts.component.scss';
+.pagination .page-link {
+  color: #2E5F73;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #2E5F73;
+  border-color: #2E5F73;
+  color: #fff;
+}
+/* Make header row full brand colour */
+.gst-table thead th {
+  background-color: #2E5F73;
+  color: #fff;
+  border-bottom: none;
+}
+
+/* Align all cells vertically in the middle */
+.gst-table th,
+.gst-table td {
+  vertical-align: middle;
+  border-top: none;        /* optional: cleaner look */
+}
+
+/* Prevent date / doc no from breaking into multiple lines */
+.gst-table .text-nowrap {
+ // white-space: nowrap;
+}
+
+/* Badge styling */
+.gst-type-badge {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+}
+
+.gst-type-sales {
+  background-color: #2E5F73;
+  color: #fff;
+}
+
+.gst-type-supplier {
+  background-color: #00c8ff;
+  color: #fff;
+}
+
+/* Pagination colours */
+.pagination .page-link {
+  color: #2E5F73;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #2E5F73;
+  border-color: #2E5F73;
+  color: #fff;
+}
+.gst-table-wrapper {
+  padding: 0;             /* removes inner padding */
+  margin: 0;              /* aligns with card edges */
+}
+
+.gst-pagination {
+  padding: 1rem;          /* consistent spacing */
+  background: #fff;
+}
+
+.gst-table thead th {
+  background-color: #2E5F73;
+  color: white;
+  white-space: nowrap;
+}
+.ap-summary-row {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.ap-summary-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0.6rem 0.9rem;
+  margin: 0.3rem 0.5rem 0.3rem 0;
+  border: 1px solid #e1e8f0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.ap-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+  border-color: #c4d1e3;
+}
+
+.ap-summary-card .label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 0.1rem;
+}
+
+.ap-summary-card .value {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* accents */
+.ap-summary-total .value {
+  color: #f59e0b; // orange
+}
+
+.ap-summary-paid .value {
+  color: #16a34a; // green
+}
+
+.ap-summary-outstanding .value {
+  color: #2563eb; // blue
+}
+
+/* search label */
+.ap-search-label span {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-right: 0.3rem;
+}
+.ap-summary-card {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0.6rem 0.9rem;
+  margin: 0.3rem 0.5rem 0.3rem 0;
+  border: 1px solid #e1e8f0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.ap-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+  border-color: #c4d1e3;
+}
+
+/* icon bubble on left */
+.ap-summary-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.6rem;
+  font-size: 1.05rem;
+  //color: $brand;
+  background: rgba(46, 95, 115, 0.08);
+}
+
+/* LABEL – smaller */
+.ap-summary-text .label {
+  font-size: 0.65rem;        /* was 0.75rem or more */
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* VALUE – slightly smaller as well (optional) */
+.ap-summary-text .value {
+  font-size: 0.95rem;        /* was ~1.05rem */
+  font-weight: 600;
+}
+
+
+/* light background tints per card */
+.ap-summary-total {
+  background: #fff7ed; // light orange
+}
+
+.ap-summary-paid {
+  background: #ecfdf3; // light green
+}
+
+.ap-summary-debit {
+  background: #fef3c7; // light amber
+}
+
+.ap-summary-outstanding {
+  background: #eff6ff; // light blue
+}
+
+/* expand icon small tweak */
+.ap-expander-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ap-expander-icon {
+  font-size: 0.8rem;
+  line-height: 1;
+}

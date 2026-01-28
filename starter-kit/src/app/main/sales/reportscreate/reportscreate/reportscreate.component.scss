@@ -1,0 +1,87 @@
+$brand: #2E5F73;
+
+.metrics-row {
+  row-gap: 1rem;
+  justify-content: center;
+}
+
+/* ============================
+   METRIC CARD STYLING
+============================ */
+.metric-card {
+  border-radius: 16px;
+  background: #fff;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  border: 1px solid rgba(46, 95, 115, 0.15);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+
+  .card-body {
+    padding: 1.5rem 1rem;
+  }
+
+  /* --- Icon Circle --- */
+  .metric-icon {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 12px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    background: rgba($brand, 0.08);
+    border: 1px solid rgba($brand, 0.18);
+    transition: all 0.25s ease;
+
+    svg {
+      width: 24px;
+      height: 24px;
+      stroke: $brand;
+    }
+  }
+
+  /* --- Title --- */
+  .metric-title {
+    margin: 8px 0 4px;
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 1.9rem;
+    line-height: 1.2;
+  }
+
+  /* --- Subtitle --- */
+  .metric-subtitle {
+    color: #64748b;
+    font-size: 0.9rem;
+    letter-spacing: 0.25px;
+  }
+
+  /* --- Hover Effect --- */
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba($brand, 0.15);
+    border-color: rgba($brand, 0.3);
+
+    .metric-icon {
+      background: rgba($brand, 0.15);
+      transform: scale(1.05);
+    }
+  }
+
+  /* --- Active State (clicked) --- */
+  &.active {
+    border: 2px solid $brand;
+    box-shadow: 0 0 0 4px rgba($brand, 0.15);
+    transform: translateY(-2px);
+
+    .metric-icon {
+      background: rgba($brand, 0.18);
+      svg {
+        stroke: darken($brand, 5%);
+      }
+    }
+
+    .metric-title {
+      color: $brand;
+    }
+  }
+}

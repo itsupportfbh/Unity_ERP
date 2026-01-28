@@ -1,0 +1,130 @@
+/* ===== Brand tokens ===== */
+:root {
+  --prl-brand: #2E5F73;
+  --prl-brand-600: #284e5e;
+  --prl-brand-700: #1f3f4b;
+  --prl-ink: #0f172a;
+}
+
+/* ===== Back button ===== */
+.prl-back{
+  background:#2E5F73 !important;
+  color:#fff !important;
+  border:none !important;
+//  border-radius:12px;
+  padding:.5rem 1rem .5rem 2.25rem;
+  line-height:1; position:relative; margin-bottom:8px;
+  box-shadow:0 4px 14px rgba(46,95,115,.25);
+}
+.prl-back i{
+  position:absolute; left:.75rem; top:50%; transform:translateY(-50%);
+  color:#fff !important;
+}
+
+/* ===== Card ===== */
+.prl-card{ border-radius:18px; margin-top:0 !important; }
+
+/* ===== Header bar ===== */
+.prl-headbar{
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  border:1px solid rgba(15,23,42,.06);
+  border-radius:16px; padding:14px 16px;
+  background:linear-gradient(180deg, rgba(46,95,115,.06), rgba(46,95,115,.03)), #fff;
+}
+.prl-head-left{ min-width:0; }
+
+.prl-head-icon{
+  width:40px; height:40px; display:grid; place-items:center;
+  border-radius:12px;
+  background: color-mix(in oklab, var(--prl-brand-600) 12%, white);
+  color: var(--prl-brand-600) !important;
+  border:1px solid rgba(40,78,94,.18); font-size:18px;
+}
+.prl-head-icon i{ color:inherit !important; }
+
+.prl-eyebrow{
+  font-size:11px; letter-spacing:.3px; color:#6b7280;
+  text-transform:uppercase; margin-bottom:2px;
+}
+.prl-heading{
+  font-size:20px; font-weight:800; color:var(--prl-brand-600) !important;
+  line-height:1.2; margin:0;
+}
+.prl-id{ font-size:14px; font-weight:700; color:var(--prl-brand); margin-left:6px; }
+
+/* Status */
+.prl-badge{ border-radius:999px; padding:.4rem .7rem; font-weight:700; letter-spacing:.2px; }
+.prl-badge-green{ background:#16a34a; color:#fff; }
+.prl-badge-amber{ background:#f59e0b; color:#fff; }
+
+/* Header actions */
+.prl-btn-outline{ border-radius:10px; }
+.prl-btn-primary{
+  background:#2E5F73 !important; border-color:#2E5F73 !important;
+  color:#fff ;
+}
+.prl-btn-primary:hover{  background:#2E5F73 !important; border-color:#2E5F73 !important;
+  color:#fff ; }
+.prl-btn-primary:disabled{
+  opacity:.75 !important; color:#fff !important;
+  background:#6b8793 !important; border-color:#6b8793 !important;
+}
+
+/* ===== Inputs / labels ===== */
+.prl-label{ font-size:13px; font-weight:600; color:#374151; margin-bottom:6px; }
+.prl-input{ border-radius:12px; border:1px solid #e5e7eb; padding:10px 12px; font-size:14px; }
+.prl-input:focus{
+  border-color:var(--prl-brand);
+  box-shadow:0 0 0 4px color-mix(in oklab, var(--prl-brand) 18%, transparent);
+}
+.prl-input:disabled{ background:#f5f5f5; cursor:not-allowed; opacity:.85; }
+
+/* ng-select harmony */
+::ng-deep .custom-ng-select .ng-select-container{
+  border-radius:12px !important; border:1px solid #e5e7eb !important; min-height:40px;
+}
+::ng-deep .custom-ng-select.ng-select-focused .ng-select-container{
+  border-color:var(--prl-brand) !important;
+  box-shadow:0 0 0 4px color-mix(in oklab, var(--prl-brand) 18%, transparent);
+}
+::ng-deep .custom-ng-select .ng-dropdown-panel{
+  border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 14px 32px rgba(15,23,42,.15);
+}
+
+/* ===== Tables ===== */
+.prl-table-wrap{ max-height:56vh; overflow:auto; }
+.prl-table td, .prl-table th{ vertical-align:middle; }
+.prl-table thead th{ font-weight:700; }
+.prl-thead-brand,
+.prl-thead-brand th{
+  background-color:#2E5F73 !important; color:#fff !important;
+}
+.prl-thead-brand{ position:sticky; top:0; z-index:2; }
+.prl-table tbody tr + tr td{ border-top:1px solid #f0f2f5; }
+.prl-tfoot{
+  background:linear-gradient(180deg, rgba(46,95,115,.08), rgba(46,95,115,.02));
+  font-weight:700;
+}
+.prl-subtitle{ color:#0f172a; font-weight:700; }
+
+/* Compact table padding (no gaping) */
+.table>:not(caption)>*>*{ padding:.6rem .75rem; }
+
+/* ===== Responsive ===== */
+@media (max-width: 820px){
+  .prl-headbar{ flex-direction:column; align-items:stretch; gap:10px; }
+  .prl-head-actions{ justify-content:flex-end; }
+}
+::ng-deep .ng-dropdown-panel {
+  z-index: 99999 !important;   // ✅ dropdown panel visible
+}
+
+::ng-deep .custom-ng-select .ng-select-container {
+  min-height: 38px;
+}
+
+::ng-deep .custom-ng-select .ng-value,
+::ng-deep .custom-ng-select .ng-placeholder,
+::ng-deep .custom-ng-select .ng-option {
+  color: #111 !important;      // ✅ text not hidden by css
+}

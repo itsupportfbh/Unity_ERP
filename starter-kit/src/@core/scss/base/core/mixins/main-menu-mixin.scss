@@ -1,0 +1,302 @@
+// =========================================================================================
+// File Name: main-menu-mixin.scss
+// Description: Common mixin for menus (dark & light variants) + collapsed icons-only mode,
+//              and fixes for Vuexy sidebar overlays.
+// ----------------------------------------------------------------------------------------
+// Item Name: Vuexy - Vuejs, React, Angular, HTML & Laravel Admin Dashboard Template
+// Author: PIXINVENT
+// Author URL: http://www.themeforest.net/user/pixinvent
+//==========================================================================================
+
+// -----------------------------------------------
+// Layout helpers
+// -----------------------------------------------
+@mixin main-menu-width($menu-width) {
+  margin-left: $menu-width;
+}
+
+@mixin menu-navbar-width($menu-width) {
+  float: left;
+  width: $menu-width;
+}
+
+// -----------------------------------------------
+// Show/Hide transforms for vertical menu
+// -----------------------------------------------
+@mixin vertical-menu-transform-show($transform-width) {
+  transform: translate3d($transform-width, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000;
+}
+
+@mixin vertical-menu-transform-hide() {
+  transform: translate3d(0, 0, 0);
+}
+
+// -----------------------------------------------
+// Submenu arrow (right chevron → rotates on open)
+// -----------------------------------------------
+@mixin vertical-menu-has-sub-arrow($arrow-font-size) {
+  &.has-sub {
+    > a:after {
+      content: '';
+      // background-image: url(str-replace(str-replace($chevron-right, 'currentColor', $body-color), '#', '%23'));
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white'><path d='M4 2l4 4-4 4z'/></svg>");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: $arrow-font-size;
+      height: $arrow-font-size;
+      width: $arrow-font-size;
+      display: inline-block;
+      position: absolute;
+      right: 20px;
+      top: 14px;
+      transform: rotate(0deg);
+      transition: all 0.2s ease-out;
+    }
+    &.open:not(.menu-item-closing) {
+      > a:after {
+        transform: rotate(90deg);
+      }
+    }
+  }
+}
+
+// -----------------------------------------------
+// Content area height helper
+// -----------------------------------------------
+@mixin content-area-wrapper-height(
+  $contentPadding: 0rem,
+  $navbarHeight: 0rem,
+  $footerHeight: 0rem,
+  $floatingNavMargin: 0rem,
+  $horizontalMenuHeight: 0rem,
+  $spacingSides: 1,
+  $horizontalLayout: false
+) {
+  height: calc(
+    100vh - calc(calc(#{$contentPadding} * #{$spacingSides}) + #{$navbarHeight} + #{$footerHeight} + #{$floatingNavMargin} + #{$horizontalMenuHeight})
+  );
+  height: calc(
+    var(--vh, 1vh) * 100 -
+      calc(calc(#{$contentPadding} * #{$spacingSides}) + #{$navbarHeight} + #{$footerHeight} + #{$floatingNavMargin} + #{$horizontalMenuHeight})
+  );
+
+  @if $horizontalLayout {
+    @include media-breakpoint-down(lg) {
+      height: calc(
+        100vh - calc(calc(calc(#{$contentPadding} - 0.8rem) * #{$spacingSides}) + #{$navbarHeight} + #{$footerHeight})
+      );
+      height: calc(
+        var(--vh, 1vh) * 100 - calc(calc(calc(#{$contentPadding} - 0.8rem) * #{$spacingSides}) + #{$navbarHeight} + #{$footerHeight})
+      );
+    }
+  } @else {
+    @include media-breakpoint-down(xs) {
+      height: calc(
+        100vh -
+          calc(
+            calc(calc(#{$contentPadding} * #{$spacingSides}) - calc(0.8rem * #{$spacingSides})) + #{$navbarHeight} + #{$footerHeight} +
+              #{$floatingNavMargin} + #{$horizontalMenuHeight}
+          )
+      );
+      height: calc(
+        var(--vh, 1vh) * 100 -
+          calc(
+            calc(calc(#{$contentPadding} * #{$spacingSides}) - calc(0.8rem * #{$spacingSides})) + #{$navbarHeight} + #{$footerHeight} +
+              #{$floatingNavMargin} + #{$horizontalMenuHeight}
+          )
+      );
+    }
+  }
+}
+
+// -----------------------------------------------
+// Light & Dark menu theme mixin
+//   Example dark: @include menu-theme(#cfd8dc, #2E5F73);
+// -----------------------------------------------
+@mixin menu-theme($theme-color, $theme-bg) {
+  $main-menu-sub-color: #fff;         // Unselected text
+  $main-menu-sub-hover-color: #F7C06E; // Hover/active text
+
+  color: $theme-color;
+  background: $theme-bg;
+
+  .navigation {
+    background: $theme-bg;
+
+    .navigation-header {
+      color: lighten($theme-color, 21.5%);
+      margin: calc(#{$content-padding} + 0.286rem) 0 0.8rem ($content-padding + 0.2rem);
+      padding: 0;
+      line-height: 1.5;
+      letter-spacing: 0.01rem;
+
+      span { font-weight: 500; }
+    }
+
+    // Main menu items
+    li {
+      // Submenu visibility
+      &.has-sub {
+        > ul { display: none; }      // hidden by default
+        &.open > ul { display: block; } // shown only when open
+      }
+
+      &.has-sub > a { transition: all 0.3s ease; }
+
+      // Top-level anchors
+      a {
+        color: $main-menu-sub-color;
+        padding: $menu-padding;
+        font-family: lora;
+        font-weight: bold;
+        transition: color 0.3s ease;
+
+        span.menu-sub-title { color: lighten($theme-color, 30%); }
+
+        & > * { transition: transform 0.25s ease; }
+      }
+
+      // Hover/active/open states at top level
+      &.active > a,
+      &.open > a,
+      &.sidebar-group-active > a,
+      a:hover {
+        color: $main-menu-sub-hover-color !important;
+      }
+
+      // Submenu anchors
+      ul li a {
+        color: $main-menu-sub-color;
+        transition: color 0.3s ease;
+
+        &:hover,
+        &.active,
+        &.open { color: $main-menu-sub-hover-color !important; }
+      }
+    }
+  }
+}
+
+// -----------------------------------------------
+// Collapsed flyout content styling mixin (Vuexy default)
+// -----------------------------------------------
+@mixin menu-content($menu-expanded-width, $menu-collapsed-width, $theme-color, $theme-bg) {
+  .main-menu-content {
+    > span.menu-title,
+    a.menu-title {
+      right: -($menu-expanded-width);
+      width: $menu-expanded-width;
+      font-weight: 600;
+      color: #fff;
+      text-transform: uppercase;
+      text-align: left;
+      background-color: $primary;
+      border-color: $primary;
+      padding: 13px 20px;
+    }
+
+    > ul.menu-content {
+      left: $menu-collapsed-width;
+      width: $menu-expanded-width;
+      transition: visibility 0.25s, opacity 0.25s;
+      box-shadow: 1px 0px 2px rgba($black, 0.1);
+      border-bottom: 2px solid rgba($black, 0.2);
+      border-left: 1px solid rgba($black, 0.02);
+
+      li {
+        white-space: nowrap;
+        position: relative;
+
+        a {
+          display: block;
+          padding: 8px 20px;
+          color: #fff;
+          transition: color 0.3s ease;
+
+          &:hover,
+          &.active,
+          &.open { color: #F7C06E !important; }
+        }
+
+        @include vertical-menu-has-sub-arrow(1rem);
+      }
+    }
+  }
+}
+
+// ======================================================================
+// Vuexy sidebar sheen removal & overlay neutralizers
+// ======================================================================
+.main-menu {
+  .shadow-bottom {
+    display: none !important;
+    background: none !important;
+    box-shadow: none !important;
+    opacity: 0 !important;
+  }
+
+  .ps__rail-x,
+  .ps__rail-y {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .navbar-header,
+  .navigation-header {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+// ======================================================================
+// COLLAPSED MENU: ICONS ONLY (hide letters/labels in collapsed state)
+// ======================================================================
+/* FINAL KILL SWITCH — remove collapsed initials next to icons */
+body.menu-collapsed {
+
+  /* 1) Hide any text nodes */
+  .main-menu .navigation > li > a .menu-title,
+  .main-menu .navigation > li > a span,
+  .main-menu .navigation > li > a .badge,
+  .main-menu .navigation > li > a .menu-sub-title {
+    display: none !important;
+    width: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* 2) Kill any generated letters/abbreviations */
+  .main-menu .navigation > li > a::after,
+  .main-menu .navigation > li > a::before,
+  .main-menu .navigation > li > a .menu-title::after,
+  .main-menu .navigation > li > a .menu-title::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* (Vuexy sometimes uses data-i18n or title attributes for content) */
+  .main-menu .navigation > li > a[title]::after,
+  .main-menu .navigation > li > a[data-i18n]::after,
+  .main-menu .navigation > li > a[title]::before,
+  .main-menu .navigation > li > a[data-i18n]::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* 3) Center icon only */
+  .main-menu .navigation > li > a {
+    justify-content: center !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    text-indent: 0 !important;   /* avoid clever indent tricks */
+  }
+
+  /* 4) Remove any list markers */
+  .main-menu .navigation,
+  .main-menu .navigation li {
+    list-style: none !important;
+  }
+}
+

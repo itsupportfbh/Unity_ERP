@@ -1,0 +1,127 @@
+<div class="card shadow-sm pl-card">
+  <div class="card-body">
+
+    <div class="reports-center">
+      <h5 class="reports-center-title">Reports Center</h5>
+
+      <div class="row g-2">
+
+        <!-- Profit & Loss -->
+        <div class="col-md-4 col-sm-6">
+          <div class="report-card clickable">
+            <div class="report-card-header">
+              <div class="report-title">Profit &amp; Loss</div>
+              <button
+                type="button"
+                class="btn btn-report"
+                [class.btn-report--active]="selectedReport === 'pl'"
+                (click)="setAndGo('pl')">
+                Open
+              </button>
+            </div>
+            <div class="report-subtitle">
+              Reports &gt; Profit and Loss
+            </div>
+          </div>
+        </div>
+
+        <!-- Balance Sheet -->
+        <div class="col-md-4 col-sm-6">
+          <div class="report-card clickable">
+            <div class="report-card-header">
+              <div class="report-title">Balance Sheet</div>
+              <button
+                type="button"
+                class="btn btn-report"
+                [class.btn-report--active]="selectedReport === 'bs'"
+                (click)="setAndGo('bs')">
+                Open
+              </button>
+            </div>
+            <div class="report-subtitle">
+              Reports &gt; Balance Sheet
+            </div>
+          </div>
+        </div>
+
+        <!-- AR/AP Aging -->
+        <div class="col-md-4 col-sm-6">
+          <div class="report-card clickable">
+            <div class="report-card-header">
+              <div class="report-title">AR/AP Aging</div>
+              <button
+                type="button"
+                class="btn btn-report"
+                [class.btn-report--active]="selectedReport === 'aging'"
+                (click)="setAndGo('aging')">
+                Open
+              </button>
+            </div>
+            <div class="report-subtitle">
+              Reports &gt; Aging
+            </div>
+          </div>
+        </div>
+
+        <!-- GST Detail Report -->
+        <div class="col-md-4 col-sm-6 mt-1">
+          <div class="report-card clickable">
+            <div class="report-card-header">
+              <div class="report-title">GST Detail Report</div>
+              <button
+                type="button"
+                class="btn btn-report"
+                [class.btn-report--active]="selectedReport === 'gst'"
+                (click)="setAndGo('gst')">
+                Open
+              </button>
+            </div>
+            <div class="report-subtitle">
+              Reports &gt; GST &gt; Detail
+            </div>
+          </div>
+        </div>
+
+        <!-- Collections Forecast -->
+        <div class="col-md-4 col-sm-6 mt-1">
+          <div class="report-card clickable">
+            <div class="report-card-header">
+              <div class="report-title">Collections Forecast</div>
+              <button
+                type="button"
+                class="btn btn-report"
+                [class.btn-report--active]="selectedReport === 'cf'"
+                (click)="setAndGo('cf')">
+                Open
+              </button>
+            </div>
+            <div class="report-subtitle">
+              Reports &gt; AR
+            </div>
+          </div>
+        </div>
+
+        <!-- Daybook -->
+        <div class="col-md-4 col-sm-6 mt-1">
+          <div class="report-card clickable">
+            <div class="report-card-header">
+              <div class="report-title">Daybook</div>
+              <button
+                type="button"
+                class="btn btn-report"
+                [class.btn-report--active]="selectedReport === 'daybook'"
+                (click)="setAndGo('daybook')">
+                Open
+              </button>
+            </div>
+            <div class="report-subtitle">
+              Reports &gt; Transaction
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>

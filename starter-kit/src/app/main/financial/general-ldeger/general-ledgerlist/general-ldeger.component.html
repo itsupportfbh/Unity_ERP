@@ -1,0 +1,117 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <!-- Header / Controls -->
+        <div class="row align-items-center px-1 pt-1">
+          <div class="col-md-6 col-12">
+            <h4 class="card-text page-title">
+              {{ headervalue || 'General Ledger' }}
+            </h4>
+
+            <div class="d-flex align-items-center m-1">
+              <label class="d-flex align-items-center mb-0">
+                Show
+                <select class="form-control mx-25 w-auto" [(ngModel)]="selectedOption">
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="25">25</option>
+                  <option [ngValue]="50">50</option>
+                  <option [ngValue]="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-6 col-12 d-flex justify-content-md-end">
+            <label class="d-flex align-items-center mb-0">
+              Search:
+              <input
+                [(ngModel)]="searchValue"
+                type="search"
+                class="form-control ml-25 search-input"
+                (keyup)="filterUpdate()"
+                (search)="filterUpdate()" />
+            </label>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-wrap px-1 pb-1">
+          <ngx-datatable
+            #table
+            class="bootstrap core-bootstrap coa-table"
+            [rows]="displayRows"
+            [rowHeight]="48"
+            [headerHeight]="50"
+            [footerHeight]="0"
+            [limit]="selectedOption"
+            [columnMode]="'force'"
+            [scrollbarH]="false"
+            [scrollbarV]="false"
+            [virtualization]="false">
+
+            <!-- HEAD CODE -->
+            <ngx-datatable-column name="HEAD CODE" [width]="120">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <span class="cell-text">{{ row.headCode }}</span>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <!-- HEAD NAME -->
+            <ngx-datatable-column name="HEAD NAME" [width]="360">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="head-cell" [class.child]="row.level > 0">
+                  <span class="indent" [style.width.px]="row.level * 18"></span>
+
+                  <button
+                    *ngIf="row.hasChildren"
+                    type="button"
+                    class="toggle-btn"
+                    (click)="toggleRow(row)">
+                  {{ row.$$expanded ? '−' : '+' }}
+                  </button>
+
+                  <span class="head-text">
+                    {{ row.headName }}
+                  </span>
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <!-- OPENING BALANCE -->
+            <ngx-datatable-column name="OPENING BALANCE" [width]="180">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <span class="num">{{ row.openingBalance || 0 }}</span>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <!-- DEBIT -->
+            <ngx-datatable-column name="DEBIT" [width]="140">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <span class="num">{{ row.debit || 0 }}</span>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <!-- CREDIT -->
+            <ngx-datatable-column name="CREDIT" [width]="140">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <span class="num">{{ row.credit || 0 }}</span>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <!-- BALANCE -->
+            <ngx-datatable-column name="BALANCE" [width]="140">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <span class="num">{{ row.balance || 0 }}</span>
+              </ng-template>
+            </ngx-datatable-column>
+
+          </ngx-datatable>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>

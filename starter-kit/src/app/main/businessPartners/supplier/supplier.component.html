@@ -1,0 +1,133 @@
+<section id="location-list" class="content-wrapper p-0">
+  <div class="content-body">
+    <div class="card shadow-sm">
+
+      <!-- ===== Card header: Title + Search + Add ===== -->
+      <div
+        class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-0 pb-0 border-0"
+      >
+        <h4 class="card-title mb-0" style="font-weight:600; color:#2E5F73;">
+          Suppliers List
+        </h4>
+
+        <div class="mt-1 mt-md-0 d-flex align-items-center">
+          <label class="d-flex align-items-center mb-0 mr-1">
+            Search:
+            <input
+              [(ngModel)]="searchValue"
+              name="searchValue"
+              type="search"
+              class="form-control ml-25"
+              (keyup)="filterUpdate()"
+              (search)="filterUpdate()"
+            />
+          </label>
+
+          <button class="btn btn-primary ml-1" (click)="addSupplier()">
+            <i data-feather="plus" class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
+            <span class="d-none d-sm-inline-block">Add</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== Card body: Show entries + table ===== -->
+      <div class="card-body pt-1">
+        <div class="row align-items-center mb-1">
+          <!-- Page size -->
+          <div class="col-md-6 col-12">
+            <div class="d-flex align-items-center">
+              <label class="d-flex align-items-center mb-0">
+                Show
+                <select class="form-control mx-25" [(ngModel)]="pageSize">
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="25">25</option>
+                  <option [ngValue]="50">50</option>
+                  <option [ngValue]="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+          </div>
+
+          <!-- (blank right side, just to match customer card spacing) -->
+          <div class="col-md-6 col-12 text-right d-none d-md-block"></div>
+        </div>
+
+        <!-- ===== Table ===== -->
+<div class="table-responsive table-wrap">
+  <ngx-datatable
+    class="bootstrap core-bootstrap suppliers-table"
+    [rows]="rows"
+    [rowHeight]="58"
+    [limit]="pageSize"
+    [columnMode]="ColumnMode.force"
+    [headerHeight]="40"
+    [footerHeight]="50"
+    [scrollbarH]="true"
+  >
+    <!-- Name -->
+    <ngx-datatable-column name="NAME" prop="name" [width]="220">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <div class="po-wrap-cell" [title]="row.name">
+      {{ row.name || '-' }}
+    </div>
+  </ng-template>
+</ngx-datatable-column>
+
+
+    <!-- Code -->
+    <ngx-datatable-column name="CODE" prop="code" [width]="140">
+    </ngx-datatable-column>
+
+    <!-- Contact Person -->
+    <ngx-datatable-column name="CONTACT PERSON" prop="contact" [width]="200">
+    </ngx-datatable-column>
+
+    <!-- Email -->
+    <ngx-datatable-column name="EMAIL" prop="email" [width]="220">
+    </ngx-datatable-column>
+
+    <!-- Phone -->
+    <ngx-datatable-column name="PHONE" prop="phone" [width]="160">
+    </ngx-datatable-column>
+
+    <!-- ✅ STATUS column -->
+    <ngx-datatable-column name="STATUS" [width]="120">
+      <ng-template let-row="row" ngx-datatable-cell-template>
+        <span
+          class="badge"
+          [ngClass]="{
+            'badge-success': row.statusId === 1,
+            'badge-danger': row.statusId === 2,
+            'badge-warning': row.statusId === 3
+          }"
+        >
+          {{ row.statusId === 1 ? 'Active' : row.statusId === 2 ? 'Inactive' : 'On Hold' }}
+        </span>
+      </ng-template>
+    </ngx-datatable-column>
+
+    <!-- ✅ ACTIONS column -->
+    <ngx-datatable-column name="ACTIONS" [width]="100" [sortable]="false">
+      <ng-template let-row="row" ngx-datatable-cell-template>
+        <div class="d-flex align-items-center">
+          <i
+            class="fas fa-pen text-primary mr-2 cursor-pointer"
+            (click)="edit(row.id)"
+          ></i>
+          <i
+            class="fas fa-trash text-danger"
+            style="cursor:pointer"
+            (click)="deleteSupplier(row.id)"
+          ></i>
+        </div>
+      </ng-template>
+    </ngx-datatable-column>
+
+  </ngx-datatable>
+</div>
+
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,17 @@
+:host { display: block; }
+
+.ngsel ::ng-deep .ng-select-container {
+  min-height: 44px;
+  border-radius: 6px;
+}
+
+.ngsel ::ng-deep .ng-value-container {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.list-group-item {
+  border: 1px solid #eef2f7;
+  margin-bottom: 8px;
+  border-radius: 10px;
+}

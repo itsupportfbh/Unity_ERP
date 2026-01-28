@@ -1,0 +1,301 @@
+<section class="horizontal-wizard">
+  <div #stepper1 id="stepper1" class="bs-stepper horizontal-wizard-example">
+
+    <!-- HEADER -->
+    <div class="bs-stepper-header">
+      <!-- Step 1 -->
+      <div class="step" data-target="#account-details">
+        <button class="step-trigger" type="button">
+          <span class="bs-stepper-box">1</span>
+          <span class="bs-stepper-label">
+            <span class="bs-stepper-title">Account Details</span>
+            <span class="bs-stepper-subtitle">Setup Account</span>
+          </span>
+        </button>
+      </div>
+      <div class="line"><i data-feather="chevron-right" class="font-medium-2"></i></div>
+
+      <!-- Step 2 -->
+      <div class="step" data-target="#personal-info">
+        <button class="step-trigger" type="button">
+          <span class="bs-stepper-box">2</span>
+          <span class="bs-stepper-label">
+            <span class="bs-stepper-title">Personal Info</span>
+            <span class="bs-stepper-subtitle">Add Personal</span>
+          </span>
+        </button>
+      </div>
+      <div class="line"><i data-feather="chevron-right" class="font-medium-2"></i></div>
+
+      <!-- Step 3 -->
+      <div class="step" data-target="#kyc-verification" [ngClass]="{'step-disabled': isKycLocked}">
+        <button class="step-trigger" type="button" [disabled]="isKycLocked">
+          <span class="bs-stepper-box">3</span>
+          <span class="bs-stepper-label">
+            <span class="bs-stepper-title">Know Your Customer(KYC)</span>
+            <span class="bs-stepper-subtitle">Upload Docs</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="bs-stepper-content">
+
+      <!-- STEP 1 -->
+      <div id="account-details" class="content">
+        <form #accountDetailsForm="ngForm" novalidate>
+          <div class="content-header">
+            <h5 class="mb-0">Account Details</h5>
+            <small class="text-muted">Enter your account details.</small>
+          </div>
+
+          <div class="row">
+            <!-- Customer Name -->
+            <div class="form-group col-md-4">
+              <label for="customerName" class="form-label">Customer Name</label>
+              <input [(ngModel)]="TDNameVar" #customerNameRef="ngModel" required type="text" name="customerName"
+                     id="customerName" class="form-control"
+                     [class.is-invalid]="(customerNameRef.touched || accountDetailsForm.submitted) && customerNameRef.invalid"
+                     placeholder="Enter a Customer" />
+              <div *ngIf="(customerNameRef.touched || accountDetailsForm.submitted) && customerNameRef.invalid"
+                   class="invalid-feedback d-block">
+                This field is required!
+              </div>
+            </div>
+
+            <!-- Country -->
+            <div class="form-group col-md-4">
+              <label class="form-label">Country</label>
+              <ng-select name="country" [items]="CountryList" bindLabel="countryName" bindValue="id"
+                         [(ngModel)]="selectedCountryId" placeholder="Select Country" (change)="onCountryChange($event)" required
+                         #countryRef="ngModel"
+                         [class.is-invalid]="(countryRef.touched || accountDetailsForm.submitted) && countryRef.invalid">
+              </ng-select>
+              <div *ngIf="(countryRef.touched || accountDetailsForm.submitted) && countryRef.invalid"
+                   class="invalid-feedback d-block">Country is required!</div>
+            </div>
+
+            <!-- Location -->
+            <div class="form-group col-md-4">
+              <label class="form-label">Location</label>
+              <ng-select name="location" [items]="LocationList" bindLabel="name" bindValue="id"
+                         [(ngModel)]="selectedLocationId" placeholder="Select Location" required #locationRef="ngModel"
+                         [class.is-invalid]="(locationRef.touched || accountDetailsForm.submitted) && locationRef.invalid">
+              </ng-select>
+              <div *ngIf="(locationRef.touched || accountDetailsForm.submitted) && locationRef.invalid"
+                   class="invalid-feedback d-block">Location is required!</div>
+            </div>
+
+            <!-- Contact Person -->
+            <div class="form-group col-md-4">
+              <label for="contactPerson" class="form-label">Point of Contact Person</label>
+              <input [(ngModel)]="TDContactPersonVar" #contactPersonRef="ngModel" required type="text"
+                     name="contactPerson" id="contactPerson" class="form-control"
+                     [class.is-invalid]="(contactPersonRef.touched || accountDetailsForm.submitted) && contactPersonRef.invalid"
+                     placeholder="Enter a point of contact" />
+              <div *ngIf="(contactPersonRef.touched || accountDetailsForm.submitted) && contactPersonRef.invalid"
+                   class="invalid-feedback d-block">This field is required!</div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group col-md-4">
+              <label for="email" class="form-label">Email</label>
+              <input [(ngModel)]="TDEmailVar" #emailRef="ngModel" required email type="email" name="email" id="email"
+                     class="form-control"
+                     [class.is-invalid]="(emailRef.touched || accountDetailsForm.submitted) && emailRef.invalid"
+                     placeholder="Enter an Email" />
+              <div *ngIf="(emailRef.touched || accountDetailsForm.submitted) && emailRef.invalid"
+                   class="invalid-feedback d-block">Email must be valid!</div>
+            </div>
+
+            <!-- Contact Number -->
+            <div class="form-group col-md-4">
+              <label for="contactNumber" class="form-label">Contact Number</label>
+              <input type="text" id="contactNumber" name="contactNumber" class="form-control"
+                     [(ngModel)]="TDContactNumberVar" #contactNumberRef="ngModel" required minlength="10" maxlength="10"
+                     (input)="onContactNumberInput()" inputmode="numeric" pattern="[0-9]*" placeholder="Enter contact number"
+                     [class.is-invalid]="(contactNumberRef.touched || accountDetailsForm.submitted) && contactNumberRef.invalid" />
+              <div *ngIf="(contactNumberRef.touched || accountDetailsForm.submitted) && contactNumberRef.invalid"
+                   class="invalid-feedback d-block">Contact Number must be <b>10 digits</b> only!</div>
+            </div>
+                <!-- Budget Line -->
+            <div class="form-group col-md-4">
+              <label class="form-label" for="budget-line">Ledger Name</label>
+              <select id="budget-line" class="form-control" name="budgetLine" [(ngModel)]="budgetLine"
+                #budgetLineRef="ngModel" required
+                [class.is-invalid]="(budgetLineRef.touched || accountDetailsForm.submitted) && budgetLineRef.invalid">
+                <option value="">Select Ledger</option>
+                <option *ngFor="let line of parentHeadList" [value]="line.value">
+                  {{ line.label }}
+                </option>
+              </select>
+
+              <div *ngIf="(budgetLineRef.touched || accountDetailsForm.submitted) && budgetLineRef.invalid"
+                class="invalid-feedback d-block">
+                This field is required!
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between wizard-actions">
+            <button type="button" class="btn-wiz btn-prev-wiz" (click)="prev()" [disabled]="isFirstStep">
+              <i data-feather="arrow-left-circle"></i><span>Previous</span>
+            </button>
+           <button type="button"
+        class="btn-wiz btn-next-wiz"
+        (click)="nextFromAccountDetails(accountDetailsForm)">
+  <span>Next</span><i data-feather="arrow-right-circle"></i>
+</button>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- STEP 2 -->
+      <div id="personal-info" class="content">
+        <form #personalInfoForm="ngForm" novalidate>
+          <div class="content-header"><h5 class="mb-0">Personal Info</h5></div>
+
+          <div class="row">
+            <!-- Customer Group -->
+            <div class="form-group col-md-6">
+              <label class="form-label">Customer Groups</label>
+              <ng-select name="Groups" [items]="CustomerGroupList" bindLabel="name" bindValue="id"
+                         placeholder="Select Group" [(ngModel)]="selectedGroupId">
+              </ng-select>
+            </div>
+
+            <!-- Payment Terms -->
+            <div class="form-group col-md-6">
+              <label class="form-label">Payment Terms</label>
+              <ng-select name="Terms" [items]="PaymenttermsList" bindLabel="paymentTermsName" bindValue="id"
+                         placeholder="Select Term" [(ngModel)]="selectedTermId">
+              </ng-select>
+            </div>
+
+            <!-- Credit -->
+            <div class="form-group col-md-6">
+              <label class="form-label">Credit Amount</label>
+              <input type="number" name="creditAmount" class="form-control" [(ngModel)]="TDCreditAmountVar"
+                     #creditAmountRef="ngModel" required min="0" placeholder="Enter Credit Amount"
+                     [class.is-invalid]="(creditAmountRef.touched || personalInfoForm.submitted) && creditAmountRef.invalid" />
+              <div *ngIf="(creditAmountRef.touched || personalInfoForm.submitted) && creditAmountRef.invalid"
+                   class="invalid-feedback d-block">Credit Amount is required and must be <b>0 or more</b>.</div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between wizard-actions">
+            <button type="button" class="btn-wiz btn-prev-wiz" (click)="prev()">
+              <i data-feather="arrow-left-circle"></i><span>Previous</span>
+            </button>
+           <button type="button" class="btn-wiz btn-next-wiz" (click)="nextFromPersonalInfo(personalInfoForm)">
+  <span>Next</span><i data-feather="arrow-right-circle"></i>
+</button>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- STEP 3: KYC -->
+      <div id="kyc-verification" class="content">
+        <form #kycForm="ngForm" novalidate>
+          <div class="content-header d-flex align-items-center gap-2">
+            <h5 class="mb-0">Know Your Customer(KYC) Verification</h5>
+            <span *ngIf="isKycLocked" class="badge bg-success">Already Approved</span>
+          </div>
+
+          <!-- Whole KYC block gets visually blocked when locked -->
+          <div class="kyc-lock" [class.locked]="isKycLocked">
+            <fieldset [disabled]="isKycLocked">
+              <div class="row">
+                <!-- Driving Licence -->
+                <div class="col-md-3">
+                  <div class="upload-card">
+                    <label class="upload-label">Driving Licence</label>
+                    <div class="upload-box" [class.readonly]="isKycLocked" (click)="!isKycLocked && fileDL.click()">
+                      <i class="upload-icon" data-feather="upload-cloud"></i>
+                      <span *ngIf="!preview.drivingLicence">Click or drop file here</span>
+                      <img *ngIf="preview.drivingLicence" [src]="preview.drivingLicence" class="preview-img" />
+                    </div>
+                    <input type="file" #fileDL hidden accept="image/*" (change)="onFileChange($event, 'drivingLicence')"/>
+                  </div>
+                </div>
+
+                <!-- Utility Bill -->
+                <div class="col-md-3">
+                  <div class="upload-card">
+                    <label class="upload-label">Utility Bill</label>
+                    <div class="upload-box" [class.readonly]="isKycLocked" (click)="!isKycLocked && fileUtility.click()">
+                      <i class="upload-icon" data-feather="upload-cloud"></i>
+                      <span *ngIf="!preview.utilityBill">Click or drop file here</span>
+                      <img *ngIf="preview.utilityBill" [src]="preview.utilityBill" class="preview-img" />
+                    </div>
+                    <input type="file" #fileUtility hidden accept="image/*" (change)="onFileChange($event, 'utilityBill')"/>
+                  </div>
+                </div>
+
+                <!-- Bank Statement -->
+                <div class="col-md-3">
+                  <div class="upload-card">
+                    <label class="upload-label">Bank Statement</label>
+                    <div class="upload-box" [class.readonly]="isKycLocked" (click)="!isKycLocked && fileBank.click()">
+                      <i class="upload-icon" data-feather="upload-cloud"></i>
+                      <span *ngIf="!preview.bankStatement">Click or drop file here</span>
+                      <img *ngIf="preview.bankStatement" [src]="preview.bankStatement" class="preview-img" />
+                    </div>
+                    <input type="file" #fileBank hidden accept="image/*" (change)="onFileChange($event, 'bankStatement')"/>
+                  </div>
+                </div>
+
+                <!-- Company Registration (ACRA) -->
+                <div class="col-md-3">
+                  <div class="upload-card">
+                    <label class="upload-label">Company Registration (ACRA)</label>
+                    <div class="upload-box" [class.readonly]="isKycLocked" (click)="!isKycLocked && fileACRA.click()">
+                      <i class="upload-icon" data-feather="upload-cloud"></i>
+                      <span *ngIf="!preview.acra">Click or drop file here</span>
+                      <img *ngIf="preview.acra" [src]="preview.acra" class="preview-img" />
+                    </div>
+                    <input type="file" #fileACRA hidden accept="image/*" (change)="onFileChange($event, 'acra')"/>
+                  </div>
+                </div>
+
+                <!-- Approved By -->
+                <div class="form-group col-md-6">
+                  <label class="form-label">Approved By</label>
+                  <ng-select name="approvedBy"
+                             [items]="ApproverList"
+                             bindLabel="name"
+                             bindValue="id"
+                             placeholder="Select Approver"
+                             [(ngModel)]="selectedApprovedById"
+                             [disabled]="isKycLocked">
+                  </ng-select>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Visual overlay -->
+            <div class="lock-overlay" *ngIf="isKycLocked" aria-hidden="true">
+              <div class="lock-chip"><span class="lock-icon">🔒</span> KYC is Already Approved</div>
+            </div>
+          </div>
+
+          <!-- Buttons stay clickable -->
+          <div class="d-flex justify-content-between wizard-actions">
+            <button type="button" class="btn-wiz btn-prev-wiz" (click)="prev()">
+              <i data-feather="arrow-left-circle"></i><span>Previous</span>
+            </button>
+            <button type="button" class="btn-wiz btn-submit-wiz" (click)="onSubmit()">
+  <span>{{ editMode ? 'Update' : 'Submit' }}</span>
+  <i data-feather="check-circle"></i>
+</button>
+
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>

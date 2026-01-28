@@ -1,0 +1,134 @@
+<div class="slideout-content">
+  <div class="modalsd modal-slide-in sdfade filter-modal" id="modals-slide-in">
+    <div class="modal-dialog">
+      <form class="modal-content pt-0" #filterForm="ngForm" (ngSubmit)="onSubmit(filterForm)">
+        <!-- Close -->
+        <button type="button" class="close" aria-label="Close" (click)="onCancel()">×</button>
+
+        <!-- Title -->
+        <div class="modal-header mb-1">
+          <h5 class="modal-title" id="exampleModalLabel">Filters</h5>
+        </div>
+
+        <div class="modal-body flex-grow-1">
+
+          <!-- Date Range -->
+          <div class="form-group">
+            <label class="form-label" for="fl-date-range">Date Range</label>
+            <select
+              id="fl-date-range"
+              class="form-control"
+              name="dateRange"
+              [(ngModel)]="filterModel.dateRange"
+              #dateRangeRef="ngModel"
+              required
+              [class.error]="filterForm.submitted && dateRangeRef.invalid">
+              <option [ngValue]="null" disabled>Select range</option>
+              <option *ngFor="let r of dateRangeOptions" [ngValue]="r.value">{{ r.label }}</option>
+            </select>
+            <span *ngIf="filterForm.submitted && dateRangeRef.invalid" class="invalid-form">
+              <small class="form-text text-danger">Please select a date range.</small>
+            </span>
+          </div>
+
+          <!-- Custom range -->
+          <div class="form-row" *ngIf="filterModel.dateRange === 'custom'">
+            <div class="form-group col-6">
+              <label class="form-label" for="fl-from">From</label>
+              <input
+                id="fl-from"
+                type="date"
+                class="form-control"
+                name="fromDate"
+                [(ngModel)]="filterModel.fromDate"
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="fl-to">To</label>
+              <input
+                id="fl-to"
+                type="date"
+                class="form-control"
+                name="toDate"
+                [(ngModel)]="filterModel.toDate"
+              />
+            </div>
+          </div>
+
+          <!-- Customer -->
+       <div class="form-group" *ngIf="showCustomer">
+  <label class="form-label" for="fl-customer">Customer</label>
+  <select
+    id="fl-customer"
+    class="form-control"
+    name="customerId"
+    [(ngModel)]="filterModel.customerId">
+    <option [ngValue]="null">All Customers</option>
+    <option *ngFor="let c of customers" [ngValue]="c.id">{{ c.name }}</option>
+  </select>
+</div>
+
+          <!-- Branch -->
+         <div class="form-group" *ngIf="showBranch">
+  <label class="form-label" for="fl-branch">Branch</label>
+  <select
+    id="fl-branch"
+    class="form-control"
+    name="branchId"
+    [(ngModel)]="filterModel.branchId">
+    <option [ngValue]="null">All Branches</option>
+    <option *ngFor="let b of branches" [ngValue]="b.id">{{ b.name }}</option>
+  </select>
+</div>
+
+          <!-- Status (used for On-Time Delivery) -->
+          <div class="form-group" *ngIf="showStatus">
+            <label class="form-label" for="fl-status">Status</label>
+            <select
+              id="fl-status"
+              class="form-control"
+              name="status"
+              [(ngModel)]="filterModel.status">
+              <option [ngValue]="null">All Statuses</option>
+              <option *ngFor="let s of statuses" [ngValue]="s.value">{{ s.label }}</option>
+            </select>
+          </div>
+
+          <!-- Salesperson -->
+        <div class="form-group" *ngIf="showSalesperson">
+  <label class="form-label" for="fl-salesperson">Salesperson</label>
+  <select
+    id="fl-salesperson"
+    class="form-control"
+    name="salespersonId"
+    [(ngModel)]="filterModel.salespersonId">
+    <option [ngValue]="null">All Salespersons</option>
+    <option *ngFor="let sp of salespersons" [ngValue]="sp.id">{{ sp.name }}</option>
+  </select>
+</div>
+
+          <!-- Category (for Sales by Item) -->
+         <div class="form-group mb-2" *ngIf="showCategory">
+  <label class="form-label" for="fl-category">Category</label>
+  <select
+    id="fl-category"
+    class="form-control"
+    name="categoryId"
+    [(ngModel)]="filterModel.categoryId">
+    <option [ngValue]="null">All Categories</option>
+    <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+  </select>
+</div>
+
+          <!-- Actions -->
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary mr-1">Apply Filters</button>
+            <button type="button" class="btn btn-outline-secondary mr-1" (click)="onReset()">Reset</button>
+            <button type="button" class="btn btn-outline-danger" (click)="onCancel()">Cancel</button>
+          </div>
+
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

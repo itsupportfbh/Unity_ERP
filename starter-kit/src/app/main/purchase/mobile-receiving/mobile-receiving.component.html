@@ -1,0 +1,140 @@
+<div class="space-y-5 ui-compact">
+
+  <!-- Mobile Receiving -->
+  <div class="bg-white rounded-2xl shadow p-3 border border-gray-100">
+    <h2 class="text-lg font-semibold text-gray-800 mb-3">
+      Mobile Receiving (PO → Scan → Qty → Save)
+    </h2>
+
+    <!-- PO + Scan Controls -->
+    <div [ngClass]="gridColsClass(4)">
+
+      <!-- PO Number -->
+      <div>
+        <label class="text-xs font-medium text-gray-600">PO Number</label>
+        <input
+          class="w-full rounded-xl border px-3 py-2 text-sm"
+          [(ngModel)]="mrPo"
+          (keydown.enter)="loadPo()"
+          placeholder="PO-000123"
+        />
+      </div>
+
+      <!-- Barcode -->
+      <div>
+        <label class="text-xs font-medium text-gray-600">Scan Barcode</label>
+        <input
+          class="w-full rounded-xl border px-3 py-2 text-sm"
+          [(ngModel)]="mrBarcode"
+          (keydown.enter)="addScan()"
+          placeholder="Scan here…"
+          autofocus
+        />
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex items-end gap-2">
+        <button
+          type="button"
+          class="px-3 py-2 rounded-xl text-sm font-medium text-white"
+          style="background-color:#0e3a4c"
+          (click)="addScan()">
+          Add
+        </button>
+
+        <button
+          type="button"
+          class="px-3 py-2 rounded-xl text-sm font-medium border border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+          (click)="syncMobile()">
+          Sync
+        </button>
+
+        <div class="flex items-center gap-2 ml-2">
+          <input
+            type="checkbox"
+            [checked]="mrOffline"
+            (change)="toggleOffline()" />
+          <label class="text-xs font-medium text-gray-600">
+            Offline Save
+          </label>
+        </div>
+      </div>
+
+      <div></div>
+    </div>
+
+    <!-- Scan Result Table -->
+    <div class="overflow-auto border rounded-xl mt-4">
+
+      <table class="min-w-full text-sm border-separate border-spacing-0">
+        <thead class="bg-[#2E5F73] text-white">
+          <tr>
+            <th class="px-3 py-2 text-left font-medium first:rounded-tl-xl border-r border-white/20">
+              Time
+            </th>
+            <th class="px-3 py-2 text-left font-medium border-r border-white/20">
+              Barcode
+            </th>
+            <th class="px-3 py-2 text-right font-medium last:rounded-tr-xl">
+              Qty
+            </th>
+          </tr>
+        </thead>
+
+        <tbody class="bg-white">
+
+          <!-- Empty State -->
+          <tr *ngIf="mrRows.length === 0">
+            <td colspan="3" class="px-3 py-6 text-center text-gray-400">
+              No scans yet.
+            </td>
+          </tr>
+
+          <!-- Scan Rows -->
+          <tr
+            *ngFor="let r of mrRows; let i = index; trackBy: trackByIndex"
+            class="border-t">
+
+            <td class="px-3 py-2 whitespace-nowrap">
+              {{ r.ts | date:'mediumTime' }}
+            </td>
+
+            <td class="px-3 py-2">
+              {{ r.barcode }}
+            </td>
+
+            <td class="px-3 py-2 text-right font-medium">
+              {{ r.qty }}
+            </td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+    </div>
+    
+    <div class="mt-4 border rounded-xl overflow-auto" *ngIf="poLines?.length">
+  <table class="min-w-full text-sm">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="px-3 py-2 text-left">Item</th>
+        <th class="px-3 py-2 text-right">Ordered</th>
+        <th class="px-3 py-2 text-right">Received</th>
+        <th class="px-3 py-2 text-right">Balance</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let l of poLines" class="border-t">
+        <td class="px-3 py-2">{{ l.item }}</td>
+        <td class="px-3 py-2 text-right">{{ l.qty }}</td>
+        <td class="px-3 py-2 text-right">{{ l.receivedQty }}</td>
+        <td class="px-3 py-2 text-right">{{ l.balanceQty }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+  </div>
+
+</div>

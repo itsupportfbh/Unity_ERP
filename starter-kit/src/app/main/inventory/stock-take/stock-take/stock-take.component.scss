@@ -1,0 +1,14 @@
+/* Make table cells wrap instead of forcing one long line */
+table td { white-space: normal; }
+
+/* Reason column: wrap anything, even long unbroken strings */
+.reason-cell { max-width: 320px; }            /* adjust to your layout */
+.reason-text {
+  display: block;
+  white-space: pre-wrap;      /* keep user-entered line breaks */
+  word-break: break-word;     /* break long words if needed */
+  overflow-wrap: anywhere;    /* last resort: break anywhere to avoid scroll */
+}
+/* component.scss */
+.remarks-col { min-width: 200px; }   /* adjust 280–360px to taste */
+.remarks-col textarea { width: 100%; }

@@ -1,0 +1,32 @@
+/* Common style for all dropdown fields */
+.dropdown-input {
+  position: relative;
+
+  input {
+    padding-right: 6rem;   /* space for ✕ and ▼ */
+  }
+
+  .btn-clear,
+  .btn-caret {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .btn-clear {
+    right: 2.0rem;   /* ✕ sits left of ▼ */
+    color: #9ca3af;  /* Tailwind gray-400 */
+  }
+
+  .btn-caret {
+    right: 0.5rem;   /* ▼ sits at the edge */
+    color: #6b7280;  /* Tailwind gray-500 */
+  }
+}
+
+

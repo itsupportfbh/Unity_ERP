@@ -1,0 +1,222 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <app-financereports></app-financereports>
+      <div class="forecast-page">
+
+        <!-- ===== Page header ===== -->
+        <!-- ===== Page header ===== -->
+<div class="d-flex justify-content-between align-items-center mb-1">
+  <div>
+    <h3 class="forecast-title mb-25">Collections Forecast</h3>
+    <p class="forecast-subtitle mb-0">
+      Forecast expected customer collections by aging bucket.
+    </p>
+  </div>
+
+  <!-- Export buttons -->
+  <div class="d-flex align-items-center gst-export">
+    <button
+      class="btn btn-outline-secondary btn-sm"
+      type="button"
+      (click)="exportToPdf()"
+      [disabled]="!invoiceRows?.length">
+      <i class="far fa-file-pdf me-25"></i>
+      <span>PDF</span>
+    </button>
+
+    <button
+      class="btn btn-outline-secondary btn-sm"
+      type="button"
+      (click)="exportToExcel()"
+      [disabled]="!invoiceRows?.length">
+      <i class="far fa-file-excel me-25"></i>
+      <span>Excel</span>
+    </button>
+  </div>
+</div>
+
+
+        <!-- ===== Filters card ===== -->
+        <div class="card filters-card mb-2">
+          <div class="card-body py-1">
+            <div class="row align-items-end">
+
+              <!-- From date -->
+              <div class="col-md-3 col-sm-6 mb-1">
+                <label class="filter-label">From Date</label>
+                <input
+                  type="date"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="fromDate">
+              </div>
+
+              <!-- To date -->
+              <div class="col-md-3 col-sm-6 mb-1">
+                <label class="filter-label">To Date</label>
+                <input
+                  type="date"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="toDate">
+              </div>
+
+              <!-- Customer -->
+              <div class="col-md-3 col-sm-6 mb-1">
+                <label class="filter-label">Customer</label>
+                <select
+                  class="form-control form-control-sm"
+                  [(ngModel)]="selectedCustomerId">
+                  <option [ngValue]="null">All Customers</option>
+                  <option *ngFor="let c of customerOptions" [ngValue]="c.customerId">
+                    {{ c.customerName }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Aging bucket -->
+              <div class="col-md-3 col-sm-6 mb-1">
+                <label class="filter-label">Aging Bucket</label>
+                <select
+                  class="form-control form-control-sm"
+                  [(ngModel)]="selectedBucket">
+                  <option value="ALL">All Buckets</option>
+                  <option value="0-7">0–7 Days</option>
+                  <option value="8-14">8–14 Days</option>
+                  <option value="15-30">15–30 Days</option>
+                  <option value="30+">30+ Days</option>
+                </select>
+              </div>
+
+              <!-- Buttons -->
+              <div class="col-12 d-flex justify-content-end mt-25">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary mr-50"
+                  (click)="resetFilters()">
+                  Reset
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary"
+                  (click)="applyFilters()">
+                  Apply
+                </button>
+              </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="d-flex align-items-center mt-1 legend-row">
+              <span class="legend-item">
+                <span class="legend-dot legend-dot-high"></span> High probability
+              </span>
+              <span class="legend-item">
+                <span class="legend-dot legend-dot-medium"></span> Medium
+              </span>
+              <span class="legend-item">
+                <span class="legend-dot legend-dot-low"></span> Low
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== KPI cards ===== -->
+        <div class="row mb-2 kpi-row">
+          <!-- Total outstanding -->
+          <div class="col-md-3 col-12 mb-1">
+            <div class="kpi-card kpi-total">
+              <div class="kpi-label">Total Outstanding</div>
+              <div class="kpi-value">₹ {{ totalAll | number:'1.2-2' }}</div>
+              <div class="kpi-pill">100% of AR</div>
+            </div>
+          </div>
+
+          <!-- Overdue > 30 (using 30+ bucket) -->
+          <div class="col-md-3 col-12 mb-1">
+            <div class="kpi-card kpi-overdue">
+              <div class="kpi-label">Overdue &gt; 30 Days</div>
+              <div class="kpi-value text-danger">₹ {{ overdueAmount | number:'1.2-2' }}</div>
+              <div class="kpi-pill pill-alert">Attention needed</div>
+            </div>
+          </div>
+
+          <!-- Expected in next 30 days -->
+          <div class="col-md-3 col-12 mb-1">
+            <div class="kpi-card kpi-next30">
+              <div class="kpi-label">Expected in next 30 days</div>
+              <div class="kpi-value text-success">₹ {{ expectedNext30 | number:'1.2-2' }}</div>
+              <div class="kpi-pill">{{ coveragePercent }}% coverage</div>
+            </div>
+          </div>
+
+          <!-- Weighted probability -->
+          <div class="col-md-3 col-12 mb-1">
+            <div class="kpi-card kpi-probability">
+              <div class="kpi-label">Weighted probability</div>
+              <div class="kpi-value">{{ weightedProbability }}%</div>
+              <div class="kpi-pill">On track</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== SUMMARY – FORECASTED COLLECTIONS BY INVOICE (ALL) ===== -->
+        <div class="card table-card">
+          <div class="card-body pb-1">
+
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <h5 class="mb-0 table-title">Forecasted Collections by Invoice</h5>
+
+              <!-- <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary active">
+                  Invoice
+                </button>
+                <button type="button" class="btn btn-outline-secondary" disabled>
+                  Customer
+                </button>
+              </div> -->
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover mb-0 forecast-table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Invoice No</th>
+                    <th>Invoice Date</th>
+                    <th>Due Date</th>
+                    <th>Aging Bucket</th>
+                    <th class="text-end">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of invoiceRows">
+                    <td>{{ r.customerName }}</td>
+                    <td>{{ r.invoiceNo }}</td>
+                    <td>{{ r.invoiceDate | date:'yyyy-MM-dd' }}</td>
+                    <td>{{ r.dueDate    | date:'yyyy-MM-dd' }}</td>
+                    <td>
+                      <span class="aging-pill">
+                        {{ getBucketLabel(r.bucketName) }}
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      ₹ {{ r.balance | number:'1.2-2' }}
+                    </td>
+                  </tr>
+
+                  <tr *ngIf="!invoiceRows?.length">
+                    <td colspan="6" class="text-center py-2">
+                      No invoices found for the selected filters.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>

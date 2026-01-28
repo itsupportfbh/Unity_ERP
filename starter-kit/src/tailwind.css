@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Example: add a component class inside Tailwind’s component layer */
+@layer components {
+  button {
+    @apply px-btnx py-btny text-sm font-medium rounded-md;
+  }
+}

@@ -1,0 +1,34 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+
+
+
+
+  .btn {
+    min-width: 40px;
+  }
+
+
+
+.avatar-lg {
+    width: 38px; /* Adjust size as needed */
+    height: 38px; /* Adjust size as needed */
+}
+
+.feather-icon {
+    font-size: 6px; /* Adjust size as needed */
+}
+.title-pill{
+  margin:0; font-size:1.25rem; font-weight:600; color:#2E5F73;
+  display:flex; align-items:center; gap:10px;
+}
+.title-pill .pill{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:30px; height:30px; border-radius:999px;
+  background:#f2f7f9; border:1px solid #dfe7ec;
+}
+.title-pill .lvl-icon{ width:18px; height:18px; color:#2E5F73; }
+.dark-layout .title-pill{ color:#E0EDF2; }
+.dark-layout .title-pill .pill{ background:#122029; border-color:#203542; }
+.dark-layout .title-pill .lvl-icon{ color:#E0EDF2; }

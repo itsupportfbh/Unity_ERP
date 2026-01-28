@@ -1,0 +1,172 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <div class="row">
+          <!-- Title + page size -->
+          <div class="col-md-3 col-12">
+            <h4 class="card-text page-title">
+              Average Margin Reports
+            </h4>
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center gap-1">
+                Show
+                <select class="form-control mx-25" (change)="onLimitChange($event)">
+                  <option [selected]="selectedOption===10" value="10">10</option>
+                  <option [selected]="selectedOption===25" value="25">25</option>
+                  <option [selected]="selectedOption===50" value="50">50</option>
+                  <option [selected]="selectedOption===100" value="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+          </div>
+
+          <!-- Search + Sort + Filter buttons -->
+          <div class="col-md-9 col-12 d-flex justify-content-start justify-content-md-end">
+            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+
+              <!-- Search -->
+              <label class="d-flex align-items-center ml-1 ml-md-0">
+                Search:
+                <input
+                  [(ngModel)]="searchValue"
+                  name="searchValue"
+                  type="search"
+                  class="form-control ml-25"
+                  (keyup)="filterUpdate($event)"
+                  (search)="filterUpdate($event)"
+                  placeholder="Invoice / customer / item"
+                />
+              </label>
+
+              <!-- Sort By -->
+              <label class="d-flex align-items-center ml-1">
+                Sort:
+                <select
+                  class="form-control ml-25"
+                  [(ngModel)]="sortBy"
+                  (change)="onSortChange()">
+                  <option value="">None</option>
+                  <option value="customerName">Customer Name</option>
+                  <option value="netSales">Net Sales</option>
+                  <option value="marginAmount">Margin (Value)</option>
+                  <option value="marginPct">Margin (%)</option>
+                  <option value="location">Branch</option>
+                </select>
+              </label>
+
+              <!-- Sort Direction -->
+              <button
+                type="button"
+                class="btn btn-outline-secondary m-1"
+                (click)="toggleSortDir()"
+                title="Toggle Asc / Desc">
+                {{ sortDir === 'asc' ? '▲ Asc' : '▼ Desc' }}
+              </button>
+
+              <!-- Filter button -->
+              <button
+                class="btn m-1 d-inline-flex align-items-center"
+                style="background-color:#2E5F73;color:white;gap:6px;"
+                (click)="openFilters()"
+              >
+                <i data-feather="filter" class="w-4 h-4"></i>
+                <span>Filter</span>
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Main datatable -->
+        <ngx-datatable
+          class="bootstrap core-bootstrap"
+          [rows]="rows"
+          [rowHeight]="50"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="selectedOption"
+          [columnMode]="'force'"
+          [scrollbarH]="true"
+          [reorderable]="true">
+
+          <ngx-datatable-column name="Invoice No." prop="invoiceNo" [width]="140">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <span class="fw-600" style="color:#2E5F73;">{{ row.salesInvoiceNo }}</span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Invoice Date" prop="salesInvoiceDate" [width]="140">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.salesInvoiceDate | date:'dd-MM-yyyy' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Customer Name" prop="customerName" [width]="220"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Item / Category" [width]="240">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.itemName }} <span class="text-muted">/</span> {{ row.category }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Net Sales" prop="netSales" [width]="150">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.netSales }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Cost of Sales" prop="purchaseCost" [width]="150">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.purchaseCost  }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Margin (Value)" prop="marginAmount" [width]="160">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.marginAmount  }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Margin (%)" prop="marginPct" [width]="120">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.marginPct }}%
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Branch" [width]="200">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.location }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Salesperson" prop="salesPerson" [width]="160"></ngx-datatable-column>
+        </ngx-datatable>
+
+      </div>
+
+      <!-- Filter sidebar -->
+      <core-sidebar
+        class="modal modal-slide-in sidebar-todo-modal fade"
+        name="reports-filters-sidebar"
+        overlayClass="modal-backdrop"
+      >
+        <app-reports-filters
+          [showCustomer]="true"
+          [showBranch]="true"
+          [showStatus]="false"
+          [showSalesperson]="true"
+          [showCategory]="false"
+          [customers]="customers"
+          [branches]="branches"
+          [salespersons]="salespersons"
+          (saved)="onFiltersApplied($event)"
+          (canceled)="onFilterCanceled()"
+        ></app-reports-filters>
+      </core-sidebar>
+
+    </section>
+  </div>
+</div>

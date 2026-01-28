@@ -1,0 +1,360 @@
+/* ===== Card wrapper & title ===== */
+:host {
+  display: block;
+}
+
+.pl-card {
+  border-radius: 1rem;
+  border: none;
+}
+
+.pl-title {
+  margin-left: 0.5rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #2E5F73;
+}
+
+/* ===================================================== */
+/* TOP SUMMARY CARDS  (Total Liabilities / Total Assets) */
+/* ===================================================== */
+
+.bs-summary-row {
+  margin-bottom: 1.25rem;
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  padding: 0.9rem 1.15rem;
+  border-radius: 1.25rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.summary-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.85rem;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.summary-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* 🔴 Liabilities card – darker pink */
+.bs-liab-card {
+  border-bottom: 4px solid #f97373;
+
+  .summary-icon {
+    background: #fef2f2;
+    svg {
+      stroke: #f97373;
+    }
+  }
+
+  .summary-value {
+    color: #b91c1c;
+  }
+}
+
+/* 🟢 Assets card – darker green */
+.bs-asset-card {
+  border-bottom: 4px solid #22c55e;
+
+  .summary-icon {
+    background: #ecfdf5;
+    svg {
+      stroke: #22c55e;
+    }
+  }
+
+  .summary-value {
+    color: #16a34a;
+  }
+}
+
+/* ===== Two-column list style ===== */
+.pl-column {
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ===== Column header (Liabilities / Assets) ===== */
+.pl-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+
+  h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f4b5f;
+    display: inline-block;
+    padding-bottom: 0.2rem;
+    border-bottom: 2px solid #1f4b5f;
+  }
+}
+
+.pl-total {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+/* UL takes remaining height in column */
+.pl-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 1rem 1rem 0 0;
+  background-color: #fafafa;
+
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 230px;
+}
+
+.pl-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #eeeeee;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.pl-item-left {
+  display: flex;
+  align-items: center;
+}
+
+.drag-icon {
+  margin-right: 0.55rem;
+  font-size: 1rem;
+  color: #9ca3af;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.pl-text {
+  .pl-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .pl-code {
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+}
+
+.pl-item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pl-amount {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ===== Total row (bottom) ===== */
+.pl-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  font-weight: 700;
+  border-radius: 0 0 1rem 1rem;
+  border-top: 1px solid transparent;
+}
+
+.pl-total-purchase {
+  background-color: #fff5f5;
+  border-top-color: #fed7d7;
+
+  .pl-amount {
+    color: #f97373;
+  }
+}
+
+.pl-total-sales {
+  background-color: #ecfdf5;
+  border-top-color: #bbf7d0;
+
+  .pl-amount {
+    color: #16a34a;
+  }
+}
+
+/* ===== Center vertical divider ===== */
+.row-with-divider {
+  position: relative;
+}
+
+.vertical-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background-color: #e5e7eb;
+}
+
+/* ===== Export buttons (same style as P&L) ===== */
+
+.report-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.report-btn-excel,
+.report-btn-pdf {
+  border: none;
+  border-radius: 999px;
+  padding: 0.25rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 0.25rem;
+  color: #ffffff !important;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.12);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+
+  i {
+    font-size: 13px;
+  }
+
+  &:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.18);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.16);
+  }
+}
+
+:host {
+  display: block;
+}
+
+/* Wrapper: keeps gap same everywhere */
+.report-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Base button style – SAME for Excel & PDF */
+.report-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.28rem 0.9rem;          /* ← size controlled here */
+  font-size: 0.78rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 0.25rem;
+  color: #ffffff !important;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.12);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+
+  i {
+    font-size: 13px;
+  }
+
+  &:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.18);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.16);
+  }
+}
+
+/* Excel color */
+.report-btn-excel {
+  background: linear-gradient(90deg, #2e5f73, #16a34a);
+}
+
+/* PDF color */
+.report-btn-pdf {
+  background: linear-gradient(90deg, #b91c1c, #f97316);
+}
+
+
+/* ===== Mobile tweaks ===== */
+@media (max-width: 767.98px) {
+  .pl-item {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .pl-title {
+    font-size: 1.15rem;
+  }
+
+  .vertical-divider {
+    display: none;
+  }
+
+  .pl-list {
+    min-height: 0;
+  }
+}

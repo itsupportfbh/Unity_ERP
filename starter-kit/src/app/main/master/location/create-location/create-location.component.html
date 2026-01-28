@@ -1,0 +1,149 @@
+<div class="slideout-content">
+    <div class="modalsd modal-slide-in sdfade new-user-modal" id="modals-slide-in">
+        <div class="modal-dialog">
+            <form [formGroup]="locationForm" (ngSubmit)="submit(formGroupRef)" #formGroupRef="ngForm" #form="ngForm"
+                class="modal-content pt-0">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">×</button>
+                <div class="modal-header mb-1">
+                    <h5 class="modal-title" id="exampleModalLabel">New Location</h5>
+                </div>
+                <div class="modal-body flex-grow-1">
+                    <!-- For Branch Field -->
+                    <!-- For Branch Field -->
+
+                    <div class="form-group mb-2">
+                        <label class="form-label" for="">Location Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="deptName"
+                            [class.error]="locationForm.get('locationName').errors && (locationForm.get('locationName').dirty || formGroupRef.submitted)"
+                            placeholder="Enter Location Name" formControlName="locationName" required />
+                        <span
+                            *ngIf="locationForm.get('locationName').errors && (locationForm.get('locationName').dirty  || formGroupRef.submitted)"
+                            class="invalid-form">
+                            <small class="form-text text-danger"
+                                *ngIf="locationForm.get('locationName').errors.required">Department
+                                Location Name field is required!</small>
+                        </span>
+                    </div>
+                    <div class="form-group">
+                        <label for="countryId" class="form-label">
+                            Select Country <span class="text-danger">*</span>
+                        </label>
+
+                        <select id="countryId" formControlName="countryId" class="form-control"
+                            (change)="onCountryChange($event.target.value)"
+                            [class.error]="locationForm.get('countryId')?.errors && (locationForm.get('countryId')?.dirty || formGroupRef.submitted)"
+                            required>
+
+                            <option [ngValue]="null" disabled selected>select</option>
+                            <option *ngFor="let Country of countries" [value]="Country.id">
+                                {{ Country.countryName }}
+                            </option>
+                        </select>
+
+                        <span
+                            *ngIf="locationForm.get('countryId')?.errors && (locationForm.get('countryId')?.dirty || formGroupRef.submitted)"
+                            class="invalid-form">
+                            <small class="form-text text-danger"
+                                *ngIf="locationForm.get('countryId')?.errors?.required">
+                                Country field is required!
+                            </small>
+                        </span>
+                    </div>
+                    <div class="form-group">
+                        <label for="stateId" class="form-label">
+                            Select State <span class="text-danger">*</span>
+                        </label>
+
+                        <select id="stateId" formControlName="stateId" class="form-control"
+                            (change)="onStateChange($event.target.value)"
+                            [class.error]="locationForm.get('stateId')?.errors && (locationForm.get('stateId')?.dirty || formGroupRef.submitted)"
+                            required>
+                            <option [ngValue]="null" disabled selected>select</option>
+                            <option *ngFor="let state of StateList" [value]="state.id">
+                                {{ state.stateName }}
+                            </option>
+                        </select>
+
+                        <span
+                            *ngIf="locationForm.get('stateId')?.errors && (locationForm.get('stateId')?.dirty || formGroupRef.submitted)"
+                            class="invalid-form">
+                            <small class="form-text text-danger" *ngIf="locationForm.get('stateId')?.errors?.required">
+                                State field is required!
+                            </small>
+                        </span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cityId" class="form-label">
+                            Select City <span class="text-danger">*</span>
+                        </label>
+
+                        <select id="cityId" formControlName="cityId" class="form-control"
+                            [class.error]="locationForm.get('cityId')?.errors && (locationForm.get('cityId')?.dirty || formGroupRef.submitted)"
+                            required>
+                            <option [ngValue]="null" disabled selected>Select</option>
+                            <option *ngFor="let city of CityList" [value]="city.id">
+                                {{ city.cityName }}
+                            </option>
+                        </select>
+
+                        <span
+                            *ngIf="locationForm.get('cityId')?.errors && (locationForm.get('cityId')?.dirty || formGroupRef.submitted)"
+                            class="invalid-form">
+                            <small class="form-text text-danger" *ngIf="locationForm.get('cityId')?.errors?.required">
+                                City field is required!
+                            </small>
+                        </span>
+                    </div>
+                       <div class="form-group mb-2">
+                        <label class="form-label" for="">Contact Number<span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control" id="deptName" max="10"
+                            [class.error]="locationForm.get('contactNumber').errors && (locationForm.get('contactNumber').dirty || formGroupRef.submitted)"
+                            placeholder="Enter contactNumber " formControlName="contactNumber" required />
+                        <span
+                            *ngIf="locationForm.get('contactNumber').errors && (locationForm.get('contactNumber').dirty  || formGroupRef.submitted)"
+                            class="invalid-form">
+                            <small class="form-text text-danger" *ngIf="locationForm.get('contactNumber').errors.required">
+                                ContactNumber field is required!</small>
+                        </span>
+                    </div>
+
+
+                    <!-- <div class="form-group mb-2">
+                        <label class="form-label" for="">Latitude <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="deptName"
+                            [class.error]="locationForm.get('latitude').errors && (locationForm.get('latitude').dirty || formGroupRef.submitted)"
+                            placeholder="Enter Latitude " formControlName="latitude" required />
+                        <span
+                            *ngIf="locationForm.get('latitude').errors && (locationForm.get('latitude').dirty  || formGroupRef.submitted)"
+                            class="invalid-form">
+                            <small class="form-text text-danger" *ngIf="locationForm.get('latitude').errors.required">
+                                Latitude Name field is required!</small>
+                        </span>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label class="form-label" for="">Longitude <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="deptName"
+                            [class.error]="locationForm.get('longitude').errors && (locationForm.get('longitude').dirty || formGroupRef.submitted)"
+                            placeholder="Enter Longitude" formControlName="longitude" required />
+                        <span
+                            *ngIf="locationForm.get('longitude').errors && (locationForm.get('longitude').dirty  || formGroupRef.submitted)"
+                            class="invalid-form">
+                            <small class="form-text text-danger" *ngIf="locationForm.get('longitude').errors.required">
+                                Longtitude Name field is required!</small>
+                        </span>
+                    </div> -->
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" id="submit" class="btn btn-primary mr-1" rippleEffect>Submit</button>
+                        <button type="button" id="cancel" class="btn btn-danger mr-1" (click)="toggleModal('app-create-location')">Cancel</button>
+                        <button type="reset" id="reset" class="btn btn-secondary" rippleEffect>reset</button>
+                    </div> 
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

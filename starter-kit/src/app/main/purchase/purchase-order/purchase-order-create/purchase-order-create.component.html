@@ -1,0 +1,594 @@
+<button class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
+    style="background-color: #2E5F73; color: white;padding-left:2.25rem;" (click)="goToPurchaseorder()">
+    <i class="fas fa-arrow-left position-absolute" style="left:0.75rem; top:50%; transform:translateY(-50%);"
+        aria-hidden="true"></i> Go to PO list
+</button>
+<div class="space-y-5 ui-compact pr-typography">
+    <!-- Purchase Order Header -->
+    <div class="bg-white rounded-2xl shadow p-2 border border-gray-100">
+        <!-- Header with Approval Workflow -->
+        <div class="flex items-center justify-between mb-2">
+            <h2 class="text-lg font-semibold text-gray-800">Purchase Order</h2>
+
+        </div>
+
+        <!-- Main Info -->
+        <div [ngClass]="gridColsClass(4)">
+            <!-- Supplier -->
+            <div class="relative dropdown-input">
+                <label class="text-xs font-medium text-gray-600">Supplier</label>
+                <div class="relative">
+                    <input type="text" [(ngModel)]="searchTexts['supplier']" (input)="filter('supplier')"
+                        (focus)="toggleDropdown('supplier', true)" placeholder="Search Supplier..."
+                        class="w-full rounded-xl border focus:outline-none focus:ring-2 px-4 py-2 text-sm"
+                        style="border-color: #0e3a4c" />
+                    <button *ngIf="searchTexts['supplier']" type="button" (click)="onClearSearch('supplier')"
+                        class="absolute inset-y-0 right-7 flex items-center text-gray-400 hover:text-gray-600 px-2 btn-clear">
+                        ✕
+                    </button>
+                    <!-- Dropdown Icon -->
+                    <button type="button" (click)="toggleDropdown('supplier')"
+                        class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-2 btn-caret">
+                        ▼
+                    </button>
+                    <p *ngIf="submitted && isEmpty(searchTexts['supplier'])" class="text-xs text-red-600 mt-1">Supplier
+                        is required.</p>
+                </div>
+
+                <!-- Dropdown Options -->
+                <ul *ngIf="dropdownOpen['supplier']"
+                    class="absolute top-full left-0 right-0 bg-white border rounded-xl mt-1 shadow z-10 max-h-40 overflow-y-auto">
+                    <li *ngFor="let item of filteredLists['supplier']" (click)="select('supplier', item)"
+                        class="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm">
+                        {{ item.name }}
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Terms -->
+            <div class="relative dropdown-input">
+                <label class="text-xs font-medium text-gray-600">Payment Terms</label>
+                <div class="relative">
+                    <input type="text" [(ngModel)]="searchTexts['paymentTerms']" (input)="filter('paymentTerms')"
+                        (focus)="toggleDropdown('paymentTerms', true)" placeholder="Search Payment Terms..."
+                        class="w-full rounded-xl border focus:outline-none focus:ring-2 px-4 py-2 text-sm"
+                        style="border-color: #0e3a4c" />
+                    <button *ngIf="searchTexts['paymentTerms']" type="button" (click)="onClearSearch('paymentTerms')"
+                        class="absolute inset-y-0 right-7 flex items-center text-gray-400 hover:text-gray-600 px-2 btn-clear">
+                        ✕
+                    </button>
+                    <!-- Dropdown Icon -->
+                    <button type="button" (click)="toggleDropdown('paymentTerms')"
+                        class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-2 btn-caret">
+                        ▼
+                    </button>
+                    <p *ngIf="submitted && isEmpty(searchTexts['paymentTerms'])" class="text-xs text-red-600 mt-1">
+                        Payment Terms is required.</p>
+                </div>
+
+                <!-- Dropdown Options -->
+                <ul *ngIf="dropdownOpen['paymentTerms']"
+                    class="absolute top-full left-0 right-0 bg-white border rounded-xl mt-1 shadow z-10 max-h-40 overflow-y-auto">
+                    <li *ngFor="let item of filteredLists['paymentTerms']" (click)="select('paymentTerms', item)"
+                        class="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm">
+                        {{ item.paymentTermsName }}
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Currency + FX Rate -->
+            <div class="flex gap-4">
+                <!-- Currency Dropdown (Left Half) -->
+                <div class="relative dropdown-input w-1/2">
+                    <label class="text-xs font-medium text-gray-600">Currency</label>
+                    <div class="relative">
+                        <input type="text" [(ngModel)]="searchTexts['currency']" (input)="filter('currency')"
+                            (focus)="toggleDropdown('currency', true)" placeholder="Srch Cur"
+                            class="w-full rounded-xl border focus:outline-none focus:ring-2 px-4 py-2 text-sm"
+                            style="border-color: #0e3a4c" disabled />
+                        <!-- Clear Button -->
+                        <button *ngIf="searchTexts['currency']" type="button" (click)="onClearSearch('currency')"
+                            class="absolute inset-y-0 right-7 flex items-center text-gray-400 hover:text-gray-600 px-2 btn-clear"
+                            disabled>
+                            ✕
+                        </button>
+                        <!-- Dropdown Icon -->
+                        <button type="button" (click)="toggleDropdown('currency')"
+                            class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-2 btn-caret" disabled>
+                            ▼
+                        </button>
+                    </div>
+
+                    <!-- Dropdown Options -->
+                    <ul *ngIf="dropdownOpen['currency']"
+                        class="absolute top-full left-0 right-0 bg-white border rounded-xl mt-1 shadow z-10 max-h-40 overflow-y-auto">
+                        <li *ngFor="let item of filteredLists['currency']" (click)="select('currency', item)"
+                            class="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm">
+                            {{ item.currencyName }}
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- FX Rate Textbox (Right Half) -->
+                <div class="w-1/2">
+                    <label class="text-xs font-medium text-gray-600">FX Rate</label>
+                    <input type="number" [(ngModel)]="poHdr.fxRate" placeholder="Enter FX Rate"
+                        class="w-full rounded-xl border focus:outline-none focus:ring-2 px-4 py-2 text-sm"
+                        style="border-color: #0e3a4c" (input)="calculateFxTotal()" [disabled]="isSGDCurrency()" />
+                </div>
+            </div>
+
+
+            <!-- Delivery Location (commented by you) -->
+
+
+            <!-- Incoterms (show only if overseas) -->
+            <div class="relative dropdown-input">
+                <label class="text-xs font-medium text-gray-600">Incoterms (Overseas Only)</label>
+                <div class="relative">
+                    <input type="text" [(ngModel)]="searchTexts['incoterms']" (input)="filter('incoterms')"
+                        (focus)="toggleDropdown('incoterms', true)" placeholder="Search Incoterms..."
+                        class="w-full rounded-xl border focus:outline-none focus:ring-2 px-4 py-2 text-sm"
+                        style="border-color: #0e3a4c" [disabled]="isSGDCurrency()" />
+                    <button *ngIf="searchTexts['incoterms']" type="button" (click)="onClearSearch('incoterms')"
+                        class="absolute inset-y-0 right-7 flex items-center text-gray-400 hover:text-gray-600 px-2 btn-clear"
+                        [disabled]="isSGDCurrency()">
+                        ✕
+                    </button>
+                    <!-- Dropdown Icon -->
+                    <button type="button" (click)="toggleDropdown('incoterms')"
+                        class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-2 btn-caret"
+                        [disabled]="isSGDCurrency()">
+                        ▼
+                    </button>
+                </div>
+
+                <!-- Dropdown Options -->
+                <ul *ngIf="dropdownOpen['incoterms']"
+                    class="absolute top-full left-0 right-0 bg-white border rounded-xl mt-1 shadow z-10 max-h-40 overflow-y-auto">
+                    <li *ngFor="let item of filteredLists['incoterms']" (click)="select('incoterms', item)"
+                        class="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm">
+                        {{ item.incotermsName }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- More Header Info -->
+        <div [ngClass]="gridColsClass(4)">
+            <!-- PO Date (system-generated, disabled) -->
+            <div>
+                <label class="text-xs font-medium text-gray-600">PO Date</label>
+
+                <input #POdateInput type="date"
+                    class="w-full rounded-xl border focus:outline-none focus:ring-2 px-3 py-2 text-sm"
+                    style="border-color: #0e3a4c" [(ngModel)]="poHdr.poDate" (change)="poDateChange()" [min]="minDate"
+                    (focus)="POdateInput.showPicker()" (click)="POdateInput.showPicker()" />
+                <p *ngIf="iserrorPoDate" class="text-xs text-red-600 mt-1">
+                    PO Date is required.
+                </p>
+
+            </div>
+
+            <!-- Expected Delivery -->
+            <div>
+                <label class="text-xs font-medium text-gray-600">Delivery Date</label>
+                <input #deliveryInput type="date"
+                    class="w-full rounded-xl border focus:outline-none focus:ring-2 px-3 py-2 text-sm"
+                    style="border-color: #0e3a4c" [(ngModel)]="poHdr.deliveryDate" (change)="deliveryChange()"
+                    [min]="minDate" (focus)="deliveryInput.showPicker()" (click)="deliveryInput.showPicker()" />
+                <p *ngIf="iserrorDelivery" class="text-xs text-red-600 mt-1">
+                    Delivery Date is required.
+                </p>
+            </div>
+
+            <!-- Remarks -->
+            <div>
+                <label class="text-xs font-medium text-gray-600">Remarks</label>
+                <textarea rows="2" class="w-full rounded-xl border focus:outline-none focus:ring-2 px-3 py-2 text-sm"
+                    style="border-color: #0e3a4c" [(ngModel)]="poHdr.remarks"></textarea>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-600">GST (%)</label>
+                <input type="number" class="w-full rounded-xl border px-3 py-2 text-sm bg-gray-100"
+                    style="border-color: #0e3a4c" [value]="poHdr.tax" disabled />
+            </div>
+        </div>
+        <div [ngClass]="gridColsClass(4)">
+           <div class="relative dropdown-input">
+            <label class="text-xs font-medium text-gray-600">Outlet</label>
+
+            <div class="relative">
+                <input
+                type="text"
+                [(ngModel)]="searchTexts['deliveryLoc']"
+                (input)="filter('deliveryLoc')"
+                (focus)="!lockHeaderByPR && toggleDropdown('deliveryLoc', true)"
+                placeholder="Search Outlet..."
+                class="w-full rounded-xl border focus:outline-none focus:ring-2 px-4 py-2 text-sm"
+                style="border-color: #0e3a4c"
+                [disabled]="lockHeaderByPR"
+                [ngClass]="lockHeaderByPR ? 'bg-gray-100 cursor-not-allowed' : ''"
+                />
+
+                <button
+                *ngIf="searchTexts['deliveryLoc'] && !lockHeaderByPR"
+                type="button"
+                (click)="onClearSearch('deliveryLoc')"
+                class="absolute inset-y-0 right-7 flex items-center text-gray-400 hover:text-gray-600 px-2 btn-clear">
+                ✕
+                </button>
+
+                <button
+                type="button"
+                (click)="!lockHeaderByPR && toggleDropdown('deliveryLoc')"
+                class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-2 btn-caret"
+                [disabled]="lockHeaderByPR">
+                ▼
+                </button>
+            </div>
+
+             <p *ngIf="submitted && !lockHeaderByPR && isEmpty(searchTexts['deliveryLoc'])"
+                class="text-xs text-red-600 mt-1">
+                Outlet is required.
+            </p>
+
+            <ul *ngIf="dropdownOpen['deliveryLoc'] && !lockHeaderByPR"
+                class="absolute top-full left-0 right-0 bg-white border rounded-xl mt-1 shadow z-10 max-h-40 overflow-y-auto">
+                <li *ngFor="let item of filteredLists['deliveryLoc']"
+                    (click)="select('deliveryLoc', item)"
+                    class="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm">
+                {{ item.name }}
+                </li>
+            </ul>
+            </div>
+
+           <div>
+            <label class="text-xs font-medium text-gray-600">Contact Number</label>
+            <input
+                type="number"
+                class="w-full rounded-xl border px-3 py-2 text-sm"
+                style="border-color: #0e3a4c"
+                [(ngModel)]="poHdr.contactNumber"
+                [disabled]="lockHeaderByPR"
+                [ngClass]="lockHeaderByPR ? 'bg-gray-100 cursor-not-allowed' : ''"
+                placeholder="Enter contact number"
+            />
+            </div>
+
+        </div>
+
+        <!-- Line Items -->
+        <!-- Line Items -->
+        <div class="mt-4 overflow-auto border border-gray-200 ">
+            <table class="min-w-full text-sm">
+                <thead class="text-white" style="background-color:#2E5F73">
+                    <tr>
+                        <th class="text-left px-3 py-2 font-medium whitespace-nowrap">PR Number</th>
+                        <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Item Code</th>
+                        <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Description</th>
+                        <!-- <th class="text-left px-3 py-2 font-medium whitespace-nowrap">LedgerName</th> -->
+                        <!-- <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Location</th>
+                        <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Contact Number</th> -->
+                        <!-- <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Recurring</th> -->
+                        <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Tax Code</th>
+                        <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Qty</th>
+                        <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Unit Price</th>
+                        <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Discount %</th>
+                        <!-- NEW -->
+                        <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Tax Amt</th>
+                        <!-- /NEW -->
+                        <th class="text-left px-3 py-2 font-medium whitespace-nowrap">Total</th>
+                        <th class="px-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngIf="poLines.length === 0">
+                        <td [attr.colspan]="14" class="px-3 py-6 text-center text-gray-400">
+                            No lines yet.
+                        </td>
+                    </tr>
+                    <tr *ngFor="let r of poLines; let i = index; trackBy: trackByIndex" class="border-t">
+                        <td class="px-3 py-2 relative dropdown-cell">
+                            <input type="text" [(ngModel)]="poLines[i].prNo" (focus)="openDropdown(i, 'prNo')"
+                                (click)="openDropdown(i, 'prNo')" (input)="filterOptions(i, 'prNo')"
+                                placeholder="Search PR No..." class="w-[150px] rounded-xl border px-3 py-2 text-sm"
+                                [disabled]="!mastersLoaded || allPrNos.length === 0" />
+
+                            <div *ngIf="poLines[i].dropdownOpen === 'prNo'"
+                                class="absolute left-0 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-48 overflow-y-auto z-50">
+                                <div *ngFor="let option of poLines[i].filteredOptions"
+                                    (click)="selectOption(i, 'prNo', option)"
+                                    class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm">
+                                    {{ option.purchaseRequestNo }}
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-3 py-2 relative dropdown-cell">
+                <input
+                    type="text"
+                    [(ngModel)]="poLines[i].item"
+                    (focus)="!poLines[i].__fromPR && openDropdown(i, 'item')"
+                    (click)="!poLines[i].__fromPR && openDropdown(i, 'item')"
+                    (input)="!poLines[i].__fromPR && filterOptions(i, 'item')"
+                    placeholder="Search Item..."
+                    class="w-[150px] rounded-xl border px-3 py-2 text-sm"
+                    [disabled]="poLines[i].__fromPR === true"
+                    [ngClass]="poLines[i].__fromPR ? 'bg-gray-100 cursor-not-allowed' : ''"
+                />
+
+                <div *ngIf="poLines[i].dropdownOpen === 'item' && !poLines[i].__fromPR"
+                    class="absolute left-0 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-48 overflow-y-auto z-50">
+                    <div *ngFor="let option of poLines[i].filteredOptions"
+                        (click)="selectOption(i, 'item', option)"
+                        class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm flex justify-between">
+                    <span>{{ option.itemCode }}</span>
+                    <span>{{ option.itemName }}</span>
+                    </div>
+                </div>
+                </td>
+
+
+                        <td class="px-3 py-2">
+                            <input class="w-[150px] rounded-xl border px-3 py-2 text-sm"
+                                [(ngModel)]="poLines[i]['description']" placeholder="Item description" />
+                        </td>
+
+                        <!-- <td class="px-3 py-2 relative dropdown-cell">
+                            <input type="text" [(ngModel)]="poLines[i].budget" (focus)="openDropdown(i, 'budget')"
+                                (input)="filterOptions(i, 'budget')" placeholder="Search Ledger..."
+                                class="w-[300px] rounded-xl border px-3 py-2 text-sm" disabled />
+
+                            <div *ngIf="poLines[i].dropdownOpen === 'budget'"
+                                class="absolute left-0 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-48 overflow-y-auto z-50">
+                                <div *ngFor="let option of poLines[i].filteredOptions"
+                                    (click)="selectOption(i, 'budget', option)"
+                                    class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm">
+                                    {{ option.label }}
+                                </div>
+                            </div>
+                        </td> -->
+
+
+                        <!-- <td class="px-3 py-2 relative dropdown-cell">
+                            <input type="text" [(ngModel)]="poLines[i].location" (focus)="openDropdown(i, 'location')"
+                                (input)="filterOptions(i, 'location')" placeholder="Search Location..."
+                                class="w-[150px] rounded-xl border px-3 py-2 text-sm" disabled />
+
+                            <div *ngIf="poLines[i].dropdownOpen === 'location'"
+                                class="absolute left-0 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-48 overflow-y-auto z-50">
+                                <div *ngFor="let option of poLines[i].filteredOptions"
+                                    (click)="selectOption(i, 'location', option)"
+                                    class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm">
+                                    {{ option.name }}
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-3 py-2">
+                            <input class="w-[150px] rounded-xl border px-3 py-2 text-sm"
+                                [(ngModel)]="poLines[i]['contactNumber']" placeholder="contactNumber" disabled />
+                        </td> -->
+                        <!-- <td class="px-3 py-2 relative dropdown-cell">
+                            <input type="text" [(ngModel)]="poLines[i].recurring" (focus)="openDropdown(i, 'recurring')"
+                                (input)="filterOptions(i, 'recurring')" placeholder="Search Recurring..."
+                                class="w-[150px] rounded-xl border px-3 py-2 text-sm" />
+
+                            <div *ngIf="poLines[i].dropdownOpen === 'recurring'"
+                                class="absolute left-0 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-48 overflow-y-auto z-50">
+                                <div *ngFor="let option of poLines[i].filteredOptions"
+                                    (click)="selectOption(i, 'recurring', option)"
+                                    class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm">
+                                    {{ option.recurringName }}
+                                </div>
+                            </div>
+                        </td> -->
+
+                        <!-- Tax Code column -->
+                        <td class="px-3 py-2 relative dropdown-cell">
+                            <input type="text" [(ngModel)]="poLines[i].taxCode" (focus)="openDropdown(i, 'taxCode')"
+                                (input)="filterOptions(i, 'taxCode')" (ngModelChange)="onTaxCodeChange(i)"
+                                placeholder="Search Tax Code..."
+                                class="w-[150px] rounded-xl border px-3 py-2 text-sm" />
+
+                            <div *ngIf="poLines[i].dropdownOpen === 'taxCode'"
+                                class="absolute left-0 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-48 overflow-y-auto z-50">
+                                <div *ngFor="let option of poLines[i].filteredOptions"
+                                    (click)="selectOption(i, 'taxCode', option)"
+                                    class="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm">
+                                    {{ option.name }}
+                                </div>
+                            </div>
+                        </td>
+
+
+                        <td class="px-3 py-2">
+                            <input type="number" class="w-[100px] rounded-xl border px-3 py-2 text-sm"
+                                [(ngModel)]="poLines[i]['qty']" (input)="calculateLineTotal(poLines[i])" />
+                        </td>
+
+                        <td class="px-3 py-2">
+                            <input type="number" class="w-[100px] rounded-xl border px-3 py-2 text-sm"
+                                [(ngModel)]="poLines[i]['price']" 
+                                (input)="sanitizeNumberInput('price', i); calculateLineTotal(poLines[i])" />
+                        </td>
+
+                        <td class="px-3 py-2">
+                            <input type="number" class="w-[100px] rounded-xl border px-3 py-2 text-sm"
+                                [(ngModel)]="poLines[i]['discount']" 
+                                (input)="sanitizeNumberInput('discount', i); calculateLineTotal(poLines[i])" />
+                        </td>
+
+                        <!-- NEW Tax Amount column -->
+                        <td class="px-3 py-2">
+                            <input type="number" class="w-[100px] rounded-xl border px-3 py-2 text-sm"
+                                [(ngModel)]="poLines[i]['taxAmount']" disabled />
+                        </td>
+                        <!-- /NEW -->
+
+                        <td class="px-3 py-2">
+                            <input type="number" class="w-[100px] rounded-xl border px-3 py-2 text-sm"
+                                [(ngModel)]="poLines[i]['total']" disabled />
+                        </td>
+
+                        <td class="px-3 py-2 text-right">
+                            <button
+                                class="px-3 py-2 rounded-xl text-sm font-medium hover:bg-gray-100 border border-transparent"
+                                (click)="poRemoveLine(i)" type="button">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="p-2 border-t bg-gray-50">
+                <button class="px-3 py-2 rounded-xl text-sm font-medium text-white" type="button" (click)="poAddLine()"
+                    (mouseenter)="hover = true" (mouseleave)="hover = false"
+                    [style.backgroundColor]="hover ? '#092f3f' : '#2E5F73'" [disabled]="!mastersLoaded">
+                    + Add line
+                </button>
+            </div>
+        </div>
+
+        <!-- Totals -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+            <div class="md:col-span-2"></div>
+            <div class="space-y-2 text-sm">
+                <!-- Subtotal: sum of qty * price -->
+                <div class="flex items-center justify-between gap-2">
+                    <span>Sub Total</span>
+                    <span class="inline-block w-28 text-right px-1">
+                        {{ poTotals.subTotal | number:'1.2-2' }}
+                    </span>
+                </div>
+
+                <!-- New: total discount from all lines -->
+                <div class="flex items-center justify-between gap-2">
+                    <span>Discount (Lines)</span>
+                    <span class="inline-block w-28 text-right px-1">
+                        {{ poTotals.lineDiscountTotal.toFixed(2) }}
+                    </span>
+                </div>
+
+                <!-- Existing: header absolute discount (optional extra) -->
+                <div class="flex justify-between items-center gap-2">
+                    <span>Discount (absolute)</span>
+                    <input type="number" class="w-24 rounded-xl border px-2 py-1 text-sm text-right"
+                        [(ngModel)]="poHdr.discount" (keydown)="allowOnlyNumbers($event)"
+                        (input)="recalculateTotals()" />
+                </div>
+
+                <div class="flex items-center justify-between gap-2">
+                    <span>Tax(Lines)</span>
+                    <span class="inline-block w-28 text-right px-1">
+                        {{ poTotals.lineTaxTotal.toFixed(2) }}
+                    </span>
+                </div>
+
+                <!-- Shipping cost input -->
+                <div *ngIf = "showShipping" class="flex justify-between items-center gap-2">
+                    <span>Shipping Cost</span>
+                    <input type="number" class="w-24 rounded-xl border px-2 py-1 text-sm text-right"
+                        [(ngModel)]="poHdr.shipping" (keydown)="allowOnlyNumbers($event)"
+                        (input)="recalculateTotals()" />
+                </div>
+
+                <!-- GST% (from supplier / country, read-only like before) -->
+                <!-- <div class="flex justify-between items-center gap-2">
+                    <span>GST (%)</span>
+                    <input type="number" class="w-24 rounded-xl border px-2 py-1 text-sm text-right"
+                        [(ngModel)]="poHdr.tax" (input)="recalculateTotals()" disabled />
+                </div> -->
+
+                <!-- New: Shipping + Tax -->
+                <div *ngIf = "showShipping" class="flex items-center justify-between gap-2">
+                    <span>Shipping + TaxPctAmt</span>
+                    <span class="inline-block w-28 text-right px-1">
+                        {{ poTotals.shippingWithTax.toFixed(2) }}
+                    </span>
+                </div>
+
+                <!-- Net Total -->
+                <div class="border-t pt-2 flex justify-between font-semibold">
+                    <span>Net Total</span>
+                    <span> {{ poTotals.netTotal | number:'1.2-2' }} {{ poHdr.currencyName }}</span>
+                </div>
+
+                <div *ngIf="poHdr.currencyName !== 'SGD'" class="border-t pt-2 flex justify-between font-semibold">
+                    <span>Net Total (Base SGD):</span>
+                    <span>{{ poHdr.netTotalBase | number : '1.2-2' }}{{ ' SGD' }}</span>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="flex gap-3 items-center mt-4 justify-end">
+
+            <!-- Approval Level Dropdown -->
+            <div class="relative dropdown-input mb-2">
+                <label class="text-xs font-medium text-gray-600">Approval Level</label>
+                <div class="relative">
+                    <input type="text" [(ngModel)]="searchTexts['approval']" (input)="filter('approval')"
+                        (focus)="toggleDropdown('approval', true)" placeholder="Search Approval..."
+                        class="w-full rounded-xl border focus:outline-none focus:ring-2 px-4 py-2 text-sm"
+                        style="border-color: #0e3a4c" />
+                    <button *ngIf="searchTexts['approval']" type="button" (click)="onClearSearch('approval')"
+                        class="absolute inset-y-0 right-7 flex items-center text-gray-400 hover:text-gray-600 px-2 btn-clear">
+                        ✕
+                    </button>
+                    <!-- Dropdown Icon -->
+                    <button type="button" (click)="toggleDropdown('approval')"
+                        class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-2 btn-caret">
+                        ▼
+                    </button>
+                </div>
+
+                <!-- Dropdown Options -->
+                <ul *ngIf="dropdownOpen['approval']"
+                    class="absolute bottom-full left-0 right-0 bg-white border rounded-xl mb-1 shadow z-10 max-h-40 overflow-y-auto">
+                    <li *ngFor="let item of filteredLists['approval']" (click)="select('approval', item)"
+                        class="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm">
+                        {{ item.name }}
+                    </li>
+                </ul>
+                <p *ngIf="submitted && isEmpty(searchTexts['approval'])" class="text-xs text-red-600 mt-1">Approval
+                    Level is required.</p>
+            </div>
+
+            <button class="px-3 py-2 rounded-xl text-sm font-medium border text-yellow-700 hover:bg-yellow-50"
+                (mouseenter)="hover = true" (mouseleave)="hover = false" type="button" (click)="setApprovalStatus(1)"
+                [disabled]="disabledButton">
+                Pending
+            </button>
+
+            <!-- Approve Button -->
+            <button class="px-3 py-2 rounded-xl text-sm font-medium text-white" style="background-color: #2E5F73"
+                (mouseenter)="hover = true" (mouseleave)="hover = false"
+                [style.backgroundColor]="hover ? '#092f3f' : '#2E5F73'" type="button" (click)="setApprovalStatus(2)"
+                [disabled]="disabledButton">
+                Approve
+            </button>
+
+            <!-- Reject Button -->
+            <button class="px-3 py-2 rounded-xl text-sm font-medium border border-red-600 text-red-700 hover:bg-red-50"
+                type="button" (click)="setApprovalStatus(3)">
+                Reject
+            </button>
+
+            <!-- Send Button -->
+            <!-- <button
+                class="px-3 py-2 rounded-xl text-sm font-medium border border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                (click)="notify('PO PDF generated & sent')" type="button">
+                Send (Email)
+            </button> -->
+            <button (click)="cancel()" class="btn btn-danger m-1 d-inline-flex align-items-center"
+                style="padding: 6px 18px; font-size: 0.9rem; border-radius: 4px;">
+                <i data-feather="x-circle" class="w-4 h-4 mr-0.5"></i>
+                <span>Cancel</span>
+            </button>
+        </div>
+
+    </div>
+</div>

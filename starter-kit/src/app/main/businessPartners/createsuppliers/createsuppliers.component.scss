@@ -1,0 +1,6 @@
+// Force number input to always show the spinner buttons
+input[type='number'] {
+  -moz-appearance: number-input;        // Firefox
+  -webkit-appearance: number-input;     // Chrome, Safari, Edge
+  appearance: number-input;
+}

@@ -1,0 +1,116 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card shadow-sm period-card">
+
+        <!-- Title -->
+        <div class="card-header border-0 pb-0">
+          <h3 class="mb-0 period-title">Period Close &amp; FX Revaluation</h3>
+        </div>
+
+        <div class="card-body">
+
+          <!-- Top row: Period + FX date + button -->
+          <div class="row align-items-center mb-2">
+
+            <!-- Period selector + lock -->
+            <div class="col-lg-6 col-md-7 mb-1">
+              <label class="form-label mb-25 fw-600">Period</label>
+              <div class="d-flex align-items-center">
+
+                <select class="form-control period-select"
+                        [(ngModel)]="selectedPeriodId"
+                        (ngModelChange)="onPeriodChange($event)">
+                  <option [ngValue]="null">-- Select Period --</option>
+                  <option *ngFor="let p of periods" [ngValue]="p.id">
+                    {{ p.label }}
+                  </option>
+                </select>
+
+                <!-- Lock toggle -->
+                <div class="d-flex align-items-center ml-1">
+                  <label class="switch mb-0 mr-50">
+                    <input type="checkbox"
+                           [checked]="isLocked"
+                           [disabled]="!isAdmin || isLocking"
+                           (change)="onToggleLock()">
+                    <span class="slider round"></span>
+                  </label>
+                  <span class="small fw-600">Lock Period</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- FX Reval Date -->
+            <div class="col-lg-3 col-md-5 mb-1">
+              <label class="form-label mb-25 fw-600">FX Reval Date</label>
+              <input type="date"
+                     class="form-control"
+                     [(ngModel)]="fxRevalDate">
+            </div>
+
+            <!-- Run FX button -->
+            <div class="col-lg-3 col-md-12 mb-1 text-md-right text-left mt-1 mt-md-0">
+              <button class="btn btn-brand"
+                      style="background-color:#2E5F73;border-color:#2E5F73;color:white;"
+                      (click)="runFxRevaluation()"
+                      [disabled]="isRunningFx || !selectedPeriodId || !fxRevalDate">
+                <i class="fas fa-sync-alt mr-25"></i>
+                {{ isRunningFx ? 'Running…' : 'Run FX Revaluation' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Info cards row -->
+          <div class="row mt-1">
+
+            <!-- Checklist -->
+            <div class="col-lg-4 col-md-12 mb-1">
+              <div class="info-box">
+                <div class="info-title">
+                  <i class="fas fa-tasks mr-50"></i> Checklist
+                </div>
+                <div class="info-body">
+                  GRNs posted, AP/AR updated, bank reconciled, GST prepared.
+                </div>
+              </div>
+            </div>
+
+            <!-- Trial Balance -->
+            <div class="col-lg-4 col-md-12 mb-1">
+              <div class="info-box">
+                <div class="info-title d-flex justify-content-between align-items-center">
+                  <span>
+                    <i class="fas fa-balance-scale mr-50"></i> Trial Balance
+                  </span>
+                  <button class="btn btn-sm btn-outline-primary"
+                          (click)="openTrialBalance()"
+                          [disabled]="!selectedPeriodId">
+                    Open TB
+                  </button>
+                </div>
+                <div class="info-body">
+                  Quick link to Trial Balance as of the selected period.
+                </div>
+              </div>
+            </div>
+
+            <!-- Lock Control -->
+            <div class="col-lg-4 col-md-12 mb-1">
+              <div class="info-box">
+                <div class="info-title">
+                  <i class="fas fa-lock mr-50"></i> Lock Control
+                </div>
+                <div class="info-body">
+                  Only Admin / Super Admin can unlock closed periods.
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,193 @@
+<div class="content-wrapper p-0">
+    <div class="content-body">
+        <section class="users-list-wrapper">
+            <div class="card">
+                <div class="row">
+                    <div class="col-md-6 col-12">
+                        <h4 class="card-text"
+                            style="margin-left: .85rem; margin-top: .75rem; font-size:1.25rem; font-weight:600; color:#2E5F73;">
+                            Credit Notes List
+                        </h4>
+
+                        <div class="d-flex justify-content-between align-items-center m-1">
+                            <label class="d-flex align-items-center">Show
+                                <select class="form-control mx-25" [(ngModel)]="selectedOption">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                entries
+                            </label>
+                        </div>
+                         <div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+            </div>
+                    </div>
+
+                    <div class="col-md-6 col-12 d-flex justify-content-md-end">
+                        <div
+                            class="d-flex align-items-center justify-content-md-end gap-2 flex-md-nowrap flex-wrap w-100">
+
+                            <!-- Search -->
+                            <input [(ngModel)]="searchValue" name="searchValue" type="search"
+                                class="form-control me-2 flex-shrink-0" placeholder="Search"
+                                (keyup)="filterUpdate($event)" (search)="filterUpdate($event)"
+                                style="flex:0 0 320px; max-width:40vw;" />
+
+                            <!-- Add -->
+                            <!-- <button (click)="openCreate()" class="btn d-inline-flex align-items-center flex-shrink-0"
+                                style="background-color:#2E5F73; color:white; gap:4px;">
+                                <i data-feather="plus-circle" class="w-4 h-4"></i><span>Add</span>
+                            </button> -->
+                              <button
+                  (click)="openCreate()"
+                  class="btn m-1 d-inline-flex align-items-center"
+                  style="background-color:#2E5F73;color:white;gap:6px;"
+                  [disabled]="isPeriodLocked"
+                  [attr.title]="isPeriodLocked
+                    ? (currentPeriodName
+                        ? 'Period ' + currentPeriodName + ' is locked'
+                        : 'Accounting period is locked')
+                    : 'Create Purchase Request'">
+                  <i data-feather="plus-circle" class="w-4 h-4"></i>
+                  <span>Add</span>
+                </button>
+                        </div>
+                    </div>
+                </div>
+
+                <ngx-datatable class="bootstrap core-bootstrap" [rows]="rows" [rowHeight]="50" [headerHeight]="50"
+                    [footerHeight]="50" [limit]="selectedOption" [columnMode]="'force'" [scrollbarH]="true"
+                    [reorderable]="true">
+
+                    <!-- Lines (eye) -->
+                    <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false"
+                        [canAutoResize]="false">
+                        <ng-template ngx-datatable-cell-template let-row="row">
+                            <span (click)="openLinesModal(row)" title="View Details"
+                                style="cursor:pointer; font-size:18px; color:#2E5F73;">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </ng-template>
+                    </ngx-datatable-column>
+
+                    <ngx-datatable-column name="CN No" prop="creditNoteNo" [width]="140"></ngx-datatable-column>
+                    <ngx-datatable-column name="DO No" prop="doNumber" [width]="120"></ngx-datatable-column>
+                    <ngx-datatable-column name="SI No" prop="siNumber" [width]="120"></ngx-datatable-column>
+                  <ngx-datatable-column name="Customer" prop="customerName" [width]="160">
+                    <ng-template let-row="row" ngx-datatable-cell-template>
+                        <div class="po-wrap-cell" [title]="row.customerName">
+                        {{ row.customerName || '-' }}
+                        </div>
+                    </ng-template>
+                    </ngx-datatable-column>
+
+
+                    <ngx-datatable-column name="CN Date" prop="creditNoteDate" [width]="140">
+                        <ng-template let-row="row" ngx-datatable-cell-template>
+                            {{ row.creditNoteDate | date:'dd-MM-yyyy' }}
+                        </ng-template>
+                    </ngx-datatable-column>
+
+                    <ngx-datatable-column name="Status" [width]="120">
+                        <ng-template let-row="row" ngx-datatable-cell-template>
+                            <span class="badge" [ngStyle]="statusStyle(row.status)">
+                                {{ statusText(row.status) }}
+                            </span>
+                        </ng-template>
+                    </ngx-datatable-column>
+
+                    <ngx-datatable-column name="Action" [width]="140">
+                        <ng-template let-row="row" ngx-datatable-cell-template>
+                            <!-- Edit -->
+                            <button type="button" class="btn btn-sm" [disabled]="row.status === 2" (click)="edit(row)"
+                                title="Edit" [ngStyle]="{
+        cursor: row.status === 2 ? 'not-allowed' : 'pointer',
+        color: row.status === 2 ? '#9ca3af' : '#2563eb',
+        background: 'transparent',
+        border: 'none',
+        padding: 0,
+        marginRight: '8px'
+      }">
+                                <i class="fas fa-pen text-primary"></i>
+                            </button>
+
+                            <!-- Delete -->
+                            <button type="button" class="btn btn-sm" [disabled]="row.status === 2"
+                                (click)="delete(row.id)" title="Delete" [ngStyle]="{
+        cursor: row.status === 2 ? 'not-allowed' : 'pointer',
+        color: row.status === 2 ? '#d1d5db' : '#dc2626',
+        background: 'transparent',
+        border: 'none',
+        padding: 0
+      }">
+                                <i class="fas fa-trash text-danger"></i>
+                            </button>
+                        </ng-template>
+                    </ngx-datatable-column>
+
+                </ngx-datatable>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Lines Modal -->
+<div *ngIf="showLinesModal" (click)="closeLinesModal()"
+    style="position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1050; display:flex; align-items:center; justify-content:center;">
+
+    <div (click)="$event.stopPropagation()"
+        style="width:900px; max-width:95vw; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+        <div
+            style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eef2f7;">
+            <h3 style="margin:0; font-size:20px; line-height:1.2; font-weight:700; color:#374151;">Credit Note Lines
+            </h3>
+            <button (click)="closeLinesModal()" aria-label="Close"
+                style="border:0; background:transparent; font-size:22px; line-height:1; cursor:pointer; color:#6b7280;">×</button>
+        </div>
+
+        <div style="padding:16px 20px;">
+            <div style="max-height:60vh; overflow:auto; border:1px solid #eef2f7; border-radius:10px;">
+                <table style="width:100%; border-collapse:collapse; font-size:14px; color:#111827;">
+                    <thead>
+                        <tr style="background:#2E5F73; color:#fff;">
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Item</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">UOM</th>
+                            <th style="padding:10px 12px; text-align:right; font-weight:600; width:120px;">Delivered
+                            </th>
+                            <th style="padding:10px 12px; text-align:right; font-weight:600; width:120px;">Returned</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Reason</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Disposition</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let l of modalLines; let i = index"
+                            [style.background]="i % 2 === 0 ? '#fcfdff' : '#ffffff'"
+                            style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:10px 12px;">{{ l.itemName || '-' }}</td>
+                            <td style="padding:10px 12px;">{{ l.uom || '-' }}</td>
+                            <td style="padding:10px 12px; text-align:right;">{{ l.deliveredQty || 0 }}</td>
+                            <td style="padding:10px 12px; text-align:right;">{{ l.returnedQty || 0 }}</td>
+                            <td style="padding:10px 12px;">{{ l.reasonName || reasonName(l.reasonId) || '-' }}</td>
+                            <td style="padding:10px 12px;">{{ dispositionName(l.restockDispositionId) }}</td>
+                        </tr>
+                        <tr *ngIf="!modalLines?.length">
+                            <td colspan="6" style="padding:14px 12px; text-align:center; color:#6b7280;">No lines</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid #eef2f7;">
+            <button (click)="closeLinesModal()"
+                style="background:#2E5F73; color:#fff; border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>

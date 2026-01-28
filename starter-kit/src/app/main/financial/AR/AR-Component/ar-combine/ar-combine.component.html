@@ -1,0 +1,161 @@
+<div class="content-wrapper container-xxl p-0">
+  <div class="content-body">
+    <div class="card ar-card ap-card">
+
+      <!-- HEADER -->
+      <div class="card-header d-flex justify-content-between align-items-center py-1">
+        <h4 class="mb-0 ar-title">Accounts Receivable (AR)</h4>
+      </div>
+
+      <!-- TABS -->
+      <ul class="nav nav-tabs ar-tabs ap-tabs mb-1" role="tablist">
+        <li class="nav-item" (click)="setTab('invoices')">
+          <a class="nav-link" [class.active]="activeTab === 'invoices'" href="javascript:void(0);">
+            Invoices
+          </a>
+        </li>
+
+        <li class="nav-item" (click)="setTab('receipts')">
+          <a class="nav-link" [class.active]="activeTab === 'receipts'" href="javascript:void(0);">
+            Receipts
+          </a>
+        </li>
+
+        <li class="nav-item" (click)="setTab('advance')">
+          <a class="nav-link" [class.active]="activeTab === 'advance'" href="javascript:void(0);">
+            Advance
+          </a>
+        </li>
+
+        <li class="nav-item" (click)="setTab('aging')">
+          <a class="nav-link" [class.active]="activeTab === 'aging'" href="javascript:void(0);">
+            Aging
+          </a>
+        </li>
+      </ul>
+
+      <!-- TAB CONTENT -->
+      <div class="card-body ar-body ap-body">
+
+        <!-- INVOICES TAB -->
+        <app-invoice-create *ngIf="activeTab === 'invoices'"></app-invoice-create>
+
+        <!-- RECEIPTS TAB -->
+        <app-receipt *ngIf="activeTab === 'receipts'"></app-receipt>
+
+        <!-- ADVANCE TAB – LIST SCREEN (LIKE AP ADVANCES) -->
+        <div *ngIf="activeTab === 'advance'">
+          <div class="ap-table-wrap">
+            <div class="ar-adv-header d-flex justify-content-between align-items-center mb-25">
+  <h6 class="mb-0 ar-adv-title">Customer Advances</h6>
+
+  <button
+    type="button"
+    class="btn btn-outline-primary btn-sm"
+    (click)="goToNewAdvance()">
+    <i class="fas fa-plus mr-25"></i>
+    New Advance
+  </button>
+</div>
+
+<div class="ar-adv-summary-row">
+  <div class="ar-adv-pill">
+    Total Advance: {{ arTotalAdvanceAmount | number:'1.2-2' }}
+  </div>
+  <div class="ar-adv-pill ar-adv-pill-balance">
+    Balance: {{ arTotalAdvanceBalance | number:'1.2-2' }}
+  </div>
+  <div class="ar-adv-pill ar-adv-pill-utilised">
+    Utilised: {{ arTotalAdvanceUtilised | number:'1.2-2' }}
+  </div>
+</div>
+
+
+            <!-- Advances table -->
+            <div class="table-responsive">
+              <table class="table mb-0 ap-table">
+                <thead>
+                  <tr>
+                    <th style="background-color:#2E5F73; color:#ffffff;">Advance No</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;">Customer</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;">Advance Date</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;">Sales Order</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;">Mode</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;">Bank</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Balance</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;">Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let a of pagedArAdvances">
+                    <td>{{ a.advanceNo }}</td>
+                    <td>{{ a.customerName }}</td>
+                    <td>{{ a.advanceDate | date:'dd-MMM-yyyy' }}</td>
+                    <td>{{ a.salesOrderNo || '-' }}</td>
+                    <td>{{ a.paymentMode }}</td>
+                    <td>{{ a.bankName || '-' }}</td>
+                    <td class="text-right">
+                      {{ a.amount | number:'1.2-2' }}
+                    </td>
+                    <td
+                      class="text-right"
+                      [ngClass]="{
+                        'text-success': a.balanceAmount > 0,
+                        'text-muted': a.balanceAmount === 0
+                      }">
+                      {{ a.balanceAmount | number:'1.2-2' }}
+                    </td>
+                    <td class="text-truncate" style="max-width:160px;" [title]="a.remarks">
+                      {{ a.remarks }}
+                    </td>
+                  </tr>
+
+                  <tr *ngIf="arAdvances.length === 0">
+                    <td colspan="9" class="text-center text-muted py-2">
+                      No customer advances found.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div
+              class="d-flex justify-content-between align-items-center mt-1"
+              *ngIf="arAdvances.length > arAdvPageSize">
+              <div class="text-muted small">
+                Showing
+                {{ (arAdvPage - 1) * arAdvPageSize + 1 }}
+                –
+                {{ Math.min(arAdvPage * arAdvPageSize, arAdvances.length) }}
+                of {{ arAdvances.length }} advances
+              </div>
+
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" [class.disabled]="arAdvPage === 1">
+                  <a class="page-link" (click)="arAdvGoToPage(arAdvPage - 1)">«</a>
+                </li>
+
+                <li
+                  class="page-item"
+                  *ngFor="let p of [].constructor(arAdvTotalPages); let idx = index"
+                  [class.active]="arAdvPage === (idx + 1)">
+                  <a class="page-link" (click)="arAdvGoToPage(idx + 1)">{{ idx + 1 }}</a>
+                </li>
+
+                <li class="page-item" [class.disabled]="arAdvPage === arAdvTotalPages">
+                  <a class="page-link" (click)="arAdvGoToPage(arAdvPage + 1)">»</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- AGING TAB -->
+        <app-aging *ngIf="activeTab === 'aging'"></app-aging>
+
+      </div>
+    </div>
+  </div>
+</div>

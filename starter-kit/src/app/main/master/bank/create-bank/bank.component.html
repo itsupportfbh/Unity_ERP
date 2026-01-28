@@ -1,0 +1,232 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card bank-card shadow-sm">
+
+        <!-- Header -->
+        <div class="card-header border-0 pb-0">
+          <div>
+            <h4 class="mb-50 bank-title">Bank Settings</h4>
+            <p class="text-muted mb-0">
+              Configure bank account details, integrations, reconciliation and security.
+            </p>
+          </div>
+        </div>
+
+        <div class="card-body pt-1">
+          <div class="row">
+
+            <!-- MAIN FORM -->
+            <div class="col-12">
+
+              <form novalidate>
+
+                <!-- Row 1: Bank / Account name / Account number -->
+                <div class="form-row">
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Bank name <span class="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="bank.bankName"
+                      name="bankName"
+                      placeholder="ACME Bank" />
+                  </div>
+
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Account Holder name <span class="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="bank.accountName"
+                      name="accountName"
+                      placeholder="ACME Pte Ltd" />
+                  </div>
+
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Account number <span class="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="bank.accountNumber"
+                      name="accountNumber"
+                      placeholder="123-456-789" />
+                  </div>
+                </div>
+
+                <!-- Row 2: Account type / Branch / IFSC -->
+                <div class="form-row">
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Account type</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="bank.accountTypeId"
+                      name="accountTypeId">
+                      <option [ngValue]="null">-- Select account type --</option>
+                      <option *ngFor="let t of accountTypes" [ngValue]="t.id">
+                        {{ t.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Branch</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="bank.branch"
+                      name="branch"
+                      placeholder="Downtown Branch" />
+                  </div>
+
+                  <div class="form-group col-md-4">
+                    <label class="form-label">IFSC / SWIFT / BIC</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="bank.ifscSwift"
+                      name="ifscSwift"
+                      placeholder="IFSC or SWIFT" />
+                  </div>
+                </div>
+
+                <!-- Row 3: Routing / Currency / Country -->
+                <div class="form-row">
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Routing / Sort code</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="bank.routingNumber"
+                      name="routingNumber"
+                      placeholder="Routing number" />
+                  </div>
+
+                  <!-- Currency (ID) -->
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Currency <span class="text-danger">*</span></label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="bank.currencyId"
+                      name="currencyId">
+                      <option [ngValue]="null">-- Select currency --</option>
+                      <option *ngFor="let c of currencies" [ngValue]="c.id">
+                        {{ c.currencyName }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Country (ID) -->
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Country <span class="text-danger">*</span></label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="bank.countryId"
+                      name="countryId">
+                      <option [ngValue]="null">-- Select Country --</option>
+                      <option *ngFor="let c of countries" [ngValue]="c.id">
+                        {{ c.countryName }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Row 3.1: Budget Line -->
+                <div class="form-row">
+                  <div class="form-group col-md-4">
+                    <label class="form-label" for="budget-line">Ledger Name</label>
+                    <select id="budget-line"
+                            class="form-control"
+                            name="budgetLineId"
+                            [(ngModel)]="bank.budgetLineId"
+                            #budgetLineRef="ngModel"
+                            required
+                            [class.is-invalid]="budgetLineRef.touched && budgetLineRef.invalid">
+                      <option value="">Select Ledger Name</option>
+                      <option *ngFor="let line of parentHeadList" [value]="line.value">
+                        {{ line.label }}
+                      </option>
+                    </select>
+
+                    <div *ngIf="budgetLineRef.touched && budgetLineRef.invalid"
+                         class="invalid-feedback d-block">
+                      This field is required!
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="my-2">
+
+                <!-- Row 4: Contacts (3 fields) -->
+                <div class="form-row">
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Primary contact</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="bank.primaryContact"
+                      name="primaryContact"
+                      placeholder="Jane Doe" />
+                  </div>
+
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Contact email <span class="text-danger">*</span></label>
+                    <input
+                      type="email"
+                      class="form-control"
+                      [(ngModel)]="bank.contactEmail"
+                      name="contactEmail"
+                      placeholder="finance@acme.com" />
+                  </div>
+
+                  <div class="form-group col-md-4">
+                    <label class="form-label">Contact phone</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="bank.contactPhone"
+                      name="contactPhone"
+                      placeholder="+1 000 000 0000" />
+                  </div>
+                </div>
+
+                <!-- Row 5: Address -->
+                <div class="form-row">
+                  <div class="form-group col-md-12">
+                    <label class="form-label">Address</label>
+                    <textarea
+                      class="form-control"
+                      rows="2"
+                      [(ngModel)]="bank.address"
+                      name="address"
+                      placeholder="Billing address">
+                    </textarea>
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex justify-content-end mt-1">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary mr-50"
+                    (click)="onReset()">
+                    Reset
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="onSave()">
+                    {{ isSaving ? 'Saving…' : 'Save changes' }}
+                  </button>
+                </div>
+
+              </form>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>

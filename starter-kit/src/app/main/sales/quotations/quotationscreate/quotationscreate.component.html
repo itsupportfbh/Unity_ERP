@@ -1,0 +1,639 @@
+<!-- Back button -->
+<button
+  (click)="goToList()"
+  class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
+  style="background-color:#2E5F73; color:white; padding-left:2.25rem;"
+>
+  <i
+    class="fas fa-arrow-left position-absolute"
+    style="left:0.75rem; top:50%; transform:translateY(-50%);"
+    aria-hidden="true"
+  ></i>
+  <span>Go to QT list</span>
+</button>
+
+<div class="space-y-1 ui-compact pr-typography">
+  <div class="bg-white rounded-2xl shadow p-2 border border-gray-100">
+
+    <div class="d-flex align-items-center justify-content-between mb-1">
+      <h2 class="text-lg fw-semibold text-gray-800 m-0">Quotation (QT)</h2>
+
+      <div class="d-flex gap-2">
+        <span class="badge bg-light text-dark">Status: {{ statusLabel(header.status) }}</span>
+        <span class="text-muted" *ngIf="header.needsHodApproval">
+          Discounts above 10% need HOD approval
+        </span>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="row g-2">
+
+      <!-- Customer -->
+      <div class="col-md-3">
+        <label class="form-label form-label-xs">Customer</label>
+        <div class="position-relative" #customerBox>
+          <input
+            type="text"
+            class="form-control prl-input"
+            placeholder="Search customer..."
+            [(ngModel)]="customerSearch"
+            name="customerSearch"
+            autocomplete="off"
+            (focus)="openCustomerDropdown()"
+            (input)="filterCustomers()"
+          />
+
+          <div *ngIf="customerDdOpen" class="prl-menu" style="max-height:220px; overflow:auto; width:100%;">
+            <div
+              class="prl-mi prl-mi-split"
+              *ngFor="let c of filteredCustomers"
+              (mousedown)="$event.preventDefault()"
+              (click)="selectCustomer(c)"
+            >
+              <span class="truncate">{{ c.name }}</span>
+            </div>
+            <div class="prl-mi prl-muted" *ngIf="!filteredCustomers?.length">No results</div>
+          </div>
+        </div>
+
+        <small class="text-muted d-block mt-1" *ngIf="activeCustomerCountry">
+          Country: {{ activeCustomerCountry?.countryName }} • GST: {{ header.taxPct || 0 }}%
+        </small>
+      </div>
+
+      <!-- Delivery Date -->
+      <div class="col-md-3">
+        <label class="form-label form-label-xs">Delivery Date</label>
+        <input
+          #dateInput
+          type="date"
+          class="form-control prl-input"
+          style="border-color:#0e3a4c;"
+          [(ngModel)]="header.deliveryDate"
+          name="deliveryDate"
+          [min]="minDate"
+          (click)="dateInput.showPicker?.()"
+          (focus)="dateInput.showPicker?.()"
+          inputmode="none"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Currency -->
+      <div class="col-md-3">
+        <label class="form-label form-label-xs">Currency</label>
+        <div class="position-relative" #currencyBox>
+          <input
+            type="text"
+            class="form-control prl-input"
+            placeholder="Type to search currency..."
+            [(ngModel)]="currencySearch"
+            name="currencySearch"
+            autocomplete="off"
+            (focus)="openCurrencyDropdown()"
+            (input)="filterCurrencies()"
+          />
+
+          <div *ngIf="currencyDdOpen" class="prl-menu" style="max-height:220px; overflow:auto; width:100%;">
+            <div
+              class="prl-mi"
+              *ngFor="let cur of filteredCurrencies"
+              (mousedown)="$event.preventDefault()"
+              (click)="selectCurrency(cur)"
+            >
+              {{ cur.name }}
+            </div>
+            <div class="prl-mi prl-muted" *ngIf="!filteredCurrencies?.length">No results</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FX Rate -->
+      <div class="col-md-3">
+        <label class="form-label form-label-xs">FX Rate</label>
+        <input
+          type="number"
+          class="form-control prl-input"
+          [(ngModel)]="header.fxRate"
+          name="fxRate"
+          step="0.000001"
+        />
+      </div>
+
+      <!-- Line Source -->
+      <div class="col-md-3">
+        <label class="form-label form-label-xs">Line Source</label>
+        <select
+          class="form-control prl-input"
+          [(ngModel)]="header.lineSource"
+          name="lineSource"
+          (change)="onLineSourceChange()"
+        >
+          <option [ngValue]="'ITEM'">Individual Item</option>
+          <option [ngValue]="'ITEMSET'">Item Set</option>
+        </select>
+        <small class="text-muted">Choose Item Master or Item Set</small>
+      </div>
+
+      <!-- Multi Select Item Set -->
+      <div class="col-md-6" *ngIf="header.lineSource === 'ITEMSET'">
+        <label class="form-label form-label-xs">Select Item Set (Multi)</label>
+
+        <div class="d-flex gap-2 align-items-start">
+          <div class="position-relative flex-grow-1" #itemSetBox>
+            <input
+              type="text"
+              class="form-control prl-input pr-10"
+              placeholder="Search item set..."
+              [(ngModel)]="itemSetSearch"
+              name="itemSetSearch"
+              autocomplete="off"
+              (focus)="openItemSetDropdown()"
+              (input)="filterItemSets()"
+            />
+
+            <button
+              type="button"
+              class="btn btn-sm position-absolute"
+              style="right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent;"
+              (click)="toggleItemSetDropdown()"
+            >
+              <i class="fas fa-chevron-down text-muted"></i>
+            </button>
+
+            <div
+              *ngIf="itemSetDdOpen"
+              class="prl-menu"
+              style="max-height:220px; overflow:auto; width:100%;"
+            >
+              <div
+                class="prl-mi prl-mi-split"
+                *ngFor="let s of filteredItemSets; trackBy: trackByItemSetId"
+                (mousedown)="$event.preventDefault()"
+                (click)="selectItemSetCandidate(s)"
+              >
+                <span class="truncate">{{ s.setName }}</span>
+                <small class="prl-muted">#{{ s.id }}</small>
+              </div>
+              <div class="prl-mi prl-muted" *ngIf="!filteredItemSets?.length">No results</div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="btn text-white"
+            style="background:#2E5F73; height:38px; min-width:90px;"
+            (click)="addSelectedItemSet()"
+            [disabled]="!pendingItemSet"
+          >
+            + Add
+          </button>
+        </div>
+
+        <div class="mt-1 d-flex flex-wrap gap-2" *ngIf="selectedItemSets.length">
+          <span
+            class="badge bg-light text-dark d-inline-flex align-items-center"
+            style="border:1px solid #e5e7eb; padding:6px 10px; border-radius:999px;"
+            *ngFor="let s of selectedItemSets; trackBy: trackByItemSetId"
+          >
+            {{ s.setName }}
+            <button
+              type="button"
+              class="btn btn-sm ms-2 p-0"
+              style="border:none;background:transparent;line-height:1;"
+              (click)="removeItemSet(s.id)"
+            >
+              <i class="fas fa-times text-muted"></i>
+            </button>
+          </span>
+        </div>
+
+        <!-- <small class="text-muted d-block mt-1">
+          Select set → click <b>Add</b>. Multiple sets add pannalam.
+        </small> -->
+      </div>
+
+      <!-- Payment Terms -->
+      <div class="col-md-3">
+        <label class="form-label form-label-xs">Payment Terms</label>
+        <div class="position-relative" #paymentBox>
+          <input
+            type="text"
+            class="form-control prl-input"
+            placeholder="Search payment terms..."
+            [(ngModel)]="paymentTermsSearch"
+            name="paymentTermsSearch"
+            autocomplete="off"
+            (focus)="openPaymentTermsDropdown()"
+            (input)="filterPaymentTerms()"
+          />
+          <div *ngIf="paymentTermsDdOpen" class="prl-menu" style="max-height:220px; overflow:auto; width:100%;">
+            <div
+              class="prl-mi"
+              *ngFor="let p of filteredPaymentTerms"
+              (mousedown)="$event.preventDefault()"
+              (click)="selectPaymentTerms(p)"
+            >
+              {{ p.name }}
+            </div>
+            <div class="prl-mi prl-muted" *ngIf="!filteredPaymentTerms?.length">No results</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GST% -->
+      <div class="col-md-3">
+        <label class="form-label form-label-xs">GST %</label>
+        <input type="number" class="form-control prl-input" [(ngModel)]="header.taxPct" name="taxPct" readonly />
+        <small class="text-muted">Derived from customer's country.</small>
+      </div>
+
+      <!-- Delivery To -->
+      <div class="col-md-6">
+        <label class="form-label form-label-xs">Delivery To</label>
+        <textarea
+          class="form-control prl-input"
+          rows="2"
+          [(ngModel)]="header.deliveryTo"
+          name="deliveryTo"
+          placeholder="Enter delivery address / delivery location..."
+        ></textarea>
+      </div>
+
+      <!-- Remarks -->
+      <div class="col-md-6">
+        <label class="form-label form-label-xs">Remarks</label>
+        <textarea
+          class="form-control prl-input"
+          rows="2"
+          [(ngModel)]="header.remarks"
+          name="remarks"
+          placeholder="Enter remarks..."
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- LINES TABLE -->
+    <div class="mt-2 border rounded-2xl bg-white">
+      <div class="qt-table-wrap">
+        <table class="table m-0 align-middle qt-table">
+          <thead>
+            <tr>
+              <th class="qt-col-item" style="background:#2E5F73;color:#fff;">Item / Set</th>
+              <th class="qt-col-desc" style="background:#2E5F73;color:#fff;">Description</th>
+              <th class="qt-col-uom"  style="background:#2E5F73;color:#fff;">UOM</th>
+              <th class="qt-col-qty text-center" style="background:#2E5F73;color:#fff;">Qty</th>
+              <th class="qt-col-price text-center" style="background:#2E5F73;color:#fff;">Unit Price</th>
+              <th class="qt-col-disc text-center" style="background:#2E5F73;color:#fff;">Discount %</th>
+              <th class="qt-col-taxmode" style="background:#2E5F73;color:#fff;">Tax Mode</th>
+              <th class="qt-col-total text-center" style="background:#2E5F73;color:#fff;">Line Total</th>
+              <th class="qt-col-action text-center" style="background:#2E5F73;color:#fff;">Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngIf="lines.length === 0">
+              <td class="text-center text-muted py-4" [attr.colspan]="9">No lines yet.</td>
+            </tr>
+
+            <ng-container *ngFor="let l of lines; let i = index">
+              <!-- Set header row -->
+              <tr *ngIf="l.isSetHeader" class="qt-set-row">
+                <td [attr.colspan]="9" class="px-3 py-2">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="fw-semibold qt-set-title">
+                      <i class="fas fa-layer-group me-2"></i>{{ l.setName }}
+                    </div>
+
+                    <button class="btn btn-sm btn-link text-danger" (click)="removeItemSet(l.itemSetId!)">
+                      <i class="fas fa-trash"></i> Remove Set
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- item row -->
+              <tr *ngIf="!l.isSetHeader">
+                <td class="qt-col-item">
+                  <div class="fw-semibold">
+                    {{ l.itemName || getItemName(l.itemId) || '-' }}
+                  </div>
+                </td>
+
+                <td class="qt-col-desc">
+                  <input
+                    class="form-control prl-input"
+                    [(ngModel)]="l.description"
+                    (ngModelChange)="onLineChanged(i)"
+                    placeholder="-"
+                  />
+                </td>
+
+                <td class="qt-col-uom">
+                  {{ getUomName(l.uomId) }}
+                </td>
+
+                <td class="qt-col-qty text-center">
+                  <input
+                    type="number"
+                    class="form-control prl-input text-center"
+                    [(ngModel)]="l.qty"
+                    (ngModelChange)="onLineChanged(i)"
+                    min="0"
+                    step="0.0001"
+                  />
+                </td>
+
+                <td class="qt-col-price text-center">
+                  <input
+                    type="number"
+                    class="form-control prl-input text-center"
+                    [(ngModel)]="l.unitPrice"
+                    (ngModelChange)="onLineChanged(i)"
+                    min="0"
+                    step="0.0001"
+                  />
+                </td>
+
+                <td class="qt-col-disc text-center">
+                  <input
+                    type="number"
+                    class="form-control prl-input text-center"
+                    [(ngModel)]="l.discountPct"
+                    (ngModelChange)="onLineChanged(i)"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                  />
+                </td>
+
+                <td class="qt-col-taxmode">
+                  <select class="form-control prl-input" [(ngModel)]="l.taxMode" (ngModelChange)="onLineChanged(i)">
+                    <option *ngFor="let m of taxModesForCurrentGst" [ngValue]="m">{{ m }}</option>
+                  </select>
+                </td>
+
+                <td class="qt-col-total text-center">
+                  {{ (l.lineTotal || 0) | number:'1.2-2' }}
+                </td>
+
+                <td class="qt-col-action text-center">
+                  <button class="btn btn-sm btn-link"
+                          (click)="openEdit(i)"
+                          title="Edit"
+                          *ngIf="header.lineSource==='ITEM' && !l.isFromSet">
+                    <i class="fas fa-pen text-primary"></i>
+                  </button>
+
+                  <button class="btn btn-sm btn-link" (click)="remove(i)" title="Remove">
+                    <i class="fas fa-trash text-danger"></i>
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Add Line button -->
+      <div class="p-2">
+        <button
+          class="btn btn-sm text-white"
+          type="button"
+          (mouseenter)="hoverAdd=true"
+          (mouseleave)="hoverAdd=false"
+          [style.background-color]="hoverAdd ? '#0b2e3d' : '#2E5F73'"
+          (click)="openAdd()"
+          [disabled]="header.lineSource !== 'ITEM'"
+          [class.opacity-50]="header.lineSource !== 'ITEM'"
+        >
+          + Add line
+        </button>
+      </div>
+    </div>
+
+    <!-- Totals -->
+    <div class="row mt-2">
+      <div class="col-md-8"></div>
+
+      <div class="col-md-4">
+        <div class="p-1 border rounded-3">
+          <div class="d-flex justify-content-between mb-1">
+            <span>Subtotal</span>
+            <strong>{{ header.subtotal | currency:header.currency }}</strong>
+          </div>
+
+          <div class="d-flex justify-content-between mb-1 align-items-center">
+            <span>Discount</span>
+            <div class="d-flex align-items-center">
+              <input
+                type="number"
+                class="form-control prl-input me-1"
+                style="width: 120px;"
+                [(ngModel)]="header.discountInput"
+                name="docDiscountInput"
+                (ngModelChange)="onDiscountChange()"
+              />
+              <select
+                class="form-control prl-input"
+                style="width: 90px;"
+                [(ngModel)]="header.discountType"
+                name="docDiscountType"
+                (change)="onDiscountTypeChange($event.target.value)"
+              >
+                <option value="VALUE">Amt</option>
+                <option value="PERCENT">%</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mb-1">
+            <span>Tax</span>
+            <strong>{{ header.taxAmount | currency:header.currency }}</strong>
+          </div>
+
+          <hr class="my-2" />
+
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">Grand Total</span>
+            <h4 class="m-0">{{ header.grandTotal | currency:header.currency }}</h4>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-2">
+          <button class="btn text-white ms-auto" type="button" (click)="save()" style="background-color:#2E5F73;">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- =======================================================
+✅ MODAL (SMALL + ITEM DROPDOWN CLICK ONLY)
+======================================================= -->
+<div *ngIf="showModal" class="prl-overlay" aria-modal="true" role="dialog" (click)="closeModal()">
+
+  <div class="prl-modal" (click)="onModalContainer($event)">
+
+    <!-- header -->
+    <div class="prl-head">
+      <h2 class="prl-title">
+        {{ editingIndex === null ? 'Add Quotation Line' : 'Edit Quotation Line' }}
+      </h2>
+      <button class="prl-close" (click)="closeModal()" type="button">✕</button>
+    </div>
+
+    <!-- body -->
+    <div class="prl-modal-body">
+      <form (ngSubmit)="submitModal()">
+
+        <div class="prl-grid">
+
+          <!-- Item (click only dropdown) -->
+          <div class="prl-col-12 prl-md-6 position-relative" #modalItemBox>
+            <label class="prl-label">Item</label>
+
+            <input
+              #itemSearchInput
+              class="prl-input pr-10"
+              name="itemSearch"
+              [(ngModel)]="modal.itemSearch"
+              placeholder="Search Item..."
+              autocomplete="off"
+              (click)="toggleModalItemDropdown()"
+              (input)="onModalItemInput()"
+            />
+
+            <button type="button" class="prl-dd-btn" (click)="toggleModalItemDropdown()"></button>
+
+            <div class="prl-menu" *ngIf="modal.dropdownOpen" style="max-height:240px; overflow:auto;">
+              <ng-container *ngIf="modal.filteredItems?.length; else noMatches">
+                <div
+                  class="prl-mi prl-mi-split"
+                  *ngFor="let row of modal.filteredItems; trackBy: trackByItemId"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="selectModalItem(row)"
+                >
+                  <span class="truncate">{{ row.itemName }}</span>
+                  <small class="prl-muted">{{ row.itemCode }}</small>
+                </div>
+              </ng-container>
+
+              <ng-template #noMatches>
+                <div class="prl-mi prl-muted">No matches</div>
+              </ng-template>
+            </div>
+          </div>
+
+          <!-- Qty -->
+          <div class="prl-col-6 prl-md-3">
+            <label class="prl-label">Qty</label>
+            <input
+              type="number"
+              class="prl-input"
+              [(ngModel)]="modal.qty"
+              name="qty"
+              (ngModelChange)="previewLineTotals()"
+            />
+          </div>
+
+          <!-- UOM -->
+          <div class="prl-col-6 prl-md-3">
+            <label class="prl-label">UOM</label>
+            <input class="prl-input" [value]="getUomName(modal.uomId)" placeholder="UOM" readonly />
+          </div>
+
+          <!-- Unit Price -->
+          <div class="prl-col-6 prl-md-3">
+            <label class="prl-label">Unit Price</label>
+            <input
+              type="number"
+              class="prl-input"
+              [(ngModel)]="modal.unitPrice"
+              name="unitPrice"
+              step="0.0001"
+              (ngModelChange)="previewLineTotals()"
+            />
+          </div>
+
+          <!-- Discount -->
+          <div class="prl-col-6 prl-md-3">
+            <label class="prl-label">Discount %</label>
+            <input
+              type="number"
+              class="prl-input"
+              [(ngModel)]="modal.discountPct"
+              name="discountPct"
+              step="0.01"
+              (ngModelChange)="previewLineTotals()"
+            />
+          </div>
+
+          <!-- Tax Mode -->
+          <div class="prl-col-12 prl-md-6">
+            <label class="prl-label">Tax Mode (Line)</label>
+            <select
+              class="prl-input"
+              [(ngModel)]="modal.taxMode"
+              name="taxMode"
+              (ngModelChange)="previewLineTotals()"
+            >
+              <option *ngFor="let m of taxModesForCurrentGst" [ngValue]="m">{{ m }}</option>
+            </select>
+            <small class="text-muted">
+              GST% used: {{ modal.taxMode === 'Standard-Rated' ? (header.taxPct || 0) : 0 }}%
+            </small>
+          </div>
+
+          <!-- Description -->
+          <div class="prl-col-12">
+            <label class="prl-label">Description</label>
+            <textarea
+              class="prl-input"
+              rows="2"
+              [(ngModel)]="modal.description"
+              name="description"
+              placeholder="Enter description..."
+            ></textarea>
+          </div>
+
+          <!-- Live preview -->
+          <div class="prl-col-12" *ngIf="modalPreview">
+            <div class="mt-2 p-2 rounded border bg-light">
+              <div class="d-flex justify-content-between small">
+                <span>Net</span>
+                <strong>{{ modalPreview.net | number:'1.2-2' }}</strong>
+              </div>
+              <div class="d-flex justify-content-between small">
+                <span>Tax</span>
+                <strong>{{ modalPreview.tax | number:'1.2-2' }}</strong>
+              </div>
+              <div class="d-flex justify-content-between">
+                <span>Total</span>
+                <strong>{{ modalPreview.total | number:'1.2-2' }}</strong>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- footer -->
+        <div class="prl-foot">
+          <button type="submit" class="btn text-white" style="background:#2E5F73; min-width:140px; border-radius:14px;">
+            {{ editingIndex !== null ? 'Save Changes' : 'Add & Close' }}
+          </button>
+          <button type="button" class="btn" style="min-width:120px; border-radius:14px; border:1px solid #e5e7eb;"
+                  (click)="closeModal()">
+            Close
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+</div>

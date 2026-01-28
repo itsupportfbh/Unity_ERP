@@ -1,0 +1,31 @@
+/* Full-screen dark overlay with center loader */
+.loading-overlay {
+  position: fixed;
+  inset: 0; /* top:0; right:0; bottom:0; left:0 */
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000; // higher than navbar, cards, etc.
+  backdrop-filter: blur(2px); // blur the entire viewport behind overlay
+}
+
+.loading-box {
+  background: #ffffff;
+  padding: 16px 24px;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  min-width: 220px;
+}
+
+.loading-text {
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+/* Extra blur on the page content itself (optional but nice) */
+.page-blur {
+  filter: blur(2px);
+  pointer-events: none;
+  user-select: none;
+}

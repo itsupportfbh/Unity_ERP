@@ -1,0 +1,152 @@
+<div class="taxmaster-card">
+  <!-- Top header: title + button -->
+  <div class="taxmaster-header d-flex justify-content-between align-items-center">
+    <h2 class="taxmaster-title mb-0 " style="font-weight: bold;">Tax Code Master</h2>
+
+    <button
+      type="button"
+      class="btn btn-primary btn-md mb-1"
+      (click)="openNewTaxModal()">
+      + New Tax Code
+    </button>
+  </div>
+
+  <!-- Table -->
+  <div class="taxmaster-table-wrap">
+    <table class="table mb-0 taxmaster-table">
+      <thead>
+        <tr>
+          <th style="background-color:#2E5F73;color:white;">Code</th>
+          <th style="background-color:#2E5F73;color:white;">Description</th>
+          <th style="background-color:#2E5F73;color:white;">Rate (%)</th>
+          <th style="background-color:#2E5F73;color:white;">Level</th>
+          <th style="background-color:#2E5F73;color:white;">Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of rows">
+          <td>{{ t.name }}</td>
+          <td>{{ t.description }}</td>
+          <td>{{ t.rate }}%</td>
+          <td>Line Level</td> <!-- or {{ getLevelName(t.level) }} if you have -->
+          <td>{{ getTypeName(t.typeId) }}</td>
+        </tr>
+
+        <tr *ngIf="!rows || rows.length === 0">
+          <td colspan="5" class="text-center text-muted py-3">
+            No tax codes defined yet.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========= MODAL ========= -->
+
+<!-- Backdrop -->
+<div class="modal-backdrop fade show" *ngIf="isTaxModalOpen"></div>
+
+<!-- Tax Code Modal -->
+<div
+  class="modal fade show d-block tax-modal"
+  tabindex="-1"
+  role="dialog"
+  *ngIf="isTaxModalOpen">
+  <div class="modal-dialog modal-md" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">New Tax Code</h5>
+        <button type="button" class="close" (click)="closeNewTaxModal()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+<form (ngSubmit)="saveTaxCode()" #taxForm="ngForm">
+  <div class="modal-body">
+
+    <!-- Row 1: Name | Description -->
+    <div class="row">
+      <div class="col-md-6">
+        <div class="form-group mb-2">
+          <label class="form-label">Name</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Name"
+            [(ngModel)]="newTax.name"
+            name="taxName"
+            required />
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="form-group mb-2">
+          <label class="form-label">Description</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Description"
+            [(ngModel)]="newTax.description"
+            name="taxDescription" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Type | Rate -->
+    <div class="row">
+      <div class="col-md-6">
+        <div class="form-group mb-2">
+          <label class="form-label">Type</label>
+          <select
+            class="form-control"
+            [(ngModel)]="newTax.typeId"
+            name="taxType"
+            required>
+            <option [ngValue]="null">Select Type</option>
+            <option *ngFor="let t of taxTypeOptions" [ngValue]="t.id">
+              {{ t.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="form-group mb-1">
+          <label class="form-label">Rate (%)</label>
+          <input
+            type="number"
+            class="form-control"
+            placeholder="e.g. 18"
+            [(ngModel)]="newTax.rate"
+            name="taxRate"
+            min="0"
+            step="0.01"
+            required />
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="modal-footer">
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="closeNewTaxModal()">
+      Cancel
+    </button>
+    <button
+      type="submit"
+      class="btn btn-primary"
+      [disabled]="taxForm.invalid">
+      Submit
+    </button>
+  </div>
+</form>
+
+
+    </div>
+  </div>
+</div>

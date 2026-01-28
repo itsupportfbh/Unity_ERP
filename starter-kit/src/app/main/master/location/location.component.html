@@ -1,0 +1,86 @@
+<section id="location-list">
+  <div class="card">
+  <h4
+              class="card-text"
+              style="margin-left:0.85rem;margin-top:0.75rem;font-size:1.25rem;font-weight:600;color:#2E5F73;">
+              Location List
+            </h4>
+  <div class="row">
+    <!-- Page size -->
+    <div class="col-md-6 col-12">
+      <div class="d-flex align-items-center m-1">
+        <label class="d-flex align-items-center mb-0">
+          Show
+          <select class="form-control mx-25" [(ngModel)]="pageSize">
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="25">25</option>
+            <option [ngValue]="50">50</option>
+            <option [ngValue]="100">100</option>
+          </select>
+          entries
+        </label>
+      </div>
+    </div>
+
+    <!-- Search + Add -->
+    <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+      <div class="d-flex align-items-center justify-content-end pr-2 pb-1 pb-md-0">
+        <label class="d-flex align-items-center mb-0">
+          Search:
+          <input
+            [(ngModel)]="searchValue"
+            name="searchValue"
+            type="search"
+            class="form-control ml-25"
+            (keyup)="filterUpdate()"
+            (search)="filterUpdate()" />
+        </label>
+
+        <button class="btn btn-primary m-1" (click)="toggleSidebar('app-create-location')">
+          <i data-feather="plus" class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
+          <span class="d-none d-sm-inline-block">Add</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data table -->
+  <ngx-datatable
+    class="bootstrap core-bootstrap"
+    [rows]="rows"
+    [rowHeight]="58"
+    [limit]="pageSize"
+    [columnMode]="ColumnMode.force"
+    [headerHeight]="40"
+    [footerHeight]="50"
+    [scrollbarH]="true">
+
+    <!-- Columns -->
+    <ngx-datatable-column name="Name" prop="name" [width]="220"></ngx-datatable-column>
+    <!-- <ngx-datatable-column name="Address" prop="address" [width]="240"></ngx-datatable-column> -->
+    <ngx-datatable-column name="City" prop="cityName" [width]="160"></ngx-datatable-column>
+    <ngx-datatable-column name="State" prop="stateName" [width]="160"></ngx-datatable-column>
+    <ngx-datatable-column name="Country" prop="countryName" [width]="160"></ngx-datatable-column>
+    <!-- <ngx-datatable-column name="Latitude" prop="latitude" [width]="140"></ngx-datatable-column>
+    <ngx-datatable-column name="Longitude" prop="longitude" [width]="140"></ngx-datatable-column> -->
+
+    <!-- Actions column -->
+   <ngx-datatable-column name="Actions" [width]="80" [sortable]="false">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <div class="d-flex align-items-center">
+      <i class="fas fa-pen text-blue-600 mr-2 cursor-pointer" style="cursor:pointer" (click)="edit(row.id)"></i>
+      <i class="fas fa-trash text-danger" style="cursor:pointer" (click)="deleteLocation(row.id)"></i>
+    </div>
+  </ng-template>
+</ngx-datatable-column>
+
+  </ngx-datatable>
+   <core-sidebar
+    class="modal modal-slide-in sidebar-todo-modal fade"
+    name="app-create-location"
+    overlayClass="modal-backdrop"
+  >
+    <app-create-location [locationId]="selectedLocationId" (onLocationChange)="getAllLocations()"></app-create-location>
+  </core-sidebar>
+  </div>
+</section>

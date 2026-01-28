@@ -1,0 +1,111 @@
+<div class="row">
+    <div class="col-lg-6 col-md-3">
+        <div class="card card-transaction">
+            <div class="card-header">
+             <h4 class="card-title title-pill">
+  <span class="pill">
+    <svg viewBox="0 0 24 24" class="lvl-icon" fill="none" stroke="currentColor" aria-hidden="true">
+      <g stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+        <polyline points="2 12 12 17 22 12"></polyline>
+        <polyline points="2 17 12 22 22 17"></polyline>
+      </g>
+    </svg>
+  </span>
+  <span class="title-text">Approval Level List</span>
+</h4>
+
+                <button (click)="createApprovalLevel()"
+                    style="background-color:#2E5F73; color:white; border:none; padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+                    <i data-feather="plus-circle" class="w-4 h-4"></i>
+                    Create
+                </button>
+
+            </div>
+
+            <div class="card-body">
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center"
+                        *ngFor="let item of approvalLevelList">
+
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center w-100">
+                            <div style="display: flex; align-items: center; gap: 8px; padding: 4px 10px;">
+                                <div class="avatar"
+                                    style="background-color: #2E5F73; color: white; width: 2.5rem; height: 2.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <h6
+                                    style="margin: 0; font-weight: 600; font-size: 1rem; display: flex; align-items: center;">
+                                    {{ item.name }}
+                                </h6>
+                            </div>
+
+                            <div class="mt-md-0 mt-1 d-flex justify-content-md-end">
+                                <!-- Edit Button -->
+                                <button type="button"
+                                    class="btn btn-outline-primary p-0 d-flex align-items-center justify-content-center"
+                                    style="width: 28px; height: 28px;" (click)="editApprovalLevel(item)">
+                                    <i data-feather="edit" style="width: 14px; height: 14px;"></i>
+                                </button>
+
+                                <!-- Delete Button -->
+                                <button type="button"
+                                    class="btn btn-outline-danger p-0 d-flex align-items-center justify-content-center ml-1"
+                                    style="width: 28px; height: 28px;" (click)="confirmdeleteApprovalLevel(item)"
+                                    [disabled]="isEditMode">
+                                    <i data-feather="trash" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-12 col-xs-12 col-lg-6 col-md-6 " *ngIf="isDisplay">
+        <div class="card ">
+            <div class="card-header">
+                <h4 class="card-title" style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #2E5F73;">
+                    {{approvalLevelHeader}}</h4>
+            </div>
+            <div class="card-body">
+                <form class="form" #addForm="ngForm">
+                    <div class="form-group">
+                        <label for="first-name-column">Approval Level Name</label>
+                        <input type="text" id="first-name-column" class="form-control" placeholder="Approval Level Name"
+                            name="fname-column" [(ngModel)]="approvalLevelName" [maxlength]="50" required />
+
+                    </div>
+                    <!-- <div class="form-group">
+                        <label for="description">Description:</label>
+                        <textarea type="text" class="form-control" id="description" placeholder="Description"
+                            name="description" [(ngModel)]="description" required></textarea>
+                    </div> -->
+                    <div class="row justify-content-start p-1">
+                        <!-- Submit -->
+                        <button type="submit" rippleEffect class="btn mr-1" [disabled]="!addForm.form.valid"
+                            (click)="onSubmit(addForm)"
+                            style="background-color:#2E5F73; color:white; padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+                            <i data-feather="check-circle" class="w-4 h-4"></i>
+                            Submit
+                        </button>
+
+                        <!-- Cancel -->
+                        <button type="button" rippleEffect class="btn btn-danger mr-1" (click)="cancel()"
+                            style="padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+                            <i data-feather="x-circle" class="w-4 h-4"></i>
+                            Cancel
+                        </button>
+
+                        <!-- Reset -->
+                        <button type="reset" rippleEffect class="btn btn-secondary" (click)="reset()"
+                            style="padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+                            <i data-feather="rotate-ccw" class="w-4 h-4"></i>
+                            Clear
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

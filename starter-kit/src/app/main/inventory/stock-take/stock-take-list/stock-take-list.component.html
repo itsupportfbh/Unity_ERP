@@ -1,0 +1,242 @@
+<div class="content-wrapper p-0">
+    <div class="content-body">
+        <!-- User List -->
+        <section class="users-list-wrapper">
+            <div class="card">
+                <div class="row">
+                    <div class="col-md-6 col-12">
+                        <h4 class="card-text"
+                            style="margin-left: 0.85rem; margin-top: 0.75rem;font-size: 1.25rem;font-weight: 600; color: #2E5F73;">
+                            Stock Take
+                            List</h4>
+                        <div class="d-flex justify-content-between align-items-center m-1">
+                            <label class="d-flex align-items-center">Show
+                                <select class="form-control mx-25" [(ngModel)]="selectedOption">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                entries
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+                        <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+
+                            <label class="d-flex align-items-center ml-1 ml-md-0">Search:<input
+                                    [(ngModel)]="searchValue" name="searchValue" type="search"
+                                    class="form-control ml-25" (keyup)="filterUpdate($event)"
+                                    (search)="filterUpdate($event)" /></label>
+
+                            <button (click)="openCreate()" class="btn m-1 d-inline-flex align-items-center"
+                                style="background-color:#2E5F73; color:white; gap:4px;">
+                                <i data-feather="plus-circle" class="w-4 h-4"></i>
+                                <span>Add</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <ngx-datatable class="bootstrap core-bootstrap" [rows]="rows" [rowHeight]="50" [headerHeight]="50"
+                    [footerHeight]="50" [limit]="selectedOption" [columnMode]="'force'" [scrollbarH]="true"
+                    [reorderable]="true">
+
+                    <!-- Expand/Collapse + FadeIn Column -->
+                    <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false"
+                        [canAutoResize]="false">
+                        <ng-template ngx-datatable-cell-template let-row="row">
+                            <span (click)="openLinesModal(row)" title="View Details"
+                                style="cursor:pointer; font-size:18px; color:#2E5F73;">
+                                <i class="fas fa-eye"></i>
+                            </span>
+
+                        </ng-template>
+                    </ngx-datatable-column>
+                    <ngx-datatable-column name="Warehouse" prop="warehouseName" [width]="120"></ngx-datatable-column>
+                                <ngx-datatable-column name="Supplier Name" prop="supplierName" [width]="200">
+  <ng-template ngx-datatable-cell-template let-row="row">
+    <span class="truncate-20"
+          [title]="row.name">
+      {{  (row.supplierName && row.supplierName.trim().length)
+          ? (row.supplierName.length > 20 ? (row.supplierName | slice:0:20) + '...' : row.supplierName)
+          : 'ALL' }}
+    </span>
+  </ng-template>
+</ngx-datatable-column>
+
+                    <ngx-datatable-column name="Type" prop="strategyId" [width]="120">
+                        <ng-template ngx-datatable-cell-template let-row="row">
+                            {{   row?.strategyName && row.strategyName.trim().length
+        ? row.strategyName
+        : 'ALL' }}
+                        </ng-template>
+                    </ngx-datatable-column>
+
+                    <ngx-datatable-column name="Status" prop="status" [width]="120">
+                        <ng-template let-value="value" ngx-datatable-cell-template>
+                            <span class="badge rounded-pill" [ngClass]="{
+        'bg-secondary': value === 1,
+        'bg-success'  : value === 2,
+        'bg-dark'     : value === 3
+      }">
+                                {{ value === 1 ? 'Draft' : (value === 2 ? 'Approved' : 'Posted') }}
+                            </span>
+                        </ng-template>
+                    </ngx-datatable-column>
+
+
+                    <!-- Edit/Delete Actions -->
+                    <ngx-datatable-column name="Action" [width]="120">
+                        <ng-template let-row="row" ngx-datatable-cell-template>
+                            <!-- Actions -->
+                            <i class="fas fa-pen me-3" [ngClass]="row.status === 3 ? 'text-muted' : 'text-primary'"
+                                [style.pointer-events]="row.status === 3 ? 'none' : 'auto'"
+                                [attr.title]="row.status === 3 ? 'Cannot edit (Posted)' : 'Edit'"
+                                (click)="row.status === 3 ? null : editStockTake(row)">
+                            </i>
+
+                            <i class="fas fa-trash me-3" [ngClass]="row.status === 3 ? 'text-muted' : 'text-danger'"
+                                [style.pointer-events]="row.status === 3 ? 'none' : 'auto'"
+                                [attr.title]="row.status === 3 ? 'Cannot delete (Posted)' : 'Delete'"
+                                (click)="row.status === 3 ? null : deleteStockTake(row.id)">
+                            </i>
+
+
+                            <button *ngIf="row.status === 2" class="btn btn-sm btn-success" title="Post inventory"
+                                [disabled]="row._posting" (click)="post(row)">
+                                <i class="fas fa-upload"></i> Post
+                            </button>
+
+                            <span *ngIf="row.status === 3" class="text-muted">Posted</span>
+
+                        </ng-template>
+                    </ngx-datatable-column>
+
+
+                </ngx-datatable>
+
+            </div>
+        </section>
+    </div>
+
+</div>
+
+<div *ngIf="showLinesModal" (click)="closeLinesModal()"
+    style="position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1050; display:flex; align-items:center; justify-content:center;">
+
+    <!-- Modal Card -->
+    <div (click)="$event.stopPropagation()"
+        style="width:800px; max-width:95vw; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+        <!-- Header -->
+        <div
+            style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eef2f7;">
+            <h3 style="margin:0; font-size:20px; line-height:1.2; font-weight:700; color:#374151;">Stock Take Lines</h3>
+            <button (click)="closeLinesModal()" aria-label="Close"
+                style="border:0; background:transparent; font-size:22px; line-height:1; cursor:pointer; color:#6b7280;">×</button>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:16px 20px;">
+            <div style="max-height:60vh; overflow:auto; border:1px solid #eef2f7; border-radius:10px;">
+                <table style="width:100%; border-collapse:collapse; font-size:14px; color:#111827;">
+                    <thead>
+                        <tr style="background:#2E5F73; color:#fff;">
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Location</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Item</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Scan/Barcode</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Available</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;white-space:nowrap">Accepted Qty</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;white-space:nowrap">Faulty Qty</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;white-space:nowrap">Total Qty</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Variance</th>
+                             <th style="padding:10px 12px; text-align:left; font-weight:600;">Reason</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Remarks</th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let l of modalLines; let i = index"
+                            [style.background]="i % 2 === 0 ? '#fcfdff' : '#ffffff'"
+                            style="border-bottom:1px solid #f1f5f9;">
+                            <td
+                                style="padding:10px 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:420px;">
+                                {{ getBinName(l.binId) }}
+                            </td>
+                            <td
+                                style="padding:10px 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:420px;">
+                                {{ getItemName(l.itemId) }}
+                            </td>
+                            <td
+                                style="padding:10px 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:420px;">
+                                {{ l.barcode || '-' }}
+                            </td>
+
+                            <td style="padding:10px 12px;">
+                                {{ l.onHand || 0 }}
+                            </td>
+                            <td style="padding:10px 12px;">
+                                {{ l.countedQty || 0 }}
+                            </td>
+                            <td style="padding:10px 12px;">
+                                {{ l.badCountedQty || 0 }}
+                            </td>
+                            <td style="padding:10px 12px;">
+                                {{ l.totalQty || 0 }}
+                            </td>
+                            <td style="padding:10px 12px;" [ngClass]="l.variance >= 0 ? 'text-success' : 'text-danger'">
+                                {{ l.variance }}
+                            </td>
+                            <td style="padding:16px 2px;"class="reason-cell">
+                                <span class="reason-text">{{ getReason(l.reasonId)}}</span>
+                                
+                            </td>
+                            <td style="padding:10px 12px;"class="reason-cell">
+                                <span class="reason-text" [title]="l.remarks">{{ l.remarks || '-' }}</span>
+                                
+                            </td>
+
+                        </tr>
+                        <tr *ngIf="!modalLines?.length">
+                            <td colspan="3" style="padding:14px 12px; text-align:center; color:#6b7280;">No lines</td>
+                        </tr>
+                    </tbody>
+
+                    <!-- <tfoot *ngIf="modalLines?.length">
+                        <tr style="background:#f3f4f6; border-top:1px solid #e5e7eb;">
+                           
+                            <td colspan="2" style="padding:10px 12px; font-weight:700;">Total</td>
+
+                            
+                            <td
+                                style="padding:10px 12px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums;">
+                                {{ modalTotal?.available }}
+                            </td>
+                            <td
+                                style="padding:10px 12px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums;">
+                                {{ modalTotal?.counted }}
+                            </td>
+                            <td
+                                style="padding:10px 12px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums;">
+                                {{ modalTotal?.variance }}
+                            </td>
+
+                     
+                            <td style="padding:10px 12px;"></td>
+                        </tr>
+                    </tfoot> -->
+
+
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="display:flex; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid #eef2f7;">
+            <button (click)="closeLinesModal()"
+                style="background:#2E5F73; color:#fff; border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,290 @@
+<button class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
+    style="background-color:#2E5F73; color:white; padding-left:2.25rem;" (click)="goToStockReorderPlanningList()">
+    <i class="fas fa-arrow-left position-absolute" style="left:0.75rem; top:50%; transform:translateY(-50%);"
+        aria-hidden="true"></i>
+    Go to Stock Reorder Planning list
+</button>
+
+<div class="card shadow-sm border-0 rounded-3">
+  <div class="card-header d-flex align-items-center justify-content-between bg-white border-0">
+    <h4 class="card-title mb-0" style="color:#2E5F73">Stock Reorder Planning</h4>
+    <button class="px-1 py-1 rounded-xl border text-gray-700 hover:bg-gray-50" (click)="onCancel()">← Back</button>
+  </div>
+
+  <div class="card-body">
+    <!-- Warehouse + Add Item -->
+    <div class="row g-3 align-items-end">
+      <div class="col-lg-4">
+        <label class="form-label small text-body-secondary d-block">Warehouse</label>
+        <ng-select
+          class="ngs ngs-sm w-100"
+          [items]="warehouses"
+          bindLabel="name"
+          bindValue="id"
+          [(ngModel)]="warehouseTypeId"
+          placeholder="Select warehouse"
+          (change)="onWarehouseChange()">
+        </ng-select>
+      </div>
+
+      <div class="col-lg-5">
+        <label class="form-label small text-body-secondary d-block">Add Item (in selected warehouse)</label>
+        <ng-select
+          class="ngs ngs-sm w-100"
+          [items]="availableItems"
+          bindLabel="itemName"
+          bindValue="id"
+          [clearable]="true"
+          [(ngModel)]="selectedItemId"
+          [disabled]="!warehouseTypeId"
+          placeholder="{{ warehouseTypeId ? 'Select item to add' : 'Choose warehouse first' }}">
+          <ng-template ng-option-tmp let-i="item">
+            <div class="d-flex justify-content-between align-items-center w-100">
+              <div>
+                <div class="fw-semibold">{{ i.itemName }}</div>
+                <small class="text-muted">SKU: {{ i.sku }}</small>
+              </div>
+              <small class="text-muted">OnHand: {{ i.onHand ?? 0 }}</small>
+            </div>
+          </ng-template>
+        </ng-select>
+      </div>
+
+      <div class="col-lg-3 d-flex align-items-end">
+        <button type="button"
+                class="btn w-100"
+                style="background:#2E5F73; color:#fff; border-color:#2E5F73;"
+                [disabled]="!warehouseTypeId || !selectedItemId"
+                (click)="addItemToWarehouse()">
+          <i class="fas fa-plus me-1"></i> Add to Reorder
+        </button>
+      </div>
+    </div>
+
+    <!-- Method / Horizon / Lead -->
+    <div class="row g-3 align-items-end mt-4">
+      <div class="col-md-4">
+        <label class="form-label small text-body-secondary d-block">Method</label>
+        <ng-select
+          class="ngs ngs-sm w-100"
+          [items]="methodOptions"
+          bindLabel="label"
+          bindValue="id"
+          placeholder="Select method"
+          [clearable]="true"
+          [(ngModel)]="methodId"
+          (change)="reloadCalculationsOnly()">
+        </ng-select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label small text-body-secondary d-block">Horizon (days)</label>
+        <input type="number" class="form-control" min="1"
+               [(ngModel)]="horizonDays"
+               (ngModelChange)="reloadCalculationsOnly()">
+      </div>
+
+      <div class="col-md-3 d-flex align-items-center" style="padding-top: 1.6rem;">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="inclLead"
+                 [(ngModel)]="includeLeadTime"
+                 (change)="reloadCalculationsOnly()">
+          <label class="form-check-label small ms-2" for="inclLead">
+            Include Lead Time
+          </label>
+        </div>
+      </div>
+
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn w-100"
+                style="background:#2E5F73;color:#fff;border-color:#2E5F73;"
+                (click)="runSuggestion()"
+                [disabled]="loading || rows.length===0">
+          Run Suggestion
+        </button>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-responsive mt-3">
+      <table class="table table-sm align-middle item-table">
+        <colgroup>
+          <col style="width:34px"><col style="width:28px"><col>
+          <col style="width:120px"><col style="width:120px"><col style="width:120px">
+          <col style="width:120px"><col style="width:140px">
+          <col style="width:200px"><!-- Location -->
+          <col style="width:170px"><!-- Delivery Date -->
+          <col style="width:220px"><!-- Reorder Qty -->
+        </colgroup>
+
+        <thead class="table-light">
+          <tr>
+            <th class="p-0 text-center align-middle" style="width:34px;min-width:34px">
+              <input type="checkbox"
+                     class="form-check-input m-0 position-static"
+                     [checked]="isAllSelected()"
+                     (change)="toggleSelectAll($event)">
+            </th>
+            <th style="width:28px;"></th>
+            <th>Item</th>
+            <th class="text-center">On Hand</th>
+            <th class="text-center">Min</th>
+            <th class="text-center">Max</th>
+            <th class="text-center">Lead (days)</th>
+            <th class="text-center">Usage {{horizonDays}}d</th>
+            <th class="text-center">Location</th>
+            <th class="text-center">Delivery Date</th>
+            <th class="text-center">Reorder Qty</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <ng-container *ngFor="let r of rows">
+            <tr>
+              <td class="p-0 text-center align-middle" style="width:34px;min-width:34px">
+                <input type="checkbox"
+                       class="form-check-input m-0 position-static"
+                       [checked]="isSelected(r.itemId)"
+                       (change)="toggleRowSelection(r.itemId, $event)">
+              </td>
+
+              <td class="text-center" style="cursor:pointer;" (click)="toggleExpand(r)">
+                <i class="fas" [ngClass]="isExpanded(r) ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+              </td>
+
+              <td style="cursor:pointer;" (click)="toggleExpand(r)">
+                <div class="fw-semibold">{{ r.itemName }}</div>
+                <div class="text-muted small" *ngIf="r.sku">SKU: {{ r.sku }}</div>
+              </td>
+
+              <td class="text-center">{{ r.onHand ?? 0 }}</td>
+              <td class="text-center">{{ r.min ?? 0 }}</td>
+              <td class="text-center">{{ r.max ?? 0 }}</td>
+              <td class="text-center">{{ r.leadDays ?? 0 }}</td>
+
+              <td>
+                <input type="number"
+                       class="form-control form-control-sm text-start"
+                       min="0" step="1"
+                       [(ngModel)]="r.usageHorizon"
+                       (ngModelChange)="recalcRow(r)">
+              </td>
+
+              <!-- Location -->
+              <td class="loc-cell">
+                <ng-select
+                  class="ngs ngs-sm w-100 loc-select"
+                  [items]="locationList"
+                  bindLabel="name"
+                  bindValue="name"
+                  [(ngModel)]="r.location"
+                  (change)="onLocationChange(r)"
+                  [dropdownPosition]="'bottom'"
+                  [searchable]="true"
+                  [virtualScroll]="true"
+                  [clearable]="true"
+                  placeholder="Select location">
+                </ng-select>
+              </td>
+
+              <!-- Delivery Date -->
+              <td>
+                <input type="date"  #dateInput
+                       class="form-control form-control-sm"
+                        [min]="minDate"
+                       [ngModel]="r.deliveryDate"
+                       (ngModelChange)="onDeliveryDateChange(r, $event)"  (click)="dateInput.showPicker()">
+              </td>
+
+              <!-- Reorder Qty + suggested -->
+              <td>
+                <div class="input-group reorder-qty-ig">
+                  <input type="number"
+                         class="form-control text-start"
+                         min="0" step="1"
+                         [(ngModel)]="r.reorderQty"
+                         (ngModelChange)="onReorderQtyChange(r)">
+                  <span class="input-group-text reorder-suggest-addon"
+                        *ngIf="(r.suggested ?? 0) > 0">
+                    Suggested: {{ r.suggested | number:'1.0-0' }}
+                  </span>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Supplier breakdown -->
+            <tr *ngIf="isExpanded(r)">
+              <td></td>
+              <td colspan="10" class="bg-light p-0">
+                <div class="supplier-panel">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-semibold d-flex align-items-center" style="color:#2E5F73;">
+                      <i class="fas fa-industry me-2"></i> Suggest Suppliers
+                    </h6>
+                    <small class="text-muted">Choose one supplier for this item</small>
+                  </div>
+
+                  <div class="supplier-grid">
+                    <div class="sup-card"
+                         *ngFor="let s of (r.supplierBreakdown || [])"
+                         [class.selected]="s.selected"
+                         (click)="selectSupplier(r, s)">
+                      <div class="sup-card-top">
+                        <input type="radio"
+                               class="form-check-input"
+                               name="sup-{{r.itemId}}"
+                               [checked]="s.selected"
+                               (click)="$event.stopPropagation(); selectSupplier(r, s)">
+                        <span class="sup-name">{{ s.name }}</span>
+                      </div>
+                      <div class="sup-metrics">
+                        <div class="metric">
+                          <div class="metric-label">Qty</div>
+                          <div class="metric-value">{{ s.qty | number:'1.0-2' }}</div>
+                        </div>
+                        <div class="metric">
+                          <div class="metric-label">Price</div>
+                          <div class="metric-value">{{ s.price | number:'1.0-2' }}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="text-muted text-center"
+                         *ngIf="!r.supplierBreakdown || !r.supplierBreakdown.length">
+                      No suppliers found for this item.
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+
+          <tr *ngIf="!loading && rows.length===0">
+            <td colspan="11" class="text-center text-muted">
+              {{ warehouseTypeId ? 'No items in this warehouse.' : 'Select a Warehouse to see items.' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex gap-2 ms-auto mt-2">
+      <button
+        type="button"
+        class="btn btn-sm"
+        style="background:#2E5F73; color:#fff; border-color:#2E5F73; padding:0.8rem;"
+        (click)="onSuggestPO()"
+        [disabled]="isBusy">
+        Suggest PO
+      </button>
+
+<button type="button" class="btn btn-sm btn-outline-danger" (click)="onCancel()">
+  <i class="fas fa-times me-1"></i> Cancel
+</button>
+
+
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,80 @@
+/* Outer card */
+.pl-card .card-body {
+  padding: 0.75rem 1rem 1rem;
+}
+
+/* Section title */
+.reports-center-title {
+  font-weight: 600;
+  color: #2E5F73;
+  margin-bottom: 0.75rem;
+}
+
+/* Report card base */
+.reports-center .report-card {
+  background: #ffffff;
+  border-radius: 1.25rem;
+  padding: 0.55rem 1.2rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  border: 1px solid #e5e7eb;
+}
+
+.report-card.clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.report-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+}
+
+/* Title + button row */
+.report-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.1rem;
+}
+
+.report-title,
+.report-subtitle {
+  margin: 0;
+}
+
+.report-title {
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: #111827;
+}
+
+.report-subtitle {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* Open button */
+.btn-report {
+  padding: 0.3rem 1.6rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  min-height: 2.1rem;
+  line-height: 1.2;
+
+  background-color: #ffffff;
+  color: #2E5F73;
+  border: 1px solid #2E5F73;
+}
+
+/* Selected */
+.btn-report--active {
+  background-color: #2E5F73;
+  color: #ffffff;
+  border-color: #2E5F73;
+}
+
+/* Hover – only for non-active */
+.btn-report:not(.btn-report--active):hover {
+  background-color: #2E5F73;
+  color: #ffffff;
+}

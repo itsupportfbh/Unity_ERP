@@ -1,0 +1,241 @@
+<div class="content-wrapper p-0">
+    <div class="content-body">
+        <section class="users-list-wrapper">
+            <div class="card shadow-sm ar-card">
+                <div class="card-body">
+
+                    <!-- ===== Header summary cards ===== -->
+                    <div class="row mb-1 ar-summary-row">
+                        <!-- Total Invoice Amount -->
+                        <div class="col-md-3 col-6 mb-2">
+                            <div class="summary-card">
+                                <div class="label">TOTAL INVOICE AMOUNT</div>
+                                <div class="value text-warning d-flex align-items-center">
+                                    <i data-feather="file-text" class="font-medium-4 me-50"></i>
+                                    <span>{{ totalInvoiceAmount | number: '1.2-2' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Paid -->
+                        <div class="col-md-3 col-6 mb-2">
+                            <div class="summary-card">
+                                <div class="label">TOTAL PAID</div>
+                                <div class="value text-success d-flex align-items-center">
+                                    <i data-feather="credit-card" class="font-medium-4 me-50"></i>
+                                    <span>{{ totalPaid | number: '1.2-2' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Credit Notes -->
+                        <div class="col-md-3 col-6 mb-2">
+                            <div class="summary-card">
+                                <div class="label">TOTAL CREDIT NOTES</div>
+                                <div class="value text-info d-flex align-items-center">
+                                    <i data-feather="file-minus" class="font-medium-4 me-50"></i>
+                                    <span>{{ totalCreditNote | number: '1.2-2' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Net Outstanding -->
+                        <div class="col-md-3 col-6 mb-2">
+                            <div class="summary-card">
+                                <div class="label">NET OUTSTANDING</div>
+                                <div class="value text-primary d-flex align-items-center">
+                                    <i data-feather="dollar-sign" class="font-medium-4 me-50"></i>
+                                    <span>{{ netOutstanding | number: '1.2-2' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="d-flex justify-content-end mb-2">
+                        <div class="form-inline">
+                            <label class="me-2">Search:</label>
+                            <input type="text" class="form-control form-control-sm" placeholder="Customer..."
+                                (input)="onSearchChange($event.target.value)" />
+                        </div>
+                    </div>
+
+                    <!-- ===== Grouped table by customer ===== -->
+                    <div class="table-responsive">
+                        <table class="table mb-0 ar-table invoice-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px;"></th>
+                                    <th>Customer</th>
+                                    <th class="text-center">Invoice Count</th>
+                                    <th class="text-end">Amount</th>
+                                    <th class="text-end">Paid</th>
+                                    <th class="text-end">Credit Note</th>
+                                    <th class="text-end">Outstanding</th>
+                                </tr>
+                            </thead>
+                            <tbody *ngIf="!loading">
+                                <!-- parent row per customer -->
+                                <ng-container *ngFor="let g of filteredGroups">
+                                    <tr class="customer-row">
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-light rounded-circle"
+                                                (click)="toggleExpand(g)">
+                                                <span *ngIf="g.expanded">&#9650;</span>
+                                                <span *ngIf="!g.expanded">&#9660;</span>
+                                            </button>
+                                        </td>
+                                        <td>{{ g.customerName }}</td>
+                                        <td class="text-center">{{ g.invoiceCount }}</td>
+                                        <td class="text-end">{{ g.totalAmount | number:'1.2-2' }}</td>
+                                        <td class="text-end">{{ g.totalPaid | number:'1.2-2' }}</td>
+                                        <td class="text-end">{{ g.totalCreditNote | number:'1.2-2' }}</td>
+                                        <td class="text-end">
+                                            {{ g.netOutstanding | number:'1.2-2' }}
+                                        </td>
+                                    </tr>
+
+                                    <!-- child invoice rows -->
+                                    <!-- child invoice rows -->
+                                    <tr *ngIf="g.expanded">
+                                        <td colspan="7" class="p-0">
+                                            <table class="table mb-0 inner-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Invoice No</th>
+                                                        <th>Invoice Date</th>
+                                                        <th>Due Date</th>
+                                                        <th class="text-end">Amount</th>
+                                                        <th class="text-end">Paid</th>
+                                                        <th class="text-end">Outstanding</th>
+                                                        <th class="text-end">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!-- normal invoice rows -->
+                                                    <tr *ngFor="let r of g.invoices">
+                                                        <td>{{ r.invoiceNo }}</td>
+                                                        <td>{{ r.invoiceDate | date:'dd-MM-yyyy' }}</td>
+                                                        <td>
+                                                            <ng-container *ngIf="r.dueDate; else noDue">
+                                                                {{ r.dueDate | date:'dd-MM-yyyy' }}
+                                                            </ng-container>
+                                                            <ng-template #noDue>-</ng-template>
+                                                        </td>
+                                                        <td class="text-end">{{ r.amount | number:'1.2-2' }}</td>
+                                                        <td class="text-end">{{ r.paid | number:'1.2-2' }}</td>
+                                                        <td class="text-end" [ngClass]="{
+          'text-success': r.outstanding === 0,
+          'text-danger': r.outstanding > 0
+        }">
+                                                            {{ r.outstanding | number:'1.2-2' }}
+                                                        </td>
+                                                        <td class="text-end align-middle">
+                                                            <span class="me-2 status-pill"
+                                                                [ngClass]="getStatusClassFromString(getInvoiceStatus(r))">
+                                                                {{ getInvoiceStatus(r) }}
+                                                            </span>
+                                                            <button
+                                                                class="btn btn-outline-secondary btn-sm ar-print-btn"
+                                                                type="button" (click)="printInvoice(r)">
+                                                                <i class="fa fa-print"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+
+                                                    <!-- ONE ROW PER CREDIT NOTE -->
+                                                    <tr class="credit-summary-row" *ngFor="let cn of g.creditNotes">
+                                                        <!-- CN No -->
+                                                        <td class="invoice-ref">{{ cn.customerCreditNoteNo ||
+                                                            cn.invoiceNo }}
+                                                            <span class="invoice-ref" *ngIf="cn.referenceNo"> ({{
+                                                                cn.referenceNo }})</span>
+                                                        </td>
+
+                                                        <!-- CN Date -->
+                                                        <td>
+                                                            <ng-container
+                                                                *ngIf="cn.customerCreditNoteDate; else cnNoDate">
+                                                                {{ cn.customerCreditNoteDate | date:'dd-MM-yyyy' }}
+                                                            </ng-container>
+                                                            <ng-template #cnNoDate>-</ng-template>
+                                                        </td>
+
+                                                        <!-- Due Date -->
+                                                        <td>-</td>
+
+                                                        <!-- Amount (negative) -->
+                                                        <td class="text-end text-danger">
+                                                            {{ (cn.customerCreditNoteAmount! * -1) | number:'1.2-2' }}
+                                                        </td>
+
+                                                        <!-- Paid -->
+                                                        <td class="text-end"
+                                                            [ngClass]="{'text-success': (cn.customerCreditStatus || 0) > 1}">
+                                                            {{
+                                                            ((cn.customerCreditStatus || 0) > 1
+                                                            ? cn.customerCreditNoteAmount
+                                                            : 0) | number:'1.2-2'
+                                                            }}
+                                                        </td>
+
+                                                        <!-- Outstanding -->
+                                                        <td class="text-end">
+                                                            {{
+                                                            ((cn.customerCreditStatus || 0) > 1
+                                                            ? 0
+                                                            : -cn.customerCreditNoteAmount!) | number:'1.2-2'
+                                                            }}
+                                                        </td>
+
+                                                        <!-- Status -->
+                                                        <!-- <td class="text-end">
+                                                            <span class="status-pill" [ngClass]="{
+              'status-credit': (cn.customerCreditStatus || 0) > 1,
+              'status-credit-draft': cn.customerCreditStatus === 1
+            }">
+                                                                {{ cn.customerCreditStatus === 1 ? 'Credit Draft' :
+                                                                'Credit Note' }}
+                                                            </span>
+                                                        </td> -->
+                                                        <td class="text-end">
+                                                            <span class="status-pill cn-status-link" [ngClass]="{
+      'status-credit': (cn.customerCreditStatus || 0) > 1,
+      'status-credit-draft': cn.customerCreditStatus === 1
+    }" (click)="openCreditNote(cn)">
+                                                                {{ cn.customerCreditStatus === 1 ? 'Credit Draft' :
+                                                                'Credit Note' }}
+                                                            </span>
+                                                        </td>
+
+                                                    </tr>
+                                                </tbody>
+
+                                            </table>
+                                        </td>
+                                    </tr>
+
+                                </ng-container>
+
+                                <tr *ngIf="filteredGroups.length === 0">
+                                    <td colspan="7" class="text-center py-3">
+                                        No customers / invoices found.
+                                    </td>
+                                </tr>
+                            </tbody>
+
+                            <tbody *ngIf="loading">
+                                <tr>
+                                    <td colspan="7" class="text-center py-3">
+                                        Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

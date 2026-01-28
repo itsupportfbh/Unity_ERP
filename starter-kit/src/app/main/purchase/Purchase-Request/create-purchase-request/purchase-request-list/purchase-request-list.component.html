@@ -1,0 +1,412 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <!-- ==================== HEADER ROW ==================== -->
+        <div class="row">
+          <!-- Title + page size -->
+          <div class="col-md-3 col-12">
+            <h4
+              class="card-text"
+              style="margin-left:0.85rem;margin-top:0.75rem;font-size:1.25rem;font-weight:600;color:#2E5F73;">
+              PR List
+            </h4>
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center">
+                Show
+                <select class="form-control mx-25" (change)="onLimitChange($event)">
+                  <option [selected]="selectedOption===10" value="10">10</option>
+                  <option [selected]="selectedOption===25" value="25">25</option>
+                  <option [selected]="selectedOption===50" value="50">50</option>
+                  <option [selected]="selectedOption===100" value="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+             <div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+            </div>
+          </div>
+
+          <!-- Search + Alerts + Add + Drafts -->
+          <div class="col-md-9 col-12 d-flex justify-content-start justify-content-md-end">
+            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+
+              <!-- Search -->
+              <label class="d-flex align-items-center ml-1 ml-md-0">
+                Search:
+                <input
+                  [(ngModel)]="searchValue"
+                  name="searchValue"
+                  type="search"
+                  class="form-control ml-25"
+                  (keyup)="filterUpdate($event)"
+                  (search)="filterUpdate($event)" />
+              </label>
+
+              <!-- Button group -->
+              <div class="d-flex align-items-center ml-1">
+
+                <!-- Alerts button + panel -->
+                <div class="position-relative mr-1">
+                  <button
+                    type="button"
+                    (click)="toggleAlerts()"
+                    class="btn d-inline-flex align-items-center"
+                    style="background:#fff;color:#2E5F73;border:1px solid #2E5F73;gap:6px;"
+                    title="Shortage Alerts">
+                    <i data-feather="bell" class="w-4 h-4"></i>
+                    <span>Alerts</span>
+                    <span
+                      *ngIf="alertCount > 0"
+                      class="badge badge-pill badge-danger"
+                      style="position:absolute;top:-6px;right:-6px;">
+                      {{ alertCount }}
+                    </span>
+                  </button>
+
+                  <!-- Slide-down alerts panel -->
+                  <div *ngIf="showAlertsPanel" class="card alerts-panel">
+                    <div class="alerts-head">
+                      <div class="d-flex align-items-center" style="gap:8px;">
+                        <i data-feather="bell"></i>
+                        <b>Shortage Alerts</b>
+                      </div>
+                      <div class="d-flex align-items-center" style="gap:8px;">
+                        <button class="btn btn-sm btn-light" (click)="refreshAlerts()">Refresh</button>
+                        <button
+                          class="btn btn-sm btn-warning"
+                          (click)="acknowledgeAll()"
+                          [disabled]="alerts.length === 0">
+                          Mark all read
+                        </button>
+                        <button
+                          class="btn btn-sm btn-outline-light"
+                          (click)="closeAlerts()"
+                          aria-label="Close">
+                          ×
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="alerts-body">
+                      <div *ngIf="alerts.length === 0" class="p-3 text-center text-muted">
+                        No new alerts.
+                      </div>
+
+                      <div
+                        *ngFor="let a of alerts; trackBy: trackByAlertId"
+                        class="alert-card">
+                        <div class="alert-title">
+                          Sales shortage — Item: {{ a.itemName || ('#' + a.itemId) }}
+                          · Qty: {{ a.requiredQty }}
+                          <ng-container *ngIf="a.warehouseId != null">
+                            · WH: {{ a.warehouseName || a.warehouseId }}
+                          </ng-container>
+                          <ng-container *ngIf="a.supplierId != null">
+                            · SUP: {{ a.supplierName || a.supplierId }}
+                          </ng-container>
+                        </div>
+
+                        <div class="alert-sub">
+                          <span *ngIf="a.createdOn">{{ a.createdOn | date:'short' }}</span>
+                        </div>
+
+                        <div class="mt-2 d-flex" style="gap:8px;">
+                          <button
+                            class="btn btn-sm btn-outline-primary"
+                            (click)="acknowledgeAlert(a)">
+                            Acknowledge
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div><!-- /alerts-panel -->
+                </div><!-- /position-relative -->
+
+                <!-- Add -->
+                <button
+                  (click)="goToCreate()"
+                  class="btn mr-1 d-inline-flex align-items-center"
+                  style="background-color:#2E5F73;color:white;gap:6px;"
+                  [disabled]="isPeriodLocked"
+                  [attr.title]="isPeriodLocked
+                    ? (currentPeriodName
+                        ? 'Period ' + currentPeriodName + ' is locked'
+                        : 'Accounting period is locked')
+                    : 'Create Purchase Request'">
+                  <i data-feather="plus-circle" class="w-4 h-4"></i>
+                  <span>Add</span>
+                </button>
+
+                <!-- Drafts -->
+                <button
+                  (click)="openDrafts()"
+                  class="btn d-inline-flex align-items-center position-relative"
+                  style="background:#ffffff;color:#2E5F73;border:1px solid #2E5F73;gap:6px;">
+                  <i data-feather="file-text" class="w-4 h-4"></i>
+                  <span>Drafts</span>
+                  <span
+                    *ngIf="draftCount > 0"
+                    class="badge badge-pill badge-warning"
+                    style="position:absolute;top:-6px;right:-6px;">
+                    {{ draftCount }}
+                  </span>
+                </button>
+
+              </div><!-- /button-group -->
+            </div><!-- /d-flex -->
+          </div><!-- /col-md-9 -->
+        </div><!-- /row -->
+
+        <!-- ==================== MAIN DATATABLE ==================== -->
+        <ngx-datatable
+          class="bootstrap core-bootstrap"
+          [rows]="rows"
+          [rowHeight]="50"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="selectedOption"
+          [columnMode]="'force'"
+          [scrollbarH]="false"
+          [reorderable]="true">
+
+          <!-- View lines -->
+          <ngx-datatable-column
+            [width]="50"
+            [resizeable]="false"
+            [sortable]="false"
+            [draggable]="false"
+            [canAutoResize]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span
+                (click)="openLinesModal(row)"
+                title="View Details"
+                style="cursor:pointer;font-size:18px;color:#2E5F73;">
+                <i class="fas fa-eye"></i>
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="PR NO" prop="purchaseRequestNo" [width]="120"></ngx-datatable-column>
+          <ngx-datatable-column name="Requester" prop="requester" [width]="180"></ngx-datatable-column>
+          <ngx-datatable-column name="Department" prop="departmentName" [width]="180"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="180">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.deliveryDate | date:'dd-MM-yyyy' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="By Reorder" prop="isReorder" [width]="150">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row?.isReorder === true ? 'Yes' : 'No' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Status" prop="status" [width]="110">
+            <ng-template let-value="value" ngx-datatable-cell-template>
+              <div
+                class="badge badge-pill status-pill"
+                [ngClass]="{
+                  'badge-secondary': value === 0,
+                  'badge-warning' : value === 1,
+                  'badge-success' : value === 2,
+                  'badge-danger'  : value === 3
+                }"
+                [style.backgroundColor]="(value === 3 || value === 4) ? 'red' : ''"
+                title="Status">
+                {{
+                  value === 0 ? 'Draft'   :
+                  value === 1 ? 'Pending' :
+                  value === 2 ? 'Approved':
+                  value === 3 ? 'Rejected': 'Unknown'
+                }}
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Action" [width]="170">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div style="display:flex;justify-content:center;align-items:center;gap:10px;">
+
+                <!-- Disabled if status Approved/Rejected OR period locked -->
+                <ng-container
+                  *ngIf="+row.status === 2 || +row.status === 3 || +row.status === 4 || isPeriodLocked; else actionsEnabled">
+                  <i
+                    class="fas fa-pen text-gray-300 mr-2"
+                    [attr.title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
+                  <i
+                    class="fas fa-trash text-gray-300"
+                    [attr.title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
+                </ng-container>
+
+                <!-- Enabled -->
+                <ng-template #actionsEnabled>
+                  <i
+                    class="fas fa-pen text-primary"
+                    style="cursor:pointer;"
+                    (click)="editRequest(row.id)"
+                    title="Edit"></i>
+                  <i
+                    class="fas fa-trash text-danger"
+                    style="cursor:pointer;"
+                    (click)="deleteRequest(row.id)"
+                    title="Delete"></i>
+                </ng-template>
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+        </ngx-datatable>
+      </div><!-- /card -->
+    </section>
+  </div>
+</div>
+
+<!-- ==================== PR LINES MODAL ==================== -->
+<div
+  *ngIf="showLinesModal"
+  (click)="closeLinesModal()"
+  style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;display:flex;align-items:center;justify-content:center;">
+  <div
+    (click)="$event.stopPropagation()"
+    style="width:800px;max-width:95vw;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <div
+      style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0;font-size:20px;line-height:1.2;font-weight:700;color:#374151;">PR Lines</h3>
+      <button
+        (click)="closeLinesModal()"
+        aria-label="Close"
+        style="border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#6b7280;">
+        ×
+      </button>
+    </div>
+
+    <div style="padding:16px 20px;">
+      <div style="max-height:60vh;overflow:auto;border:1px solid #eef2f7;border-radius:10px;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#111827;">
+          <thead>
+            <tr style="background:#2E5F73;color:#fff;">
+              <th style="padding:10px 12px;text-align:left;font-weight:600;">Item Name</th>
+              <th style="padding:10px 12px;text-align:left;font-weight:600;">Location</th>
+              <th style="padding:10px 12px;text-align:right;font-weight:600;width:120px;">Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let l of modalLines; let i = index"
+              [style.background]="i % 2 === 0 ? '#fcfdff' : '#ffffff'"
+              style="border-bottom:1px solid #f1f5f9;">
+              <td
+                style="padding:10px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;">
+                {{ l.itemSearch || '-' }}
+              </td>
+              <td style="padding:10px 12px;">{{ l.location || '-' }}</td>
+              <td
+                style="padding:10px 12px;text-align:right;font-variant-numeric:tabular-nums;">
+                {{ l.qty || 0 }}
+              </td>
+            </tr>
+            <tr *ngIf="!modalLines?.length">
+              <td colspan="3" style="padding:14px 12px;text-align:center;color:#6b7280;">No lines</td>
+            </tr>
+          </tbody>
+          <tfoot *ngIf="modalLines?.length">
+            <tr style="background:#f3f4f6;border-top:1px solid #e5e7eb;">
+              <td colspan="2" style="padding:10px 12px;font-weight:700;">Total</td>
+              <td
+                style="padding:10px 12px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;">
+                {{ modalTotalQty }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div
+      style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #eef2f7;">
+      <button
+        (click)="closeLinesModal()"
+        style="background:#2E5F73;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== DRAFTS MODAL ==================== -->
+<div
+  *ngIf="showDraftsModal"
+  (click)="closeDrafts()"
+  style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1060;display:flex;align-items:center;justify-content:center;">
+  <div
+    (click)="$event.stopPropagation()"
+    style="width:960px;max-width:95vw;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <div
+      style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0;font-size:18px;font-weight:700;color:#2E5F73;">Draft Purchase Requests</h3>
+      <button
+        (click)="closeDrafts()"
+        aria-label="Close"
+        style="border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#6b7280;">
+        ×
+      </button>
+    </div>
+
+    <div style="padding:12px 16px;">
+      <div style="max-height:65vh;overflow:auto;border:1px solid #eef2f7;border-radius:10px;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <thead style="background:#f8fafc;">
+            <tr>
+              <th style="padding:10px 12px;text-align:left;">Requester</th>
+              <th style="padding:10px 12px;text-align:left;">Department</th>
+              <th style="padding:10px 12px;text-align:left;">Delivery</th>
+              <th style="padding:10px 12px;text-align:left;">Description</th>
+              <th style="padding:10px 12px;text-align:center;width:200px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let d of drafts; trackBy: trackById"
+              style="border-top:1px solid #f1f5f9;">
+              <td style="padding:10px 12px;">{{ d.requester || '-' }}</td>
+              <td style="padding:10px 12px;">{{ d.departmentName || d.departmentID || '-' }}</td>
+              <td style="padding:10px 12px;">{{ d.deliveryDate | date:'dd-MM-yyyy' }}</td>
+              <td
+                style="padding:10px 12px;max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ d.description || '-' }}
+              </td>
+              <td style="padding:10px 12px;text-align:center;">
+                <div style="display:flex;justify-content:center;align-items:center;gap:8px;">
+                  <button class="btn btn-sm btn-primary" (click)="promoteDraft(d.id)">Open</button>
+                  <button class="btn btn-sm btn-outline-danger" (click)="deleteDraft(d.id)">Delete</button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="!drafts?.length">
+              <td colspan="5" style="padding:14px 12px;text-align:center;color:#6b7280;">No drafts</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div
+      style="display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #eef2f7;">
+      <button
+        (click)="closeDrafts()"
+        style="background:#2E5F73;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>

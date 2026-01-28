@@ -1,0 +1,77 @@
+/* ---- COMPACT SKIN (no functionality change) ---- */
+
+/* overall card spacing */
+.ui-compact-slim .card {
+  border-radius: 18px;
+  padding: 14px;            /* was p-5/6 */
+}
+
+/* headings & label spacing */
+.ui-compact-slim .title-row { margin-bottom: 10px; }   /* was ~20px */
+.ui-compact-slim label { font-size: 11px; margin-bottom: 4px; }
+
+/* form controls (inputs/selects/date/time) */
+.ui-compact-slim .ctl {
+  height: 36px;             /* tighter height */
+  padding: 0 10px;          /* remove big vertical padding */
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+/* remove default inner padding some browsers put on date/time */
+.ui-compact-slim input[type="date"].ctl,
+.ui-compact-slim input[type="time"].ctl,
+.ui-compact-slim input[type="number"].ctl { padding-top: 0; padding-bottom: 0; }
+
+/* grid spacing */
+.ui-compact-slim .hdr-grid { gap: 10px; } /* was gap-4 */
+
+/* table compaction */
+.table-compact { border-collapse: collapse; }
+.table-compact thead th { padding: 10px 12px; }
+.table-compact tbody td { padding: 10px 12px; }
+.table-compact th, .table-compact td { border: 1px solid #d1d5db; } /* gray-300 */
+
+/* make header shorter */
+.table-compact thead { line-height: 1.1; }
+
+/* smaller buttons */
+.ui-compact-slim .btn-compact {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* pills */
+.ui-compact-slim .pill { padding: 2px 8px; border-radius: 9999px; font-size: 11px; }
+
+/* reduce gaps inside action rows */
+.ui-compact-slim .row-actions { gap: 6px; }
+
+/* tighter modal */
+.ui-compact-slim .modal-box { max-width: 520px; border-radius: 14px; }
+.ui-compact-slim .modal-tabs { gap: 16px; }
+.ui-compact-slim .modal-actions { gap: 8px; }
+
+/* compact signature pad */
+.ui-compact-slim canvas { height: 140px !important; }
+
+/* keep your brand color handy */
+:root { --brand:#2E5F73; }
+
+
+
+/* in styles.css (global) */
+.ng-dropdown-panel {
+  max-height: 180px !important;
+  overflow-y: auto !important;
+  min-width: 12rem !important; /* approximate */
+  box-sizing: border-box;
+}
+
+/* force scrollbar style and spacing */
+.ng-dropdown-panel .ng-dropdown-panel-items {
+  padding: 4px 0;
+}

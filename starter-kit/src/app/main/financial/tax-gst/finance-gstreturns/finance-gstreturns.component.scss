@@ -1,0 +1,156 @@
+// src/app/main/finance/gst-returns/finance-gstreturns.component.scss
+$brand: #2E5F73;
+
+.gst-wrapper {
+  padding: 1rem;
+}
+
+.gst-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem 1.5rem;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+}
+
+.gst-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.gst-header-left {
+  display: flex;
+  align-items: center;
+
+  i {
+    font-size: 1.6rem;
+    color: $brand;
+  }
+}
+
+.gst-title {
+  margin: 0 0 0 0.5rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.gst-header-right {
+  display: grid;
+  grid-template-columns: minmax(140px, 180px) repeat(3, minmax(120px, 180px));
+  gap: 0.75rem;
+  align-items: end;
+  width: 100%;
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.gst-field {
+  label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    color: #64748b;
+  }
+
+  .form-control {
+    border-radius: 8px;
+    font-size: 0.9rem;
+    height: 2.3rem;
+  }
+}
+
+.gst-system-panel {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.gst-system-title {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.gst-system-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-bottom: 0.15rem;
+}
+
+.gst-match-panel {
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  border: 1px solid transparent;
+}
+
+.gst-match-ok {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+}
+
+.gst-match-bad {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.gst-status-icon {
+  font-size: 1.4rem;
+  color: #f97316;
+
+  .gst-match-ok & {
+    color: #16a34a;
+  }
+}
+
+.gst-match-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.gst-match-subtitle {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.gst-footer {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-brand {
+  background-color: $brand;
+  border-color: $brand;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.45rem 1.25rem;
+  font-weight: 500;
+
+  &:hover {
+    background-color: darken($brand, 4%);
+    border-color: darken($brand, 4%);
+  }
+}
+// finance-gstreturns.component.scss
+
+.gst-header-right {
+  display: grid;
+  grid-template-columns:
+    minmax(140px, 160px)  // Year
+    minmax(140px, 170px)  // Quarter
+    repeat(3, minmax(120px, 170px)); // Box6, Box7, Box8
+  gap: 0.75rem;
+  align-items: end;
+  width: 100%;
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+

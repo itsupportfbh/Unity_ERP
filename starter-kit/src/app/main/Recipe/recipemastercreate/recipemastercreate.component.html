@@ -1,0 +1,294 @@
+<button (click)="onGoToRecipeList()"
+        class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
+        style="background-color:#2E5F73; color:white; padding-left:2.25rem;">
+  <i class="fas fa-arrow-left position-absolute"
+     style="left:0.75rem; top:50%; transform:translateY(-50%);"
+     aria-hidden="true"></i>
+  <span>Go to Recipe list</span>
+</button>
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card pr-card">
+
+        <div class="card-body">
+
+          <!-- Title -->
+          <h3 class="pr-title">Recipe Wizard</h3>
+
+          <!-- Stepper (exact PR style text) -->
+          <div class="pr-steps">
+            <div class="pr-step" [class.active]="step===1">
+              <span class="num">1</span><span class="txt">Header</span>
+            </div>
+            <span class="sep"></span>
+            <div class="pr-step" [class.active]="step===2">
+              <span class="num">2</span><span class="txt">Lines</span>
+            </div>
+            <span class="sep"></span>
+            <div class="pr-step" [class.active]="step===3">
+              <span class="num">3</span><span class="txt">Review</span>
+            </div>
+          </div>
+
+          <!-- ================== STEP 1 HEADER ================== -->
+          <div *ngIf="step===1" [formGroup]="form" class="pr-pane">
+
+            <div class="row g-3 mt-2">
+
+              <div class="col-md-6">
+                <label class="pr-label">Recipe (Finished Food) <span class="text-danger">*</span></label>
+
+                <!-- use NG-SELECT if you have it, else normal select -->
+                <!-- NORMAL SELECT -->
+                <select class="pr-input"
+                        formControlName="finishedItemId"
+                        (change)="onFinishedItemChanged()">
+                  <option value="">Search / Select...</option>
+                  <option *ngFor="let it of finishedFoods" [value]="it.id">
+                    {{ it.itemName }}
+                  </option>
+                </select>
+
+                <small class="text-danger" *ngIf="isInvalid('finishedItemId')">Required</small>
+              </div>
+
+              <div class="col-md-3">
+                <label class="pr-label">Cuisine</label>
+                <select class="pr-input" formControlName="cuisine">
+                  <option value="">-- Select --</option>
+                  <option value="South Indian">South Indian</option>
+                  <option value="North Indian">North Indian</option>
+                  <option value="Chinese">Chinese</option>
+                  <option value="Western">Western</option>
+                </select>
+              </div>
+
+              <div class="col-md-3">
+                <label class="pr-label">Status</label>
+                <select class="pr-input" formControlName="status">
+                  <option value="Draft">Draft</option>
+                  <option value="Active">Active</option>
+                  <option value="Deleted">Inactive</option>
+                </select>
+              </div>
+
+              <!-- <div class="col-md-4">
+                <label class="pr-label">Item Code</label>
+                <input class="pr-input" [value]="selectedFinished?.itemCode || ''" readonly />
+              </div>
+
+              <div class="col-md-4">
+                <label class="pr-label">UOM</label>
+                <input class="pr-input" [value]="selectedFinished?.uomName || ''" readonly />
+              </div>
+
+              <div class="col-md-4">
+                <label class="pr-label">Recipe Code (Auto)</label>
+                <input class="pr-input" [value]="form.value.code" readonly />
+              </div> -->
+
+              <div class="col-12">
+                <label class="pr-label">Notes</label>
+                <input class="pr-input" formControlName="notes" placeholder="Optional..." />
+              </div>
+
+            </div>
+
+            <div class="pr-footer">
+              <button type="button" class="btn pr-btn-outline" (click)="cancel()">Close</button>
+              <button type="button" class="btn pr-btn" (click)="goStep(2)">
+                Next: Lines →
+              </button>
+            </div>
+          </div>
+
+          <!-- ================== STEP 2 LINES ================== -->
+          <div *ngIf="step===2" class="pr-pane">
+
+            <div class="lines-container">
+              <table class="lines-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th style="width:120px;">Qty</th>
+                    <th style="width:180px;">UOM</th>
+                    <th style="width:140px;">Yield %</th>
+                    <th style="width:120px;">Cost</th>
+                    <th style="width:140px;" class="text-center">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr *ngIf="bomLines.length===0">
+                    <td colspan="6" style="text-align:center;color:#9ca3af;padding:22px;">
+                      No lines yet.
+                    </td>
+                  </tr>
+
+                  <tr *ngFor="let l of bomLines; let i=index">
+                    <td>{{ l.ingredientName }}</td>
+                    <td>{{ l.qty }}</td>
+                    <td>{{ l.uomName }}</td>
+                    <td>{{ l.yieldPct }}</td>
+                    <td style="text-align:right;font-weight:700;">
+                      {{ l.rowCost | number:'1.2-2' }}
+                    </td>
+                    <td class="text-center">
+                     <button
+  type="button"
+  class="btn btn-sm pr-btn-outline"
+  title="Edit"
+  (click)="openLineModal(i)">
+  <i class="fas fa-pen"></i>
+</button>
+
+                      <button type="button" class="btn btn-sm btn-outline-danger ms-1" (click)="deleteLine(i)">X</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <button type="button" class="btn pr-btn mt-2" (click)="openLineModal()">
+                + Add line
+              </button>
+            </div>
+
+            <div class="pr-footer pr-footer-between">
+              <button type="button" class="btn pr-btn-outline" (click)="goStep(1)">← Back</button>
+              <button type="button" class="btn pr-btn" (click)="goStep(3)">Review →</button>
+            </div>
+          </div>
+
+          <!-- ================== STEP 3 REVIEW ================== -->
+          <div *ngIf="step===3" class="pr-pane">
+
+            <div class="pr-review-top">
+              <div>
+                <div class="pr-label">Recipe</div>
+                <div class="pr-value">{{ selectedFinished?.itemName || '-' }}</div>
+              </div>
+
+              <div>
+                <div class="pr-label">Status</div>
+                <div class="pr-value">{{ form.value.status }}</div>
+              </div>
+
+              <div class="total-pill">
+                Total Cost <span>{{ totalCost | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <div class="lines-container mt-2">
+              <table class="lines-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th style="width:120px;">Qty</th>
+                    <th style="width:180px;">UOM</th>
+                    <th style="width:140px;">Yield %</th>
+                    <th style="width:120px;">Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let l of bomLines">
+                    <td>{{ l.ingredientName }}</td>
+                    <td>{{ l.qty }}</td>
+                    <td>{{ l.uomName }}</td>
+                    <td>{{ l.yieldPct }}</td>
+                    <td style="text-align:right;font-weight:700;">
+                      {{ l.rowCost | number:'1.2-2' }}
+                    </td>
+                  </tr>
+                  <tr *ngIf="bomLines.length===0">
+                    <td colspan="5" style="text-align:center;color:#9ca3af;padding:18px;">No lines</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="pr-footer pr-footer-between">
+              <button type="button" class="btn pr-btn-outline" (click)="goStep(2)">← Back</button>
+              <button type="button" class="btn pr-btn" [disabled]="isSaving" (click)="submit()">
+                {{ isSaving ? 'Saving...' : 'Submit' }}
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="prl-overlay pr-modal-overlay" *ngIf="showLineModal" (click)="closeLineModal()">
+  <div class="prl-modal pr-modal" (click)="$event.stopPropagation()">
+
+    <div class="prl-head">
+      <h4 class="prl-title">{{ editingIndex !== null ? 'Edit Recipe Line' : 'Add Recipe Line' }}</h4>
+      <button type="button" class="prl-close" (click)="closeLineModal()">✕</button>
+    </div>
+
+    <!-- ✅ IMPORTANT: bind lineForm here -->
+    <form class="prl-body" [formGroup]="lineForm" (ngSubmit)="addAndClose()">
+      <div class="prl-grid">
+
+    <div class="prl-col-12 prl-md-6" [formGroup]="lineForm">
+  <label class="prl-label">Item</label>
+
+  <ng-select
+    class="custom-ng-select pr-tail-select"
+    [items]="rawMaterials"
+    bindLabel="itemName"
+    bindValue="id"
+    formControlName="ingredientItemId"
+    (change)="onLineItemChanged()"
+    placeholder="Search Item...">
+  </ng-select>
+
+  <small class="text-danger"
+    *ngIf="lineForm.get('ingredientItemId')?.invalid && (lineForm.get('ingredientItemId')?.touched || lineForm.get('ingredientItemId')?.dirty)">
+    Item required
+  </small>
+</div>
+
+
+        <div class="prl-col-12 prl-md-3">
+          <label class="prl-label">Quantity</label>
+          <input type="number" class="prl-input" formControlName="qty" />
+        </div>
+
+        <div class="prl-col-12 prl-md-3">
+          <label class="prl-label">UOM</label>
+          <input class="prl-input" formControlName="uomName" readonly />
+        </div>
+
+        <div class="prl-col-12 prl-md-3">
+          <label class="prl-label">Yield %</label>
+          <input type="number" class="prl-input" formControlName="yieldPct" />
+        </div>
+
+        <div class="prl-col-12 prl-md-3">
+          <label class="prl-label">Unit Cost</label>
+          <input type="number" class="prl-input" formControlName="unitCost" />
+        </div>
+
+        <div class="prl-col-12">
+          <label class="prl-label">Remarks</label>
+          <textarea class="prl-input prl-textarea" formControlName="remarks" placeholder="Optional..."></textarea>
+        </div>
+
+      </div>
+
+      <div class="prl-foot">
+        <button type="button" class="prl-btn prl-btn-outline-brand" (click)="addAnother()">Add Another</button>
+        <button type="submit" class="prl-btn prl-btn-primary">Add &amp; Close</button>
+        <button type="button" class="prl-btn" (click)="closeLineModal()">Close</button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+

@@ -1,0 +1,691 @@
+<!-- Page container -->
+<div class="min-h-screen bg-blue-50/40 p-4 md:p-8 ">
+  <div class="max-w-7xl mx-auto space-y-5 ui-compact pr-typography">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-blue-800">Inventory Management — SynergiFlow</h1>
+        <p class="text-gray-600 text-sm">Items · Stock · Transfers · Counts · Reorder</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Help</button>
+        <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white">New Item</button>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="flex flex-wrap gap-2">
+      <button
+        *ngFor="let t of tabs; trackBy: trackByIdx"
+        (click)="tab = t"
+        class="px-3 py-2 rounded-xl text-sm border"
+        [ngClass]="tab === t ? 'bg-white border-blue-500 text-blue-700 shadow' : 'bg-blue-50 border-transparent text-blue-700 hover:bg-white'">
+        {{ t }}
+      </button>
+    </nav>
+
+    <!-- ========== ITEM MASTER ========== -->
+    <section *ngIf="tab === 'Item Master'" class="space-y-5">
+      <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-800">Item Master — {{ item.sku || '(new)' }}</h2>
+          <div class="flex gap-2">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white" (click)="saveDemo()">Save</button>
+            <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Clone</button>
+            <button class="px-3 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 border border-transparent">Archive</button>
+          </div>
+        </div>
+
+        <!-- Row 1 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">SKU</label>
+            <input class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                   [(ngModel)]="item.sku" name="sku">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Name</label>
+            <input class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                   [(ngModel)]="item.name" name="name">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Category</label>
+            <input class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                   [(ngModel)]="item.category" name="category">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">UOM</label>
+            <input class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                   [(ngModel)]="item.uom" name="uom">
+          </div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">Barcode(s)</label>
+            <input class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                   [(ngModel)]="item.barcode" name="barcode">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Costing Method</label>
+            <select class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm bg-white"
+                    [(ngModel)]="item.costing" name="costing">
+              <option>FIFO</option>
+              <option>LIFO</option>
+              <option>Weighted Avg</option>
+              <option>Standard</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Min / Max</label>
+            <div class="flex gap-2">
+              <input type="number" class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                     [(ngModel)]="item.min" name="min">
+              <input type="number" class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                     [(ngModel)]="item.max" name="max">
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Reorder Qty / Lead time (days)</label>
+            <div class="flex gap-2">
+              <input type="number" class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                     [(ngModel)]="item.reorder" name="reorder">
+              <input type="number" class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                     [(ngModel)]="item.leadTime" name="leadTime">
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">Batch / Serial</label>
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-2 text-xs font-medium text-gray-600">
+                <input type="checkbox" [(ngModel)]="item.batchFlag" name="batchFlag"> Batch
+              </label>
+              <label class="flex items-center gap-2 text-xs font-medium text-gray-600">
+                <input type="checkbox" [(ngModel)]="item.serialFlag" name="serialFlag"> Serial
+              </label>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Tax Class</label>
+            <select class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm bg-white"
+                    [(ngModel)]="item.tax" name="tax">
+              <option>NONE</option>
+              <option>GST</option>
+              <option>VAT</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-xs font-medium text-gray-600">Specifications</label>
+            <textarea class="w-full min-h-[90px] rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                      [(ngModel)]="item.specs" name="specs"></textarea>
+          </div>
+        </div>
+
+        <!-- Item sub-tabs -->
+        <nav class="flex gap-2 mt-4 mb-3">
+          <button
+            *ngFor="let t of itemTabs; trackBy: trackByIdx"
+            (click)="itemSubTab = t"
+            class="px-2 py-1 text-xs rounded"
+            [ngClass]="itemSubTab === t ? 'bg-blue-100' : 'bg-transparent'">
+            {{ t }}
+          </button>
+        </nav>
+
+        <!-- Sub-tab contents -->
+        <div *ngIf="itemSubTab === 'Summary'" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">Picture</label>
+            <input type="file">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Attachments</label>
+            <input type="file" multiple>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Last Cost / Std Cost</label>
+            <input placeholder="0.00"
+                   class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm">
+          </div>
+        </div>
+
+        <div *ngIf="itemSubTab === 'Pricing'">
+          <label class="text-xs font-medium text-gray-600">Unit Prices</label>
+          <div class="overflow-auto border border-gray-200 rounded-xl">
+            <table class="min-w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                  <th class="text-left px-3 py-2 font-medium">Price</th>
+                  <th class="text-left px-3 py-2 font-medium">UOM</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="px-3 py-2"><input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"></td>
+                  <td class="px-3 py-2"><input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="p-2 border-t bg-gray-50">
+              <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white">+ Add line</button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="itemSubTab === 'Suppliers'">
+          <label class="text-xs font-medium text-gray-600">Preferred Suppliers</label>
+          <div class="flex flex-wrap items-center gap-2 rounded-xl border border-gray-300 px-2 py-2">
+            <span class="px-2 py-1 rounded-full text-xs bg-gray-100 border">FreshFoods</span>
+            <input class="flex-1 min-w-[140px] outline-none text-sm" placeholder="Type and press Enter">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Add</button>
+          </div>
+        </div>
+
+        <div *ngIf="itemSubTab === 'BOM'" class="text-sm text-gray-600">
+          Link to BOM management module (placeholder)
+        </div>
+
+        <div *ngIf="itemSubTab === 'Substitutes'">
+          <label class="text-xs font-medium text-gray-600">Substitute Items</label>
+          <div class="flex flex-wrap items-center gap-2 rounded-xl border border-gray-300 px-2 py-2">
+            <input class="flex-1 min-w-[140px] outline-none text-sm" placeholder="Type and press Enter">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Add</button>
+          </div>
+        </div>
+
+        <div *ngIf="itemSubTab === 'Attachments'">
+          <input type="file" multiple>
+        </div>
+
+        <div *ngIf="itemSubTab === 'Audit'" class="text-sm text-gray-600">
+          Audit trail: created/updated by X at Y (demo)
+        </div>
+      </div>
+
+      <!-- Items list sample -->
+      <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-800">Items List (sample)</h2>
+        </div>
+        <div class="overflow-auto border border-gray-200 rounded-xl">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">SKU</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Name</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Category</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">UOM</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">On Hand</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Reserved</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Available</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Min</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Reorder</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-t">
+                <td class="px-3 py-2">ITM001</td><td class="px-3 py-2">Rice 5kg</td><td class="px-3 py-2">Food</td>
+                <td class="px-3 py-2">KG</td><td class="px-3 py-2">120</td><td class="px-3 py-2">10</td>
+                <td class="px-3 py-2">110</td><td class="px-3 py-2">50</td><td class="px-3 py-2">60</td>
+              </tr>
+              <tr class="border-t">
+                <td class="px-3 py-2">ITM002</td><td class="px-3 py-2">Cooking Oil 2L</td><td class="px-3 py-2">Food</td>
+                <td class="px-3 py-2">L</td><td class="px-3 py-2">60</td><td class="px-3 py-2">0</td>
+                <td class="px-3 py-2">60</td><td class="px-3 py-2">20</td><td class="px-3 py-2">30</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== STOCK OVERVIEW ========== -->
+    <section *ngIf="tab === 'Stock Overview'" class="space-y-5">
+      <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-800">Stock Overview</h2>
+        <div class="flex gap-2">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white">Transfer</button>
+            <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Adjust</button>
+            <button class="px-3 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 border border-transparent">Count</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">Warehouse</label>
+            <select class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm bg-white"
+                    [(ngModel)]="stockFilter.warehouse" name="warehouse">
+              <option>All</option>
+              <option>Central</option>
+              <option>Branch</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Below Min</label>
+            <label class="flex items-center gap-2 text-xs font-medium text-gray-600">
+              <input type="checkbox" [(ngModel)]="stockFilter.belowMin" name="belowMin"> Show only
+            </label>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Expiring (30d)</label>
+            <label class="flex items-center gap-2 text-xs font-medium text-gray-600">
+              <input type="checkbox" [(ngModel)]="stockFilter.expiring" name="expiring"> Show only
+            </label>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Search</label>
+            <input class="w-full rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"
+                   [(ngModel)]="stockFilter.search" name="stockSearch" placeholder="Item / SKU / Bin">
+          </div>
+        </div>
+
+        <div class="overflow-auto border rounded-xl mt-4">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Item</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Warehouse</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Bin</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">On Hand</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Min</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Available</th>
+                <th class="text-left px-3 py-2 font-medium text-gray-600">Expiry</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of stockRows; trackBy: trackByIdx" class="border-t">
+                <td class="px-3 py-2">{{ r.item }}</td>
+                <td class="px-3 py-2">{{ r.warehouse }}</td>
+                <td class="px-3 py-2">{{ r.bin }}</td>
+                <td class="px-3 py-2">{{ r.onHand }}</td>
+                <td class="px-3 py-2">{{ r.min }}</td>
+                <td class="px-3 py-2">{{ r.onHand }}</td>
+                <td class="px-3 py-2">{{ r.exp }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== STOCK TRANSFER ========== -->
+    <section *ngIf="tab === 'Stock Transfer'" class="space-y-5">
+      <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-800">Stock Transfer</h2>
+          <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border"
+                [ngClass]="badgeToneClasses('blue')">Flow: Draft → Approve → Post</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">From Warehouse / Bin</label>
+            <input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                   [ngModel]="fromDisplay" (ngModelChange)="onFromDisplayChange($event)" name="fromWhBin">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">To Warehouse / Bin</label>
+            <input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                   [ngModel]="toDisplay" (ngModelChange)="onToDisplayChange($event)" name="toWhBin">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Reason</label>
+            <input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                   [(ngModel)]="stHdr.reason" name="stReason">
+          </div>
+          <div class="flex items-end gap-2">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white" (click)="saveDemo('Saved as draft (demo)')">Save Draft</button>
+            <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Submit for Approval</button>
+          </div>
+        </div>
+
+        <!-- Lines table -->
+        <div class="overflow-auto border border-gray-200 rounded-xl mt-4">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600">
+              <tr>
+                <th class="text-left px-3 py-2 font-medium">Item</th>
+                <th class="text-left px-3 py-2 font-medium">Qty</th>
+                <th class="text-left px-3 py-2 font-medium">Batch/Serial</th>
+                <th class="text-left px-3 py-2 font-medium">Remarks</th>
+                <th class="px-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="stLines.length === 0">
+                <td class="px-3 py-6 text-center text-gray-400" colspan="5">No lines yet.</td>
+              </tr>
+              <tr *ngFor="let row of stLines; let i = index; trackBy: trackByIdx" class="border-t">
+                <td class="px-3 py-2">
+                  <input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                         [ngModel]="row['item']" (ngModelChange)="changeLine(stLines, i, 'item', $event)" name="st_item_{{i}}">
+                </td>
+                <td class="px-3 py-2">
+                  <input type="number" class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                         [ngModel]="row['qty']" (ngModelChange)="changeLine(stLines, i, 'qty', $event)" name="st_qty_{{i}}">
+                </td>
+                <td class="px-3 py-2">
+                  <input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                         [ngModel]="row['batch']" (ngModelChange)="changeLine(stLines, i, 'batch', $event)" name="st_batch_{{i}}">
+                </td>
+                <td class="px-3 py-2">
+                  <input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                         [ngModel]="row['remarks']" (ngModelChange)="changeLine(stLines, i, 'remarks', $event)" name="st_remarks_{{i}}">
+                </td>
+                <td class="px-3 py-2 text-right">
+                  <button class="px-3 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 border border-transparent"
+                          (click)="removeLine(stLines, i)">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="p-2 border-t bg-gray-50">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white" (click)="addLine(stLines)">+ Add line</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== STOCK TAKE ========== -->
+    <section *ngIf="tab === 'Stock Take'" class="space-y-5">
+      <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-800">Stock Take (Cycle / Full)</h2>
+          <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border"
+                [ngClass]="badgeToneClasses('green')">Plan → Freeze → Mobile Capture → Review → Post</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">Type</label>
+            <select class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm bg-white"
+                    [(ngModel)]="takePlan.type" name="takeType">
+              <option>Cycle</option>
+              <option>Full</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Strategy</label>
+            <select class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm bg-white"
+                    [(ngModel)]="takePlan.strategy" name="takeStrategy">
+              <option>ABC</option>
+              <option>By Location</option>
+              <option>Random</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Freeze Inventory</label>
+            <label class="flex items-center gap-2 text-xs font-medium text-gray-600">
+              <input type="checkbox" [(ngModel)]="takePlan.freeze" name="takeFreeze"> Freeze
+            </label>
+          </div>
+          <div class="flex items-end gap-2">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white">Plan</button>
+            <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Export Mobile Tasks</button>
+          </div>
+        </div>
+
+        <!-- Lines -->
+        <div class="overflow-auto border border-gray-200 rounded-xl mt-4">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600">
+              <tr>
+                <th class="text-left px-3 py-2 font-medium">Location</th>
+                <th class="text-left px-3 py-2 font-medium">Item</th>
+                <th class="text-left px-3 py-2 font-medium">Counted</th>
+                <th class="text-left px-3 py-2 font-medium">Scan/Barcode</th>
+                <th class="text-left px-3 py-2 font-medium">Remarks</th>
+                <th class="px-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="takeLines.length === 0">
+                <td class="px-3 py-6 text-center text-gray-400" colspan="6">No lines yet.</td>
+              </tr>
+              <tr *ngFor="let row of takeLines; let i = index; trackBy: trackByIdx" class="border-t">
+                <td class="px-3 py-2"><input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                      [ngModel]="row['loc']" (ngModelChange)="changeLine(takeLines, i, 'loc', $event)" name="tk_loc_{{i}}"></td>
+                <td class="px-3 py-2"><input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                      [ngModel]="row['item']" (ngModelChange)="changeLine(takeLines, i, 'item', $event)" name="tk_item_{{i}}"></td>
+                <td class="px-3 py-2"><input type="number" class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                      [ngModel]="row['qty']" (ngModelChange)="changeLine(takeLines, i, 'qty', $event)" name="tk_qty_{{i}}"></td>
+                <td class="px-3 py-2"><input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                      [ngModel]="row['barcode']" (ngModelChange)="changeLine(takeLines, i, 'barcode', $event)" name="tk_barcode_{{i}}"></td>
+                <td class="px-3 py-2"><input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                      [ngModel]="row['remarks']" (ngModelChange)="changeLine(takeLines, i, 'remarks', $event)" name="tk_remarks_{{i}}"></td>
+                <td class="px-3 py-2 text-right">
+                  <button class="px-3 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 border border-transparent"
+                          (click)="removeLine(takeLines, i)">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="p-2 border-t bg-gray-50">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white" (click)="addLine(takeLines)">+ Add line</button>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-3">
+          <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Review Variances</button>
+          <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white" (click)="saveDemo('Posted counts (demo)')">Post Counts</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== STOCK ADJUSTMENT ========== -->
+    <section *ngIf="tab === 'Stock Adjustment'" class="space-y-5">
+      <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-800">Stock Adjustment</h2>
+          <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border"
+                [ngClass]="badgeToneClasses('amber')">Adjust → Approve (per threshold) → Post</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">Type</label>
+            <select class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm bg-white"
+                    [(ngModel)]="adjHdr.type" name="adjType">
+              <option>Increase</option>
+              <option>Decrease</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Reason Code</label>
+            <select class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm bg-white"
+                    [(ngModel)]="adjHdr.reason" name="adjReason">
+              <option>Damage</option>
+              <option>Shrinkage</option>
+              <option>Correction</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Approval Threshold</label>
+            <input type="number" class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                   [(ngModel)]="adjHdr.threshold" name="adjThreshold">
+          </div>
+          <div class="flex items-end gap-2">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white">Save Draft</button>
+            <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Submit for Approval</button>
+          </div>
+        </div>
+
+        <!-- Lines -->
+        <div class="overflow-auto border border-gray-200 rounded-xl mt-4">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600">
+              <tr>
+                <th class="text-left px-3 py-2 font-medium">Item</th>
+                <th class="text-left px-3 py-2 font-medium">Qty</th>
+                <th class="text-left px-3 py-2 font-medium">Reason</th>
+                <th class="text-left px-3 py-2 font-medium">Remarks</th>
+                <th class="px-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="adjLines.length === 0">
+                <td class="px-3 py-6 text-center text-gray-400" colspan="5">No lines yet.</td>
+              </tr>
+              <tr *ngFor="let row of adjLines; let i = index; trackBy: trackByIdx" class="border-t">
+                <td class="px-3 py-2"><input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                      [ngModel]="row['item']" (ngModelChange)="changeLine(adjLines, i, 'item', $event)" name="ad_item_{{i}}"></td>
+                <td class="px-3 py-2"><input type="number" class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                      [ngModel]="row['qty']" (ngModelChange)="changeLine(adjLines, i, 'qty', $event)" name="ad_qty_{{i}}"></td>
+                <td class="px-3 py-2"><input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                      [ngModel]="row['reason']" (ngModelChange)="changeLine(adjLines, i, 'reason', $event)" name="ad_reason_{{i}}"></td>
+                <td class="px-3 py-2"><input class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                      [ngModel]="row['remarks']" (ngModelChange)="changeLine(adjLines, i, 'remarks', $event)" name="ad_remarks_{{i}}"></td>
+                <td class="px-3 py-2 text-right">
+                  <button class="px-3 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 border border-transparent"
+                          (click)="removeLine(adjLines, i)">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="p-2 border-t bg-gray-50">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white" (click)="addLine(adjLines)">+ Add line</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CYCLE COUNT ========== -->
+    <section *ngIf="tab === 'Cycle / Physical Count'" class="space-y-5">
+      <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-lg font-semibold text-gray-800">Cycle Count / Physical Count</h2>
+          <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border"
+                [ngClass]="badgeToneClasses('blue')">Plan by ABC → Mobile Capture → Variance → Approve</span>
+        </div>
+        <p class="text-sm text-gray-600">
+          This screen links to Stock Take but focuses on scheduled repeating counts and mobile scanning.
+          Mobile app will push scanned counts back for variance review.
+        </p>
+        <div class="mt-4 flex gap-2">
+          <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white">Manage Schedules</button>
+          <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Export Tasks</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== REORDER PLANNING ========== -->
+    <section *ngIf="tab === 'Reorder Planning'" class="space-y-5">
+      <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-800">Reorder Planning</h2>
+          <div class="flex gap-2">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white">Suggest POs</button>
+            <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Convert to PR</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">Method</label>
+            <select class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm bg-white"
+                    [(ngModel)]="rpParams.method" name="rpMethod">
+              <option>Min/Max</option>
+              <option>Reorder Point</option>
+              <option>MRP (usage &amp; lead time)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Horizon (days)</label>
+            <input type="number" class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+                   [(ngModel)]="rpParams.horizon" name="rpHorizon">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Include Lead Time</label>
+            <label class="flex items-center gap-2 text-xs font-medium text-gray-600">
+              <input type="checkbox" [(ngModel)]="rpParams.includeLead" name="rpIncludeLead"> Yes
+            </label>
+          </div>
+          <div class="flex items-end">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white">Run Suggestion</button>
+          </div>
+        </div>
+
+        <div class="overflow-auto border rounded-xl mt-4">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-2 text-left font-medium text-gray-600">Item</th>
+                <th class="px-3 py-2 text-left font-medium text-gray-600">On Hand</th>
+                <th class="px-3 py-2 text-left font-medium text-gray-600">Min</th>
+                <th class="px-3 py-2 text-left font-medium text-gray-600">Reorder</th>
+                <th class="px-3 py-2 text-left font-medium text-gray-600">Lead (d)</th>
+                <th class="px-3 py-2 text-left font-medium text-gray-600">Usage 30d</th>
+                <th class="px-3 py-2 text-left font-medium text-gray-600">Suggested</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of reorderSuggestions; trackBy: trackByIdx" class="border-t">
+                <td class="px-3 py-2">{{ s.item }}</td>
+                <td class="px-3 py-2">{{ s.onHand }}</td>
+                <td class="px-3 py-2">{{ s.min }}</td>
+                <td class="px-3 py-2">{{ s.reorder }}</td>
+                <td class="px-3 py-2">{{ s.lead }}</td>
+                <td class="px-3 py-2">{{ s.usage30 }}</td>
+                <td class="px-3 py-2">{{ s.suggest }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== REPORTS ========== -->
+    <section *ngIf="tab === 'Reports'" class="space-y-5">
+      <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-800">Reports</h2>
+          <button class="px-3 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white">Export</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="rounded-xl border p-3 bg-white">
+            <h3 class="font-semibold mb-2">Stock Ledger</h3>
+            <p class="text-sm text-gray-600">Drillable ledger by item/batch/date.</p>
+            <div class="mt-3">
+              <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">View</button>
+            </div>
+          </div>
+
+          <div class="rounded-xl border p-3 bg-white">
+            <h3 class="font-semibold mb-2">Valuation / Aging</h3>
+            <p class="text-sm text-gray-600">Valuation by costing method; aging by batch.</p>
+            <div class="mt-3">
+              <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Run</button>
+            </div>
+          </div>
+
+          <div class="rounded-xl border p-3 bg-white">
+            <h3 class="font-semibold mb-2">Slow / Fast Movers</h3>
+            <p class="text-sm text-gray-600">Top N slowest and fastest moving items.</p>
+            <div class="mt-3">
+              <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Analyze</button>
+            </div>
+          </div>
+
+          <div class="rounded-xl border p-3 bg-white">
+            <h3 class="font-semibold mb-2">Expiry / Negative Stock</h3>
+            <p class="text-sm text-gray-600">
+              Expiry alerts and negative stock listing. Auto-email to HOD &amp; Boss on triggers.
+            </p>
+            <div class="mt-3">
+              <button class="px-3 py-2 rounded-xl text-sm font-medium border border-blue-600 text-blue-700 hover:bg-blue-50">Configure Alerts</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>

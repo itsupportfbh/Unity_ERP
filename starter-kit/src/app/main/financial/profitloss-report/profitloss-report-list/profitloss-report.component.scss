@@ -1,0 +1,319 @@
+/* ===== Card wrapper & title ===== */
+.pl-card {
+  border-radius: 1rem;
+  border: none;
+}
+
+.pl-title {
+  margin-left: 0.5rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #2E5F73;
+}
+
+/* ===== Top summary cards ===== */
+.pl-summary-row {
+  margin-bottom: 1.5rem;
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  padding: 0.9rem 1.15rem;
+  border-radius: 1.25rem;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+
+  /* 🔹 light outline on top / left / right */
+  border: 1px solid #e5e7eb;
+
+  /* 🔹 bottom alone 3px (colour will come from modifier class) */
+  border-bottom-width: 3px;
+  border-bottom-color: transparent;
+}
+
+
+.summary-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.85rem;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.summary-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* different colors like sample image */
+.summary-expense {
+  border-bottom-color: #fecaca;
+}
+
+.summary-sales {
+  border-bottom-color: #fed7aa;
+}
+
+.summary-profit {
+  border-bottom-color: #bbf7d0;
+}
+
+.summary-icon-expense {
+  background: #fef2f2;
+  svg {
+    stroke: #f97373;
+  }
+}
+
+.summary-icon-sales {
+  background: #fff7ed;
+  svg {
+    stroke: #fb923c;
+  }
+}
+
+.summary-icon-profit {
+  background: #ecfdf5;
+  svg {
+    stroke: #22c55e;
+  }
+}
+
+/* ===== Two-column list style ===== */
+.pl-column {
+  padding: 0.25rem 0.5rem;
+}
+
+/* ===== Column header (Purchase / Sales) ===== */
+.pl-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+
+  h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f4b5f;
+    display: inline-block;
+    padding-bottom: 0.2rem;
+    border-bottom: 2px solid #1f4b5f; /* underline */
+  }
+}
+
+.pl-total {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+/* 👉 UL made flex column so total can sit at the bottom */
+.pl-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 1rem;
+  background-color: #fafafa;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 230px; /* tweak this if needed for perfect alignment */
+}
+
+.pl-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #eeeeee;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.pl-item-left {
+  display: flex;
+  align-items: center;
+}
+
+.drag-icon {
+  margin-right: 0.55rem;
+  font-size: 1rem;
+  color: #9ca3af;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.pl-text {
+  .pl-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .pl-code {
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+}
+
+.pl-item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pl-amount {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ===== Total row base style ===== */
+/* margin-top:auto pushes this row to the bottom of .pl-list */
+.pl-total-row {
+  font-weight: 700;
+  margin-top: auto;
+
+  .pl-name {
+    font-weight: 700;
+  }
+}
+
+/* 🔴 Purchase total – pink like Total Expense card */
+.pl-total-purchase {
+  background-color: #fff5f5;
+  border-top: 1px solid #fed7d7;
+
+  .pl-amount {
+    color: #f97373;
+  }
+}
+
+/* 🟢 Sales total – green */
+.pl-total-sales {
+  background-color: #ecfdf5; /* very light green */
+  border-top: 1px solid #bbf7d0;
+
+  .pl-amount {
+    color: #16a34a; /* green text */
+  }
+}
+
+/* ===== Center vertical divider ===== */
+.row-with-divider {
+  position: relative;
+}
+
+.vertical-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background-color: #e5e7eb;
+}
+
+/* Mobile tweaks */
+@media (max-width: 767.98px) {
+  .summary-card {
+    margin-bottom: 0.4rem;
+  }
+
+  .pl-item {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .pl-title {
+    font-size: 1.15rem;
+  }
+
+  .vertical-divider {
+    display: none;
+  }
+}
+:host {
+  display: block;
+}
+
+/* Wrapper: keeps gap same everywhere */
+.report-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Base button style – SAME for Excel & PDF */
+.report-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.28rem 0.9rem;          /* ← size controlled here */
+  font-size: 0.78rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 0.25rem;
+  color: #ffffff !important;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.12);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+
+  i {
+    font-size: 13px;
+  }
+
+  &:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.18);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.16);
+  }
+}
+
+/* Excel color */
+.report-btn-excel {
+  background: linear-gradient(90deg, #2e5f73, #16a34a);
+}
+
+/* PDF color */
+.report-btn-pdf {
+  background: linear-gradient(90deg, #b91c1c, #f97316);
+}
+
+

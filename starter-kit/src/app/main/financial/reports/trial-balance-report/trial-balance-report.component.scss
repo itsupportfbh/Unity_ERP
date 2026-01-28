@@ -1,0 +1,174 @@
+.trial-table thead tr th {
+  background-color: #2E5F73 !important;
+  color: #fff !important;
+}
+
+.reports-center {
+  border-top: 1px solid #e5e5e5;
+  padding-top: 1rem;
+}
+
+.report-card {
+  border: 1px solid #e5edf1;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #f9fbfc;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.report-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #2E5F73;
+}
+
+.report-subtitle {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.tb-account-col {
+  white-space: nowrap;      /* no line break */
+}
+
+/* ===== TB SUMMARY CARDS – AP/AR STYLE ===== */
+
+.tb-summary-row {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tb-summary-card {
+  display: flex;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: #ffffff; /* overridden per card below */
+  box-shadow: 0 4px 14px rgba(20, 47, 66, 0.06);
+  border: 1px solid #d4dde8;   // base border
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.tb-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(20, 47, 66, 0.14);
+  border-color: #b8c4d8;       // slightly darker on hover
+}
+
+
+/* round icon circle on left */
+.tb-summary-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+  background: rgba(46, 95, 115, 0.08); /* default, per-card overrides below */
+}
+
+/* feather turns <i> into <svg>, so style svg */
+.tb-summary-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: #2e5f73;
+}
+
+.tb-summary-content {
+  flex: 1;
+}
+
+.tb-summary-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.15rem;
+  color: #7c8895;
+}
+
+.tb-summary-value {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2e5f73;
+}
+
+/* --- Card specific colours (light like AR/AP) --- */
+/* --- Card specific colours (match Aging / AR cards) --- */
+
+/* 1) Opening Debit  -> peach / orange */
+.tb-card-opening-debit {
+  background: #fff3e8;                 /* light peach card */
+  border-color: #ffd7b8;
+}
+.tb-card-opening-debit .tb-summary-icon {
+  background: #ffe0c2;                 /* peach circle */
+}
+.tb-card-opening-debit .tb-summary-value {
+  color: #f97316;                      /* orange text */
+}
+
+/* 2) Opening Credit -> mint / green */
+.tb-card-opening-credit {
+  background: #ecfdf3;                 /* mint card */
+  border-color: #bbf7d0;
+}
+.tb-card-opening-credit .tb-summary-icon {
+  background: #bbf7d0;                 /* mint circle */
+}
+.tb-card-opening-credit .tb-summary-value {
+  color: #16a34a;                      /* green text */
+}
+
+/* 3) Closing Debit -> soft yellow */
+.tb-card-closing-debit {
+  background: #fef9c3;                 /* pale yellow card */
+  border-color: #fde68a;
+}
+.tb-card-closing-debit .tb-summary-icon {
+  background: #fde68a;                 /* yellow circle */
+}
+.tb-card-closing-debit .tb-summary-value {
+  color: #ca8a04;                      /* amber text */
+}
+
+/* 4) Closing Credit -> lavender / indigo */
+.tb-card-closing-credit {
+  background: #eef2ff;                 /* light lavender card */
+  border-color: #e0e7ff;
+}
+.tb-card-closing-credit .tb-summary-icon {
+  background: #e0e7ff;                 /* lavender circle */
+}
+.tb-card-closing-credit .tb-summary-value {
+  color: #4f46e5;                      /* indigo text */
+}
+
+/* Action column smaller & centered */
+.trial-table th:last-child,
+.trial-table td:last-child {
+  width: 70px;
+  text-align: center;
+}
+
+/* Small round-ish icon buttons */
+.tb-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;   /* overall button size */
+  height: 24px;
+  padding: 0;
+}
+
+/* Feather icon size inside the button */
+.tb-action-icon,
+.tb-action-btn svg {
+  width: 14px;   /* <- change to 12/16 if you want smaller/bigger */
+  height: 14px;
+  stroke-width: 2.2;   /* slightly bolder line, optional */
+}

@@ -1,0 +1,26 @@
+
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import '@core/scss/angular/libs/sweet-alerts.component.scss';
+:host ::ng-deep .core-bootstrap .datatable-header {
+  background: #2E5F73;
+  color: #fff;
+}
+
+:host ::ng-deep .core-bootstrap .datatable-header-cell {
+  font-weight: 600;
+  letter-spacing: .4px;
+}
+
+:host ::ng-deep .core-bootstrap .datatable-body-row {
+  border-bottom: 1px solid #eef2f7;
+}
+
+// .badge-light-primary1 {
+//   background: #eef6f8;
+//   color: #2E5F73;
+//   font-weight: 600;
+//   border-radius: 8px;
+//   padding: 4px 10px;
+// }

@@ -1,0 +1,144 @@
+/* ===== Page Card Polish ===== */
+:host ::ng-deep .card.shadow-sm {
+  border: 0;
+  border-radius: 16px;
+  box-shadow: 0 10px 28px rgba(34, 48, 62, 0.08) !important;
+}
+
+:host ::ng-deep .card-header {
+  background: #fff;
+  border-bottom: 1px solid #eef2f7;
+  padding: 18px 22px;
+}
+
+:host ::ng-deep .card-body {
+  padding: 22px;
+}
+
+:host ::ng-deep .card-footer {
+  background: #fff;
+  border-top: 1px solid #eef2f7;
+  padding: 16px 22px;
+}
+
+/* ===== Headings ===== */
+:host ::ng-deep h4 {
+  letter-spacing: .2px;
+}
+
+:host ::ng-deep small.text-muted {
+  font-size: 12px;
+}
+
+/* ===== Labels ===== */
+:host ::ng-deep .form-label.small {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 6px;
+}
+
+/* ===== Inputs ===== */
+:host ::ng-deep .form-control {
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
+  transition: all .18s ease;
+}
+
+:host ::ng-deep .form-control:focus {
+  border-color: #2E5F73;
+  box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.12);
+}
+
+:host ::ng-deep .form-control::placeholder {
+  color: #9ca3af;
+}
+
+/* ===== Validation ===== */
+:host ::ng-deep .form-control.is-invalid {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12);
+}
+
+/* ===== ng-select ===== */
+:host ::ng-deep .ng-select .ng-select-container {
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
+  transition: all .18s ease;
+}
+
+:host ::ng-deep .ng-select.ng-select-focused .ng-select-container {
+  border-color: #2E5F73;
+  box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.12);
+}
+
+:host ::ng-deep .ng-select .ng-placeholder {
+  color: #9ca3af;
+}
+
+:host ::ng-deep .ng-dropdown-panel {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 18px 40px rgba(0,0,0,.12);
+}
+
+:host ::ng-deep .ng-dropdown-panel .ng-option {
+  padding: 10px 12px;
+}
+
+:host ::ng-deep .ng-dropdown-panel .ng-option.ng-option-selected,
+:host ::ng-deep .ng-dropdown-panel .ng-option.ng-option-marked {
+  background: rgba(46, 95, 115, 0.08);
+}
+
+/* ===== Selected role chips ===== */
+.role-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#2E5F73;
+  color:#fff;
+  border-radius:10px;
+  padding:6px 10px;
+  margin-right:6px;
+  font-weight:600;
+  line-height: 1;
+}
+.role-chip-x{
+  margin-left:4px;
+  cursor:pointer;
+  opacity:.85;
+}
+.role-chip-x:hover{ opacity:1; }
+
+/* ===== Buttons ===== */
+:host ::ng-deep .btn {
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 700;
+}
+
+:host ::ng-deep .btn-outline-secondary {
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+:host ::ng-deep .btn-outline-secondary:hover {
+  background: #f9fafb;
+}
+
+:host ::ng-deep .btn-brand {
+  background: #2E5F73 !important;
+  border: 0 !important;
+  color: #fff !important;
+  box-shadow: 0 10px 18px rgba(46, 95, 115, 0.18);
+}
+
+:host ::ng-deep .btn-brand:hover {
+  filter: brightness(.95);
+}

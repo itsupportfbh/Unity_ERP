@@ -1,0 +1,167 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <div class="row">
+          <!-- Title + page size -->
+          <div class="col-md-6 col-12">
+            <h4 class="card-text page-title">
+             On-Time Delivery Reports
+            </h4>
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center gap-1">
+                Show
+                <select class="form-control mx-25" (change)="onLimitChange($event)">
+                  <option [selected]="selectedOption===10" value="10">10</option>
+                  <option [selected]="selectedOption===25" value="25">25</option>
+                  <option [selected]="selectedOption===50" value="50">50</option>
+                  <option [selected]="selectedOption===100" value="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+          </div>
+
+          <!-- Search + buttons -->
+          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+
+              <label class="d-flex align-items-center ml-1 ml-md-0">
+                Search:
+                <input
+                  [(ngModel)]="searchValue"
+                  name="searchValue"
+                  type="search"
+                  class="form-control ml-25"
+                  (keyup)="filterUpdate($event)"
+                  (search)="filterUpdate($event)"
+                  placeholder="QT number / customer / status"
+                />
+              </label>
+
+              <button
+               
+                class="btn m-1 d-inline-flex align-items-center"
+                style="background-color:#2E5F73;color:white;gap:6px;"
+              >
+                <i data-feather="plus-circle" class="w-4 h-4"></i>
+                <span>Add</span>
+              </button>
+
+              <!-- <button
+                (click)="openDrafts()"
+                class="btn m-1 d-inline-flex align-items-center position-relative btn-outline-brand"
+              >
+                <i data-feather="file-text" class="w-4 h-4"></i>
+                <span>Drafts</span>
+                <span
+                  *ngIf="draftCount > 0"
+                  class="badge badge-pill badge-warning draft-badge"
+                >
+                  {{ draftCount }}
+                </span>
+              </button> -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Main datatable -->
+<ngx-datatable
+  class="bootstrap core-bootstrap"
+  [rows]="rows"
+  [rowHeight]="50"
+  [headerHeight]="50"
+  [footerHeight]="50"
+  [limit]="selectedOption"
+  [columnMode]="'force'"
+  [scrollbarH]="true"
+  [reorderable]="true">
+
+  <ngx-datatable-column name="Delivery Order No." prop="doNo" [width]="170">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <span class="fw-600 brand">{{ row.doNo }}</span>
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column name="Customer / Branch" [width]="240">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      {{ row.customerName }} <span class="text-muted">/</span> {{ row.branch }}
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column name="Planned Delivery Date" prop="plannedDate" [width]="180">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      {{ row.plannedDate | date:'dd-MM-yyyy' }}
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column name="Actual Delivery Date" prop="actualDate" [width]="180">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <span *ngIf="row.actualDate; else pending">
+        {{ row.actualDate | date:'dd-MM-yyyy' }}
+      </span>
+      <ng-template #pending><span class="text-muted">—</span></ng-template>
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column name="Delay (Days)" [width]="130">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      {{ delayDays(row) }}
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column name="Status" prop="status" [width]="140">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <span [ngClass]="statusClass(row.status)">{{ row.status }}</span>
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column name="Delivery Qty / %" [width]="170">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      {{ row.deliveryQty | number:'1.0-2' }}
+      <span class="text-muted">/</span>
+      {{ deliveredPct(row) | number:'1.0-0' }}%
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column name="Driver / Vehicle" [width]="200">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      {{ row.driver }} <span class="text-muted">/</span> {{ row.vehicle }}
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column name="Remarks" prop="remarks" [width]="240">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <span [title]="row.remarks || ''">{{ row.remarks || '—' }}</span>
+    </ng-template>
+  </ngx-datatable-column>
+
+</ngx-datatable>
+
+      </div>
+       <core-sidebar
+  class="modal modal-slide-in sidebar-todo-modal fade"
+  name="reports-filters-sidebar"
+  overlayClass="modal-backdrop"
+>
+  <app-reports-filters
+    [showCustomer]="true"
+    [showBranch]="true"
+    [showStatus]="true"
+    [showSalesperson]="false"
+    [showCategory]="false"
+    [customers]="customers"
+    [branches]="branches"
+    [statuses]="statuses"
+    (saved)="onFiltersApplied($event)"
+    (canceled)="onFilterCanceled()"
+  ></app-reports-filters>
+</core-sidebar>
+
+
+    </section>
+  </div>
+</div>
+
+

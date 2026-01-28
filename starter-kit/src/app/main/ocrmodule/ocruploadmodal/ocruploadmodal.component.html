@@ -1,0 +1,76 @@
+<div class="ocr-backdrop" *ngIf="open">
+  <div class="ocr-modal">
+    <div class="ocr-head">
+      <div>
+        <div class="ocr-title">Scan / OCR</div>
+        <div class="ocr-sub">Upload PDF/Image → Extract → Apply to Supplier Invoice</div>
+      </div>
+      <button type="button" class="ocr-x" (click)="close()">✕</button>
+    </div>
+
+    <div class="ocr-body">
+      <!-- Left -->
+      <div class="ocr-left">
+        <div class="ocr-row">
+          <label class="ocr-label">Language</label>
+          <select class="ocr-input" [(ngModel)]="lang" [ngModelOptions]="{standalone:true}">
+            <option value="eng">English (eng)</option>
+            <option value="eng+tam">English + Tamil (eng+tam)</option>
+          </select>
+        </div>
+
+        <div class="ocr-row">
+          <label class="ocr-label">Upload (PDF / Image)</label>
+          <input class="ocr-input" type="file" accept="image/*,.pdf" (change)="onPick($event)" />
+          <div class="ocr-file" *ngIf="file">{{ file.name }}</div>
+        </div>
+
+        <div class="ocr-preview">
+          <ng-container *ngIf="previewUrl; else emptyPreview">
+            <img *ngIf="isImage" [src]="previewUrl" alt="preview" />
+            <div *ngIf="!isImage" class="ocr-empty">PDF selected (preview not shown)</div>
+          </ng-container>
+          <ng-template #emptyPreview>
+            <div class="ocr-empty">No file selected</div>
+          </ng-template>
+        </div>
+
+        <div class="ocr-actions">
+          <button type="button" class="btn-ocr" [disabled]="!file || loading" (click)="run()">
+            {{ loading ? 'Reading…' : 'Run OCR' }}
+          </button>
+          <button type="button" class="btn-ocr ghost" (click)="reset()">Reset</button>
+        </div>
+
+        <div class="ocr-error" *ngIf="error">{{ error }}</div>
+      </div>
+
+      <!-- Right -->
+      <div class="ocr-right">
+        <div class="ocr-metrics" *ngIf="result">
+          <span>Conf: {{ result.meanConfidence | number:'1.2-2' }}</span>
+          <span>Words: {{ result.wordCount }}</span>
+          <button type="button" class="btn-ocr tiny ghost" (click)="copy()">Copy</button>
+        </div>
+
+        <div class="ocr-fields" *ngIf="result">
+          <div class="ocr-field"><span>Supplier</span><b>{{ result.parsed?.supplierName || '—' }}</b></div>
+          <div class="ocr-field"><span>Invoice No</span><b>{{ result.parsed?.invoiceNo || '—' }}</b></div>
+          <div class="ocr-field"><span>Invoice Date</span><b>{{ result.parsed?.invoiceDate || '—' }}</b></div>
+          <div class="ocr-field"><span>SubTotal</span><b>{{ (result.parsed?.subTotal || 0) | number:'1.2-2' }}</b></div>
+          <div class="ocr-field"><span>Discount</span><b>{{ (result.parsed?.discount || 0) | number:'1.2-2' }}</b></div>
+          <div class="ocr-field"><span>Tax %</span><b>{{ result.parsed?.taxPercent || 0 }}</b></div>
+          <div class="ocr-field"><span>Tax Amount</span><b>{{ (result.parsed?.taxAmount || 0) | number:'1.2-2' }}</b></div>
+          <div class="ocr-field"><span>Grand Total</span><b>{{ (result.parsed?.total || 0) | number:'1.2-2' }}</b></div>
+        </div>
+
+        <textarea class="ocr-text" [value]="result?.text || ''" readonly></textarea>
+
+        <div class="ocr-apply">
+          <button type="button" class="btn-ocr" [disabled]="!result" (click)="apply()">Apply to Form</button>
+          <button type="button" class="btn-ocr ghost" (click)="close()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

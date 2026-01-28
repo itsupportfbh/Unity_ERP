@@ -1,0 +1,555 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import '@core/scss/angular/libs/sweet-alerts.component.scss';
+
+$brand: #2E5F73;
+
+/* ====== Shell / Page ====== */
+.content-body {
+  background: #f4f7fb;
+}
+
+.ap-card {
+  border-radius: 18px;
+  border: 0;
+  padding: 1.25rem 1.5rem 1.5rem;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+  background: #ffffff;
+}
+
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: $brand;
+  margin-bottom: 0.25rem;
+}
+
+/* ====== Fancy AP Tabs ====== */
+.ap-tabs {
+  margin-top: 0.9rem;
+  padding: 0.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f9fafb, #e5edf6);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  position: relative;
+}
+
+/* Optional subtle border around the whole chip group */
+.ap-tabs::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  pointer-events: none;
+}
+
+/* Keep items compact and aligned */
+.ap-tabs .nav-item {
+  margin: 0;
+}
+
+/* Base tab style */
+.ap-tabs .nav-link {
+  position: relative;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
+}
+
+/* Small dot indicator on every tab */
+.ap-tabs .nav-link::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  flex-shrink: 0;
+  transition:
+    background-color 0.18s ease,
+    transform 0.12s ease;
+}
+
+/* Hover state */
+.ap-tabs .nav-link:hover {
+  color: $brand;
+  background-color: rgba(46, 95, 115, 0.06);
+  transform: translateY(-1px);
+}
+
+/* Active tab = white pill popping out */
+.ap-tabs .nav-link.active {
+  color: $brand;
+  background: #ffffff;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+  transform: translateY(-1px);
+}
+
+/* Active dot – brand colored and slightly bigger */
+.ap-tabs .nav-link.active::before {
+  background: $brand;
+  transform: scale(1.4);
+}
+
+/* Tiny underline under active tab (inside the pill) */
+.ap-tabs .nav-link.active::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 0.15rem;
+  height: 2px;
+  border-radius: 999px;
+  background-color: rgba(46, 95, 115, 0.3);
+}
+
+/* Mobile tweaks */
+@media (max-width: 576px) {
+  .ap-tabs {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.3rem;
+  }
+
+  .ap-tabs .nav-link {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+  }
+}
+
+
+
+/* ====== Summary cards (top of invoice tab) ====== */
+.ap-summary-row {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.ap-summary-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0.6rem 0.9rem;
+  margin: 0.3rem 0.5rem 0.3rem 0;
+  border: 1px solid #e1e8f0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.ap-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+  border-color: #c4d1e3;
+}
+
+.ap-summary-card .label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 0.1rem;
+}
+
+.ap-summary-card .value {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* accents */
+.ap-summary-total .value {
+  color: #f59e0b; // orange
+}
+
+.ap-summary-paid .value {
+  color: #16a34a; // green
+}
+
+.ap-summary-outstanding .value {
+  color: #2563eb; // blue
+}
+
+/* search label */
+.ap-search-label span {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-right: 0.3rem;
+}
+
+/* ====== Tables ====== */
+.ap-table-wrap {
+  margin-top: 0.4rem;
+  background: #f9fafb;
+  border-radius: 14px;
+  padding: 0.75rem 0.85rem 1rem;
+}
+
+.ap-table {
+  font-size: 0.84rem;
+  color: #1f2933;
+}
+
+.ap-table thead th {
+  border-bottom: 0;
+  background: #2E5F73;     // brand header color
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  color: #ffffff;          // white text for contrast
+  padding: 0.55rem 0.75rem;
+  white-space: nowrap;
+}
+
+
+.ap-table tbody td {
+  padding: 0.55rem 0.75rem;
+  vertical-align: middle;
+  border-top: 1px solid #edf2f7;
+}
+
+.ap-table tbody tr:nth-child(even) {
+  background-color: #fdfefe;
+}
+
+.ap-table tbody tr:hover {
+  background-color: #eef6fb;
+}
+
+/* ====== Totals row (legacy, if you use it somewhere else) ====== */
+.ap-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+
+.ap-total-item {
+  flex: 0 0 auto;
+  min-width: 210px;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #e5edf6;
+}
+
+.ap-total-item .label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+
+.ap-total-item .value {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* ====== Forms (Payments tab) ====== */
+.ap-form-row .form-group {
+  margin-bottom: 0.75rem;
+}
+
+.ap-form-row label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 0.15rem;
+}
+
+.ap-card .form-control,
+.ap-card select.form-control {
+  border-radius: 0.6rem;
+  border-color: #cbd5e1;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.ap-card .form-control:focus {
+  border-color: $brand;
+  box-shadow: 0 0 0 1px rgba(46, 95, 115, 0.18);
+}
+
+/* Submit button */
+.btn-brand {
+  background-color: $brand;
+  border-color: $brand;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.4rem 1.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-brand i {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-brand:hover {
+  background-color: #224758;
+  border-color: #224758;
+}
+
+/* ====== Status pills (invoice & match) ====== */
+.status-pill {
+  border-radius: 999px;
+  padding: 0.1rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.badge-success.status-pill {
+  background: #e3f9e5;
+  color: #1a7c3f;
+}
+
+.badge-warning.status-pill {
+  background: #fff4e5;
+  color: #b45309;
+}
+
+.badge-danger.status-pill {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-secondary.status-pill {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+/* Brand colour reuse */
+.text-brand {
+  color: $brand !important;
+}
+
+/* Small helper subtitles */
+.ap-card .sub-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+/* Inline totals row in Payments tab */
+.ap-inline-totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.ap-inline-pill {
+  display: inline-flex;
+  align-items: baseline;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #f9fafb;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+}
+
+.ap-inline-pill .label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 0.35rem;
+  color: #6b7280;
+}
+
+.ap-inline-pill .value {
+  font-size: 0.9rem;
+}
+
+/* colour accents */
+.ap-pill-inv .value {
+  color: #f59e0b; // orange
+}
+
+.ap-pill-paid .value {
+  color: #16a34a; // green
+}
+
+.ap-pill-dn .value {
+  color: #b91c1c; // red
+}
+
+.ap-pill-os {
+  border-color: #c7d2fe;
+  background: #eff6ff;
+}
+
+.ap-pill-os .value {
+  color: #2563eb; // blue
+}
+/* === Summary cards layout with icon === */
+.ap-summary-card {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0.6rem 0.9rem;
+  margin: 0.3rem 0.5rem 0.3rem 0;
+  border: 1px solid #e1e8f0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.ap-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+  border-color: #c4d1e3;
+}
+
+/* icon bubble on left */
+.ap-summary-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.6rem;
+  font-size: 1.05rem;
+  color: $brand;
+  background: rgba(46, 95, 115, 0.08);
+}
+
+/* LABEL – smaller */
+.ap-summary-text .label {
+  font-size: 0.65rem;        /* was 0.75rem or more */
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* VALUE – slightly smaller as well (optional) */
+.ap-summary-text .value {
+  font-size: 0.95rem;        /* was ~1.05rem */
+  font-weight: 600;
+}
+
+
+/* light background tints per card */
+.ap-summary-total {
+  background: #fff7ed; // light orange
+}
+
+.ap-summary-paid {
+  background: #ecfdf3; // light green
+}
+
+.ap-summary-debit {
+  background: #fef3c7; // light amber
+}
+
+.ap-summary-outstanding {
+  background: #eff6ff; // light blue
+}
+
+/* expand icon small tweak */
+.ap-expander-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ap-expander-icon {
+  font-size: 0.8rem;
+  line-height: 1;
+}
+/* ===== Supplier totals pill row on Payments tab ===== */
+.supplier-totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* base pill */
+.sup-total-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 1rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: #f4f7fb;
+  border: 1px solid #d1d9e6;
+  color: #4b5563;
+  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.06);
+}
+
+/* little spacing between label & amount (Inv 96,147.00 etc.) */
+.sup-total-pill::after {
+  content: '';
+  width: 0.35rem;
+}
+
+/* colour accents based on existing classes you already add */
+.sup-total-pill.text-success {
+  background: #ecfdf3;     /* Paid */
+  border-color: #bbf7d0;
+}
+
+.sup-total-pill.text-danger {
+  background: #fef2f2;     /* Debit Note */
+  border-color: #fecaca;
+}
+
+.sup-total-pill.text-brand {
+  background: #eff6ff;     /* Net OS */
+  border-color: #bfdbfe;
+}
+
+/* optional: make Net OS number pop a bit more */
+.sup-total-pill.text-brand {
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+}
+.pagination .page-item .page-link {
+  border-radius: 20px;
+  margin: 0 3px;
+  color: #2E5F73;
+  font-weight: 500;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #2E5F73;
+  border-color: #2E5F73;
+  color: white !important;
+}
+
+

@@ -1,0 +1,165 @@
+<!-- credit-note-create.component.html -->
+<button (click)="goList()" class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
+  style="background-color:#2E5F73; color:white; padding-left:2.25rem;">
+  <i class="fas fa-arrow-left position-absolute" style="left:0.75rem; top:50%; transform:translateY(-50%);"
+    aria-hidden="true"></i>
+  <span>Go to CN list</span>
+</button>
+
+<div class="card shadow-sm prl-card">
+  <div class="card-header d-flex justify-content-between align-items-center prl-headbar">
+    <div class="prl-heading-wrap">
+      <h1 class="m-0 prl-heading" style="color:#2E5F73 !important; font-weight:800; line-height:1.2;">
+        {{ isEdit ? 'Edit Credit Note' : 'Credit Note (CN)' }}
+        <span class="prl-id" *ngIf="cnNo">#{{ cnNo }}</span>
+      </h1>
+    </div>
+
+    <!-- <div class="d-flex gap-2 prl-head-actions">
+      <button class="btn prl-btn-primary" (click)="save()" [disabled]="!creditNoteDate || !doId || lines.length===0">
+        {{ isEdit ? 'Update Credit Note' : 'Create Credit Note' }}
+      </button>
+    </div> -->
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <!-- Delivery Order (only source) -->
+      <div class="col-lg-4 col-md-6">
+        <label class="form-label prl-label">Delivery Order</label>
+        <ng-select class="custom-ng-select" [items]="doList" bindValue="id" bindLabel="doNumber" [(ngModel)]="doId"
+          placeholder="Select DO…" [clearable]="true" [searchable]="true" [virtualScroll]="true" [appendTo]="'body'"
+          (change)="onDoChanged()" [disabled]="isEdit" [ngModelOptions]="{standalone:true}">
+          <ng-template ng-option-tmp let-d="item">
+            <div class="d-flex flex-column">
+              <span class="fw-600">{{ d?.doNumber }}</span>
+              <small class="text-muted">#{{ d?.id }} • {{ d?.customerName }}</small>
+            </div>
+          </ng-template>
+        </ng-select>
+      </div>
+
+      <div class="col-lg-4 col-md-6">
+        <label class="form-label prl-label">Sales Invoice</label>
+        <input type="text" class="form-control prl-input" [value]="siNumber || ''" readonly>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <label class="form-label prl-label">Customer</label>
+        <input type="text" class="form-control prl-input" [value]="customerName || ''" readonly>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <label class="form-label prl-label">Credit Note Date</label>
+        <input type="date" class="form-control prl-input" [(ngModel)]="creditNoteDate"
+          [ngModelOptions]="{standalone:true}">
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end mt-2">
+      <button class="btn btn-outline-primary prl-btn-outline" (click)="addLine()">+ Add Line</button>
+    </div>
+
+    <div class="table-responsive mt-2 prl-table-wrap si-compact">
+      <table class="table table-sm align-middle prl-table credit-table">
+        <thead class="prl-thead-brand">
+          <tr>
+            <th style="min-width:220px">Item</th>
+            <th style="min-width:90px">UOM</th>
+            <th class="text-center" style="min-width:110px">Delivered</th>
+            <th class="text-center" style="min-width:110px">Returned</th>
+            <th style="min-width:160px">Reason</th>
+            <th style="min-width:150px">Disposition</th>
+            <th style="min-width:56px">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let r of lines; index as i; trackBy: trackByLine">
+            <!-- Item (restricted to DO items) -->
+            <td>
+              <ng-container *ngIf="!r.itemId || r.itemId===0; else picked">
+                <ng-select class="custom-ng-select" [items]="availableItems" bindLabel="itemName" bindValue="itemId"
+                  [(ngModel)]="r.itemId" placeholder="Select DO item…" [clearable]="true" [searchable]="true"
+                  [virtualScroll]="true" (change)="onItemPicked(i, r.itemId)" [appendTo]="'body'"
+                  [ngModelOptions]="{standalone:true}">
+                  <ng-template ng-option-tmp let-it="item">
+                    <div class="d-flex flex-column">
+                      <div class="fw-600">{{ it.itemName }}</div>
+                      <small class="text-muted">Delivered: {{ it.deliveredQty }} • UOM: {{ it.uom || 'Pieces' }}</small>
+                    </div>
+                  </ng-template>
+                </ng-select>
+              </ng-container>
+              <ng-template #picked>
+                <input class="form-control prl-input" [value]="r.itemName" readonly>
+              </ng-template>
+
+              <!-- HIDDEN binders (keeps pricing values in the model/payload) -->
+              <input type="hidden" [(ngModel)]="r.unitPrice" [ngModelOptions]="{standalone:true}">
+              <input type="hidden" [(ngModel)]="r.discountPct" [ngModelOptions]="{standalone:true}">
+              <input type="hidden" [(ngModel)]="r.gstPct" [ngModelOptions]="{standalone:true}">
+              <input type="hidden" [(ngModel)]="r.tax" [ngModelOptions]="{standalone:true}">
+              <input type="hidden" [(ngModel)]="r.taxCodeId" [ngModelOptions]="{standalone:true}">
+              <input type="hidden" [(ngModel)]="r.lineNet" [ngModelOptions]="{standalone:true}">
+            </td>
+
+            <!-- UOM -->
+            <td><input class="form-control prl-input" [value]="r.uom || ''" readonly></td>
+
+            <!-- Delivered (readonly) -->
+            <td class="text-end">
+              <input type="number" class="form-control prl-input text-end" [value]="r.deliveredQty" readonly>
+            </td>
+
+            <!-- Returned (editable, caps at delivered) -->
+            <td class="text-end">
+              <input type="number" step="0.0001" class="form-control prl-input text-end" [(ngModel)]="r.returnedQty"
+                (input)="recalc(i)" [ngModelOptions]="{standalone:true}">
+            </td>
+
+            <!-- Reason -->
+            <td>
+              <ng-select class="custom-ng-select" [items]="reasons" bindLabel="stockIssuesNames" bindValue="id"
+                [(ngModel)]="r.reasonId" [clearable]="true" [searchable]="true" [appendTo]="'body'"
+                [ngModelOptions]="{standalone:true}">
+              </ng-select>
+            </td>
+
+            <!-- Disposition -->
+            <td>
+              <ng-select class="custom-ng-select" [items]="dispositions" bindLabel="name" bindValue="id"
+                [(ngModel)]="r.restockDispositionId" [clearable]="true" [searchable]="false" [appendTo]="'body'"
+                [ngModelOptions]="{standalone:true}">
+              </ng-select>
+            </td>
+
+            <!-- Remove -->
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-danger prl-btn-outline" (click)="removeLine(i)">
+                <i class="fa fa-times"></i>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="lines.length===0">
+            <td colspan="7" class="text-center text-muted">
+              Select a Delivery Order to load delivered items or click “Add Line”.
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-end mt-3 gap-2">
+      <button type="button" class="btn prl-btn-outline" (click)="save(1)"
+        [disabled]="!creditNoteDate || !doId || lines.length===0">
+        Save as Draft
+      </button>
+
+      <button type="button" class="btn prl-btn-primary" (click)="save(2)"
+        [disabled]="!creditNoteDate || !doId || lines.length===0">
+        Save & Approve
+      </button>
+    </div>
+  </div>
+</div>

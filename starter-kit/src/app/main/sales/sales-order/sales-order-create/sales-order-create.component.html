@@ -1,0 +1,344 @@
+<!-- Sales Order Create -->
+<div class="so-page pr-typography">
+  <div class="bg-white rounded-2xl shadow px-3 pt-3 pb-6 border border-gray-100 so-card">
+
+    <!-- Header -->
+    <div class="so-head">
+      <h2 class="title">{{ editMode ? 'Edit Sales Order' : 'Sales Order' }}</h2>
+    </div>
+
+    <!-- Header fields -->
+    <div [ngClass]="gridColsClass(4)" class="so-grid">
+
+      <!-- Quotation -->
+      <div class="so-header-dd dropdown-input">
+        <label class="lbl">Quotation No</label>
+        <div class="relative">
+          <input type="text" class="so-inp"
+                 [(ngModel)]="searchTexts['quotationNo']"
+                 (input)="!editMode && filter('quotationNo')"
+                 (focus)="!editMode && toggleDropdown('quotationNo', true)"
+                 placeholder="Search Quotation No..."
+                 [disabled]="editMode"/>
+          <button *ngIf="searchTexts['quotationNo'] && !editMode" type="button"
+                  (click)="onClearSearch('quotationNo')" class="btn-clear">✕</button>
+          <button type="button"
+                  (click)="!editMode && toggleDropdown('quotationNo')"
+                  class="btn-caret" [disabled]="editMode">▼</button>
+        </div>
+        <p *ngIf="submitted && isEmpty(searchTexts['quotationNo'])" class="err">
+          Quotation No is required.
+        </p>
+
+        <ul *ngIf="dropdownOpen['quotationNo'] && !editMode" class="dropdown">
+          <li *ngFor="let c of filteredLists['quotationNo']" (click)="select('quotationNo', c)">
+            {{ c.number }}
+          </li>
+        </ul>
+      </div>
+
+      <!-- Customer -->
+      <div class="so-header-dd">
+        <label class="lbl">Customer</label>
+        <input type="text" class="so-inp" disabled [(ngModel)]="searchTexts['customer']"/>
+        <p *ngIf="submitted && isEmpty(searchTexts['customer'])" class="err">
+          Customer is required.
+        </p>
+      </div>
+
+      <!-- GST -->
+      <div>
+        <label class="lbl">GST (%)</label>
+        <input class="so-inp" type="text" disabled [(ngModel)]="soHdr.gstPct"/>
+      </div>
+
+      <!-- Requested Date -->
+      <div>
+        <label class="lbl">Requested Date</label>
+        <input class="so-inp so-inp-readonly" type="date"
+               [(ngModel)]="soHdr.requestedDate" [min]="todayStr"
+               disabled [ngModelOptions]="{ standalone: true }"/>
+      </div>
+
+      <!-- Delivery Date + Preview button under it -->
+      <div class="col-span-1 md:col-span-1">
+        <label class="lbl">Delivery Date</label>
+        <div class="field-stack">
+          <input class="so-inp" type="date" [(ngModel)]="soHdr.deliveryDate" [disabled]="true"/>
+          <button type="button"
+                  class="btn-outline sm btn-preview-under"
+                  *ngIf="!editMode"
+                  (click)="previewAlloc()">
+            Preview Allocation
+          </button>
+        </div>
+      </div>
+
+      <!-- ✅ NEW: Delivery To -->
+      <div class="md:col-span-2">
+        <label class="lbl">Delivery To</label>
+        <textarea
+          class="so-inp so-textarea"
+          rows="3"
+          [(ngModel)]="soHdr.deliveryTo"
+          placeholder="Delivery address / site / contact person"></textarea>
+
+        <p *ngIf="submitted && isEmpty(soHdr.deliveryTo)" class="err">
+          Delivery To is required.
+        </p>
+      </div>
+
+      <!-- ✅ NEW: Remarks -->
+      <div class="md:col-span-2">
+        <label class="lbl">Remarks</label>
+        <textarea
+          class="so-inp so-textarea"
+          rows="3"
+          [(ngModel)]="soHdr.remarks"
+          placeholder="Any remarks..."></textarea>
+      </div>
+
+    </div>
+
+    <!-- Lines -->
+    <div class="table-wrap mt-4">
+      <table class="so-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Description</th>
+            <th>UOM</th>
+            <th class="num">Qty</th>
+            <th class="num">Unit Price</th>
+            <th class="num">Discount (%)</th>
+            <th>Tax</th>
+            <th class="num">Total</th>
+            <th class="text-right">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngIf="soLines.length===0">
+            <td [attr.colspan]="9" class="empty">No lines yet.</td>
+          </tr>
+
+          <tr *ngFor="let ln of soLines; let i=index; trackBy: trackByIndex">
+            <!-- Item (disabled in edit mode) -->
+            <td class="relative dropdown-input so-line-dd">
+              <input
+                type="text"
+                class="so-inp w-64"
+                [(ngModel)]="soLines[i].item"
+                (focus)="!editMode && openDropdown(i,'item')"
+                (input)="!editMode && filterOptions(i,'item')"
+                placeholder="Search Item..."
+                [disabled]="editMode" />
+
+              <div *ngIf="!editMode && soLines[i].dropdownOpen==='item'" class="dropdown-panel">
+                <div *ngFor="let it of soLines[i].filteredOptions"
+                     (click)="selectOption(i,'item', it)"
+                     class="dropdown-row">
+                  <span>{{ it.itemCode }}</span>
+                  <span class="dim">{{ it.itemName }}</span>
+                </div>
+              </div>
+
+              <div class="chips">
+                <span *ngFor="let w of soLines[i].warehouses" class="chip-outline">
+                  {{ w.warehouseName }} · Avl {{ w.available }}
+                </span>
+              </div>
+            </td>
+
+            <!-- Description -->
+            <td>
+              <input class="so-inp w-72"
+                     [(ngModel)]="soLines[i].description"
+                     placeholder="Description"
+                     [disabled]="editMode">
+            </td>
+
+            <!-- UOM -->
+            <td>
+              <input class="so-inp w-24"
+                     [(ngModel)]="soLines[i].uom"
+                     placeholder="UOM"
+                     [disabled]="editMode">
+            </td>
+
+            <!-- Qty -->
+            <td class="num">
+              <input type="number"
+                     class="so-inp w-24 text-right"
+                     [(ngModel)]="soLines[i].quantity"
+                     (input)="onQtyChange(i)">
+            </td>
+
+            <!-- Unit Price -->
+            <td class="num">
+              <input type="number"
+                     class="so-inp w-28 text-right"
+                     [(ngModel)]="soLines[i].unitPrice"
+                     (input)="onUnitPriceChange(i)"
+                     min="0"
+                     step="0.01">
+            </td>
+
+            <!-- Discount -->
+            <td class="num">
+              <input type="number"
+                     class="so-inp w-20 text-right"
+                     [(ngModel)]="soLines[i].discount"
+                     (input)="onDiscountChange(i)"
+                     placeholder="0"/>
+            </td>
+
+            <!-- Tax -->
+            <td>
+              <div class="dim xs mb-1">
+                {{
+                  soLines[i].tax === 'Standard-Rated'
+                    ? 'Standard-Rated (GST applies)'
+                    : soLines[i].tax === 'Zero-Rated'
+                      ? 'Zero-Rated (0%)'
+                      : 'Exempt (No GST)'
+                }}
+              </div>
+              <div>Tax: {{ soLines[i].lineTax || 0 | number:'1.2-2' }}</div>
+            </td>
+
+            <!-- Total -->
+            <td class="num">{{ (soLines[i].total || 0) | number:'1.2-2' }}</td>
+
+            <!-- Action -->
+            <td class="text-right">
+              <button type="button"
+                      class="btn-chip btn-chip--danger-outline btn-chip--sm"
+                      (click)="removeLine(i)"
+                      aria-label="Remove line">
+                <span class="btn-chip__icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 6h18M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M7 6l1 14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-14"
+                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span>Remove</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Summary -->
+    <div class="sum-grid">
+      <div class="sum-grid-spacer"></div>
+      <aside class="mini-total-card mtc-spaced">
+        <div class="mtc-row">
+          <span class="mtc-label">Sub Total</span>
+          <input id="subTotalInp" class="so-inp mtc-inp text-right" type="text"
+                 [value]="(totals.subTotal || 0) | number:'1.2-2'" readonly>
+        </div>
+
+        <div class="mtc-row">
+          <span class="mtc-label">Discount</span>
+
+          <div class="mtc-discount-wrap">
+            <select class="so-inp mtc-inp mtc-discount-mode"
+                    [(ngModel)]="discountDisplayMode"
+                    [ngModelOptions]="{standalone:true}">
+              <option value="PCT">%</option>
+              <option value="VAL">Value</option>
+            </select>
+
+            <input id="discLinesInp"
+                   class="so-inp mtc-inp mtc-discount-value text-right"
+                   type="text"
+                   [value]="discountDisplayMode === 'PCT'
+                             ? (discountPctSummary | number:'1.2-2')
+                             : ((totals.discountLines || 0) | number:'1.2-2')"
+                   readonly>
+          </div>
+        </div>
+
+        <div class="mtc-row">
+          <span class="mtc-label">Tax (GST)</span>
+          <input id="taxTotalInp" class="so-inp mtc-inp text-right" type="text"
+                 [value]="(totals.gstAmount || 0) | number:'1.2-2'" readonly>
+        </div>
+
+        <div class="mtc-row">
+          <span class="mtc-label">Shipping</span>
+          <input id="shipInp" type="number" class="so-inp mtc-inp text-right"
+                 [(ngModel)]="soHdr.shipping" (input)="recalcTotals()">
+        </div>
+
+        <div class="mtc-sep"></div>
+
+        <div class="mtc-row mtc-grand">
+          <span class="mtc-label">Net Total</span>
+          <span class="mtc-amt">{{ totals.netTotal | number:'1.2-2' }}</span>
+        </div>
+      </aside>
+    </div>
+
+  </div>
+
+  <!-- Sticky bottom actions -->
+  <div class="sticky-actions">
+    <div class="container">
+      <button class="so-btn so-btn-primary" (click)="post()">
+        {{ editMode ? 'Update' : 'Save' }}
+      </button>
+      <button class="so-btn so-btn-danger" (click)="cancel()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Allocation Preview Modal -->
+  <div class="modal-backdrop" *ngIf="showPreview"></div>
+  <div class="modal" *ngIf="showPreview" role="dialog" aria-modal="true">
+    <div class="modal-card modal-slim">
+      <div class="modal-head modal-brand">
+        <div class="title">Allocation Preview</div>
+        <button type="button" class="btn-icon btn-close-head" (click)="closePreview()" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="!previewData?.length" class="empty-state">No allocations available.</div>
+
+        <div *ngFor="let p of previewData" class="pv-line">
+          <div class="pv-line-head">
+            <span><b>Item Id:</b> {{ p.itemId }}</span>
+            <span><b>Requested:</b> {{ p.requestedQty }}</span>
+            <span class="alloc-badge" [class.ok]="p.fullyAllocated" [class.bad]="!p.fullyAllocated">
+              Allocated: {{ p.allocatedQty }} • {{ p.fullyAllocated ? 'Full' : 'Partial' }}
+            </span>
+          </div>
+
+          <div class="pv-grid">
+            <div *ngFor="let a of p.allocations" class="pv-chip">
+              <div class="pv-chip-top">
+                <span class="pv-chip-tag">{{ a.warehouseName || ('WH ' + (a.warehouseId ?? '—')) }}</span>
+                <span class="pv-dot"></span>
+                <span class="pv-chip-tag">{{ a.supplierName || ('SUP ' + (a.supplierId ?? '—')) }}</span>
+              </div>
+              <div class="pv-chip-bottom">
+                <span>{{ a.binName || (a.binId ?? '—') }}</span>
+                <span class="pv-dot"></span>
+                <b>QTY {{ a.qty }}</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn-dark" (click)="closePreview()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

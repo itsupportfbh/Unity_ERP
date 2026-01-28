@@ -1,0 +1,117 @@
+/* Brand-outline button */
+.btn-outline-brand {
+  border-color: #2E5F73;
+  color: #fff;
+  background: #2E5F73;
+}
+
+/* Table header brand */
+.item-table thead th {
+  background:#2E5F73;
+  color:#fff;
+  vertical-align: middle;
+}
+
+/* Keep cell alignment tidy */
+.table.table-sm.item-table th,
+.table.table-sm.item-table td {
+  vertical-align: middle;
+}
+
+/* Reorder Qty group: keep input wide, pill stable */
+.reorder-qty-ig {
+  max-width: 100%;
+  min-width: 200px;
+}
+.reorder-qty-ig .form-control {
+  min-width: 120px;
+  padding-top: .4rem;
+  padding-bottom: .4rem;
+}
+.reorder-qty-ig .input-group-text {
+  flex: 0 0 auto;      /* no shrinking */
+  white-space: nowrap;
+}
+.reorder-qty-ig .reorder-suggest-addon {
+  background: #f3f6f8;
+  border-color: #e5eaee;
+  font-size: .75rem;
+  color: #6b7b88;
+  line-height: 1.1;
+  padding: .3rem .5rem;
+}
+
+/* Supplier panel + card grid */
+.supplier-panel {
+  margin: .25rem 1rem .75rem 1.5rem;
+  padding: .9rem;
+  background: #f9fbfc;
+  border: 1px solid #e9edf2;
+  border-radius: .75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.03);
+}
+
+.supplier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: .75rem;
+}
+
+.sup-card {
+  border: 1px solid #e6edf2;
+  border-radius: .65rem;
+  background: #fff;
+  padding: .75rem .8rem;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.sup-card:hover {
+  border-color: #c9d7df;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.sup-card.selected {
+  border-color: #2E5F73;
+  background: rgba(46,95,115,.05);
+  box-shadow: 0 0 0 2px rgba(46,95,115,.15) inset;
+}
+
+.sup-card-top {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .5rem;
+}
+.sup-card-top .form-check-input {
+  width: 1rem;
+  height: 1rem;
+}
+.sup-name {
+  font-weight: 600;
+  color: #2E5F73;
+}
+
+.sup-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+}
+.metric {
+  background: #f6fafc;
+  border: 1px solid #e8eff4;
+  border-radius: .5rem;
+  padding: .5rem .6rem;
+  text-align: center;
+}
+.metric-label {
+  font-size: .72rem;
+  color: #6b7b88;
+  margin-bottom: .15rem;
+}
+.metric-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* allow ng-select panel to overflow the table container */
+.table-responsive { overflow: visible !important; }  /* was hidden/auto */
+.item-table { overflow: visible; }
+.loc-cell { position: relative; overflow: visible; }

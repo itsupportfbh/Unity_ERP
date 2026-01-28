@@ -1,0 +1,947 @@
+<!-- src/app/main/financial/accounts-payable/accounts-payable.component.html -->
+
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card ap-card">
+        <!-- ================= PAGE HEADER ================= -->
+        <div class="row">
+          <div class="col-12 d-flex justify-content-between align-items-center">
+            <h4 class="card-text page-title">
+              Accounts Payable
+            </h4>
+          </div>
+        </div>
+
+        <!-- ================= TABS ================= -->
+      <ul class="nav nav-tabs ap-tabs mt-1" role="tablist">
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      [ngClass]="{ 'active': activeTab === 'invoices' }"
+      (click)="setTab('invoices')">
+      Supplier Invoices
+    </a>
+  </li>
+
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      [ngClass]="{ 'active': activeTab === 'payments' }"
+      (click)="setTab('payments')">
+      Payments
+    </a>
+  </li>
+
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      [ngClass]="{ 'active': activeTab === 'aging' }"
+      (click)="setTab('aging')">
+      Aging
+    </a>
+  </li>
+
+  <!-- ⭐ NEW: Supplier Advances tab -->
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      [ngClass]="{ 'active': activeTab === 'advances' }"
+      (click)="setTab('advances')">
+      Advances
+    </a>
+  </li>
+
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      [ngClass]="{ 'active': activeTab === 'match' }"
+      (click)="setTab('match')">
+      3-Way Match
+    </a>
+  </li>
+</ul>
+
+
+        <!-- ================= TAB CONTENT ================= -->
+        <div class="tab-content p-1">
+
+          <!-- ===================================================== -->
+          <!--  SUPPLIER INVOICES TAB                                -->
+          <!-- ===================================================== -->
+          <div
+            class="tab-pane"
+            [ngClass]="{ 'active show': activeTab === 'invoices' }"
+            *ngIf="activeTab === 'invoices'">
+
+            <!-- Summary cards -->
+            <div class="ap-summary-row row no-gutters">
+              <!-- Total Invoice -->
+              <div class="col-xl-3 col-md-6 col-12">
+                <div class="ap-summary-card ap-summary-total">
+                  <div class="ap-summary-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                  </div>
+                  <div class="ap-summary-text">
+                    <div class="label">Total Invoice Amount</div>
+                    <div class="value">
+                      {{ totalInvAmount | number:'1.2-2' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Total Paid -->
+              <div class="col-xl-3 col-md-6 col-12">
+                <div class="ap-summary-card ap-summary-paid">
+                  <div class="ap-summary-icon">
+                    <i class="fas fa-wallet"></i>
+                  </div>
+                  <div class="ap-summary-text">
+                    <div class="label">Total Paid</div>
+                    <div class="value">
+                      {{ totalInvPaid | number:'1.2-2' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Total Debit Notes -->
+              <div class="col-xl-3 col-md-6 col-12">
+                <div class="ap-summary-card ap-summary-debit">
+                  <div class="ap-summary-icon">
+                    <i class="fas fa-file-invoice"></i>
+                  </div>
+                  <div class="ap-summary-text">
+                    <div class="label">Total Debit Notes</div>
+                    <div class="value">
+                      {{ totalInvDebitNote | number:'1.2-2' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Net Outstanding -->
+              <div class="col-xl-3 col-md-6 col-12">
+                <div class="ap-summary-card ap-summary-outstanding">
+                  <div class="ap-summary-icon">
+                    <i class="fas fa-balance-scale"></i>
+                  </div>
+                  <div class="ap-summary-text">
+                    <div class="label">Net Outstanding</div>
+                    <div class="value">
+                      {{ totalInvOutstanding | number:'1.2-2' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search -->
+            <div class="row mb-1">
+              <div class="col-md-6 col-12 ml-auto">
+                <div class="d-flex justify-content-md-end justify-content-start ap-search-label">
+                  <label class="d-flex align-items-center mb-0">
+                    <span>Search:</span>
+                    <input
+                      [(ngModel)]="invoiceSearch"
+                      type="search"
+                      class="form-control ml-25"
+                      (keyup)="filterInvoices($event)"
+                      (search)="filterInvoices($event)" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main table: one row per supplier -->
+            <div class="table-responsive ap-table-wrap">
+              <table class="table mb-0 ap-table">
+                <thead>
+                  <tr>
+                    <th style="background-color:#2E5F73; color:#ffffff;"></th>
+                    <th style="background-color:#2E5F73; color:#ffffff;">Supplier</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Invoice Count</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Paid</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Outstanding</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ng-container *ngFor="let g of pagedSupplierGroups">
+                    <!-- Supplier summary row -->
+                    <tr>
+                      <td class="text-center align-middle">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary rounded-circle ap-expander-btn"
+                          (click)="toggleSupplierExpand(g.supplierId)"
+                          [attr.title]="isSupplierExpanded(g.supplierId) ? 'Hide invoices' : 'Show invoices'">
+                          <i
+                            class="ap-expander-icon"
+                            [ngClass]="{
+                              'fas fa-eye': !isSupplierExpanded(g.supplierId),
+                              'fas fa-eye-slash': isSupplierExpanded(g.supplierId)
+                            }">
+                          </i>
+                        </button>
+                      </td>
+                      <td class="font-weight-semibold">
+                        {{ g.supplierName }}
+                      </td>
+                      <td class="text-right">
+                        {{ g.invoices.length }}
+                      </td>
+                      <td class="text-right">
+                        {{ g.totalGrandTotal | number:'1.2-2' }}
+                      </td>
+                      <td class="text-right">
+                        {{ g.totalPaid | number:'1.2-2' }}
+                      </td>
+                      <td class="text-right text-brand font-weight-bold">
+                        {{ g.totalOutstanding | number:'1.2-2' }}
+                      </td>
+                    </tr>
+
+                    <!-- Detail table: invoices + separate debit note row -->
+                    <tr *ngIf="isSupplierExpanded(g.supplierId)">
+                      <td colspan="6" class="p-0">
+                        <div class="ap-inner-wrap">
+                          <table class="table mb-0 ap-table ap-inner-table">
+                            <thead>
+                              <tr>
+                                <th style="background-color:#2E5F73; color:#ffffff;">Invoice No</th>
+                                <th style="background-color:#2E5F73; color:#ffffff;">Invoice Date</th>
+                                <th style="background-color:#2E5F73; color:#ffffff;">Due Date</th>
+                                <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
+                                <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Paid</th>
+                                <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Outstanding</th>
+                                <th style="background-color:#2E5F73; color:#ffffff;" class="text-center">Status</th>
+                                
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <ng-container *ngFor="let inv of g.invoices">
+                                <!-- Invoice row -->
+                                <tr>
+                                  <td>{{ inv.invoiceNo }}</td>
+                                  <td>{{ inv.invoiceDate | date:'dd-MMM-yyyy' }}</td>
+                                  <td>{{ inv.dueDate | date:'dd-MMM-yyyy' }}</td>
+                                  <td class="text-right">
+                                    {{ inv.grandTotal | number:'1.2-2' }}
+                                  </td>
+                                  <td class="text-right">
+                                    {{ inv.paidAmount | number:'1.2-2' }}
+                                  </td>
+                                  <td class="text-right">
+                                    {{ inv.outstandingAmount | number:'1.2-2' }}
+                                  </td>
+                                  <td class="text-center">
+                                    <span
+                                      class="badge status-pill"
+                                      [ngClass]="getInvoiceStatusClassByAmounts(inv)">
+                                      {{ getInvoiceStatusTextByAmounts(inv) }}
+                                    </span>
+                                  </td>
+                                  
+                                </tr>
+
+                                <!-- Debit note row -->
+                                <tr *ngIf="inv.debitNoteAmount > 0" class="ap-dn-row">
+                                  <td>
+                                    <span *ngIf="inv.debitNoteNo">
+                                      {{ inv.debitNoteNo }}
+                                    </span>
+                                  </td>
+                                  <td>{{ inv.debitNoteDate | date:'dd-MMM-yyyy' }}</td>
+                                  <td></td>
+                                  <td class="text-right text-danger">
+                                    -{{ inv.debitNoteAmount | number:'1.2-2' }}
+                                  </td>
+                                  <td class="text-right text-success">
+                                    {{ inv.debitNoteAmount | number:'1.2-2' }}
+                                  </td>
+                                  <td class="text-right">0.00</td>
+                                  <td class="text-center">
+                                    <span class="badge status-pill badge-secondary">
+                                      Debit Note
+                                    </span>
+                                  </td>
+                                  <td></td>
+                                </tr>
+                              </ng-container>
+                            </tbody>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  </ng-container>
+
+                  <tr *ngIf="supplierGroups.length === 0">
+                    <td colspan="6" class="text-center text-muted py-2">
+                      No AP invoices found.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Invoices pagination -->
+            <div
+              class="d-flex justify-content-between align-items-center mt-1"
+              *ngIf="supplierGroups.length > invPageSize">
+              <div class="text-muted small">
+                Showing
+                {{ (invPage - 1) * invPageSize + 1 }}
+                –
+                {{ Math.min(invPage * invPageSize, supplierGroups.length) }}
+                of {{ supplierGroups.length }} suppliers
+              </div>
+
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" [class.disabled]="invPage === 1">
+                  <a class="page-link" (click)="invGoToPage(invPage - 1)">«</a>
+                </li>
+
+                <li
+                  class="page-item"
+                  *ngFor="let p of [].constructor(invTotalPages); let idx = index"
+                  [class.active]="invPage === (idx + 1)">
+                  <a class="page-link" (click)="invGoToPage(idx + 1)">{{ idx + 1 }}</a>
+                </li>
+
+                <li class="page-item" [class.disabled]="invPage === invTotalPages">
+                  <a class="page-link" (click)="invGoToPage(invPage + 1)">»</a>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+          <!-- ===================================================== -->
+          <!--  PAYMENTS TAB (LIST + CREATE)                         -->
+          <!-- ===================================================== -->
+          <div
+            class="tab-pane"
+            [ngClass]="{ 'active show': activeTab === 'payments' }"
+            *ngIf="activeTab === 'payments'">
+
+            <!-- LIST MODE -->
+            <div class="ap-table-wrap" *ngIf="!showPaymentForm">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <h6 class="sub-title mb-0">Supplier Payments</h6>
+                <button
+                  type="button"
+                  class="btn btn-brand"
+                  (click)="openNewPayment()"
+                  [disabled]="isPeriodLocked">
+                  <i class="fas fa-plus mr-25"></i>
+                  New Payment
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table mb-0 ap-table">
+                  <thead>
+                    <tr>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Payment No</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Supplier</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Invoice</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Payment Date</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Method</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Reference</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let p of pagedPayments">
+                      <td>{{ p.paymentNo }}</td>
+                      <td>{{ p.supplierName }}</td>
+                      <td>{{ p.invoiceNo }}</td>
+                      <td>{{ p.paymentDate | date:'dd-MMM-yyyy' }}</td>
+                      <td>{{ p.paymentMethodName || getPaymentMethodName(p.paymentMethodId) }}</td>
+                      <td class="text-right">{{ p.amount | number:'1.2-2' }}</td>
+                      <td>{{ p.referenceNo }}</td>
+                      <td>{{ p.notes }}</td>
+                    </tr>
+                    <tr *ngIf="payments.length === 0">
+                      <td colspan="8" class="text-center text-muted py-2">
+                        No payments posted yet.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Payments list pagination -->
+              <div
+                class="d-flex justify-content-between align-items-center mt-1"
+                *ngIf="payments.length > payListPageSize">
+                <div class="text-muted small">
+                  Showing
+                  {{ (payListPage - 1) * payListPageSize + 1 }}
+                  –
+                  {{ Math.min(payListPage * payListPageSize, payments.length) }}
+                  of {{ payments.length }} payments
+                </div>
+
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" [class.disabled]="payListPage === 1">
+                    <a class="page-link" (click)="payListGoToPage(payListPage - 1)">«</a>
+                  </li>
+
+                  <li
+                    class="page-item"
+                    *ngFor="let p of [].constructor(payListTotalPages); let idx = index"
+                    [class.active]="payListPage === (idx + 1)">
+                    <a class="page-link" (click)="payListGoToPage(idx + 1)">{{ idx + 1 }}</a>
+                  </li>
+
+                  <li class="page-item" [class.disabled]="payListPage === payListTotalPages">
+                    <a class="page-link" (click)="payListGoToPage(payListPage + 1)">»</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- CREATE MODE -->
+            <div class="ap-form-row row" *ngIf="showPaymentForm">
+              <!-- Header + Back button -->
+              <div class="col-12 d-flex justify-content-between align-items-center mb-1">
+                <h6 class="sub-title mb-0">New Supplier Payment</h6>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  (click)="backToPaymentList()">
+                  <i class="fas fa-arrow-left mr-25"></i>
+                  Back to List
+                </button>
+              </div>
+
+              <!-- Supplier + totals -->
+              <div class="col-md-3 col-12">
+                <div class="form-group">
+                  <label>Supplier <span class="text-danger">*</span></label>
+
+                  <!-- SEARCHABLE SUPPLIER DROPDOWN -->
+                  <ng-select
+                    [(ngModel)]="paySupplierId"
+                    name="paySupplier"
+                    [items]="suppliers"
+                    bindLabel="name"
+                    bindValue="id"
+                    [searchable]="true"
+                    [clearable]="true"
+                    placeholder="Search supplier"
+                    (change)="onPaySupplierChange()">
+                  </ng-select>
+                </div>
+              </div>
+
+              <div class="col-md-9 col-12 d-flex align-items-center">
+                <div class="d-flex flex-wrap w-100 supplier-totals">
+                  <div class="sup-total-pill">
+                    Inv: {{ supTotalInvoice | number:'1.2-2' }}
+                  </div>
+                  <div class="sup-total-pill text-success">
+                    Paid: {{ supTotalPaid | number:'1.2-2' }}
+                  </div>
+                  <div class="sup-total-pill text-danger">
+                    Debit Note: {{ supTotalDebitNote | number:'1.2-2' }}
+                  </div>
+                  <div class="sup-total-pill text-brand font-weight-bold">
+                    Net OS: {{ supTotalNetOutstanding | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Date -->
+              <div class="col-md-2 col-12 mt-1">
+                <div class="form-group">
+                  <label>Date</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    [(ngModel)]="payDate"
+                    name="payDate"
+                    (change)="onPayDateChange()" />
+                </div>
+              </div>
+
+              <!-- Method -->
+              <div class="col-md-2 col-12 mt-1">
+                <div class="form-group">
+                  <label>Method</label>
+                  <select
+                    class="form-control"
+                    [(ngModel)]="payMethodId"
+                    name="payMethod"
+                    (change)="onMethodChange()">
+                    <option [ngValue]="1">Cash</option>
+                    <option [ngValue]="2">Bank Transfer</option>
+                    <option [ngValue]="3">Cheque</option>
+                    <option [ngValue]="4">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Bank (only for Bank Transfer / Cheque) -->
+              <div class="col-md-3 col-12 mt-1" *ngIf="payMethodId === 2 || payMethodId === 3">
+                <div class="form-group">
+                  <label>Bank Account <span class="text-danger">*</span></label>
+
+                  <select
+                    class="form-control"
+                    [(ngModel)]="selectedBankId"
+                    name="bankAccount"
+                    (change)="onBankChange()">
+                    <option [ngValue]="null">-- Select Bank --</option>
+                    <option *ngFor="let b of bankAccounts" [ngValue]="b.id">
+                      {{ b.headName }}
+                    </option>
+                  </select>
+
+                  <div class="mt-25 text-muted small" *ngIf="bankAvailableBalance !== null">
+                    <div>
+                      Available:
+                      <strong>{{ bankAvailableBalance | number:'1.2-2' }}</strong>
+                    </div>
+                    <div *ngIf="payAmount > 0">
+                      After Payment:
+                      <strong>{{ bankBalanceAfterPayment | number:'1.2-2' }}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Amount -->
+              <div class="col-md-2 col-12 mt-1">
+                <div class="form-group">
+                  <label>Amount <span class="text-danger">*</span></label>
+                  <input
+                    type="number"
+                    class="form-control text-right"
+                    [(ngModel)]="payAmount"
+                    name="payAmount"
+                    min="0"
+                    step="0.01"
+                    (input)="onAmountInputChange()" />
+                </div>
+              </div>
+
+              <!-- Reference -->
+              <div class="col-md-3 col-12 mt-1">
+                <div class="form-group">
+                  <label>Reference No</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [(ngModel)]="payReference"
+                    name="payRef"
+                    placeholder="Cheque / UTR No" />
+                </div>
+              </div>
+
+              <!-- Notes -->
+              <div class="col-md-7 col-12 mt-1">
+                <div class="form-group">
+                  <label>Notes</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [(ngModel)]="payNotes"
+                    name="payNotes"
+                    placeholder="Remarks / Description" />
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="col-md-5 col-12 mt-1 d-flex align-items-end justify-content-md-end">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary mr-50"
+                  (click)="cancelPaymentForm()">
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  style="background-color: #2E5F73; color: white;"
+                  class="btn"
+                  (click)="postPayment()">
+                  <i class="fas fa-check-circle mr-25"></i>
+                  Post Payment
+                </button>
+              </div>
+
+              <!-- Supplier invoice list with checkboxes + DN row -->
+              <div class="col-12 mt-1" *ngIf="supplierInvoicesAll.length">
+                <div class="table-responsive ap-table-wrap">
+                  <table class="table mb-0 ap-table">
+                    <thead>
+                      <tr>
+                        <th style="background-color:#2E5F73; color:#ffffff;" class="text-center align-middle">
+                          <input
+                            type="checkbox"
+                            [(ngModel)]="payInvSelectAll"
+                            (ngModelChange)="onSelectAllInvoicesChange($event)" />
+                        </th>
+                        <th style="background-color:#2E5F73; color:#ffffff;">Invoice No</th>
+                        <th style="background-color:#2E5F73; color:#ffffff;">Invoice Date</th>
+                        <th style="background-color:#2E5F73; color:#ffffff;">Due Date</th>
+                        <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
+                        <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Paid</th>
+                        <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Outstanding</th>
+                        <th style="background-color:#2E5F73; color:#ffffff;" class="text-center">Status</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <ng-container *ngFor="let si of pagedSupplierInvoices">
+                        <!-- Invoice row with checkbox -->
+                        <tr>
+                          <td class="text-center align-middle">
+                            <input
+                              type="checkbox"
+                              [(ngModel)]="si.isSelected"
+                              (ngModelChange)="onInvoiceCheckboxChange(si, $event)" />
+                          </td>
+                          <td>{{ si.invoiceNo }}</td>
+                          <td>{{ si.invoiceDate | date:'dd-MMM-yyyy' }}</td>
+                          <td>{{ si.dueDate | date:'dd-MMM-yyyy' }}</td>
+                          <td class="text-right">{{ si.grandTotal | number:'1.2-2' }}</td>
+                          <td class="text-right">{{ si.paidAmount | number:'1.2-2' }}</td>
+                          <td class="text-right">{{ si.outstandingAmount | number:'1.2-2' }}</td>
+                          <td class="text-center">
+                            <span
+                              class="badge status-pill"
+                              [ngClass]="getInvoiceStatusClassByAmounts(si)">
+                              {{ getInvoiceStatusTextByAmounts(si) }}
+                            </span>
+                          </td>
+                        </tr>
+
+                        <!-- Separate Debit Note row under amount -->
+                        <tr *ngIf="si.debitNoteAmount > 0" class="ap-dn-row">
+                          <td></td>
+                          <td>
+                            <span *ngIf="si.debitNoteNo">
+                              {{ si.debitNoteNo }}
+                            </span>
+                          </td>
+                          <td>{{ si.debitNoteDate | date:'dd-MMM-yyyy' }}</td>
+                          <td></td>
+                          <td class="text-right text-danger">
+                            -{{ si.debitNoteAmount | number:'1.2-2' }}
+                          </td>
+                          <td class="text-right text-success">
+                            {{ si.debitNoteAmount | number:'1.2-2' }}
+                          </td>
+                          <td class="text-right">0.00</td>
+                          <td class="text-center">
+                            <span class="badge status-pill badge-secondary">
+                              Debit Note
+                            </span>
+                          </td>
+                        </tr>
+                      </ng-container>
+
+                      <tr *ngIf="!supplierInvoicesAll.length">
+                        <td colspan="8" class="text-center text-muted py-2">
+                          No invoices for this supplier.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Supplier invoices (payment) pagination -->
+                <div
+                  class="d-flex justify-content-between align-items-center mt-1"
+                  *ngIf="supplierInvoicesAll.length > payInvPageSize">
+                  <div class="text-muted small">
+                    Showing
+                    {{ (payInvPage - 1) * payInvPageSize + 1 }}
+                    –
+                    {{ Math.min(payInvPage * payInvPageSize, supplierInvoicesAll.length) }}
+                    of {{ supplierInvoicesAll.length }} invoices
+                  </div>
+
+                  <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" [class.disabled]="payInvPage === 1">
+                      <a class="page-link" (click)="payInvGoToPage(payInvPage - 1)">«</a>
+                    </li>
+
+                    <li
+                      class="page-item"
+                      *ngFor="let p of [].constructor(payInvTotalPages); let idx = index"
+                      [class.active]="payInvPage === (idx + 1)">
+                      <a class="page-link" (click)="payInvGoToPage(idx + 1)">{{ idx + 1 }}</a>
+                    </li>
+
+                    <li class="page-item" [class.disabled]="payInvPage === payInvTotalPages">
+                      <a class="page-link" (click)="payInvGoToPage(payInvPage + 1)">»</a>
+                    </li>
+                  </ul>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ===================================================== -->
+          <!--  AGING TAB                                            -->
+          <!-- ===================================================== -->
+          <div
+            class="tab-pane"
+            [ngClass]="{ 'active show': activeTab === 'aging' }"
+            *ngIf="activeTab === 'aging'">
+            <app-ap-aging></app-ap-aging>
+          </div>
+
+          <!-- ===================================================== -->
+          <!--  3-WAY MATCH TAB                                      -->
+          <!-- ===================================================== -->
+          <div
+            class="tab-pane"
+            [ngClass]="{ 'active show': activeTab === 'match' }"
+            *ngIf="activeTab === 'match'">
+
+            <div class="ap-table-wrap">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <h6 class="sub-title mb-0">
+                  PO vs GRN vs Supplier Invoice
+                </h6>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table mb-0 ap-table">
+                  <thead>
+                    <tr>
+                      <th style="background-color:#2E5F73; color:#ffffff;">PO No</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">GRN No</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Invoice No</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Supplier</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">PO Amt</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Invoice Amt</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;" class="text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let m of pagedMatchRows">
+                      <td>{{ m.poNo }}</td>
+                      <td>{{ m.grnNo }}</td>
+                      <td>{{ m.invoiceNo }}</td>
+                      <td>{{ m.supplierName }}</td>
+                      <td class="text-right">{{ m.poAmount | number:'1.2-2' }}</td>
+                      <td class="text-right">{{ m.invoiceAmount | number:'1.2-2' }}</td>
+                      <td class="text-center">
+                        <span
+                          class="badge status-pill"
+                          [ngClass]="matchStatusClass(m.status)">
+                          {{ m.status || 'Mismatch' }}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr *ngIf="matchRows.length === 0">
+                      <td colspan="7" class="text-center text-muted py-2">
+                        No match data available.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Match pagination -->
+              <div
+                class="d-flex justify-content-between align-items-center mt-1"
+                *ngIf="matchRows.length > matchPageSize">
+                <div class="text-muted small">
+                  Showing
+                  {{ (matchPage - 1) * matchPageSize + 1 }}
+                  –
+                  {{ Math.min(matchPage * matchPageSize, matchRows.length) }}
+                  of {{ matchRows.length }} rows
+                </div>
+
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" [class.disabled]="matchPage === 1">
+                    <a class="page-link" (click)="matchGoToPage(matchPage - 1)">«</a>
+                  </li>
+
+                  <li
+                    class="page-item"
+                    *ngFor="let p of [].constructor(matchTotalPages); let idx = index"
+                    [class.active]="matchPage === (idx + 1)">
+                    <a class="page-link" (click)="matchGoToPage(idx + 1)">{{ idx + 1 }}</a>
+                  </li>
+
+                  <li class="page-item" [class.disabled]="matchPage === matchTotalPages">
+                    <a class="page-link" (click)="matchGoToPage(matchPage + 1)">»</a>
+                  </li>
+                </ul>
+              </div>
+
+            </div>
+
+          </div>
+<!-- ===================================================== -->
+<!--  ADVANCES TAB (Supplier Advances)                     -->
+<!-- ===================================================== -->
+<div
+  class="tab-pane"
+  [ngClass]="{ 'active show': activeTab === 'advances' }"
+  *ngIf="activeTab === 'advances'">
+
+  <div class="ap-table-wrap">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+      <h6 class="sub-title mb-0">Supplier Advances</h6>
+
+      <!-- New Advance button (you will wire to a form later) -->
+     <button
+  type="button"
+  class="btn btn-outline-primary btn-sm ml-50"
+  (click)="router.navigate(['/financial/ap-advance'])">
+  <i class="fas fa-plus mr-25"></i>
+  New Advance
+</button>
+
+    </div>
+
+    <!-- Summary row (optional) -->
+    <div class="d-flex flex-wrap mb-1">
+      <div class="sup-total-pill mr-1">
+        Total Advance: {{ totalAdvanceAmount | number:'1.2-2' }}
+      </div>
+      <div class="sup-total-pill text-success mr-1">
+        Utilised: {{ totalAdvanceUtilised | number:'1.2-2' }}
+      </div>
+      <div class="sup-total-pill text-brand font-weight-bold mr-1">
+        Balance: {{ totalAdvanceBalance | number:'1.2-2' }}
+      </div>
+    </div>
+
+    <!-- Advances table -->
+    <div class="table-responsive">
+      <table class="table mb-0 ap-table">
+        <thead>
+          <tr>
+            <th style="background-color:#2E5F73; color:#ffffff;">Advance No</th>
+            <th style="background-color:#2E5F73; color:#ffffff;">Supplier</th>
+            <th style="background-color:#2E5F73; color:#ffffff;">Advance Date</th>
+            <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Original Amount</th>
+            <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Utilised</th>
+            <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Balance</th>
+            <th style="background-color:#2E5F73; color:#ffffff;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of pagedSupplierAdvances">
+            <td>{{ a.advanceNo }}</td>
+            <td>{{ a.supplierName }}</td>
+            <td>{{ a.advanceDate | date:'dd-MMM-yyyy' }}</td>
+            <td class="text-right">
+              {{ a.originalAmount | number:'1.2-2' }}
+            </td>
+            <td class="text-right text-success">
+              {{ a.utilisedAmount | number:'1.2-2' }}
+            </td>
+            <td class="text-right text-brand font-weight-bold">
+              {{ a.balanceAmount | number:'1.2-2' }}
+            </td>
+            <td>
+              <span class="badge status-pill"
+                    [ngClass]="a.balanceAmount > 0 ? 'badge-primary' : 'badge-secondary'">
+                {{ a.balanceAmount > 0 ? 'Open' : 'Fully Applied' }}
+              </span>
+            </td>
+          </tr>
+
+          <tr *ngIf="supplierAdvances.length === 0">
+            <td colspan="7" class="text-center text-muted py-2">
+              No supplier advances found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Advances pagination -->
+    <div
+      class="d-flex justify-content-between align-items-center mt-1"
+      *ngIf="supplierAdvances.length > advPageSize">
+      <div class="text-muted small">
+        Showing
+        {{ (advPage - 1) * advPageSize + 1 }}
+        –
+        {{ Math.min(advPage * advPageSize, supplierAdvances.length) }}
+        of {{ supplierAdvances.length }} advances
+      </div>
+
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item" [class.disabled]="advPage === 1">
+          <a class="page-link" (click)="advGoToPage(advPage - 1)">«</a>
+        </li>
+
+        <li
+          class="page-item"
+          *ngFor="let p of [].constructor(advTotalPages); let idx = index"
+          [class.active]="advPage === (idx + 1)">
+          <a class="page-link" (click)="advGoToPage(idx + 1)">{{ idx + 1 }}</a>
+        </li>
+
+        <li class="page-item" [class.disabled]="advPage === advTotalPages">
+          <a class="page-link" (click)="advGoToPage(advPage + 1)">»</a>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+        </div>
+        <!-- /TAB CONTENT -->
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ========================================================= -->
+<!--  EMAIL MODAL (app-invoice-email)                         -->
+<!-- ========================================================= -->
+<div
+  class="modal fade"
+  tabindex="-1"
+  role="dialog"
+  [ngClass]="{ 'show d-block': showEmailModal }"
+  *ngIf="showEmailModal"
+  (click)="onEmailModalBackdropClick($event)">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          Email Supplier Invoice
+        </h5>
+        <button type="button" class="close" aria-label="Close" (click)="closeEmailModal()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <app-invoice-email [invoice]="selectedInvoiceForEmail"></app-invoice-email>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="closeEmailModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showEmailModal" class="modal-backdrop fade show"></div>

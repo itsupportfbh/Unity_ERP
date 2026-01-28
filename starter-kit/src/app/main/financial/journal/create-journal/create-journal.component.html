@@ -1,0 +1,262 @@
+<div class="content-wrapper container-xxl p-0">
+  <div class="content-body">
+    <div class="row g-3">
+      <div class="col-md-12">
+        <div class="card journal-card h-100">
+          <div class="card-body">
+
+            <!-- ===== HEADER TITLE ===== -->
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <h2 class="journal-title mb-0">Manual Journal Entry</h2>
+                <p class="journal-subtitle mb-0">
+                  Capture multiple debit &amp; credit lines in a single balanced journal.
+                </p>
+              </div>
+            </div>
+
+            <!-- ===== TOP ROW : DATE + NARRATION ===== -->
+            <div class="row gx-3 gy-3 mb-2">
+              <!-- Journal Date -->
+              <div class="col-md-4 col-sm-6">
+                <label class="form-label mb-25">Journal Date</label>
+                <input
+                  type="date"
+                  class="form-control journal-input"
+                  [(ngModel)]="journalDate"
+                  name="journalDate" />
+              </div>
+
+              <!-- Header Description -->
+              <div class="col-md-8 col-sm-6">
+                <label class="form-label mb-25">Description</label>
+                <input
+                  type="text"
+                  class="form-control journal-input"
+                  [(ngModel)]="description"
+                  (ngModelChange)="onHeaderDescriptionChange($event)"
+                  name="description"
+                  placeholder="Narration" />
+              </div>
+            </div>
+
+            <!-- ========================================= -->
+            <!-- GRID + TOTALS + RECURRING + BUTTONS BLOCK -->
+            <!-- ========================================= -->
+            <div class="journal-grid-block">
+
+              <!-- ===== LINES GRID ===== -->
+              <div class="journal-table-wrapper">
+                <table class="table journal-table mb-0">
+                  <thead>
+                    <tr>
+                      <th class="col-desc">Description</th>
+                      <th class="col-ledger">Ledger Name</th>
+                      <th class="col-amount text-right">Debit</th>
+                      <th class="col-amount text-right">Credit</th>
+                      <th class="col-actions"></th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <!-- Empty state -->
+                    <tr *ngIf="!lines || lines.length === 0">
+                      <td colspan="5" class="jl-no-lines text-center">
+                        No lines yet.
+                      </td>
+                    </tr>
+
+                    <!-- Actual lines -->
+                    <tr *ngFor="let line of lines; let i = index">
+                      <!-- Line Description -->
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control journal-input"
+                          [(ngModel)]="line.lineDescription"
+                          placeholder="Line description" />
+                      </td>
+
+                      <!-- Ledger Name -->
+                      <td>
+                        <ng-select
+                          class="journal-select w-100"
+                          [items]="parentHeadList"
+                          bindLabel="label"
+                          bindValue="value"
+                          [(ngModel)]="line.ledgerId"
+                          [clearable]="true"
+                          placeholder="Select Ledger Name">
+                        </ng-select>
+                      </td>
+
+                      <!-- Debit -->
+                      <td class="text-right amount-cell">
+                        <input
+                          type="number"
+                          class="form-control journal-input text-right"
+                          [(ngModel)]="line.debit"
+                          (input)="onDebitChanged(line)"
+                          placeholder="0.00" />
+                      </td>
+
+                      <!-- Credit -->
+                      <td class="text-right amount-cell">
+                        <input
+                          type="number"
+                          class="form-control journal-input text-right"
+                          [(ngModel)]="line.credit"
+                          (input)="onCreditChanged(line)"
+                          placeholder="0.00" />
+                      </td>
+
+                      <!-- Remove -->
+                      <td class="text-center">
+                        <button
+                          type="button"
+                          class="btn btn-sm journal-remove-btn"
+                          [disabled]="lines.length === 1"
+                          (click)="removeLine(i)">
+                          ×
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <!-- Add line footer -->
+                <div class="journal-add-footer">
+                  <button
+                    type="button"
+                    class="journal-add-btn"
+                    (click)="addLine()"
+                    (mouseenter)="addHover = true"
+                    (mouseleave)="addHover = false"
+                    [style.backgroundColor]="addHover ? '#092f3f' : '#2E5F73'">
+                    + Add line
+                  </button>
+                </div>
+              </div>
+
+              <!-- ===== TOTALS STRIP ===== -->
+              <div class="journal-totals-strip">
+                <div>
+                  <span class="totals-label">Total Debit</span>
+                  <span class="totals-value">{{ totalDebit | number:'1.2-2' }}</span>
+                </div>
+                <div>
+                  <span class="totals-label">Total Credit</span>
+                  <span class="totals-value">{{ totalCredit | number:'1.2-2' }}</span>
+                </div>
+                <div class="ms-auto">
+                  <span
+                    class="badge"
+                    [ngClass]="isBalanced ? 'badge-balanced' : 'badge-unbalanced'">
+                    {{ isBalanced ? 'Balanced' : 'Not Balanced' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- ===== RECURRING SECTION ===== -->
+              <div class="recurring-card">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" id="isRecurring"
+                          [(ngModel)]="isRecurring">
+                    <label class="form-check-label ms-2" for="isRecurring">
+                      Make this a recurring journal
+                    </label>
+                  </div>
+                  <small class="recurring-help d-none d-md-inline">
+                    Automatically create this journal on a schedule.
+                  </small>
+                </div>
+
+                <div class="row gx-3 gy-2 mt-1" *ngIf="isRecurring">
+                  <!-- Frequency -->
+                  <div class="col-md-3 col-sm-6">
+                    <label class="recurring-label">Frequency</label>
+                    <select
+                      class="form-control journal-input"
+                      [(ngModel)]="recurringFrequency">
+                      <option [ngValue]="null" disabled>Select frequency</option>
+                      <option value="Daily">Daily</option>
+                      <option value="Weekly">Weekly</option>
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly</option>
+                      <option value="Yearly">Yearly</option>
+                    </select>
+                  </div>
+
+                  <!-- Every -->
+                  <div class="col-md-2 col-sm-6">
+                    <label class="recurring-label">Every</label>
+                    <input
+                      type="number"
+                      min="1"
+                      class="form-control journal-input"
+                      [(ngModel)]="recurringInterval">
+                  </div>
+
+                  <!-- Start date -->
+                  <div class="col-md-3 col-sm-6">
+                    <label class="recurring-label">Start Date</label>
+                    <input
+                      type="date"
+                      class="form-control journal-input"
+                      [(ngModel)]="recurringStartDate" />
+                  </div>
+
+                  <!-- Ends -->
+                  <div class="col-md-2 col-sm-6">
+                    <label class="recurring-label">Ends</label>
+                    <select
+                      class="form-control journal-input"
+                      [(ngModel)]="recurringEndType">
+                      <option value="NoEnd">Never</option>
+                      <option value="EndByDate">On date</option>
+                      <option value="EndByCount">After N times</option>
+                    </select>
+                  </div>
+
+                  <!-- End Date -->
+                  <div class="col-md-2 col-sm-6" *ngIf="recurringEndType === 'EndByDate'">
+                    <label class="recurring-label">End Date</label>
+                    <input
+                      type="date"
+                      class="form-control journal-input"
+                      [(ngModel)]="recurringEndDate" />
+                  </div>
+
+                  <!-- Count -->
+                  <div class="col-md-2 col-sm-6" *ngIf="recurringEndType === 'EndByCount'">
+                    <label class="recurring-label">Occurrences</label>
+                    <input
+                      type="number"
+                      min="1"
+                      class="form-control journal-input"
+                      [(ngModel)]="recurringCount" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- ===== BUTTONS ===== -->
+              <div class="journal-action-row">
+                <button class="btn btn-outline-secondary" (click)="onCancel()">Cancel</button>
+
+                <button class="btn journal-submit-btn"
+                        [disabled]="isSaving || !isBalanced || !hasValidLines"
+                        (click)="onSubmit()">
+                  {{ isSaving ? 'Saving...' : 'Submit Journal' }}
+                </button>
+              </div>
+
+            </div>
+            <!-- /journal-grid-block -->
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

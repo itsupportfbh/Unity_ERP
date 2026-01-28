@@ -1,0 +1,190 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+
+// invoice-create.component.scss
+$brand: #2e5f73;
+
+.ar-card {
+  border-radius: 18px;
+}
+
+/* ================= SUMMARY CARDS (AR) ================= */
+
+/* Base summary card style */
+.summary-card {
+  border-radius: 1rem;
+  padding: 0.9rem 1.25rem;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;          // light border like AP
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 82px;
+  position: relative;
+  overflow: hidden;
+
+  // smooth hover animation
+  transition: transform 0.18s ease-out,
+              box-shadow 0.18s ease-out,
+              border-color 0.18s ease-out,
+              background-color 0.18s ease-out;
+
+  .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #a0aec0;
+    margin-bottom: 0.25rem;
+  }
+
+  .value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+}
+
+/* Hover – move slightly forward and scale */
+.summary-card:hover {
+  transform: translateY(-4px) scale(1.02);        // “forward + bigger”
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.14); // stronger shadow
+  border-color: $brand;                           // brand outline on hover
+  z-index: 2;
+}
+
+/* Row wrapper for easy nth-child styling */
+.ar-summary-row {
+  margin-bottom: 0.75rem;
+}
+
+/* 1st card – Total Invoice Amount */
+.ar-summary-row > div:nth-child(1) .summary-card {
+  background-color: #fff7ed;   // light orange
+  border-color: #fed7aa;
+}
+
+/* 2nd card – Total Paid */
+.ar-summary-row > div:nth-child(2) .summary-card {
+  background-color: #ecfdf3;   // light green
+  border-color: #bbf7d0;
+}
+
+/* 3rd card – Total Credit Notes */
+.ar-summary-row > div:nth-child(3) .summary-card {
+  background: #fef3c7;    // light blue
+  border-color: #bfdbfe;
+}
+
+/* 4th card – Net Outstanding */
+.ar-summary-row > div:nth-child(4) .summary-card {
+  background-color: #eef2ff;   // light violet
+  border-color: #c7d2fe;
+}
+
+/* ================= TABLES ================= */
+
+.invoice-table thead {
+  background-color: $brand;
+  color: #fff;
+
+  th {
+    border: 0;
+    font-weight: 600;
+    font-size: 0.82rem;
+  }
+}
+
+.customer-row {
+  background: #f7fafc;
+  font-weight: 600;
+}
+
+.inner-table {
+  background: #fff;
+
+  thead {
+    background: #f1f5f9;
+    color: #4a5568;
+  }
+}
+
+.status-pill {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.status-paid {
+  background-color: #e6f6ec;
+  color: #137333;
+}
+
+.status-partial {
+  background-color: #fff4e5;
+  color: #b26a00;
+}
+
+.status-unpaid {
+  background-color: #ffecec;
+  color: #c53929;
+}
+
+.invoice-table thead tr th {
+  background-color: #2E5F73 !important;
+  color: #fff !important;
+}
+
+/* print button inline with pill, no drop down */
+.ar-print-btn {
+  padding: 0.15rem 0.45rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.ar-print-btn i {
+  font-size: 0.8rem;
+}
+
+/* ===== AR tables ===== */
+
+/* main & inner headers: keep in one line, smaller so they fit */
+.ar-table thead th,
+.inner-table thead th {
+  white-space: nowrap;
+  font-size: 0.78rem;
+  padding: 0.45rem 0.6rem;
+}
+
+/* numbers tighter so they don't push width */
+.inner-table td.text-end {
+  white-space: nowrap;
+}
+
+/* remove horizontal scrollbar for this page’s table */
+.ar-card .table-responsive {
+  overflow-x: visible;     /* no horizontal scroll bar */
+}
+
+/* Keep Invoice No + Invoice Date + Due Date in a single line */
+.inner-table td:first-child,
+.inner-table td:nth-child(2),
+.inner-table td:nth-child(3) {
+  white-space: nowrap;
+}
+
+/* Credit-note row one line */
+.inner-table tr.credit-summary-row td {
+  white-space: nowrap;
+}
+
+.invoice-ref {
+  font-size: 0.65rem;
+  color: #6c757d;
+  margin-top: -2px;
+}

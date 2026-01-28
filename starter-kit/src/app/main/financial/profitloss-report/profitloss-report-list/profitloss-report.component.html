@@ -1,0 +1,203 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+
+      <!-- ===== Reports Center card on top ===== -->
+      <app-financereports></app-financereports>
+
+      <!-- ===== Profit & Loss Card ===== -->
+      <div class="card shadow-sm pl-card mt-2">
+        <div class="card-body">
+
+          <!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h4 class="pl-title">{{ headerTitle }}</h4>
+
+  <div class="d-flex align-items-center report-export-actions">
+    <button
+      type="button"
+      class="btn btn-sm d-flex align-items-center report-btn report-btn-excel"
+      (click)="exportExcelSimple()">
+      <i data-feather="file-text" class="me-50"></i>
+      <span>Export Excel</span>
+    </button>
+
+    <button
+      type="button"
+      class="btn btn-sm d-flex align-items-center report-btn report-btn-pdf"
+      (click)="exportPdfSimple()">
+      <i data-feather="file" class="me-50"></i>
+      <span>Export PDF</span>
+    </button>
+  </div>
+</div>
+
+
+
+
+          <!-- ===== Top Summary Cards ===== -->
+          <div class="row pl-summary-row mb-2">
+            <!-- Total Expense -->
+            <div class="col-md-4 col-12 mb-1">
+              <div class="summary-card summary-expense">
+                <div class="summary-icon summary-icon-expense">
+                  <i data-feather="trending-down"></i>
+                </div>
+                <div>
+                  <div class="summary-label">Total Expense</div>
+                  <div class="summary-value">
+                    {{ totalExpense | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Sales -->
+            <div class="col-md-4 col-12 mb-1">
+              <div class="summary-card summary-sales">
+                <div class="summary-icon summary-icon-sales">
+                  <i data-feather="trending-up"></i>
+                </div>
+                <div>
+                  <div class="summary-label">Total Sales</div>
+                  <div class="summary-value">
+                    {{ totalSales | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Net Profit -->
+            <div class="col-md-4 col-12 mb-1">
+              <div class="summary-card summary-profit">
+                <div class="summary-icon summary-icon-profit">
+                  <i data-feather="dollar-sign"></i>
+                </div>
+                <div>
+                  <div class="summary-label">Net Profit</div>
+                  <div class="summary-value" [ngClass]="netProfitClass">
+                    {{ netProfit | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Two-column layout ===== -->
+          <div class="row row-with-divider">
+            <!-- Center vertical divider -->
+            <div class="vertical-divider d-none d-md-block"></div>
+
+            <!-- =========== LEFT: Purchase Accounts (5xx) =========== -->
+            <div class="col-md-6 col-12 mb-2">
+              <div class="pl-column">
+                <div class="pl-column-header">
+                  <h5>Purchase Accounts</h5>
+                </div>
+
+                <ul class="pl-list">
+                  <!-- Purchase rows (including Net Profit when profit > 0) -->
+                  <li class="pl-item"
+                      *ngFor="let acc of purchaseRows"
+                      [ngClass]="{ 'pl-net-row': acc.isPnLLine }">
+                    <div class="pl-item-left">
+                      <span class="drag-icon">
+                        <i data-feather="menu"></i>
+                      </span>
+                      <div class="pl-text">
+                        <div class="pl-name">{{ acc.name }}</div>
+                        <div class="pl-code" *ngIf="acc.code">
+                          {{ acc.code }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="pl-item-right">
+                      <span class="pl-amount">
+                        {{ acc.amount | number:'1.2-2' }}
+                      </span>
+                      <div class="avatar-circle"
+                           *ngIf="!acc.isPnLLine"
+                           [style.background-color]="acc.avatarColor">
+                        <span>{{ acc.avatarText }}</span>
+                      </div>
+                    </div>
+                  </li>
+
+                  <!-- Purchase Total row (grand total incl. Net Profit if any) -->
+                  <li class="pl-item pl-total-row pl-total-purchase">
+                    <div class="pl-item-left">
+                      <div class="pl-text">
+                        <div class="pl-name">Total</div>
+                      </div>
+                    </div>
+                    <div class="pl-item-right">
+                      <span class="pl-amount">
+                        {{ leftGrandTotal | number:'1.2-2' }}
+                      </span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- =========== RIGHT: Sales Accounts (4xx) =========== -->
+            <div class="col-md-6 col-12 mb-2">
+              <div class="pl-column">
+                <div class="pl-column-header">
+                  <h5>Sales Accounts</h5>
+                </div>
+
+                <ul class="pl-list">
+                  <!-- Sales rows (including Net Loss when profit < 0) -->
+                  <li class="pl-item"
+                      *ngFor="let acc of salesRows"
+                      [ngClass]="{ 'pl-net-row': acc.isPnLLine }">
+                    <div class="pl-item-left">
+                      <span class="drag-icon">
+                        <i data-feather="menu"></i>
+                      </span>
+                      <div class="pl-text">
+                        <div class="pl-name">{{ acc.name }}</div>
+                        <div class="pl-code" *ngIf="acc.code">
+                          {{ acc.code }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="pl-item-right">
+                      <span class="pl-amount">
+                        {{ acc.amount | number:'1.2-2' }}
+                      </span>
+                      <div class="avatar-circle"
+                           *ngIf="!acc.isPnLLine"
+                           [style.background-color]="acc.avatarColor">
+                        <span>{{ acc.avatarText }}</span>
+                      </div>
+                    </div>
+                  </li>
+
+                  <!-- Sales Total row (grand total incl. Net Loss if any) -->
+                  <li class="pl-item pl-total-row pl-total-sales">
+                    <div class="pl-item-left">
+                      <div class="pl-text">
+                        <div class="pl-name">Total</div>
+                      </div>
+                    </div>
+                    <div class="pl-item-right">
+                      <span class="pl-amount">
+                        {{ rightGrandTotal | number:'1.2-2' }}
+                      </span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

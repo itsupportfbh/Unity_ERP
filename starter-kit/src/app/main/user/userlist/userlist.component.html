@@ -1,0 +1,134 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <!-- ===== HEADER ===== -->
+        <div class="row">
+
+          <!-- Title + page size -->
+          <div class="col-md-4 col-12">
+            <h4
+              class="card-text"
+              style="margin-left:0.85rem;margin-top:0.75rem;font-size:1.25rem;font-weight:600;color:#2E5F73;">
+              User List
+            </h4>
+
+            <label class="d-flex align-items-center m-1">
+              Show
+              <select
+                class="form-control mx-25"
+                style="width:80px"
+                [(ngModel)]="pageSize"
+                (change)="onPageSizeChange()">
+                <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
+              </select>
+              entries
+            </label>
+          </div>
+
+          <!-- Search + Add -->
+          <div class="col-md-8 col-12 d-flex justify-content-end align-items-center gap-1">
+            <label class="d-flex align-items-center">
+              Search:
+              <input
+                class="form-control ml-25"
+                style="width:260px"
+                [(ngModel)]="searchText"
+                (input)="onSearchChange()" />
+            </label>
+
+            <button
+              class="btn d-inline-flex align-items-center m-1"
+              style="background:#2E5F73;color:#fff;gap:6px;"
+              (click)="add()">
+              <i class="fas fa-plus-circle"></i>
+              Add
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== TABLE ===== -->
+        <ngx-datatable
+          class="bootstrap core-bootstrap mt-2"
+          [rows]="filtered"
+          [rowHeight]="50"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="pageSize"
+          [columnMode]="'force'"
+          [scrollbarH]="true">
+
+      
+
+          <!-- Username -->
+          <ngx-datatable-column name="USERNAME" prop="username">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span class="fw-semibold">{{ row.username }}</span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Email -->
+          <ngx-datatable-column name="EMAIL" prop="email">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row.email }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Roles -->
+          <ngx-datatable-column name="ROLES" [minWidth]="220" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <ng-container *ngIf="row.approvalLevelNames?.length; else noRole">
+                <span
+                  *ngFor="let r of row.approvalLevelNames"
+                  class="badge badge-light-primary mr-25">
+                  {{ r }}
+                </span>
+              </ng-container>
+              <ng-template #noRole>
+                <span class="text-muted">No</span>
+              </ng-template>
+            </ng-template>
+          </ngx-datatable-column>
+<ngx-datatable-column name="TEAMS" [minWidth]="50" [maxWidth]="150" [sortable]="false">
+  <ng-template ngx-datatable-cell-template let-row="row">
+    <ng-container *ngIf="row.teams?.length; else noTeam">
+      <span *ngFor="let t of row.teams" class="badge badge-light-info mr-25">
+        {{ t }}
+      </span>
+    </ng-container>
+    <ng-template #noTeam>
+      <span class="text-muted">No</span>
+    </ng-template>
+  </ng-template>
+</ngx-datatable-column>
+
+          <!-- Action -->
+          <ngx-datatable-column name="ACTION" [width]="120" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <div class="d-flex justify-content-center align-items-center gap-1">
+                <i
+                  class="fas fa-pen text-primary mr-1"
+                  style="cursor:pointer;"
+                  (click)="edit(row.id)"
+                  title="Edit">
+                </i>
+
+                <i
+                  class="fas fa-trash text-danger"
+                  style="cursor:pointer;"
+                  (click)="disable(row)"
+                  title="Disable">
+                </i>
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+        </ngx-datatable>
+
+        
+
+      </div>
+    </section>
+  </div>
+</div>

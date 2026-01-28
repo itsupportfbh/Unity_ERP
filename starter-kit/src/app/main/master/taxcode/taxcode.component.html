@@ -1,0 +1,210 @@
+<div class="row">
+  <!-- Left: TaxCode List -->
+  <div class="col-lg-6 col-md-6">
+    <div class="card card-transaction">
+      <div class="card-header">
+        <h4
+          class="card-title"
+          style="display:flex;align-items:center;gap:10px;margin:0;font-size:1.25rem;font-weight:600;color:#2E5F73;"
+        >
+          <span
+            style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background-color:#e5f0f3;border-radius:50%;"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#2E5F73"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="width:18px;height:18px;"
+            >
+              <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"></path>
+              <circle cx="10" cy="9" r="1.6"></circle>
+              <circle cx="14" cy="13" r="1.6"></circle>
+              <path d="M9 15l6-6"></path>
+            </svg>
+          </span>
+          TaxCode List
+        </h4>
+
+        <button
+          (click)="createTaxCode()"
+          style="background-color: #2E5F73; color: white; border: none; padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;"
+        >
+          Create
+        </button>
+      </div>
+
+      <div class="card-body">
+        <ul class="list-group">
+          <li
+            class="list-group-item d-flex justify-content-between align-items-center"
+            *ngFor="let item of rows"
+          >
+            <div class="avatar bg-light-primary mr-2 align-items-center avatar-lg">
+              <div class="avatar-content">
+                <span
+                  data-feather="globe"
+                  style="width: 2rem; height: 2rem; font-size: 1.5rem;"
+                ></span>
+              </div>
+            </div>
+
+            <div
+              class="d-flex flex-column flex-md-row justify-content-between align-items-md-center w-100"
+            >
+              <div class="m-l-16 m-r-auto">
+                <h6 class="mat-subtitle-1 f-s-16 f-w-600">
+                  {{ item.name }}
+                </h6>
+                <!-- optional: show rate -->
+                <small *ngIf="item.rate != null">Rate: {{ item.rate }}%</small>
+              </div>
+
+              <div class="mt-md-0 mt-1 d-flex justify-content-md-end">
+                <!-- Edit Button -->
+                <button
+                  type="button"
+                  class="btn btn-outline-primary p-0 d-flex align-items-center justify-content-center"
+                  style="width: 28px; height: 28px;"
+                  (click)="getTaxCodeDetails(item.id)"
+                >
+                  <i data-feather="edit" style="width: 14px; height: 14px;"></i>
+                </button>
+
+                <!-- Delete Button -->
+                <button
+                  type="button"
+                  class="btn btn-outline-danger p-0 d-flex align-items-center justify-content-center ml-1"
+                  style="width: 28px; height: 28px;"
+                  (click)="deleteTaxCode(item.id, item.isUsed)"
+                  [disabled]="isEditMode"
+                >
+                  <i data-feather="trash" style="width: 14px; height: 14px;"></i>
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Create / Edit form -->
+  <div
+    class="col-sm-12 col-xs-12 col-lg-6 col-md-6"
+    *ngIf="isDisplay"
+  >
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">{{ modeHeader }}</h4>
+      </div>
+
+      <div class="card-body">
+        <form
+          class="form"
+          #taxCodeForm="ngForm"
+          (ngSubmit)="taxCodeForm.form.valid && saveTaxCode()"
+        >
+          <!-- Name -->
+          <div class="form-group">
+            <label for="tax-name">Name</label>
+            <input
+              type="text"
+              id="tax-name"
+              class="form-control"
+              placeholder="Name"
+              name="name"
+              [(ngModel)]="name"
+              [maxlength]="50"
+              required
+            />
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label for="tax-desc">Description</label>
+            <input
+              type="text"
+              id="tax-desc"
+              class="form-control"
+              placeholder="Description"
+              name="description"
+              [(ngModel)]="description"
+              [maxlength]="150"
+            />
+          </div>
+
+          <!-- Type (dropdown) -->
+          <div class="form-group">
+            <label for="tax-type">Type</label>
+            <select
+              id="tax-type"
+              class="form-control"
+              name="typeId"
+              [(ngModel)]="typeId"
+              required
+            >
+              <option [ngValue]="null" disabled>Select Type</option>
+              <option *ngFor="let t of taxTypes" [ngValue]="t.id">
+                {{ t.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Rate % -->
+          <div class="form-group">
+            <label for="tax-rate">Rate (%)</label>
+            <input
+              type="number"
+              id="tax-rate"
+              class="form-control"
+              placeholder="e.g. 18"
+              name="rate"
+              [(ngModel)]="rate"
+              min="0"
+              max="100"
+              step="0.01"
+              required
+            />
+          </div>
+
+          <!-- Buttons -->
+          <div class="row justify-content-start p-1">
+            <button
+              type="submit"
+              rippleEffect
+              class="btn mr-1"
+              [disabled]="!taxCodeForm.form.valid"
+              style="background-color: #2E5F73;color: white;padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;"
+            >
+              Submit
+            </button>
+
+            <button
+              type="button"
+              rippleEffect
+              class="btn btn-danger mr-1"
+              (click)="cancel()"
+              style="padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              rippleEffect
+              class="btn btn-secondary"
+              *ngIf="resetButton"
+              (click)="reset()"
+              style="padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;"
+            >
+              Reset
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,185 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <!-- Header bar -->
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="page-title mb-0">
+            {{ isEdit ? 'Edit Receipt' : 'New Receipt' }}
+            <span *ngIf="receiptNo" class="text-muted small ms-1">#{{ receiptNo }}</span>
+          </h4>
+          <div class="d-flex gap-1">
+            <button class="btn btn-outline-secondary mr-25" (click)="cancel()">
+              Cancel
+            </button>
+            <button class="btn btn-brand" [disabled]="!canSave()" (click)="save()">
+              {{ isSaving ? 'Posting…' : 'Post Receipt' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+
+          <!-- Top form row -->
+          <div class="row g-2 mb-3 align-items-end">
+
+            <!-- Customer -->
+            <div class="col-md-4">
+              <label class="form-label">Customer <span class="text-danger">*</span></label>
+              <ng-select [items]="customerList" bindLabel="customerName" bindValue="customerId" [(ngModel)]="customerId"
+                name="customerId" placeholder="Select customer" (change)="onCustomerChange($event)">
+              </ng-select>
+            </div>
+
+            <!-- Date -->
+            <div class="col-md-2 col-6">
+              <label class="form-label">Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" [(ngModel)]="receiptDate" name="receiptDate" />
+            </div>
+            <!-- Payment Mode -->
+            <div class="col-md-2 col-6">
+              <label class="form-label d-block">
+                Payment Mode <span class="text-danger">*</span>
+              </label>
+              <select class="form-control" [(ngModel)]="paymentMode" name="paymentMode"
+                (change)="onPaymentModeChange()">
+                <option value="CASH">Cash</option>
+                <option value="BANK">Bank</option>
+              </select>
+            </div>
+
+            <!-- Bank -->
+            <div class="col-md-2" *ngIf="paymentMode === 'BANK'">
+              <label class="form-label d-block">
+                Bank <span class="text-danger">*</span>
+              </label>
+              <ng-select class="w-100 bank-select" [items]="banks" bindLabel="bankName" bindValue="id"
+                [(ngModel)]="selectedBankId" name="bankId" placeholder="-- Select Bank --" (change)="onBankChange($event)">
+              </ng-select>
+
+              <div class="text-muted small bank-balance-text" *ngIf="bankAvailableBalance !== null">
+                <div>
+                  Available:
+                  <strong>{{ bankAvailableBalance | number:'1.2-2' }}</strong>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Amount Received -->
+            <div class="col-md-2">
+              <label class="form-label">Amount Received <span class="text-danger">*</span></label>
+
+              <!-- CASH -->
+              <input *ngIf="paymentMode === 'CASH'" type="number" class="form-control text-end"
+                [(ngModel)]="amountReceived" name="amountReceived" min="0" (input)="onAmountReceivedChange()" />
+
+              <!-- BANK -->
+              <input *ngIf="paymentMode === 'BANK'" type="number" class="form-control text-end"
+                [(ngModel)]="amountReceived" name="amountReceivedBank" (input)="onAmountReceivedChange()" />
+            </div>
+          </div>
+
+          <!-- Totals row -->
+          <div class="row mb-2">
+            <div class="col-md-6"></div>
+            <div class="col-md-6">
+              <div class="d-flex justify-content-end small text-muted gap-2 flex-wrap">
+                <span>
+                  Amount Received:
+                  <strong>{{ amountReceived | number:'1.2-2' }}</strong>
+                </span>
+                <span>|</span>
+                <span>
+                  Total Allocated:
+                  <strong>{{ totalAllocated | number:'1.2-2' }}</strong>
+                </span>
+                <span>|</span>
+                <span>
+                  Unallocated:
+                  <strong [ngClass]="{
+                    'text-success': unallocatedAmount >= 0,
+                    'text-danger': unallocatedAmount < 0
+                  }">
+                    {{ unallocatedAmount | number:'1.2-2' }}
+                  </strong>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Allocation grid -->
+          <div class="table-responsive" *ngIf="customerId">
+            <table class="table table-sm table-bordered align-middle ap-table">
+              <thead>
+                <tr>
+                  <!-- Select-all checkbox -->
+                  <th class="text-center" style="width: 40px;">
+                    <input type="checkbox" [checked]="allSelected"
+                      (change)="onHeaderCheckboxChange($event.target.checked)" />
+                  </th>
+                  <th>Invoice</th>
+                  <th>Date</th>
+                  <th class="text-end">Amount</th>
+                  <th class="text-end">Paid</th>
+                  <th class="text-end">Balance</th>
+                  <th class="text-end">Allocate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let inv of invoices; let i = index">
+                  <!-- Row checkbox -->
+                  <td class="text-center">
+                    <input type="checkbox" [checked]="allocations[i]?.selected"
+                      (change)="onRowCheckboxChange(i, $event.target.checked)" />
+                  </td>
+
+                  <td>{{ inv.invoiceNo }}</td>
+                  <td>{{ inv.invoiceDate | date:'dd-MMM-yyyy' }}</td>
+                  <td class="text-end">{{ inv.amount | number:'1.2-2' }}</td>
+
+                  <!-- Paid = already paid + allocation -->
+                  <td class="text-end">
+                    {{ rowPaid(inv, i) | number:'1.2-2' }}
+                  </td>
+
+                  <!-- Balance = amount - (already paid + allocation) -->
+                  <td class="text-end">
+                    {{ rowBalance(inv, i) | number:'1.2-2' }}
+                  </td>
+
+                  <!-- Allocate -->
+                  <td class="text-end">
+                    <input type="number" min="0" class="form-control form-control-sm text-end"
+                      [(ngModel)]="allocations[i].allocatedAmount" name="alloc_{{ i }}" (input)="onAllocateChange(i)" />
+                  </td>
+                </tr>
+
+                <tr *ngIf="!invoices.length">
+                  <td colspan="7" class="text-center text-muted py-3">
+                    No open invoices for this customer
+                  </td>
+                </tr>
+              </tbody>
+
+              <tfoot *ngIf="invoices.length">
+                <tr class="fw-semibold">
+                  <td colspan="6" class="text-end">Total Allocate</td>
+                  <td class="text-end">
+                    {{ totalAllocated | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div *ngIf="!customerId" class="text-muted small">
+            Select a customer to load open invoices for allocation.
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

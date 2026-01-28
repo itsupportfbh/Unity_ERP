@@ -1,0 +1,254 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <div class="row">
+          <div class="col-md-3 col-12">
+            <h4 class="card-text"
+                style="margin-left:0.85rem;margin-top:1rem;font-size:1.25rem;font-weight:600;color:#2E5F73;">
+              Production Plan List
+            </h4>
+              <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center">
+                Show
+                <select class="form-control mx-25" (change)="onLimitChange($event)">
+                  <option [selected]="selectedOption===10" value="10">10</option>
+                  <option [selected]="selectedOption===25" value="25">25</option>
+                  <option [selected]="selectedOption===50" value="50">50</option>
+                  <option [selected]="selectedOption===100" value="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-9 col-12 d-flex justify-content-end">
+            <div class="d-flex align-items-center pr-1 pb-1 pb-md-0 mt-1" style="gap:10px;">
+              <label class="d-flex align-items-center">
+                Search:
+                <input class="form-control ml-25" type="search" [(ngModel)]="searchValue"
+                       (keyup)="applyFilter()" (search)="applyFilter()">
+              </label>
+
+              <button class="btn d-inline-flex align-items-center"
+                      style="background:#2E5F73;color:#fff;gap:6px;" (click)="goToCreate()"
+                      >
+                <i data-feather="plus-circle"></i>
+                <span>Create From SO</span>
+              </button>
+               <button
+                type="button"
+                class="btn d-inline-flex align-items-center justify-content-center flex-shrink-0 position-relative"
+                style="border:1px solid #2E5F73; color:#2E5F73; background:white; width:44px; height:38px; padding:0;"
+                title="Shortage GRN Alerts"
+                (click)="openShortageGrnAlerts()">
+
+                <i class="fas fa-bell"></i>
+
+                <span *ngIf="shortageGrnCount > 0"
+                      style="position:absolute; top:-6px; right:-6px; min-width:20px; height:20px; padding:0 6px;
+                            border-radius:999px; background:#28a745; color:#fff; display:flex; align-items:center;
+                            justify-content:center; font-size:12px; font-weight:700; line-height:1;">
+                  {{ shortageGrnCount }}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <ngx-datatable class="bootstrap core-bootstrap"
+          [rows]="rows"
+          [rowHeight]="50"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="10"
+          [columnMode]="'force'">
+
+          <!-- view explosion -->
+          <ngx-datatable-column [width]="50" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span (click)="openExplosion(row)" title="Explosion"
+                    style="cursor:pointer;font-size:18px;color:#2E5F73;">
+                <i class="fas fa-eye"></i>
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Plan ID" prop="productionPlanNo" [width]="100"></ngx-datatable-column>
+          <ngx-datatable-column name="SO NO" prop="salesOrderNo" [width]="160"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Plan Date" prop="planDate" [width]="140">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row.planDate | date:'dd-MM-yyyy' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Status" prop="status" [width]="120"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Shortage" prop="totalShortage" [width]="140">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span class="badge badge-pill"
+                    [ngClass]="row.totalShortage > 0 ? 'badge-danger' : 'badge-success'">
+                {{ row.totalShortage | number:'1.0-2' }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Action" [width]="160">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <div style="display:flex;justify-content:center;gap:12px;align-items:center;">
+                <!-- Edit icon -->
+                <i class="fas fa-pen text-primary"
+                   style="cursor:pointer;"
+                   (click)="edit(row.id)"
+                   title="Edit"></i>
+
+                <!-- Delete icon -->
+                <i class="fas fa-trash text-danger"
+   style="cursor:pointer;"
+   (click)="remove(row.id)"
+   title="Delete"></i>
+
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+        </ngx-datatable>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Lines Modal -->
+<div *ngIf="showExplosionModal" (click)="closeExplosion()"
+     style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;display:flex;align-items:center;justify-content:center;">
+  <div (click)="$event.stopPropagation()"
+      style="width:800px;max-width:95vw;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0;font-size:20px;font-weight:600;color:#374151;">{{ modalTitle || 'Plan Lines' }}</h3>
+      <button (click)="closeExplosion()"
+              style="border:0;background:transparent;font-size:22px;cursor:pointer;color:#6b7280;">×</button>
+    </div>
+
+    <div style="padding:16px 20px;">
+      <div style="max-height:60vh;overflow:auto;border:1px solid #eef2f7;border-radius:10px;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#111827;">
+          <thead>
+            <tr style="background:#2E5F73;color:#fff;">
+              
+              <th style="padding:10px 12px;text-align:left;width:220px;">Finished Item</th>
+              <th style="padding:10px 12px;text-align:left;width:120px;">Planned Qty</th>
+              <th style="padding:10px 12px;text-align:left;width:160px;">Expected Output</th>
+             
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let l of planLines; let i=index"
+                [style.background]="i%2===0 ? '#fcfdff' : '#ffffff'"
+                style="border-bottom:1px solid #f1f5f9;">
+             
+              <td style="padding:10px 12px;text-align:left">
+                {{ l.finishedItemName || ('ItemId: ' + l.finishedItemId) }}
+              </td>
+              <td style="padding:10px 12px;text-align:left;">{{ l.plannedQty | number:'1.0-2' }}</td>
+              <td style="padding:10px 12px;text-align:left;">{{ l.expectedOutput | number:'1.0-2' }}</td>
+              
+            </tr>
+
+            <tr *ngIf="!planLines?.length">
+              <td colspan="5" style="padding:14px 12px;text-align:center;color:#6b7280;">No lines</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #eef2f7;">
+      <button (click)="closeExplosion()"
+              style="background:#2E5F73;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<div *ngIf="showShortageGrnModal"
+     (click)="closeShortageGrnModal()"
+     style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1060;display:flex;align-items:center;justify-content:center;">
+  <div (click)="$event.stopPropagation()"
+       style="width:960px;max-width:95vw;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0;font-size:18px;font-weight:800;color:#2E5F73;">
+        Shortage GRN Alerts
+      </h3>
+
+      <div class="d-flex align-items-center" style="gap:8px;">
+        <input [(ngModel)]="shortageGrnSearch"
+               type="search"
+               class="form-control"
+               placeholder="Search Plan / SO / GRN"
+               style="width:320px;height:38px;" />
+
+        <button class="btn btn-sm btn-light" (click)="loadShortageGrnAlerts()">Refresh</button>
+
+        <button (click)="closeShortageGrnModal()"
+                style="border:0;background:transparent;font-size:22px;cursor:pointer;color:#6b7280;">×</button>
+      </div>
+    </div>
+
+    <div style="padding:12px 16px;">
+      <div style="max-height:65vh;overflow:auto;border:1px solid #eef2f7;border-radius:10px;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <thead style="background:#f8fafc;">
+            <tr>
+              <th style="padding:10px 12px;text-align:left;">Plan ID</th>
+              <th style="padding:10px 12px;text-align:left;">SO No</th>
+              <th style="padding:10px 12px;text-align:left;">GRN No</th>
+              <th style="padding:10px 12px;text-align:left;">Received Date</th>
+              <th style="padding:10px 12px;text-align:left;">Item Code</th>
+              <th style="padding:10px 12px;text-align:left;">Item Name</th>
+              <th style="padding:10px 12px;text-align:left;">Qty Received</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let a of filteredShortageGrnList(); let i=index"
+                style="border-top:1px solid #f1f5f9;">
+              <td style="padding:10px 12px;font-weight:800;color:#2E5F73;">
+                {{ a.productionPlanId }}
+              </td>
+              <td style="padding:10px 12px;">{{ a.salesOrderNo || ('SOID:' + a.salesOrderId) }}</td>
+              <td style="padding:10px 12px;">{{ a.grnNo }}</td>
+              <td style="padding:10px 12px;">
+                {{ a.receptionDate | date:'dd-MM-yyyy' }}
+              </td>
+              <td style="padding:10px 12px;">{{ a.itemCode }}</td>
+              <td style="padding:10px 12px;">{{ a.itemName }}</td>
+              <td style="padding:10px 12px;">{{ a.qtyReceived }}</td>
+
+            </tr>
+
+            <tr *ngIf="filteredShortageGrnList().length === 0">
+              <td colspan="4" style="padding:14px 12px;text-align:center;color:#6b7280;">
+                No alerts
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #eef2f7;">
+      <button (click)="closeShortageGrnModal()"
+              style="background:#2E5F73;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer;">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>

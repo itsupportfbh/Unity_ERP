@@ -1,0 +1,118 @@
+$brand: #2E5F73;
+
+/* Optional wrapper around the strip */
+.tax-tab-strip {
+  margin-bottom: 0.75rem;
+}
+
+/* ====== Fancy Tax Tabs – same as AP tabs ====== */
+.tax-tabs {
+  margin-top: 0.9rem;
+  padding: 0.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f9fafb, #e5edf6);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  position: relative;
+}
+
+/* Subtle border around the whole chip group */
+.tax-tabs::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  pointer-events: none;
+}
+
+/* Keep items compact and aligned */
+.tax-tabs .nav-item {
+  margin: 0;
+}
+
+/* Base tab style */
+.tax-tabs .nav-link {
+  position: relative;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
+}
+
+/* Small dot indicator on every tab */
+.tax-tabs .nav-link::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  flex-shrink: 0;
+  transition:
+    background-color 0.18s ease,
+    transform 0.12s ease;
+}
+
+/* Hover state */
+.tax-tabs .nav-link:hover {
+  color: $brand;
+  background-color: rgba(46, 95, 115, 0.06);
+  transform: translateY(-1px);
+}
+
+/* Active tab = white pill popping out */
+.tax-tabs .nav-link.active {
+  color: $brand;
+  background: #ffffff;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+  transform: translateY(-1px);
+}
+
+/* Active dot – brand colored and slightly bigger */
+.tax-tabs .nav-link.active::before {
+  background: $brand;
+  transform: scale(1.4);
+}
+
+/* Tiny underline under active tab (inside the pill) */
+.tax-tabs .nav-link.active::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 0.15rem;
+  height: 2px;
+  border-radius: 999px;
+  background-color: rgba(46, 95, 115, 0.3);
+}
+
+/* Mobile tweaks */
+@media (max-width: 576px) {
+  .tax-tabs {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.3rem;
+  }
+
+  .tax-tabs .nav-link {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+  }
+}

@@ -1,0 +1,177 @@
+/* =========================================================
+   Imports (keep these at the very top)
+   ========================================================= */
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import '@core/scss/angular/libs/sweet-alerts.component.scss';
+
+/* =========================================================
+   Small utilities you already use
+   ========================================================= */
+.highlight-link:hover { color: darkblue !important; }
+
+/* Avatar pills */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: bold;
+}
+.avatar-content { display: flex; align-items: center; justify-content: center; width: 100%; }
+.avatar-blue  { background-color: #007bff; }
+.avatar-red   { background-color: #dc3545; }
+.avatar-green { background-color: #28a745; }
+
+/* Table thumbnail */
+.initial-thumb {
+  height: 36px;
+  width: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.initial-thumb:hover { transform: scale(1.05); border-color: #0e3a4c; }
+
+/* =========================================================
+   COMPACT CENTERED IMAGE PREVIEW MODAL
+   (use with .img-modal, .img-modal__dialog, etc. in your HTML)
+   ========================================================= */
+.img-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;                 /* above bootstrap/modals */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease;
+}
+
+/* Click-catcher (so backdrop click closes) */
+.img-modal__backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+/* The popup box */
+.img-modal__dialog {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 92%;
+  max-width: 420px;              /* 👈 compact width */
+  max-height: 85vh;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 30px rgba(14, 58, 76, 0.25);
+  animation: scaleIn 0.25s ease;
+}
+
+/* Header */
+.img-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+}
+
+/* Body */
+.img-modal__body {
+  padding: 0.75rem;
+  background: #fff;
+  text-align: center;
+}
+.img-modal__body img {
+  max-width: 100%;
+  max-height: 320px;             /* 👈 smaller image area */
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Footer */
+.img-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0.65rem 1rem;
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* =========================================================
+   Animations
+   ========================================================= */
+@keyframes scaleIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* =========================================================
+   Responsive tweaks (optional)
+   ========================================================= */
+@media (max-width: 576px) {
+  .img-modal__dialog { max-width: 360px; }
+  .img-modal__body img { max-height: 260px; }
+}
+
+
+
+
+.grn-list-table-container {
+  width: 100%;
+  overflow-y: visible !important; // disable vertical scroll
+  overflow-x: auto;               // allow horizontal scroll if needed
+}
+
+.ngx-datatable.bootstrap.core-bootstrap.grn-table {
+  height: auto !important;        // let table expand fully
+  min-height: auto !important;
+  max-height: none !important;
+}
+
+.datatable-body {
+  overflow-y: visible !important; // key line
+}
+
+.datatable-scroll {
+  overflow-y: visible !important; // key line for forcing full display
+}
+
+.icon-disabled {
+  color: #9ca3af !important; /* Tailwind gray-400 */
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+
+i.fas.fa-pen {
+  cursor: pointer;
+  font-size: 16px; /* adjust icon size */
+  line-height: 1;
+}
+
+
+.truncate-20 {
+  max-width: 180px;         /* adjust width if needed */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}

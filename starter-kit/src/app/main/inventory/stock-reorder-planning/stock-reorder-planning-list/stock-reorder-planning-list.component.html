@@ -1,0 +1,152 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+        <div class="row">
+          <div class="col-md-6 col-12">
+            <h4 class="card-text" style="margin-left:.85rem;margin-top:.75rem;font-size:1.25rem;font-weight:600;color:#2E5F73;">
+              Stock Reorder Planning List
+            </h4>
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center">
+                Show
+                <select class="form-control mx-25" [(ngModel)]="selectedOption">
+                  <option [value]="10">10</option>
+                  <option [value]="25">25</option>
+                  <option [value]="50">50</option>
+                  <option [value]="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+              <label class="d-flex align-items-center ml-1 ml-md-0">
+                Search:
+                <input [(ngModel)]="searchValue" name="searchValue" type="search"
+                       class="form-control ml-25" (keyup)="filterUpdate($event)" (search)="filterUpdate($event)"/>
+              </label>
+
+              <button (click)="openCreate()" class="btn m-1 d-inline-flex align-items-center"
+                      style="background-color:#2E5F73;color:white;gap:4px;">
+                <i data-feather="plus-circle" class="w-4 h-4"></i>
+                <span>Add</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <ngx-datatable class="bootstrap core-bootstrap"
+                       [rows]="rows"
+                       [rowHeight]="50"
+                       [headerHeight]="50"
+                       [footerHeight]="50"
+                       [limit]="selectedOption"
+                       [columnMode]="'force'"
+                       [scrollbarH]="true"
+                       [reorderable]="true">
+
+          <!-- View details -->
+          <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false" [canAutoResize]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span (click)="openLinesModal(row)" title="View Details"
+                    style="cursor:pointer;font-size:18px;color:#2E5F73;">
+                <i class="fas fa-eye"></i>
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Warehouse" prop="warehouseName" [width]="160"></ngx-datatable-column>
+          <ngx-datatable-column name="Method" prop="methodName" [width]="140"></ngx-datatable-column>
+
+          <!-- <ngx-datatable-column name="Status" prop="status" [width]="120">
+            <ng-template let-value="value" ngx-datatable-cell-template>
+              <span class="badge rounded-pill"
+                    [ngClass]="{ 'bg-secondary': value === 1, 'bg-success': value === 2, 'bg-info': value === 3 }">
+                {{ value === 1 ? 'Draft' : (value === 2 ? 'Approved' : 'Posted') }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column> -->
+
+        </ngx-datatable>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Modal -->
+<div *ngIf="showLinesModal"
+     (click)="closeLinesModal()"
+     style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;display:flex;align-items:center;justify-content:center;">
+  <div (click)="$event.stopPropagation()"
+       style="width:1000px;max-width:95vw;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.25);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0;font-size:20px;line-height:1.2;font-weight:700;color:#374151;">Reorder → Purchase Request Lines</h3>
+      <button (click)="closeLinesModal()" aria-label="Close"
+              style="border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#6b7280;">×</button>
+    </div>
+
+    <div style="padding:16px 20px;">
+      <div style="max-height:60vh;overflow:auto;border:1px solid #eef2f7;border-radius:10px;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;color:#111827;">
+  <!-- Header -->
+<thead>
+  <tr style="background:#2E5F73;color:#fff;">
+    <th style="padding:10px 12px;">PR No</th>
+    <th style="padding:10px 12px;">Item</th>
+    <th style="padding:10px 12px;">Requested Qty</th>
+    <th style="padding:10px 12px;">On Hand</th>
+    <th style="padding:10px 12px;">Min</th>
+    <th style="padding:10px 12px;">Max</th>
+    <th style="padding:10px 12px;">Reorder Qty</th>
+    <th style="padding:10px 12px;">Location</th>
+    <th style="padding:10px 12px; white-space:nowrap;">Delivery Date</th>
+    <th style="padding:10px 12px;">Status</th>
+  </tr>
+</thead>
+
+<tbody>
+  <tr *ngFor="let l of modalLines; let i = index"
+      [style.background]="i % 2 === 0 ? '#fcfdff' : '#ffffff'"
+      style="border-bottom:1px solid #f1f5f9;">
+    <td style="padding:10px 12px;">{{ l.prNo }}</td>
+    <td style="padding:10px 12px;">
+      {{ l.itemCode ? (l.itemCode + ' - ' + l.itemName) : l.itemName }}
+    </td>
+    <td style="padding:10px 12px; text-align:right;">{{ l.requestedQty }}</td>
+    <td style="padding:10px 12px; text-align:right;">{{ l.onHand }}</td>
+    <td style="padding:10px 12px; text-align:right;">{{ l.min }}</td>
+    <td style="padding:10px 12px; text-align:right;">{{ l.max }}</td>
+    <td style="padding:10px 12px; text-align:right;">{{ l.reorderQty }}</td>
+    <td style="padding:10px 12px;">{{ l.location }}</td>
+    <td style="padding:10px 12px;">{{ l.deliveryDate }}</td>
+    <td style="padding:10px 12px;">
+      <span class="badge rounded-pill"
+            [ngClass]="{'bg-secondary': l.status === 1, 'bg-success': l.status === 2, 'bg-info': l.status === 3}">
+        {{ l.status === 1 ? 'Draft' : l.status === 2 ? 'Approved' : 'Posted' }}
+      </span>
+    </td>
+  </tr>
+
+  <tr *ngIf="!modalLines?.length">
+    <td colspan="10" style="padding:14px 12px; text-align:center; color:#6b7280;">
+      No lines
+    </td>
+  </tr>
+</tbody>
+
+</table>
+
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #eef2f7;">
+      <button (click)="closeLinesModal()"
+              style="background:#2E5F73;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>

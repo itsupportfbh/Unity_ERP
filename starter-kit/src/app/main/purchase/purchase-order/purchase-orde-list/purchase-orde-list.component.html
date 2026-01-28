@@ -1,0 +1,787 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <!-- User List -->
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <div class="row">
+          <!-- Title + page size -->
+          <div class="col-md-6 col-12">
+            <h4 class="card-text"
+                style="margin-left: 0.85rem; margin-top: 0.75rem;font-size: 1.25rem;font-weight: 600; color: #2E5F73;">
+              PO List
+            </h4>
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center">
+                Show
+                <select class="form-control mx-25" [(ngModel)]="selectedOption">
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="25">25</option>
+                  <option [ngValue]="50">50</option>
+                  <option [ngValue]="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+             <div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+            </div>
+          </div>
+
+          <!-- Search + Add + Reorder + Drafts -->
+          <div class="col-md-6 col-12 d-flex justify-content-md-end">
+            <div
+              class="d-flex align-items-center justify-content-md-end gap-2 flex-md-nowrap flex-wrap w-100">
+
+              <!-- Search -->
+              <input [(ngModel)]="searchValue"
+                     name="searchValue"
+                     type="search"
+                     class="form-control me-2 flex-shrink-0"
+                     placeholder="Search"
+                     (keyup)="filterUpdate($event)"
+                     (search)="filterUpdate($event)"
+                     style="flex:0 0 320px; max-width:40vw;"/>
+
+              <!-- Add -->
+              <!-- <button
+                (click)="openCreate()"
+                class="btn d-inline-flex align-items-center flex-shrink-0"
+                style="background-color:#2E5F73; color:white; gap:4px;">
+                <i data-feather="plus-circle" class="w-4 h-4"></i>
+                <span>Add</span>
+              </button> -->
+<button
+                   (click)="openCreate()"
+                  class="btn mr-1 d-inline-flex align-items-center"
+                  style="background-color:#2E5F73;color:white;gap:6px;"
+                  [disabled]="isPeriodLocked"
+                  [attr.title]="isPeriodLocked
+                    ? (currentPeriodName
+                        ? 'Period ' + currentPeriodName + ' is locked'
+                        : 'Accounting period is locked')
+                    : 'Create Purchase Request'">
+                  <i data-feather="plus-circle" class="w-4 h-4"></i>
+                  <span>Add</span>
+                </button>
+                                <!-- ALERT (SEPARATE ICON BUTTON) -->
+                <button
+                type="button"
+                class="btn d-inline-flex align-items-center justify-content-center flex-shrink-0 position-relative"
+                style="border:1px solid #2E5F73; color:#2E5F73; background:white; width:44px; height:38px; padding:0;"
+                title="PR Pending Alerts"
+                (click)="openPendingPrAlerts()">
+
+                <i data-feather="bell" class="w-4 h-4"></i>
+
+                <span
+                  *ngIf="pendingPrCount > 0"
+                  style="position:absolute; top:-6px; right:-6px; min-width:20px; height:20px; padding:0 6px;
+                        border-radius:999px; background:#dc3545; color:#fff; display:flex; align-items:center;
+                        justify-content:center; font-size:12px; font-weight:700; line-height:1;">
+                  {{ pendingPrCount }}
+                </span>
+              </button>
+
+                <!-- Pending PR Alerts Modal -->
+              <div
+                *ngIf="showPendingPrModal"
+                (click)="closePendingPrModal()"
+                style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1060;display:flex;align-items:center;justify-content:center;">
+                <div
+                  (click)="$event.stopPropagation()"
+                  style="width:960px;max-width:95vw;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #eef2f7;">
+                    <h3 style="margin:0;font-size:18px;font-weight:700;color:#2E5F73;">PR Pending Alerts</h3>
+
+                    <div class="d-flex align-items-center" style="gap:8px;">
+                      <input
+                        [(ngModel)]="pendingPrSearch"
+                        type="search"
+                        class="form-control"
+                        placeholder="Search PR No / Requester / Dept"
+                        style="width:320px;height:38px;" />
+
+                      <button class="btn btn-sm btn-light" (click)="loadPendingPrAlerts()">Refresh</button>
+
+                      <button
+                        (click)="closePendingPrModal()"
+                        aria-label="Close"
+                        style="border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#6b7280;">
+                        ×
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style="padding:12px 16px;">
+                    <div style="max-height:65vh;overflow:auto;border:1px solid #eef2f7;border-radius:10px;">
+                      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                        <thead style="background:#f8fafc;">
+                          <tr>
+                            <th style="padding:10px 12px;text-align:left;">PR No</th>
+                            <th style="padding:10px 12px;text-align:left;">Requester</th>
+                            <th style="padding:10px 12px;text-align:left;">Department</th>
+                            <th style="padding:10px 12px;text-align:left;">Delivery</th>
+                            <th style="padding:10px 12px;text-align:center;width:170px;">Action</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          <tr *ngFor="let pr of filteredPendingPrList(); trackBy: trackByPrId" style="border-top:1px solid #f1f5f9;">
+                            <td style="padding:10px 12px;font-weight:700;color:#2E5F73;">
+                              {{ pr.purchaseRequestNo }}
+                            </td>
+                            <td style="padding:10px 12px;">{{ pr.requester }}</td>
+                            <td style="padding:10px 12px;">{{ pr.departmentName }}</td>
+                            <td style="padding:10px 12px;">{{ getPrLocation(pr) }}</td>
+
+                            <td style="padding:10px 12px;text-align:center;">
+                              <button
+                                class="btn btn-sm btn-primary"
+                                style="background:#2E5F73;border:0;"
+                                (click)="createPoFromPr(pr)">
+                                Create PO
+                              </button>
+                            </td>
+                          </tr>
+
+                          <tr *ngIf="filteredPendingPrList().length === 0">
+                            <td colspan="5" style="padding:14px 12px;text-align:center;color:#6b7280;">
+                              No Pending PRs
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #eef2f7;">
+                    <button
+                      (click)="closePendingPrModal()"
+                      style="background:#2E5F73;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;">
+                      Close
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+                            <!-- Reorder (ICON ONLY) -->
+                <button
+                  (click)="openReorderDetails()"
+                  class="btn d-inline-flex align-items-center justify-content-center position-relative flex-shrink-0"
+                  style="border:1px solid #2E5F73; color:#2E5F73; background:white; width:44px; height:38px; padding:0;"
+                  title="Reorder">
+                  <i data-feather="repeat" class="w-4 h-4"></i>
+
+                  <span
+                    *ngIf="reorderCount > 0"
+                    class="badge badge-pill badge-warning"
+                    style="position:absolute; top:-6px; right:-6px;">
+                    {{ displayReorderCount }}
+                  </span>
+                </button>
+
+                <!-- Drafts (ICON ONLY) -->
+                <div class="position-relative d-inline-block flex-shrink-0">
+                  <button
+                    (click)="openDraftsModal()"
+                    class="btn d-inline-flex align-items-center justify-content-center"
+                    style="border:1px solid #2E5F73; color:#2E5F73; background:white; width:44px; height:38px; padding:0;"
+                    title="Drafts">
+                    <i data-feather="file-text" class="w-4 h-4"></i>
+                  </button>
+
+                  <span
+                    *ngIf="drafts?.length"
+                    style="position:absolute; top:-6px; right:-6px; min-width:20px; height:20px; padding:0 6px;
+                          border-radius:999px; background:orange; color:#fff; display:flex; align-items:center;
+                          justify-content:center; font-size:12px; font-weight:700; line-height:1;">
+                    {{ drafts.length }}
+                  </span>
+                </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ================== MAIN TABLE ================== -->
+        <ngx-datatable
+          class="bootstrap core-bootstrap"
+          [rows]="rows"
+          [rowHeight]="50"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="selectedOption"
+          [columnMode]="'force'"
+          [scrollbarH]="true"
+          [reorderable]="true">
+
+          <!-- View lines -->
+          <ngx-datatable-column
+            [width]="50"
+            [resizeable]="false"
+            [sortable]="false"
+            [draggable]="false"
+            [canAutoResize]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span
+                (click)="openLinesModal(row)"
+                title="View Details"
+                style="cursor:pointer; font-size:18px; color:#2E5F73;">
+                <i class="fas fa-eye"></i>
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="PO Number" prop="purchaseOrderNo" [width]="120"></ngx-datatable-column>
+      <ngx-datatable-column name="Supplier Name" prop="supplierName" [width]="200">
+  <ng-template ngx-datatable-cell-template let-row="row">
+    <span class="truncate-20"
+          [title]="row.supplierName">
+      {{ row.supplierName?.slice(0, 20) }}{{ row.supplierName?.length > 20 ? '...' : '' }}
+    </span>
+  </ng-template>
+</ngx-datatable-column>
+
+          <ngx-datatable-column name="Currency/FX" prop="currencyName" [width]="120"></ngx-datatable-column>
+
+          <ngx-datatable-column name="PO Date" prop="poDate" [width]="120">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.poDate | date:'dd-MM-yyyy' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="120">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.deliveryDate | date:'dd-MM-yyyy' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Status -->
+          <ngx-datatable-column name="Status" prop="approvalStatus" [width]="120">
+            <ng-template let-value="value" ngx-datatable-cell-template>
+              <div
+                class="badge badge-pill text-center inline-flex items-center !px-3 !py-1 !leading-none"
+                [ngClass]="{
+                  'badge-secondary': value === 0,
+                  'badge-warning'  : value === 1,
+                  'badge-success'  : value === 2,
+                  'badge-danger'   : value === 3
+                }"
+                [style.backgroundColor]="(value === 3 || value === 4) ? 'red' : ''"
+                style="cursor: default;">
+                {{
+                  value === 0 ? 'Draft'   :
+                  value === 1 ? 'Pending' :
+                  value === 2 ? 'Approved':
+                  value === 3 ? 'Rejected': 'Unknown'
+                }}
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="QR" [width]="80" [sortable]="false">
+          <ng-template ngx-datatable-cell-template let-row="row">
+            <button
+              class="btn btn-sm"
+              style="border:1px solid #2E5F73; color:#2E5F73; background:white;"
+              (click)="openQr(row)">
+              QR
+            </button>
+          </ng-template>
+        </ngx-datatable-column>
+
+
+          <!-- Edit/Delete -->
+        <ngx-datatable-column name="Action" [width]="200" [sortable]="false" [canAutoResize]="false">
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <div class="action-icons">
+              <!-- Email -->
+              <button class="icon-btn"
+                      type="button"
+                      [disabled]="row.approvalStatus !== 2"
+                      (click)="openEmailConfirm(row)"
+                      title="Email">
+                <i class="fas fa-envelope"></i>
+              </button>
+
+              <!-- Print -->
+              <button class="icon-btn"
+                      type="button"
+                      (click)="openPoPdfPreview(row)"
+                      title="Print">
+                <i class="fas fa-print"></i>
+              </button>
+
+              <!-- Edit -->
+              <button class="icon-btn"
+                      type="button"
+                      [disabled]="isRowLocked(row)"
+                      (click)="editPO(row)"
+                      title="Edit">
+                <i class="fas fa-pen"></i>
+              </button>
+
+              <!-- Delete -->
+              <button class="icon-btn danger"
+                      type="button"
+                      [disabled]="isRowLocked(row)"
+                      (click)="deletePO(row.id)"
+                      title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </ng-template>
+        </ngx-datatable-column>
+
+        </ngx-datatable>
+
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ================== PO LINES MODAL ================== -->
+<div *ngIf="showLinesModal"
+     (click)="closeLinesModal()"
+     style="position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1050; display:flex; align-items:center; justify-content:center;">
+
+  <div
+    (click)="$event.stopPropagation()"
+    style="width:800px; max-width:95vw; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <div
+      style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0; font-size:20px; line-height:1.2; font-weight:700; color:#374151;">PO Lines</h3>
+      <button
+        (click)="closeLinesModal()"
+        aria-label="Close"
+        style="border:0; background:transparent; font-size:22px; line-height:1; cursor:pointer; color:#6b7280;">
+        ×
+      </button>
+    </div>
+
+    <div style="padding:16px 20px;">
+      <div style="max-height:60vh; overflow:auto; border:1px solid #eef2f7; border-radius:10px;">
+        <table style="width:100%; border-collapse:collapse; font-size:14px; color:#111827;">
+          <thead>
+            <tr style="background:#2E5F73; color:#fff;">
+              <th style="padding:10px 12px; text-align:left; font-weight:600;">PR NO</th>
+              <th style="padding:10px 12px; text-align:left; font-weight:600;">Item Name</th>
+              <th style="padding:10px 12px; text-align:left; font-weight:600;">Recurring</th>
+              <th style="padding:10px 12px; text-align:left; font-weight:600;">TaxCode</th>
+              <th style="padding:10px 12px; text-align:left; font-weight:600;">Location</th>
+              <th style="padding:10px 12px; text-align:right; font-weight:600; width:120px;">Qty</th>
+              <th style="padding:10px 12px; text-align:right; font-weight:600; width:120px;">Price</th>
+              <th style="padding:10px 12px; text-align:right; font-weight:600; width:120px;">Discount(%)</th>
+               <th style="padding:10px 12px; text-align:right; font-weight:600; width:110px;">Tax Amt</th>
+              <th style="padding:10px 12px; text-align:right; font-weight:600; width:120px;">Total</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let l of modalLines; let i = index"
+                [style.background]="i % 2 === 0 ? '#fcfdff' : '#ffffff'"
+                style="border-bottom:1px solid #f1f5f9;">
+              <td
+                style="padding:10px 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:420px;">
+                {{ l.prNo || '-' }}
+              </td>
+              <td
+                style="padding:10px 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:420px;">
+                {{ l.item || '-' }}
+              </td>
+              <td style="padding:10px 12px;">
+                {{ l.recurring || '-' }}
+              </td>
+              <td style="padding:10px 12px;">
+                {{ l.taxCode || '-' }}
+              </td>
+              <td style="padding:10px 12px;">
+                {{ modalLocation || '-' }}
+              </td>
+              <td style="padding:10px 12px; text-align:right; font-variant-numeric:tabular-nums;">
+                {{ l.qty || 0 }}
+              </td>
+              <td style="padding:10px 12px; text-align:right; font-variant-numeric:tabular-nums;">
+                {{ l.price || 0 }}
+              </td>
+              <td style="padding:10px 12px; text-align:right; font-variant-numeric:tabular-nums;">
+                {{ l.discount || 0 }}
+              </td>
+              <td style="padding:10px 12px; text-align:right; font-variant-numeric:tabular-nums;">
+                {{ l.taxAmt || 0 }}
+              </td>
+              <td style="padding:10px 12px; text-align:right; font-variant-numeric:tabular-nums;">
+                {{ l.total || 0 }}
+              </td>
+            </tr>
+
+            <tr *ngIf="!modalLines?.length">
+              <td colspan="9" style="padding:14px 12px; text-align:center; color:#6b7280;">
+                No lines
+              </td>
+            </tr>
+          </tbody>
+
+          <tfoot *ngIf="modalLines?.length">
+            <tr style="background:#f3f4f6; border-top:1px solid #e5e7eb;">
+              <td colspan="9" style="padding:10px 12px; font-weight:700;">Total</td>
+              <td
+                style="padding:10px 12px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums;">
+                {{ modalTotal }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div
+      style="display:flex; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid #eef2f7;">
+      <button
+        (click)="closeLinesModal()"
+        style="background:#2E5F73; color:#fff; border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =============== DRAFTS MODAL =============== -->
+<div *ngIf="showDraftsModal"
+     (click)="closeDraftsModal()"
+     style="position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1050; display:flex; align-items:center; justify-content:center;">
+
+  <div
+    (click)="$event.stopPropagation()"
+    style="width:820px; max-width:95vw; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <div
+      style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0; font-size:20px; font-weight:700; color:#374151;">Draft Purchase Orders</h3>
+      <button
+        (click)="closeDraftsModal()"
+        aria-label="Close"
+        style="border:0; background:transparent; font-size:22px; cursor:pointer; color:#6b7280;">
+        ×
+      </button>
+    </div>
+
+    <div style="padding:16px 20px;">
+      <div style="max-height:60vh; overflow:auto;">
+        <table class="table" style="width:100%; border-collapse:separate; border-spacing:0 6px;">
+          <thead>
+            <tr style="color:#6b7280; font-size:13px;">
+              <th style="padding:8px 10px;">Supplier</th>
+              <th style="padding:8px 10px;">Payment Terms</th>
+              <th style="padding:8px 10px;">Delivery</th>
+              <th style="padding:8px 10px;">Remarks</th>
+              <th style="padding:8px 10px; width:160px; text-align:center;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of drafts" style="background:#f9fafb;">
+              <td style="padding:10px 12px;">{{ d.supplierName || '-' }}</td>
+              <td style="padding:10px 12px;">{{ d.paymentTermName || '-' }}</td>
+              <td style="padding:10px 12px;">{{ d.deliveryDate | date:'dd-MM-yyyy' }}</td>
+              <td style="padding:10px 12px;">{{ d.remarks || '-' }}</td>
+              <td style="padding:10px 12px; text-align:center;">
+                <button
+                  class="btn btn-sm"
+                  (click)="openDraft(d)"
+                  style="background:#7c3aed; color:#fff; border:none; border-radius:8px; padding:6px 10px; margin-right:8px;">
+                  Open
+                </button>
+                <button
+                  class="btn btn-sm"
+                  (click)="deleteDraft(d.id)"
+                  style="background:#fff; color:#dc2626; border:1px solid #dc2626; border-radius:8px; padding:6px 10px;">
+                  Delete
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="!drafts?.length">
+              <td colspan="5" style="padding:14px 12px; text-align:center; color:#6b7280;">
+                No drafts
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div
+      style="display:flex; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid #eef2f7;">
+      <button
+        (click)="closeDraftsModal()"
+        style="background:#2E5F73; color:#fff; border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =============== REORDER MODAL =============== -->
+<div *ngIf="showReorderModal"
+     (click)="closeReorderModal()"
+     style="position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1050; display:flex; align-items:center; justify-content:center;">
+
+  <div
+    (click)="$event.stopPropagation()"
+    style="width:860px; max-width:95vw; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <!-- Header -->
+    <div
+      style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0; font-size:20px; font-weight:700; color:#374151;">
+        Reorder Purchase Requests
+      </h3>
+
+      <input
+        [(ngModel)]="reorderSearch"
+        type="search"
+        (input)="filterReorders()"
+        placeholder="Search PR No / Requester / Dept"
+        class="form-control"
+        style="max-width:320px;">
+    </div>
+
+    <!-- Body -->
+    <div style="padding:16px 20px;">
+      <div style="max-height:60vh; overflow:auto;">
+        <table class="table" style="width:100%; border-collapse:separate; border-spacing:0 6px;">
+          <thead>
+            <tr style="color:#6b7280; font-size:13px;">
+              <th style="padding:8px 10px;">PR No</th>
+              <th style="padding:8px 10px;">Requester</th>
+              <th style="padding:8px 10px;">Department</th>
+              <th style="padding:8px 10px;">Delivery Date</th>
+              <th style="padding:8px 10px;">By Reorder</th>
+              <th style="padding:8px 10px; width:160px; text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of reorderRows" style="background:#f9fafb;">
+              <td style="padding:10px 12px;">
+                {{ r.purchaseRequestNo || r.prNo || '-' }}
+              </td>
+              <td style="padding:10px 12px;">
+                {{ r.requester || '-' }}
+              </td>
+              <td style="padding:10px 12px;">
+                {{ r.department || r.departmentName || '-' }}
+              </td>
+              <td style="padding:10px 12px;">
+                {{ r.deliveryDate | date:'dd-MM-yyyy' }}
+              </td>
+              <td style="padding:10px 12px;">Yes</td>
+              <td style="padding:10px 12px; text-align:center;">
+                <button
+                  class="btn btn-sm"
+                  (click)="createFromReorder(r)"
+                  style="background:#2E5F73; color:#fff; border:none; border-radius:8px; padding:6px 10px;">
+                  Create
+                </button>
+              </td>
+            </tr>
+
+            <tr *ngIf="!reorderRows?.length">
+              <td colspan="6" style="padding:14px 12px; text-align:center; color:#6b7280;">
+                No reorder PRs
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div
+      style="display:flex; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid #eef2f7;">
+      <button
+        (click)="closeReorderModal()"
+        style="background:#2E5F73; color:#fff; border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+<div *ngIf="showQrModal"
+     (click)="closeQr()"
+     style="position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1050;
+            display:flex; align-items:center; justify-content:center;">
+
+  <div (click)="$event.stopPropagation()"
+       style="width:420px; max-width:92vw; background:#fff;
+              border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <div style="display:flex; justify-content:space-between;
+                padding:14px 16px; border-bottom:1px solid #eee;">
+      <h3 style="margin:0; font-size:18px;">PO QR – {{ qrPoNo }}</h3>
+      <button (click)="closeQr()" style="border:0; background:none; font-size:22px;">×</button>
+    </div>
+
+    <div style="padding:16px; text-align:center;">
+      <img *ngIf="qrImgBase64"
+           [src]="qrImgBase64"
+           style="width:260px; height:260px;" />
+
+      <div style="font-size:12px; color:#6b7280; word-break:break-all;">
+        {{ qrPayloadUrl }}
+      </div>
+
+      <div class="mt-3 d-flex justify-content-center gap-2">
+        <a class="btn btn-sm"
+           [href]="qrImgBase64"
+           [attr.download]="'PO-' + qrPoNo + '.png'"
+           style="background:#2E5F73; color:white;">
+          Download
+        </a>
+
+        <button class="btn btn-sm"
+                style="border:1px solid #2E5F73; color:#2E5F73;"
+                (click)="copyQrLink()">
+          Copy Link
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ PO PDF Preview Modal -->
+<div *ngIf="showPoPdfModal" class="pdf-overlay" (click)="closePoPdfModal()">
+  <div class="pdf-modal" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="pdf-head">
+      <div class="pdf-title">
+        <h3>Print Preview — {{ poPdfMeta?.purchaseOrderNo }}</h3>
+        <small *ngIf="poPdfLoading">Generating PDF...</small>
+      </div>
+
+      <div class="pdf-actions">
+        <button type="button" class="btn btn-outline-secondary"
+                (click)="printCurrentPoPdf()"
+                [disabled]="poPdfLoading || !poPdfBlob">
+          <i class="fas fa-print mr-50"></i> Print
+        </button>
+
+        <button type="button" class="btn btn-brand"
+                (click)="downloadCurrentPoPdf()"
+                [disabled]="poPdfLoading || !poPdfBlob">
+          <i class="fas fa-download mr-50"></i> Download
+        </button>
+
+        <button type="button" class="btn btn-light close-x" (click)="closePoPdfModal()">×</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="pdf-body">
+      <div *ngIf="poPdfLoading" class="pdf-loading">
+        <div class="spinner-border" role="status"></div>
+        <p class="mt-1 mb-0">Preparing PDF preview...</p>
+      </div>
+
+      <ng-container *ngIf="!poPdfLoading">
+        <div *ngIf="poPdfSafeUrl; else noPoPdf" class="pdf-frame-wrap">
+          <iframe class="pdf-frame"
+                  [src]="poPdfSafeUrl"
+                  title="PO PDF Preview"
+                  loading="eager">
+          </iframe>
+        </div>
+
+        <ng-template #noPoPdf>
+          <div class="pdf-empty">
+            <i class="far fa-file-pdf"></i>
+            <p class="mb-0">PDF not available.</p>
+          </div>
+        </ng-template>
+      </ng-container>
+    </div>
+
+    <!-- Footer -->
+    <div class="pdf-foot">
+      <button class="btn btn-secondary" (click)="closePoPdfModal()">Close</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ✅ EMAIL CONFIRM MODAL -->
+<div *ngIf="showEmailConfirmModal"
+     (click)="closeEmailConfirmModal()"
+     style="position:fixed; inset:0; background:rgba(0,0,0,.45);
+            z-index:1065; display:flex; align-items:center; justify-content:center;">
+
+  <div (click)="$event.stopPropagation()"
+       style="width:520px; max-width:92vw; background:#fff; border-radius:14px;
+              overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <!-- Header -->
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                padding:14px 18px; border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0; font-size:18px; font-weight:800; color:#2E5F73;">
+        Confirm Email
+      </h3>
+
+      <button (click)="closeEmailConfirmModal()"
+              aria-label="Close"
+              style="border:0; background:transparent; font-size:22px; cursor:pointer; color:#6b7280;">
+        ×
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:16px 18px; font-size:14px; color:#111827;">
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div style="width:40px; height:40px; border-radius:999px;
+                    background:rgba(46,95,115,.12); display:flex; align-items:center; justify-content:center;">
+          <i class="fas fa-envelope" style="color:#2E5F73;"></i>
+        </div>
+
+        <div style="flex:1;">
+          <div style="font-weight:700; margin-bottom:6px;">
+            Send Purchase Order email?
+          </div>
+
+          <div style="color:#4b5563; line-height:1.5;">
+            <div><b>PO No:</b> {{ emailConfirmRow?.purchaseOrderNo || '-' }}</div>
+            <div><b>Supplier:</b> {{ emailConfirmRow?.supplierName || '-' }}</div>
+            <div><b>Currency:</b> {{ emailConfirmRow?.currencyName || '-' }}</div>
+          </div>
+
+          <div *ngIf="emailSending" style="margin-top:10px; color:#6b7280;">
+            Sending email...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="display:flex; justify-content:flex-end; gap:10px;
+                padding:12px 18px; border-top:1px solid #eef2f7;">
+
+      <button class="btn btn-light"
+              (click)="closeEmailConfirmModal()"
+              [disabled]="emailSending"
+              style="border-radius:10px;">
+        Cancel
+      </button>
+
+      <button class="btn"
+              (click)="confirmSendEmail()"
+              [disabled]="emailSending"
+              style="background:#2E5F73; color:#fff; border-radius:10px; font-weight:800;">
+        <i class="fas fa-paper-plane mr-50"></i> Send
+      </button>
+
+    </div>
+  </div>
+</div>
+

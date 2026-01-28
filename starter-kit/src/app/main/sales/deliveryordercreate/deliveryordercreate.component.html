@@ -1,0 +1,162 @@
+<!-- deliveryorder-create.component.html -->
+<!-- deliveryorder-create.component.html -->
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="m-0">Create Delivery Order</h5>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary" (click)="resetForm()">Clear</button>
+      <button class="btn btn-primary"
+              (click)="saveDo()"
+              [disabled]="!selectedSoId || !deliveryDate || !driverId || !vehicleId">
+        Save DO
+      </button>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <!-- Header form -->
+    <div class="row g-3">
+      <!-- Sales Order (ng-select) -->
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label">Sales Order</label>
+       <ng-select
+  [items]="soList"
+  bindLabel="salesOrderNo"
+  bindValue="id"
+  [(ngModel)]="selectedSoId"
+  name="soId"
+  [searchable]="true"
+  [clearable]="true"
+  placeholder="Select SO…"
+  (change)="onSoChanged(selectedSoId)">
+
+  <!-- Selected chip -->
+  <ng-template ng-label-tmp let-item="item">
+    {{ item.salesOrderNo }} — {{ item.customerName }}
+  </ng-template>
+
+  <!-- Dropdown rows -->
+  <ng-template ng-option-tmp let-item="item">
+    {{ item.salesOrderNo }} — {{ item.customerName }}
+  </ng-template>
+</ng-select>
+
+      </div>
+
+      <!-- Driver (ng-select) -->
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label">Driver</label>
+        <ng-select
+          [items]="driverList"
+          bindLabel="name"
+          bindValue="id"
+          [(ngModel)]="driverId"
+          name="driverId"
+          [searchable]="true"
+          [clearable]="true"
+          placeholder="Select driver…">
+        </ng-select>
+      </div>
+
+      <!-- Vehicle (ng-select) -->
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label">Vehicle</label>
+        <ng-select
+          [items]="vehicleList"
+          bindValue="id"
+          [(ngModel)]="vehicleId"
+          name="vehicleId"
+          [searchable]="true"
+          [clearable]="true"
+          placeholder="Select vehicle…">
+          <ng-template ng-label-tmp let-item="item">
+            {{ item.vehicleNo }}<span *ngIf="item.vehicleType"> ({{ item.vehicleType }})</span>
+          </ng-template>
+          <ng-template ng-option-tmp let-item="item">
+            {{ item.vehicleNo }}<span *ngIf="item.vehicleType"> ({{ item.vehicleType }})</span>
+          </ng-template>
+        </ng-select>
+      </div>
+
+      <!-- Route (ng-select) -->
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label">Route</label>
+        <ng-select
+          [items]="routeList"
+          bindLabel="name"
+          bindValue="id"
+          [(ngModel)]="routeId"
+          name="routeId"
+          [searchable]="true"
+          [clearable]="true"
+          placeholder="Select route…">
+        </ng-select>
+      </div>
+
+      <!-- Delivery Date -->
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label">Delivery Date</label>
+        <input type="date"
+               class="form-control"
+               [(ngModel)]="deliveryDate"
+               name="deliveryDate"
+               [min]="today">
+      </div>
+    </div>
+
+    <!-- Lines from selected SO -->
+    <div class="mt-4">
+      <h6 class="mb-2">Items (from Sales Order)</h6>
+
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th style="width:120px">UOM</th>
+              <th class="text-end" style="width:140px">Ordered</th>
+              <th class="text-end" style="width:140px">Pending</th>
+              <th class="text-end" style="width:160px">Deliver Qty</th>
+              <th style="width:220px">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of soLines; trackBy: trackBySoLineId">
+              <td>{{ l.itemName }}</td>
+              <td>{{ l.uom }}</td>
+              <td class="text-end">{{ l.orderedQty | number:'1.0-2' }}</td>
+              <td class="text-end">{{ l.pendingQty | number:'1.0-2' }}</td>
+              <td class="text-end">
+                <input type="number"
+                       class="form-control text-end"
+                       [(ngModel)]="l.deliverQty"
+                       [min]="0"
+                       [max]="l.pendingQty"
+                       (ngModelChange)="recalcTotals()">
+              </td>
+              <td>
+                <input class="form-control" [(ngModel)]="l.notes" placeholder="(optional)">
+              </td>
+            </tr>
+
+            <tr *ngIf="!selectedSoId">
+              <td colspan="6" class="text-center text-muted">Choose a Sales Order to view items</td>
+            </tr>
+            <tr *ngIf="selectedSoId && !soLines?.length">
+              <td colspan="6" class="text-center text-muted">No lines found for this Sales Order</td>
+            </tr>
+          </tbody>
+
+          <tfoot *ngIf="soLines?.length">
+            <tr class="table-light">
+              <th colspan="4" class="text-end">Total Deliver Qty</th>
+              <th class="text-end">{{ totalDeliverQty | number:'1.0-2' }}</th>
+              <th></th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

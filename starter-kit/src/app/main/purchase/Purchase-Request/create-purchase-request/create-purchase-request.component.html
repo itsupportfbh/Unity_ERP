@@ -1,0 +1,673 @@
+<button (click)="onGoToPRList()"
+        class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
+        style="background-color:#2E5F73; color:white; padding-left:2.25rem;">
+  <i class="fas fa-arrow-left position-absolute"
+     style="left:0.75rem; top:50%; transform:translateY(-50%);"
+     aria-hidden="true"></i>
+  <span>Go to PR list</span>
+</button>
+
+<div class="space-y-1 ui-compact pr-typography">
+  <div class="bg-white rounded-2xl shadow p-1 border border-gray-100">
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-lg font-semibold text-gray-800">PR Wizard</h2>
+    </div>
+
+    <!-- Steps -->
+    <div class="flex items-center gap-2 mb-2">
+      <div class="flex items-center gap-2" *ngFor="let s of prSteps; let i = index">
+        <div
+          [ngClass]="{
+            'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold': true,
+            'text-white': i <= prStep,
+            'bg-gray-200 text-gray-600': i > prStep
+          }"
+          [ngStyle]="{ 'background-color': i <= prStep ? '#0e3a4c' : '' }"
+        >
+          {{ i + 1 }}
+        </div>
+        <span class="text-sm transition-colors" [ngClass]="i === prStep ? 'font-semibold text-[#0e3a4c]' : 'text-gray-500'">
+          {{ s }}
+        </span>
+        <div class="w-8 h-px bg-gray-300" *ngIf="i < prSteps.length - 1"></div>
+      </div>
+    </div>
+
+    <!-- Step 0: Header -->
+    <div *ngIf="prStep === 0" class="space-y-1">
+      <div [ngClass]="gridColsClass(3)">
+        <!-- Requester -->
+        <div>
+          <label class="text-xs font-medium text-gray-600">Requester</label>
+          <input
+            class="w-full rounded-xl border focus:outline-none focus:ring-2 px-4 py-2 text-sm"
+            style="border-color:#0e3a4c"
+            placeholder="Your name"
+            [(ngModel)]="prHeader.requester"
+            name="requester"
+            autocomplete="off" disabled
+          />
+        </div>
+
+        <!-- Department -->
+        <div class="dropdown-wrapper">
+          <label class="text-xs font-medium text-gray-600">Department</label>
+          <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+              <input
+                type="text"
+                [(ngModel)]="searchText"
+                (input)="filterDepartments()"
+                (focus)="toggleDropdown(true)"
+                placeholder="Search Department..."
+                class="w-full rounded-xl border focus:outline-none focus:ring-2 px-4 py-2 text-sm pr-10"
+                style="border-color:#0e3a4c"
+                name="departmentSearch"
+                autocomplete="off" disabled
+              />
+              <button
+                type="button" disabled
+                (click)="toggleDropdown()"
+                class="absolute inset-y-0 right-2 my-auto w-8 h-8 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100"
+                aria-label="Toggle department dropdown">
+                <i class="fas fa-chevron-down"></i>
+              </button>
+
+              <ul
+                *ngIf="dropdownOpen"
+                class="absolute top-full left-0 right-0 bg-white border rounded-xl mt-1 shadow z-10 max-h-40 overflow-y-auto prl-menu"
+                role="listbox">
+                <li
+                  *ngFor="let dept of filteredDepartments"
+                  (click)="selectDepartment(dept)"
+                  class="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm"
+                  role="option">
+                  {{ dept.departmentName || dept.DepartmentName }}
+                </li>
+                <li *ngIf="filteredDepartments?.length === 0" class="px-3 py-2 text-gray-400 text-sm">
+                  No results
+                </li>
+              </ul>
+            </div>
+
+            <!-- <button
+              type="button"
+              (click)="onAddDepartmentClick()"
+              class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#0e3a4c] text-white hover:bg-[#0b2e3d] transition"
+              title="Add department"
+              aria-label="Add department">
+              <i class="fas fa-plus"></i>
+            </button> -->
+          </div>
+        </div>
+
+        <!-- Delivery Date -->
+        <div>
+          <label class="text-xs font-medium text-gray-600">Delivery Date</label>
+          <input
+            #dateInput
+            type="date"
+            class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none cursor-pointer"
+            style="border-color:#0e3a4c;"
+            [(ngModel)]="prHeader.neededBy"
+            name="deliveryDate"
+            [min]="minDate"
+            (click)="dateInput.showPicker()"
+          />
+        </div>
+      </div>
+
+      <div [ngClass]="gridColsClass(3)">
+        <!-- Description -->
+        <div>
+          <label class="text-xs font-medium text-gray-600">Description</label>
+          <input
+            class="w-full rounded-xl border focus:outline-none focus:ring-2 px-3 py-2 text-sm"
+            style="border-color:#0e3a4c"
+            placeholder="e.g., Weekly replenishment"
+            [(ngModel)]="prHeader.description"
+            name="description"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Multi-location -->
+        <div class="flex items-center gap-2 ml-6">
+          <input id="multiloc" type="checkbox" [(ngModel)]="prHeader.multiLoc" name="multiLoc" class="h-4 w-4"/>
+          <label class="text-xs font-medium text-gray-600" for="multiloc">
+            Split to multiple locations
+          </label>
+        </div>
+      </div>
+
+      <!-- Step 0 buttons -->
+      <div class="flex justify-end gap-2">
+        <button
+          class="px-3 py-2 rounded-xl text-sm font-medium border border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+          (click)="prGo(1)" type="button">
+          Next: Lines →
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 1: Lines -->
+    <div *ngIf="prStep === 1" class="space-y-4">
+      <div class="border border-gray-200 rounded-2xl overflow-hidden">
+        <table class="w-full table-auto">
+          <thead class="bg-[#2E5F73] text-white">
+            <tr>
+              <th class="px-3 py-2 text-left">Item</th>
+              <th class="px-3 py-2 text-left">Qty</th>
+              <th class="px-3 py-2 text-left">UOM</th>
+              <th class="px-3 py-2 text-left">Outlet</th>
+              <!-- <th class="px-3 py-2 text-left">LedgerName</th> -->
+              <th class="px-3 py-2 text-left">Remarks</th>
+              <th class="px-3 py-2 text-right">Action</th>
+            </tr>
+          </thead>
+
+            <tbody>
+            <tr *ngIf="prLines.length === 0">
+              <td class="px-3 py-6 text-center text-gray-400" [attr.colspan]="7">No lines yet.</td>
+            </tr>
+
+            <tr
+              *ngFor="let line of prLines; let i = index; trackBy: trackByIndex"
+              class="border-t transition-opacity"
+              [class.opacity-80]="line.isDraft"
+            >
+              <td class="px-3 py-2">{{ line.itemSearch }}</td>
+              <td class="px-3 py-2">{{ line.qty }}</td>
+              <td class="px-3 py-2">{{ line.uomSearch || line.uom }}</td>
+              <td class="px-3 py-2">{{ line.locationSearch || line.location }}</td>
+              <!-- <td class="px-3 py-2">{{ line.budget }}</td> -->
+              <td class="px-3 py-2">{{ line.remarks }}</td>
+              <td class="px-3 py-2 text-right">
+                <button
+                  type="button"
+                  (click)="editLine(i)"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 mr-1"
+                  title="Edit"
+                  aria-label="Edit line"
+                >
+                  <i class="fas fa-pen text-blue-600"></i>
+                </button>
+                <button
+                  type="button"
+                  (click)="prRemoveLine(i)"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100"
+                  title="Remove"
+                  aria-label="Remove line"
+                >
+                  <i class="fas fa-trash text-red-500"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Add Line -->
+        <div class="p-2 border-t bg-gray-50">
+          <button
+            class="px-3 py-2 rounded-xl text-sm font-medium text-white"
+            style="background-color:#0e3a4c;"
+            (mouseenter)="hover=true"
+            (mouseleave)="hover=false"
+            [style.background-color]="hover ? '#0b2e3d' : '#0e3a4c'"
+            (click)="prAddLine()"
+            type="button"
+          >
+            + Add line
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="flex justify-between gap-2">
+        <button class="px-3 py-2 rounded-xl text-sm font-medium hover:bg-gray-100 border border-transparent"
+                (click)="prGo(-1)" type="button">
+          ← Back
+        </button>
+        <div class="flex gap-2">
+          <button class="px-3 py-2 rounded-xl text-sm font-medium text-white"
+                  style="background-color:#0e3a4c;" (click)="prGo(1)" type="button">
+            Review →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Review -->
+    <div *ngIf="prStep === 2" class="space-y-3" #topOfWizard>
+      <div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div class="bg-[#0e3a4c] px-4 py-2 flex items-center justify-between">
+          <h3 class="text-white font-semibold text-sm">Purchase Request Preview</h3>
+        </div>
+
+        <div class="p-2 space-y-3 text-[13px]">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <p class="text-gray-500 text-[11px] font-medium">Requester</p>
+              <p class="text-gray-900 font-semibold truncate">{{ prHeader.requester || '-' }}</p>
+            </div>
+            <div>
+              <p class="text-gray-500 text-[11px] font-medium">Department</p>
+              <p class="text-gray-900 font-semibold truncate">{{ searchText || '-' }}</p>
+            </div>
+            <div>
+              <p class="text-gray-500 text-[11px] font-medium">Delivery Date</p>
+              <p class="text-gray-900 font-semibold">{{ prHeader.neededBy | date:'dd-MM-yyyy' || '-' }}</p>
+            </div>
+            <div>
+              <p class="text-gray-500 text-[11px] font-medium">Multi Location</p>
+              <p class="text-gray-900 font-semibold">{{ prHeader.multiLoc ? 'Yes' : 'No' }}</p>
+            </div>
+            <div class="md:col-span-2">
+              <p class="text-gray-500 text-[11px] font-medium">Description</p>
+              <p class="text-gray-900 leading-snug">{{ prHeader.description || '-' }}</p>
+            </div>
+          </div>
+
+   <div class="pr-review-tiles">
+  <div class="pr-review-tiles-head">
+    <h4>Line Items</h4>
+    <!-- <div class="total-pill">
+      Total Qty <span>{{ totalQty }}</span>
+    </div> -->
+  </div>
+
+  <ng-container *ngIf="prLines?.length > 0; else noLines">
+
+    <div class="tiles-grid">
+      <div *ngFor="let l of prLines; let i = index" class="tile">
+        <!-- left icon -->
+        <div class="tile-icon">
+          <i class="fas fa-box"></i>
+        </div>
+
+        <!-- middle content -->
+        <div class="tile-body">
+          <div class="tile-title">
+            {{ l['item'] || l['itemSearch'] || '(no item)' }}
+          </div>
+
+          <div class="tile-meta">
+            <span class="meta-chip">
+              <i class="fas fa-map-marker-alt"></i>
+              <span class="truncate">
+                {{ l['loc'] || l['location'] || l['locationSearch'] || '-' }}
+              </span>
+            </span>
+
+            <span *ngIf="l['remarks']" class="meta-chip muted">
+              <i class="fas fa-comment-dots"></i>
+              <span class="truncate">{{ l['remarks'] }}</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- right qty -->
+        <div class="tile-right">
+          <div class="qty-pill">{{ l['qty'] || 0 }}</div>
+          <div class="uom-pill">{{ l['uom'] || l['uomSearch'] || '-' }}</div>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <ng-template #noLines>
+    <div class="empty-tile">
+      No lines added
+    </div>
+  </ng-template>
+</div>
+
+
+          <div class="flex justify-end pt-1 border-t border-gray-200">
+            <p class="text-[12px] font-semibold text-gray-700">
+              Total Qty: <span class="text-[#0e3a4c]">{{ totalQty }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between gap-2">
+        <button class="px-3 py-1.5 rounded-md text-xs font-medium border border-gray-300 hover:bg-gray-100"
+                (click)="prGo(-1)" type="button">
+          ← Back
+        </button>
+        <div class="flex gap-2">
+          <button class="px-3 py-1.5 rounded-md text-xs font-medium text-white shadow hover:opacity-90"
+                  style="background-color:#0e3a4c;" type="button" (click)="saveRequest()">
+            Convert to PO / RFQ
+          </button>
+        </div>
+      </div>
+
+      <!-- === bottom anchor === -->
+      <div #bottomOfWizard style="height:1px;"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PR Line Modal -->
+<div *ngIf="showModal" class="prl-overlay" aria-modal="true" role="dialog">
+  <div class="prl-modal" (click)="onModalRootClick($event)" role="dialog" aria-labelledby="prl-title">
+    <div class="prl-head">
+      <h2 id="prl-title" class="prl-title">
+        {{ editingIndex === null ? 'Add Purchase Request Line' : 'Edit Purchase Request Line' }}
+      </h2>
+      <button type="button" class="prl-close" (click)="closeModal()" aria-label="Close">✕</button>
+    </div>
+
+    <form #modalForm="ngForm" (ngSubmit)="onSubmitModal()">
+      <div class="prl-grid">
+        <!-- Item -->
+        <div class="prl-col-12 prl-md-6">
+          <label class="prl-label">Item</label>
+
+          <div class="flex items-center gap-2">
+            <!-- input + dropdown -->
+            <div class="relative flex-1 prl-dropdown">
+              <input
+                #itemSearchInput
+                type="text"
+                name="itemSearch"
+                [(ngModel)]="modalLine.itemSearch"
+                (focus)="onModalItemFocus()"
+                (input)="filterModalItems()"
+                placeholder="Search Item..."
+                class="prl-input pr-10"
+                autocomplete="off"
+              />
+
+              <button
+                type="button"
+                (click)="onModalItemFocus()"
+                class="absolute inset-y-0 right-2 my-auto w-8 h-8 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100"
+                aria-label="Toggle item dropdown"
+              >
+                <i class="fas fa-chevron-down"></i>
+              </button>
+
+              <div *ngIf="modalLine.dropdownOpen && modalLine.filteredItems?.length" class="prl-menu">
+                <div *ngFor="let item of modalLine.filteredItems" (click)="selectModalItem(item)" class="prl-mi prl-mi-split">
+                  <span>{{ item.itemName }}</span>
+                  <small class="prl-muted">{{ item.itemCode }}</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- round + button -->
+            <button
+              type="button"
+              class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#0e3a4c] text-white hover:bg-[#0b2e3d] transition"
+              title="Add item"
+              aria-label="Add item"
+              (click)="openNewItemModal()"
+            >
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Qty -->
+        <div class="prl-col-12 prl-md-3">
+          <label class="prl-label">Quantity</label>
+          <input type="number" name="qty" [(ngModel)]="modalLine.qty" class="prl-input" />
+        </div>
+
+        <!-- UOM -->
+        <div class="prl-col-12 prl-md-3 prl-dropdown">
+          <label class="prl-label">UOM</label>
+          <input
+            type="text"
+            name="uomSearch"
+            [(ngModel)]="modalLine.uomSearch"
+            (focus)="onModalUomFocus()"
+            (input)="filterModalUoms()"
+            [disabled]="isItemSelected"
+            placeholder="Search UOM..."
+            class="prl-input"
+            autocomplete="off"
+          />
+          <div *ngIf="modalLine.uomDropdownOpen && modalLine.filteredUoms?.length" class="prl-menu">
+            <div *ngFor="let uom of modalLine.filteredUoms" (click)="selectModalUom(uom)" class="prl-mi">
+              {{ uom.name }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div class="prl-col-12 prl-md-6 prl-dropdown">
+          <label class="prl-label">Outlet</label>
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              name="locationSearch"
+              [(ngModel)]="modalLine.locationSearch"
+              (focus)="onModalLocationFocus()"
+              (input)="filterModalLocations()"
+              placeholder="Search Outlet..."
+              class="prl-input"
+              autocomplete="off"
+            />
+            <div *ngIf="modalLine.locationDropdownOpen && modalLine.filteredLocations?.length" class="prl-menu">
+              <div *ngFor="let location of modalLine.filteredLocations"
+                   (click)="selectModalLocation(location)"
+                   class="prl-mi">
+                {{ location.name }}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#0e3a4c] text-white hover:bg-[#0b2e3d] transition"
+              title="Add Location"
+              aria-label="Add Location"
+              (click)="openAddLocationModal()"
+            >
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Budget -->
+        <!-- <div class="prl-col-12 prl-md-6">
+          <label class="prl-label">Ledger Name</label>
+          <input type="text" name="budget" [(ngModel)]="modalLine.budget" [disabled]="isItemSelected" class="prl-input" />
+        </div> -->
+
+        <!-- Remarks -->
+        <div class="prl-col-12">
+          <label class="prl-label">Remarks</label>
+          <textarea name="remarks" [(ngModel)]="modalLine.remarks" rows="3" class="prl-input prl-textarea"></textarea>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div *ngIf="editingIndex === null; else editFooter" class="prl-foot">
+        <button type="button" class="prl-btn prl-btn-outline-brand" (click)="addAnotherPR()">Add Another PR</button>
+        <button type="submit" class="prl-btn prl-btn-primary">Add &amp; Close</button>
+        <button type="button" class="prl-btn" (click)="closeModal()">Close</button>
+      </div>
+
+      <ng-template #editFooter>
+        <div class="prl-foot">
+          <button type="button" class="prl-btn" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="prl-btn prl-btn-primary">Save Changes</button>
+        </div>
+      </ng-template>
+    </form>
+  </div>
+</div>
+
+<!-- New Item Modal -->
+<div *ngIf="showNewItemModal" class="prl-overlay" aria-modal="true" role="dialog">
+  <div class="prl-modal" (click)="onModalRootClick($event)" role="dialog" aria-labelledby="new-item-title">
+    <div class="prl-head">
+      <h2 id="new-item-title" class="prl-title">Add New Item</h2>
+      <button type="button" class="prl-close" (click)="closeNewItemModal()" aria-label="Close">✕</button>
+    </div>
+
+    <form (ngSubmit)="submitNewItem()">
+      <div class="prl-grid">
+        <div class="prl-col-12 prl-md-6">
+          <label class="prl-label">Item Name</label>
+          <input
+            type="text"
+            [(ngModel)]="newItem.itemName"
+            name="newItemName"
+            class="prl-input"
+            required
+          />
+        </div>
+
+        <div class="prl-col-12 prl-md-6">
+          <label class="prl-label">Item Code</label>
+          <input
+            type="text"
+            [(ngModel)]="newItem.itemCode"
+            name="newItemCode"
+            class="prl-input"
+            required
+          />
+        </div>
+
+        <div class="prl-col-12 prl-md-6 prl-dropdown">
+          <label class="prl-label">UOM</label>
+          <select
+            class="prl-input"
+            name="newItemUom"
+            [(ngModel)]="newItem.uomId"
+            required
+          >
+            <option value="" disabled selected>Select UOM</option>
+            <option *ngFor="let uom of uomList" [value]="uom.id">{{ uom.name }}</option>
+          </select>
+        </div>
+
+        <!-- <div class="prl-col-12 prl-md-6 prl-dropdown">
+          <label class="prl-label">Ledger Name</label>
+          <select
+            class="prl-input"
+            name="newItemBudget"
+            [(ngModel)]="newItem.budgetLineId"
+            required
+          >
+            <option value="" disabled selected>Select Ledger</option>
+            <option *ngFor="let head of parentHeadList" [value]="head.value">{{ head.label }}</option>
+          </select>
+        </div> -->
+      </div>
+
+      <div class="prl-foot">
+        <button type="button" class="prl-btn" (click)="closeNewItemModal()">Cancel</button>
+        <button type="submit" class="prl-btn prl-btn-primary">Submit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Location Modal -->
+<div *ngIf="showAddLocationModal" class="prl-overlay" aria-modal="true" role="dialog">
+  <div class="prl-modal" (click)="onModalRootClick($event)" role="dialog" aria-labelledby="add-loc-title">
+    <div class="prl-head">
+      <h2 id="add-loc-title" class="prl-title">Add Location</h2>
+      <button type="button" class="prl-close" (click)="closeAddLocationModal()" aria-label="Close">✕</button>
+    </div>
+
+    <form (ngSubmit)="submitNewLocation()">
+      <div class="prl-grid">
+        <div class="prl-col-12 prl-md-6">
+          <label class="prl-label">Location Name</label>
+          <input
+            type="text"
+            [(ngModel)]="newLocation.name"
+            name="locationName"
+            class="prl-input"
+            required
+          />
+        </div>
+
+        <div class="prl-col-12 prl-md-6 prl-dropdown">
+          <label class="prl-label">Country</label>
+          <select
+            class="prl-input"
+            name="countryId"
+            [(ngModel)]="newLocation.countryId"
+            (change)="onCountryChange(newLocation.countryId)"
+            required
+          >
+            <option [ngValue]="null" disabled>Select Country</option>
+            <option *ngFor="let c of countries" [ngValue]="c.id">{{ c.countryName }}</option>
+          </select>
+        </div>
+
+        <div class="prl-col-12 prl-md-6 prl-dropdown">
+          <label class="prl-label">State</label>
+          <select
+            class="prl-input"
+            name="stateId"
+            [(ngModel)]="newLocation.stateId"
+            (change)="onStateChange(newLocation.stateId)"
+            required
+          >
+            <option [ngValue]="null" disabled>Select State</option>
+            <option *ngFor="let s of StateList" [ngValue]="s.id">{{ s.stateName }}</option>
+          </select>
+        </div>
+
+        <div class="prl-col-12 prl-md-6 prl-dropdown">
+          <label class="prl-label">City</label>
+          <select
+            class="prl-input"
+            name="cityId"
+            [(ngModel)]="newLocation.cityId"
+            required
+          >
+            <option [ngValue]="null" disabled>Select City</option>
+            <option *ngFor="let ct of CityList" [ngValue]="ct.id">{{ ct.cityName }}</option>
+          </select>
+        </div>
+
+        <div class="prl-col-12 prl-md-6">
+          <label class="prl-label">Contact Number</label>
+          <input
+            type="text"
+            [(ngModel)]="newLocation.contactNumber"
+            name="contactNumber"
+            class="prl-input"
+          />
+        </div>
+
+        <div class="prl-col-12 prl-md-6">
+          <label class="prl-label">Latitude</label>
+          <input
+            type="text"
+            [(ngModel)]="newLocation.latitude"
+            name="latitude"
+            class="prl-input"
+          />
+        </div>
+
+        <div class="prl-col-12 prl-md-6">
+          <label class="prl-label">Longitude</label>
+          <input
+            type="text"
+            [(ngModel)]="newLocation.longitude"
+            name="longitude"
+            class="prl-input"
+          />
+        </div>
+      </div>
+
+      <div class="prl-foot">
+        <button type="button" class="prl-btn" (click)="closeAddLocationModal()">Cancel</button>
+        <button type="submit" class="prl-btn prl-btn-primary">Submit</button>
+      </div>
+    </form>
+  </div>
+</div>

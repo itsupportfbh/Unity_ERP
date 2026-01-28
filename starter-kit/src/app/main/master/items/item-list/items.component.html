@@ -1,0 +1,115 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <!-- User List -->
+    <section class="users-list-wrapper">
+      <div class="card">
+        <div class="row">
+          <div class="col-md-6 col-12" >
+            <h4 class="card-text" style="margin-left: 0.85rem; margin-top: 0.75rem;font-size: 1.25rem; font-weight: 600; color: #2E5F73;" >Item List</h4>
+            <div class="d-flex justify-content-between align-items-center m-1" >
+             <label class="d-flex align-items-center">Show
+                <select class="form-control mx-25">
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+                entries
+            </label>
+            </div>
+          </div>
+          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end" >
+            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+             
+              <label class="d-flex align-items-center ml-1 ml-md-0">Search:<input [(ngModel)]="searchValue"
+                  name="searchValue" type="search" class="form-control ml-25" (keyup)="filterUpdate($event)"
+                  (search)="filterUpdate($event)" /></label>
+             <button
+  id="Add"
+  class="btn m-1"
+  style="background-color: #2E5F73; color: white;"
+  rippleEffect
+  (click)="openCreate()"
+>
+  <i data-feather="plus" class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
+  <span class="d-none d-sm-inline-block">Add</span>
+</button>
+
+
+            </div>
+          </div>
+        </div>
+<ngx-datatable
+  class="bootstrap core-bootstrap items-table"
+  [rows]="rows"
+  [rowHeight]="50"
+  [headerHeight]="50"
+  [footerHeight]="50"
+  [limit]="selectedOption"
+  [columnMode]="'force'"
+  [scrollbarH]="false"
+  [reorderable]="true">
+
+  <!-- Item Code -->
+  <ngx-datatable-column name="Item Code" prop="itemCode" [width]="120">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <span class="cell-ellipsis" [title]="row.itemCode">{{ row.itemCode }}</span>
+    </ng-template>
+  </ngx-datatable-column>
+
+  <!-- Item Name -->
+  <ngx-datatable-column name="Item Name" prop="itemName" [width]="170">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <span class="cell-ellipsis" [title]="row.itemName">{{ row.itemName }}</span>
+    </ng-template>
+  </ngx-datatable-column>
+
+  <!-- Category Name -->
+  <ngx-datatable-column name="Category Name" prop="catagoryName" [width]="170">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <span class="cell-ellipsis" [title]="row.catagoryName">{{ row.catagoryName }}</span>
+    </ng-template>
+  </ngx-datatable-column>
+
+  <!-- UOM -->
+  <ngx-datatable-column name="UOM" prop="uomName" [width]="120">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <span class="cell-ellipsis" [title]="row.uomName">{{ row.uomName }}</span>
+    </ng-template>
+  </ngx-datatable-column>
+
+  <!-- Ledger Name -->
+  <ngx-datatable-column name="Ledger Name" prop="budgetLineName" [width]="260">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <span class="cell-ellipsis" [title]="row.budgetLineName">{{ row.budgetLineName }}</span>
+    </ng-template>
+  </ngx-datatable-column>
+
+  <!-- Action -->
+  <ngx-datatable-column name="Action" [width]="90" [sortable]="false" [canAutoResize]="false">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <div class="action-cell">
+        <i class="fas fa-pen edit-icon" (click)="editRequest(row.id)"></i>
+        <i class="fas fa-trash delete-icon" (click)="deleteRequest(row.id)"></i>
+      </div>
+    </ng-template>
+  </ngx-datatable-column>
+
+</ngx-datatable>
+
+
+      </div>
+    </section>
+   </div>
+   <core-sidebar
+  class="modal modal-slide-in sidebar-todo-modal fade"
+  name="app-createitemsidebar"
+  overlayClass="modal-backdrop"
+>
+  <app-createitemsidebar
+    [editId]="selectedItemId"
+    (saved)="loadItem()"
+  ></app-createitemsidebar>
+</core-sidebar>
+
+</div>

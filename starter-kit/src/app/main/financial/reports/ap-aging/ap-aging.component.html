@@ -1,0 +1,303 @@
+<!-- src/app/main/financial/reports/ap-aging/ap-aging.component.html -->
+
+<div class="ap-aging-wrapper">
+   <div class="d-flex justify-content-between align-items-center mb-1 aging-header">
+    <h4 class="mb-0 aging-title">AP Aging</h4>
+
+    <div class="d-flex align-items-center gst-export">
+      <button class="btn btn-outline-secondary btn-sm"
+              type="button"
+              (click)="exportToPdf()"
+              [disabled]="!filteredRows?.length">
+        <i class="far fa-file-pdf me-25"></i>
+        <span>PDF</span>
+      </button>
+
+      <button class="btn btn-outline-secondary btn-sm"
+              type="button"
+              (click)="exportToExcel()"
+              [disabled]="!filteredRows?.length">
+        <i class="far fa-file-excel me-25"></i>
+        <span>Excel</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================== FILTER BAR ================== -->
+  <div class="row mb-1 align-items-end">
+    <div class="col-md-3 col-12">
+      <label>From Date</label>
+      <input
+        type="date"
+        class="form-control"
+        [(ngModel)]="fromDate"
+        (change)="onFilterChange()" />
+    </div>
+
+    <div class="col-md-3 col-12">
+      <label>To Date</label>
+      <input
+        type="date"
+        class="form-control"
+        [(ngModel)]="toDate"
+        (change)="onFilterChange()" />
+    </div>
+
+    <div class="col-md-4 col-12">
+      <label>Supplier</label>
+      <ng-select
+        [items]="supplierOptions"
+        bindLabel="name"
+        bindValue="supplierId"
+        [(ngModel)]="selectedSupplierId"
+        placeholder="All suppliers"
+        (change)="onSupplierChange()">
+      </ng-select>
+    </div>
+
+    <div class="col-md-2 col-12 text-md-right mt-1 mt-md-0">
+      <!-- Clear filter -->
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary mr-50"
+        (click)="selectedSupplierId = null; onFilterChange()"
+        title="Clear filter">
+        <i class="fas fa-eraser"></i>
+      </button>
+
+      <!-- Refresh -->
+      <button
+        type="button"
+        class="btn btn-sm"
+        style="background-color:#2E5F73; color:#ffffff;"
+        (click)="onFilterChange()"
+        title="Refresh">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================== SUMMARY CARDS ================== -->
+  <div class="ap-summary-row row no-gutters ap-aging-summary">
+
+    <!-- TOTAL OUTSTANDING -->
+    <div class="col-xl-3 col-md-6 col-12 mb-50">
+      <div class="ap-summary-card ap-summary-outstanding">
+        <div class="ap-summary-icon">
+          <i class="fas fa-file-invoice"></i>
+        </div>
+        <div class="ap-summary-text">
+          <div class="label">TOTAL OUTSTANDING</div>
+          <div class="value">
+            {{ totalOutstandingAll | number:'1.2-2' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 0 – 30 DAYS -->
+    <div class="col-xl-3 col-md-6 col-12 mb-50">
+      <div class="ap-summary-card ap-summary-0-30">
+        <div class="ap-summary-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="ap-summary-text">
+          <div class="label">0 – 30 DAYS</div>
+          <div class="value">
+            {{ total0_30 | number:'1.2-2' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 31 – 60 DAYS -->
+    <div class="col-xl-3 col-md-6 col-12 mb-50">
+      <div class="ap-summary-card ap-summary-31-60">
+        <div class="ap-summary-icon">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="ap-summary-text">
+          <div class="label">31 – 60 DAYS</div>
+          <div class="value">
+            {{ total31_60 | number:'1.2-2' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 61 DAYS & ABOVE -->
+    <div class="col-xl-3 col-md-6 col-12 mb-50">
+      <div class="ap-summary-card ap-summary-61plus">
+        <div class="ap-summary-icon">
+          <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <div class="ap-summary-text">
+          <div class="label">61 DAYS & ABOVE</div>
+          <div class="value">
+            {{ total61_90_90Plus | number:'1.2-2' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================== MAIN AGING TABLE ================== -->
+  <div class="table-responsive ap-table-wrap">
+    <table class="table mb-0 ap-table">
+      <thead>
+        <tr>
+          <th style="background-color:#2E5F73; color:#ffffff;">Supplier</th>
+          <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Total Outstanding</th>
+          <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">0 – 30</th>
+          <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">31 – 60</th>
+          <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">61 – 90</th>
+          <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">90+</th>
+          <th style="background-color:#2E5F73; color:#ffffff;" class="text-center">Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of filteredRows">
+          <td>{{ r.supplierName }}</td>
+          <td class="text-right text-brand font-weight-bold">
+            {{ r.totalOutstanding | number:'1.2-2' }}
+          </td>
+          <td class="text-right">
+            {{ r.bucket0_30 | number:'1.2-2' }}
+          </td>
+          <td class="text-right">
+            {{ r.bucket31_60 | number:'1.2-2' }}
+          </td>
+          <td class="text-right">
+            {{ r.bucket61_90 | number:'1.2-2' }}
+          </td>
+          <td class="text-right">
+            {{ r.bucket90Plus | number:'1.2-2' }}
+          </td>
+          <td class="text-center">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              (click)="openDetail(r)">
+              View
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="!filteredRows.length && !isLoading">
+          <td colspan="7" class="text-center text-muted py-2">
+            No aging data found for selected range.
+          </td>
+        </tr>
+
+        <tr *ngIf="isLoading">
+          <td colspan="7" class="text-center text-muted py-2">
+            Loading...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================== DETAIL PANEL ================== -->
+  <div class="ap-aging-detail mt-1" *ngIf="isDetailOpen">
+    <div class="d-flex justify-content-between align-items-center mb-50">
+      <h6 class="mb-0">
+        Invoices for: <strong>{{ selectedSupplierName }}</strong>
+      </h6>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        (click)="closeDetail()">
+        Close
+      </button>
+    </div>
+
+    <div class="table-responsive ap-table-wrap">
+      <table class="table mb-0 ap-table">
+        <thead>
+          <tr>
+            <th style="background-color:#2E5F73; color:#ffffff;">Invoice No</th>
+            <th style="background-color:#2E5F73; color:#ffffff;">Invoice Date</th>
+            <th style="background-color:#2E5F73; color:#ffffff;">Due Date</th>
+            <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
+            <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Paid</th>
+            <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Outstanding</th>
+            <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Days</th>
+            <th style="background-color:#2E5F73; color:#ffffff;" class="text-center">Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of detailRows">
+            <td>{{ d.invoiceNo }}</td>
+            <td>{{ d.invoiceDate | date:'dd-MMM-yyyy' }}</td>
+            <td>{{ d.dueDate | date:'dd-MMM-yyyy' }}</td>
+            <td class="text-right">{{ d.originalAmount | number:'1.2-2' }}</td>
+            <td class="text-right">{{ d.paidAmount | number:'1.2-2' }}</td>
+            <td class="text-right text-brand font-weight-bold">
+              {{ d.balance | number:'1.2-2' }}
+            </td>
+            <td class="text-right">{{ d.ageDays }}</td>
+
+            <!-- Email button -->
+            <td class="text-center">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                (click)="openEmailModal(d)"
+                title="Email Invoice">
+                <i class="fas fa-envelope"></i>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!detailRows.length">
+            <td colspan="8" class="text-center text-muted py-2">
+              No invoices in this range.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===================== EMAIL MODAL ===================== -->
+  <div
+    class="modal fade"
+    tabindex="-1"
+    role="dialog"
+    [ngClass]="{ 'show d-block': showEmailModal }"
+    *ngIf="showEmailModal"
+    (click)="onEmailModalBackdropClick($event)">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Email Supplier Invoice
+          </h5>
+          <button type="button" class="close" aria-label="Close" (click)="closeEmailModal()">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <app-invoice-email
+            [invoice]="selectedInvoiceForEmail">
+          </app-invoice-email>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="closeEmailModal()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showEmailModal" class="modal-backdrop fade show"></div>
+
+</div>

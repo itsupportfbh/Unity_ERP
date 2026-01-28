@@ -1,0 +1,179 @@
+<!-- reports-sales-by-item.component.html -->
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <div class="row">
+          <!-- Title + page size -->
+          <div class="col-md-3 col-12">
+            <h4 class="card-text page-title">
+              Item by Sales Reports
+            </h4>
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center gap-1">
+                Show
+                <select class="form-control mx-25" (change)="onLimitChange($event)">
+                  <option [selected]="selectedOption===10" value="10">10</option>
+                  <option [selected]="selectedOption===25" value="25">25</option>
+                  <option [selected]="selectedOption===50" value="50">50</option>
+                  <option [selected]="selectedOption===100" value="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+          </div>
+
+          <!-- Search + Filter button -->
+          <div class="col-md-9 col-12 d-flex justify-content-start justify-content-md-end">
+            <div class="d-flex align-items-center justify-content-end pr-0 pb-0 pb-md-0">
+
+              <label class="d-flex align-items-center ml-1 ml-md-0">
+                Search:
+                <input
+                  [(ngModel)]="searchValue"
+                  name="searchValue"
+                  type="search"
+                  class="form-control ml-25"
+                  (keyup)="filterUpdate($event)"
+                  (search)="filterUpdate($event)"
+                  placeholder="SKU / item / category"
+                />
+              </label>
+<label class="d-flex align-items-center ml-1">
+      Sort:
+      <select class="form-control ml-25" [(ngModel)]="sortBy" (change)="onSortChange()">
+        <option value="">None</option>
+        <option value="itemName">Item Name</option>
+        <option value="category">Category</option>
+        <option value="quantity">Quantity Sold</option>
+        <option value="netSales">Net Sales</option>
+        <option value="grossSales">Gross Sales</option>
+        <option value="marginPct">Margin (%)</option>
+      </select>
+    </label>
+      <button
+      type="button"
+      class="btn btn-outline-secondary m-1"
+      (click)="toggleSortDir()"
+      title="Toggle Asc / Desc">
+      {{ sortDir === 'asc' ? '▲ Asc' : '▼ Desc' }}
+    </button>
+              <button
+                (click)="openFilters()"
+                class="btn m-1 d-inline-flex align-items-center"
+                style="background-color:#2E5F73;color:white;gap:6px;"
+              >
+                <i data-feather="filter" class="w-4 h-4"></i>
+                <span>Filter</span>
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Main datatable -->
+        <ngx-datatable
+          class="bootstrap core-bootstrap sales-report-table"
+          [rows]="rows"
+          [rowHeight]="48"
+          [headerHeight]="48"
+          [footerHeight]="48"
+          [limit]="selectedOption"
+          [columnMode]="'standard'"
+          [scrollbarH]="true"
+          [reorderable]="true">
+
+          <ngx-datatable-column name="SKU" prop="sku" [width]="110"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Item Name" prop="itemName" [width]="150"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Category" [width]="150">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.category }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="UOM" prop="uom" [width]="80"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Quantity Sold" prop="quantity" [width]="140" [cellClass]="'col-num'">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.quantity | number:'1.0-2' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Gross Sales" prop="grossSales" [width]="140" [cellClass]="'col-num'">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.grossSales | number:'1.0-2' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Discount (%)" [width]="120" [cellClass]="'col-num'">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.discount | number:'1.0-2' }}%
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Tax Amount" prop="taxAmount" [width]="130" [cellClass]="'col-num'">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.taxAmount | number:'1.0-2' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Net Sales (Amount)" prop="netSales" [width]="175" [cellClass]="'col-num'">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.netSales | number:'1.0-2' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Cost" prop="unitPrice" [width]="110" [cellClass]="'col-num'">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.unitPrice | number:'1.0-2' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Margin (%)" [width]="120" [cellClass]="'col-num'">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.marginPct | number:'1.0-2' }}%
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Branch / Location" prop="location" [width]="170"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Salesperson" [width]="160">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.salesPerson }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Date" [width]="120">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.createdDate | date:'dd-MM-yyyy' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+        </ngx-datatable>
+
+      </div>
+    </section>
+  </div>
+
+  <core-sidebar
+    class="modal modal-slide-in sidebar-todo-modal fade"
+    name="reports-filters-sidebar"
+    overlayClass="modal-backdrop"
+  >
+    <app-reports-filters
+      [showCustomer]="false"
+      [showBranch]="true"
+      [showStatus]="false"
+      [showSalesperson]="true"
+      [showCategory]="true"
+      [branches]="branches"
+      [salespersons]="salespersons"
+      [categories]="categories"
+      (saved)="onFiltersApplied($event)"
+      (canceled)="onFilterCanceled()"
+    ></app-reports-filters>
+  </core-sidebar>
+</div>

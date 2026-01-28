@@ -1,0 +1,301 @@
+<button class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
+    style="background-color:#2E5F73; color:white; padding-left:2.25rem;" (click)="goToStockTakeList()">
+    <i class="fas fa-arrow-left position-absolute" style="left:0.75rem; top:50%; transform:translateY(-50%);"
+        aria-hidden="true"></i>
+    Go to Stock Take list
+</button>
+
+<div class="card card-elevated rounded-16">
+    <!-- Header -->
+    <div class="card-header d-flex align-items-center justify-content-between bg-white border-0">
+        <h4 class="card-title mb-0" style="color:#2E5F73">Stock Take (Cycle / Full)</h4>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+
+        <!-- Header fields -->
+        <div class="row g-3 align-items-end">
+            <div class="col-sm-6 col-md-3">
+                <label class="form-label">Warehouse<span style="color:red">*</span></label>
+                <ng-select [items]="warehouseTypes" bindLabel="name" bindValue="id" [(ngModel)]="warehouseTypeId"
+                    placeholder="Select warehouse"  class="w-100">
+                </ng-select>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label class="form-label">Supplier</label>
+                <ng-select [items]="supplierList" bindLabel="name" bindValue="id" [(ngModel)]="supplierId"
+                    (ngModelChange)="onSupplierChanged($event)" placeholder="ALL Suppliers" class="w-100">
+                </ng-select>
+            </div>
+            <!-- <div class="col-sm-6 col-md-3">
+                <label class="form-label">Type<span style="color:red">*</span></label>
+                <ng-select [items]="takeTypes" bindLabel="label" bindValue="id" [(ngModel)]="takeTypeId"
+                    placeholder="Select type" (ngModelChange)="onTypeChanged($event)" class="w-100">
+                </ng-select>
+            </div> -->
+
+            <div class="col-sm-6 col-md-3">
+                <label class="form-label">Type</label>
+                <ng-select [items]="strategies" bindLabel="strategyName" bindValue="id" [(ngModel)]="strategyId"
+                     (ngModelChange)="onTypeChanged($event)" placeholder="ALL Types" class="w-100" [disabled]="strategyCheck">
+                </ng-select>
+            </div>
+
+            <div class="col-sm-6 col-md-3 d-flex align-items-center">
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="freezeChk" [(ngModel)]="freeze">
+                    <label class="form-check-label" for="freezeChk">Freeze inventory</label>
+                </div>
+            </div>
+
+            <div class="col-md-12 d-flex align-items-center gap-2  justify-content-end">
+                <button type="button" class="btn text-white" style="background-color:#2E5F73"
+                    (click)="onSubmit()">Load</button>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="mt-2">
+            <!-- <button type="button" class="btn btn-outline-primary" (click)="onExportMobileTasks()">Export Mobile
+                Tasks</button> -->
+        </div>
+
+        <div class="table-responsive mt-1">
+            <table class="table table-bordered mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="background-color:#2E5F73; color:white; width:200px;">Location</th>
+                        <th style="background-color:#2E5F73; color:white; width:200px;">Supplier</th>
+                        <th style="background-color:#2E5F73; color:white; width:200px;">Item</th>
+                        <th style="background-color:#2E5F73; color:white; width:200px;">Barcode</th>
+                        <!-- <th style="background-color:#2E5F73; color:white; width:120px;">Available</th> -->
+                        <th style="background-color:#2E5F73; color:white; width:150px;white-space: nowrap;">Accepted Qty
+                        </th>
+                        <th style="background-color:#2E5F73; color:white; width:150px;white-space: nowrap;">Faulty Qty
+                        </th>
+                        <th style="background-color:#2E5F73; color:white;width:250px;white-space: nowrap;">Reason For
+                            Faulty Qty</th>
+                        <th class="remarks-col"
+                            style="background-color:#2E5F73; color:white;width:300px;white-space: nowrap;">Remarks</th>
+                        <!-- <th style="background-color:#2E5F73; color:white; width:200px;">Action</th> -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let r of lines; let i = index">
+                        <td style="min-width: 200px;">
+                            <ng-select [items]="LocationTypes" bindLabel="binName" bindValue="id" [(ngModel)]="r.binId"
+                                placeholder="Item" class="w-100" disabled></ng-select>
+                        </td>
+                        <td style="min-width:200px;">
+                            {{ r.supplierName || ('Supplier #' + r.supplierId) }}
+                            </td>
+
+                        <td style="min-width: 200px;">
+                            <ng-select [items]="itemList" bindLabel="itemName" bindValue="id" [(ngModel)]="r.itemId"
+                                placeholder="Item" class="w-100" disabled></ng-select>
+                        </td>
+                        <td style="min-width: 200px;"><input type="text" class="form-control" [(ngModel)]="r.barcode"
+                                (ngModelChange)="onCheckReview()" placeholder="Enter barcode" /></td>
+
+                        <!-- <td class="text-muted">{{ r.onHand ?? 0 }}</td> -->
+                        <td>
+                            <input type="number" class="form-control" [(ngModel)]="r.countedQty"
+                                (ngModelChange)="onCountChange(r)" min="0" placeholder="0" />
+                            <div *ngIf="r._error" class="small text-danger mt-1">{{ r._error }}</div>
+                        </td>
+                        <td>
+                            <input type="number" class="form-control" [(ngModel)]="r.badCountedQty"
+                                (ngModelChange)="onUnCountChange(r)" min="0" placeholder="0" />
+                            <div *ngIf="r._error" class="small text-danger mt-1">{{ r._error }}</div>
+                        </td>
+                        <!-- <td><ng-select [items]="reasonList" bindLabel="stockIssuesNames" bindValue="id" [(ngModel)]="r.reason"
+                                 placeholder="Item" class="w-100"></ng-select>
+                        </td> -->
+                        <!-- stock-take-list.component.html OR stock-take.component.html -->
+                        <td>
+                            <ng-select [items]="reasonList" bindLabel="stockIssuesNames" bindValue="id" [(ngModel)]="r.reasonId"
+                                 placeholder="Item" class="w-100">
+                            </ng-select>
+
+                        </td>
+                        <td class="remarks-col">
+                            <textarea class="form-control" autosize rows="1" [(ngModel)]="r.remarks"
+                                placeholder="Remarks" (ngModelChange)="onCheckReview()"></textarea>
+                        </td>
+
+                        <!-- <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeLine(i)">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td> -->
+                    </tr>
+
+                    <tr *ngIf="!lines.length">
+                        <td colspan="7" class="text-center text-muted py-4">No lines yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer actions -->
+        <div class="d-flex align-items-center pt-3 mt-3 border-top">
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <!-- <button type="button" class="btn btn-outline-primary" [disabled]="!lines.length"
+                    (click)="openReview()">Review Variances</button> -->
+
+                <button type="button" class="btn text-white" style="background-color:#2E5F73;"
+                    (click)="onSave(1)">Save</button>
+            </div>
+        </div>
+
+        <!-- Left-side Stock Review button -->
+        <div class="d-flex align-items-center justify-content-between mt-3">
+            <div>
+                <button type="button" class="btn"
+                    [class]="showStockReview ? 'btn-outline-secondary' : 'btn-outline-primary'"
+                    (click)="toggleStockReview()" style="background-color:#2E5F73;color:#fff">
+                    <i class="fas fa-clipboard-check me-1"></i>
+                    {{ showStockReview ? 'Hide Stock Review Variance' : 'Stock Review Variance' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Collapsible review panel (NO action column) -->
+        <div *ngIf="showStockReview" class="mt-2 border rounded-3 p-2">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="form-check me-3">
+                        <input #chkSelectAllRef class="form-check-input" type="checkbox" id="chkSelectAllRef"
+                            [(ngModel)]="selectAllReview" (change)="toggleSelectAllReview()">
+                        <label class="form-check-label" for="chkSelectAllRef">Select all</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:42px;background-color:#2E5F73;color: #fff;"></th>
+                            <th style="background-color:#2E5F73;color: #fff;">Location</th>
+                             <th style="background-color:#2E5F73; color:white; width:200px;">Supplier</th>
+                            <th style="background-color:#2E5F73;color: #fff;">Item</th>
+                            <th style="background-color:#2E5F73;color: #fff;">Barcode</th>
+                            <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">
+                                OnHand Available/Fault</th>
+                            <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">
+                                Accepted Qty</th>
+                            <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">Faulty
+                                Qty</th>
+                            <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">Total
+                                Qty</th>
+                            <th class="text-end" style="background-color:#2E5F73;color: #fff;">Variance</th>
+                            <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">Reason
+                                For Faulty Qty</th>
+                            <th class="text-end" style="background-color:#2E5F73;color: #fff;">Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let r of reviewRows">
+                            <td><input type="checkbox" [(ngModel)]="r.selected" (change)="onRowSelectedChanged()"></td>
+                            <td class="text-truncate" style="max-width:220px;">{{ r.binName || getBinName(r.binId) }}
+                            </td>
+                            <td style="min-width:200px;">
+                            {{ r.supplierName || ('Supplier #' + r.supplierId) }}
+                            </td>
+
+                            <td class="text-truncate" style="max-width:220px;">
+                                {{ r.itemName || getItemName(r.itemId) }}
+                            </td>
+                            <td class="text-end">{{ toNum(r.barcode) }}</td>
+                            <td class="text-end"> {{ toNum(r.onHand) }} /  {{ toNum(r.badOnHand ?? 0) }}</td>
+                            <td class="text-end">{{ toNum(r.countedQty) }}</td>
+                            <td class="text-end">{{ toNum(r.badCountedQty) }}</td>
+                            <td class="text-end">{{ toNum(r.countedQty) + toNum(r.badCountedQty) }}</td>
+                            <td class="text-end" [ngClass]="getVariance(r) >= 0 ? 'text-success' : 'text-danger'">
+                                {{ signed(getVariance(r)) }}
+                            </td>
+                            <!-- <td class="text-end"><ng-select [items]="reasonList" bindLabel="stockIssuesNames" bindValue="id" [(ngModel)]="r.reason"
+                                 placeholder="Item" class="w-100"></ng-select></td> -->
+                            <td class="reason-cell">
+                                <!-- remove the long-line issue, preserve user line breaks, and show full text on hover -->
+                               <ng-select [items]="reasonList" bindLabel="stockIssuesNames" bindValue="id" [(ngModel)]="r.reasonId"
+                                 placeholder="Item" class="w-100"></ng-select>
+                            </td>
+                            <td class="remarks-col">
+                                <textarea class="form-control" autosize rows="1" [(ngModel)]="r.remarks"
+                                    placeholder="Remarks"></textarea>
+                            </td>
+                        </tr>
+
+                        <tr *ngIf="!reviewRows.length">
+                            <td colspan="8" class="text-center text-muted py-3">No lines to review.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Footer actions -->
+        <div *ngIf="showStockReview" class="d-flex align-items-center pt-3 mt-3 border-top">
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <button type="button" class="btn text-white" style="background-color:#2E5F73;"
+                    (click)="onSaveStockReview(2)">Approved</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== Review Variances Modal ===================== -->
+<!-- <ng-template #reviewTpl let-modal>
+    <div class="modal-header">
+        <h5 class="modal-title">Review Variances</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+    </div>
+
+    <div class="modal-body">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Item</th>
+                        <th class="text-end">Available(OnHand)</th>
+                        <th class="text-end">Accepted Qty</th>
+                        <th class="text-end">Faulty Qty</th>
+                        <th class="text-end">Total Qty</th>
+                        <th class="text-end">Variance</th>
+                        <th class="text-end">Reason For Faulty Qty</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let r of lines">
+                        <td>{{ r.binName }}</td>
+                        <td>{{ r.itemName || getItemName(r.itemId) }}</td>
+                        <td class="text-end">{{ toNum(r.onHand) }}</td>
+                        <td class="text-end">{{ toNum(r.countedQty) }}</td>
+                        <td class="text-end">{{ toNum(r.badCountedQty) }}</td>
+                        <td class="text-end">{{ toNum(r.countedQty + r.badCountedQty) }}</td>
+                        <td class="text-end" [ngClass]="getVariance(r) >= 0 ? 'text-success' : 'text-danger'">
+                            {{ signed(getVariance(r)) }}
+                        </td>
+                        <td class="text-end">
+                         
+                            {{ r.reason }}
+                        </td>
+                        <td>{{ r.remarks }}</td>
+                    </tr>
+
+                    <tr *ngIf="!lines.length">
+                        <td colspan="6" class="text-center text-muted py-3">No lines.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" (click)="modal.close()">Close</button>
+    </div>
+</ng-template> -->

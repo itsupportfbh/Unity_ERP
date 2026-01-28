@@ -1,0 +1,34 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+
+$brand: #2E5F73;
+
+.page-title {
+  margin-left: .85rem;
+  margin-top: .75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: $brand;
+}
+
+.btn-brand {
+  background-color: $brand;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ml-25 { margin-left: .25rem !important; }
+.mr-25 { margin-right: .25rem !important; }
+.actions {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+}
+
+.receipt-table thead tr th {
+  background-color: #2E5F73 !important;
+  color: #fff !important;
+}

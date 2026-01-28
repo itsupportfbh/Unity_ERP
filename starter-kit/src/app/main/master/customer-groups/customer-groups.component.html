@@ -1,0 +1,100 @@
+<div class="row">
+  <div class="col-lg-6 col-md-6">
+    <div class="card card-transaction">
+      <div class="card-header">
+<h4 class="card-title" style="display:flex;align-items:center;gap:10px;margin:0;font-size:1.25rem;font-weight:600;color:#2E5F73;">
+  <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background-color:#e5f0f3;border-radius:50%;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#2E5F73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
+      <path d="M17 21v-1a4 4 0 0 0-4-4h-2a4 4 0 0 0-4 4v1"></path>
+      <circle cx="12" cy="8" r="3"></circle>
+      <path d="M7 21v-1a4 4 0 0 1 2.5-3.68"></path>
+      <path d="M17 16.32A4 4 0 0 1 19 20v1"></path>
+      <circle cx="5.5" cy="8.5" r="2.5"></circle>
+      <circle cx="18.5" cy="8.5" r="2.5"></circle>
+    </svg>
+  </span>
+  Customer Groups List
+</h4>
+
+
+        <button  (click)="createCustomerGroups()"   style="background-color: #2E5F73; color: white; border: none; padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;">Create</button>
+      </div>
+      <div class="card-body">
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let item of rows">
+            <div class="avatar bg-light-primary mr-2 align-items-center avatar-lg">
+              <div class="avatar-content">
+                <!-- If you want to use an icon as avatar: -->
+                <span data-feather="globe" style="width: 2rem; height: 2rem; font-size: 1.5rem;"></span>
+              </div>
+            </div>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center w-100">
+              <div class="m-l-16 m-r-auto">
+                <h6 class="mat-subtitle-1 f-s-16 f-w-600">{{ item.name }}</h6>
+              </div>
+             <div class="mt-md-0 mt-1 d-flex justify-content-md-end">
+  <!-- Edit Button -->
+  <button type="button"
+          class="btn btn-outline-primary p-0 d-flex align-items-center justify-content-center"
+          style="width: 28px; height: 28px;"
+          (click)="getCustomerGroupsDetails(item.id)">
+    <i data-feather="edit" style="width: 14px; height: 14px;"></i>
+  </button>
+
+  <!-- Delete Button -->
+  <button type="button"
+          class="btn btn-outline-danger p-0 d-flex align-items-center justify-content-center ml-1"
+          style="width: 28px; height: 28px;"
+          (click)="deleteCustomerGroups(item.id)"
+          [disabled]="isEditMode">
+    <i data-feather="trash" style="width: 14px; height: 14px;"></i>
+  </button>
+</div>
+
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-12 col-xs-12 col-lg-6 col-md-6 " *ngIf="isDisplay">
+    <div class="card ">
+      <div class="card-header">
+        <h4 class="card-title">{{modeHeader}}</h4>
+      </div>
+      <div class="card-body">
+        <form class="form" (ngSubmit)="addForm.form.valid" #addForm="ngForm">
+          <div class="form-group">
+            <label for="first-name-column">Name</label>
+            <input type="text" id="first-name-column" class="form-control" placeholder=" Name" name="fname-column"
+              [(ngModel)]="Name" [maxlength]="50" required />
+          </div>
+           <div class="form-group">
+            <label for="first-name-column">Description</label>
+            <input type="text" id="first-name-column" class="form-control" placeholder="Description" name="fname-column"
+              [(ngModel)]="description" [maxlength]="50" required />
+          </div>
+          
+
+              <div class="row justify-content-start p-1">
+                        <button type="submit" rippleEffect class="btn mr-1" [disabled]="!addForm.form.valid"
+                            (click)="CreateCustomerGroups()"
+                            style="background-color: #2E5F73;color: white;padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;">
+                            Submit
+                        </button>
+
+                        <button type="cancel" rippleEffect class="btn btn-danger mr-1" (click)="cancel()"
+                            style="padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;">
+                            Cancel
+                        </button>
+
+                        <button type="reset" rippleEffect class="btn btn-secondary" *ngIf="resetButton"  (click)="reset()"
+                            style="padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;">
+                            Reset
+                        </button>
+                    </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

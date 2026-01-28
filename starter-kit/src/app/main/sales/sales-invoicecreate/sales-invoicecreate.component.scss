@@ -1,0 +1,241 @@
+:host { display:block; }
+
+/* ===== Brand tokens ===== */
+:root {
+  --prl-brand: #2E5F73;
+  --prl-brand-600: #284e5e;
+  --prl-brand-700: #1f3f4b;
+  --prl-ink: #0f172a;
+}
+
+/* ===== Card ===== */
+.prl-card { border-radius:18px; margin-top:0 !important; }
+
+/* ===== Header bar ===== */
+.prl-headbar{
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  border:1px solid rgba(15,23,42,.06);
+  border-radius:16px; padding:14px 16px;
+  background:linear-gradient(180deg, rgba(46,95,115,.06), rgba(46,95,115,.03)), #fff;
+}
+.prl-heading{
+  font-size:20px; font-weight:800; color:var(--prl-brand-600) !important;
+  line-height:1.2; margin:0;
+}
+
+/* Header actions / buttons */
+.prl-btn-outline{ border-radius:10px; }
+.prl-btn-primary{
+  background:#2E5F73 !important; border-color:#2E5F73 !important; color:#fff !important;
+  padding:.45rem .9rem; line-height:1.25;
+}
+.prl-btn-primary:hover{ filter:brightness(.95); }
+.prl-btn-primary:disabled{
+  opacity:.75 !important; color:#fff !important;
+  background:#6b8793 !important; border-color:#6b8793 !important;
+}
+
+/* ===== Inputs / labels ===== */
+.prl-label{ font-size:13px; font-weight:600; color:#374151; margin-bottom:6px; }
+.prl-input{
+  border-radius:12px; border:1px solid #e5e7eb; padding:6px 8px; height:32px;
+  font-size:14px; line-height:1.25;
+}
+.prl-input:focus{
+  border-color:var(--prl-brand);
+  box-shadow:0 0 0 4px color-mix(in oklab, var(--prl-brand) 18%, transparent);
+}
+.prl-input:disabled{ background:#f5f5f5; cursor:not-allowed; opacity:.85; }
+.si-compact input[type="number"]{ text-align:right; }
+
+/* ===== ng-select general ===== */
+:host ::ng-deep .custom-ng-select .ng-select-container{
+  height:32px; min-height:32px;
+  border:1px solid #e5e7eb !important;
+  border-radius:12px !important;
+  padding:0 6px;
+  box-shadow:none !important;
+  outline:none !important;
+  background:#fff;
+}
+:host ::ng-deep .custom-ng-select.ng-select-focused .ng-select-container{
+  border-color:var(--prl-brand) !important;
+  box-shadow:0 0 0 4px color-mix(in oklab, var(--prl-brand) 18%, transparent);
+}
+:host ::ng-deep .custom-ng-select .ng-value-container{ padding:2px 2px; }
+:host ::ng-deep .custom-ng-select .ng-input > input{ height:30px; }
+:host ::ng-deep .custom-ng-select .ng-dropdown-panel{
+  margin-top:6px;
+  border:1px solid #e5e7eb !important;
+  border-radius:12px !important;
+  box-shadow:0 14px 32px rgba(15,23,42,.15);
+  overflow:hidden;
+}
+:host ::ng-deep .custom-ng-select .ng-dropdown-panel .ng-option{
+  padding:8px 10px;
+}
+:host ::ng-deep .custom-ng-select .ng-dropdown-panel .ng-option:hover{
+  background: color-mix(in oklab, var(--prl-brand, #2E5F73) 8%, white);
+}
+
+/* ===== Tables ===== */
+.prl-table-wrap{ max-height:56vh; overflow:auto; }
+.prl-table td, .prl-table th{ vertical-align:middle; }
+.prl-table thead th{ font-weight:700; }
+
+.prl-thead-brand,
+.prl-thead-brand th{
+  background-color:#2E5F73 !important;
+  color:#fff !important;
+}
+.prl-thead-brand{ position:sticky; top:0; z-index:2; }
+
+.prl-table tbody tr + tr td{ border-top:1px solid #f0f2f5; }
+.si-compact .table > :not(caption) > * > *{ padding:.45rem .6rem !important; }
+
+/* ===== Summary card ===== */
+.prl-summary-card {
+  border-radius: 22px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  padding: 14px 18px;
+  background: #ffffff;
+}
+
+.prl-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.prl-summary-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.prl-summary-input {
+  flex: 0 0 55%;
+  max-width: 55%;
+  border-radius: 14px;
+  border: 1px solid var(--prl-brand, #2E5F73);
+  height: 32px;
+  padding: 4px 10px;
+  font-size: 14px;
+  text-align: right;
+  color: #0f172a;
+}
+.prl-summary-input[readonly] {
+  background: #f9fafb;
+}
+
+/* ===== Apply Advance ng-select ===== */
+
+/* Outer ng-select behaves like an input slot: no border */
+.prl-summary-select {
+  flex: 0 0 55%;
+  max-width: 55%;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+/* Inner container is the pill (one field only) */
+:host ::ng-deep .prl-summary-select .ng-select-container {
+  width: 100%;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 14px !important;
+  border: 1px solid var(--prl-brand, #2E5F73) !important;
+  padding: 0 10px;
+  box-shadow: none !important;
+  background: #fff;
+}
+:host ::ng-deep .prl-summary-select .ng-value-container {
+  padding: 2px 0;
+  align-items: center;
+}
+:host ::ng-deep .prl-summary-select .ng-arrow-wrapper {
+  padding-left: 6px;
+}
+:host ::ng-deep .prl-summary-select.ng-select-opened .ng-select-container,
+:host ::ng-deep .prl-summary-select.ng-select-focused .ng-select-container {
+  border-color: var(--prl-brand, #2E5F73) !important;
+  box-shadow: 0 0 0 4px
+    color-mix(in oklab, var(--prl-brand, #2E5F73) 18%, transparent) !important;
+}
+
+/* ===== Net total row ===== */
+.prl-summary-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  font-weight: 700;
+}
+.prl-summary-total-row span:first-child {
+  font-size: 14px;
+  color: #111827;
+}
+.prl-summary-total-value {
+  font-size: 16px;
+  color: var(--prl-brand, #2E5F73);
+}
+
+/* Notes pill */
+.notes-textarea {
+  border-radius: 999px;
+  resize: none;
+  overflow-y: hidden;
+  min-height: 40px;
+  line-height: 1.4;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 820px){
+  .prl-headbar{ flex-direction:column; align-items:stretch; gap:10px; }
+  .prl-head-actions{ justify-content:flex-end; }
+}
+/* ✅ make dropdown panel wider (appendTo=body case) */
+:host ::ng-deep .pin-budget-select .ng-dropdown-panel {
+  min-width: 650px !important;     /* increase */
+  max-width: 900px !important;     /* optional */
+}
+
+/* ✅ IMPORTANT: stop cutting option text */
+:host ::ng-deep .pin-budget-select .ng-dropdown-panel .ng-option {
+  white-space: normal !important;  /* allow wrap */
+  overflow: visible !important;    /* do not cut */
+  text-overflow: initial !important;
+  line-height: 1.25;
+  padding: 10px 12px;
+}
+
+/* ✅ also make option inner container full width */
+:host ::ng-deep .pin-budget-select .ng-dropdown-panel .ng-option .ng-option-label {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: initial !important;
+  display: block;
+  width: 100%;
+}
+
+/* ✅ selected value (inside input) also show full */
+:host ::ng-deep .pin-budget-select .ng-select-container .ng-value-container .ng-value {
+  white-space: nowrap;             /* keep one line */
+  overflow: hidden;
+  text-overflow: ellipsis;         /* OR change to normal if you want wrap */
+}
+
+/* If you prefer wrap inside input box, use this instead:
+:host ::ng-deep .pin-budget-select .ng-select-container .ng-value-container .ng-value {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: initial !important;
+}
+*/

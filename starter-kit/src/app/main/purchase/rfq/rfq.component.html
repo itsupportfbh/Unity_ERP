@@ -1,0 +1,95 @@
+   <div class="space-y-5 ui-compact">
+      <div class="bg-white rounded-2xl shadow p-3 border border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Invite Suppliers</h2>
+        <label class="text-xs font-medium text-gray-600">Suppliers</label>
+        <div class="flex flex-wrap items-center gap-2 rounded-xl border border-gray-300 px-2 py-2">
+          <span *ngFor="let s of rfqSuppliers; let i = index; trackBy: trackByIndex"
+                class="px-2 py-1 rounded-full text-xs bg-gray-100 border">
+            {{ s }}
+            <button class="ml-2 text-gray-500 hover:text-red-600" (click)="removeRfqSupplier(i)" type="button">×</button>
+          </span>
+          <input class="flex-1 min-w-[140px] outline-none text-sm" [(ngModel)]="rfqSupplierText"
+                 (keydown.enter)="$event.preventDefault(); addRfqSupplier()" placeholder="Type supplier name and press Enter"/>
+          <button class="px-3 py-2 rounded-xl text-sm font-medium border border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                  (click)="addRfqSupplier()" type="button">Add</button>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">RFQ Valid Until</label>
+            <input type="date" class="w-full rounded-xl border px-3 py-2 text-sm"/>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Send Via</label>
+            <select class="w-full rounded-xl border px-3 py-2 text-sm bg-white">
+              <option>Email</option>
+              <option>WhatsApp</option>
+              <option>Both</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button class="px-3 py-2 rounded-xl text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+                    (click)="notify('RFQ sent (demo)')" type="button" [style.backgroundColor]="'#0e3a4c'">Send RFQ</button>
+          </div>
+        </div>
+      </div>
+
+     <div class="bg-white rounded-2xl shadow p-3 border border-gray-100">
+  <h2 class="text-lg font-semibold text-gray-800 mb-3">Compare Quotes</h2>
+
+  <!-- Table wrapper -->
+  <div class="overflow-hidden rounded-xl border">
+    <table class="min-w-full text-sm border-separate border-spacing-0">
+      <!-- Dark teal header -->
+      <thead class="bg-[#2E5F73] text-white">
+        <tr>
+          <th class="px-3 py-2 text-left font-semibold rounded-tl-xl border-r border-white/20">
+            Item
+          </th>
+          <th class="px-3 py-2 text-left font-semibold border-r border-white/20">
+            Qty
+          </th>
+
+          <!-- Supplier columns -->
+          <th *ngFor="let s of rfqSuppliers; let last = last"
+              class="px-3 py-2 text-left font-semibold border-r border-white/20"
+              [ngClass]="{ 'border-r-0 rounded-tr-xl': last }">
+            {{ s }}
+          </th>
+        </tr>
+      </thead>
+
+      <tbody class="bg-white">
+        <tr *ngFor="let it of rfqItems; let idx = index; trackBy: trackByIndex"
+            class="border-b last:border-b-0">
+          <td class="px-3 py-3 text-gray-700">{{ it.item }}</td>
+          <td class="px-3 py-3 text-gray-700">{{ it.qty }}</td>
+
+          <!-- Price inputs per supplier -->
+          <td *ngFor="let s of rfqSuppliers" class="px-3 py-2">
+            <input
+              type="number"
+              class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E5F73]/30"
+              placeholder="Enter price"
+              (input)="setQuotePrice(s, idx, $any($event.target).value)"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CTA -->
+  <div class="flex justify-end mt-3">
+    <button
+      class="px-5 py-2 rounded-full text-sm font-medium text-white"
+      style="background-color:#0e3a4c"
+      (click)="notify('Winner selected and PO created (demo)')"
+      type="button"
+    >
+      Pick Winner → Create PO
+    </button>
+  </div>
+</div>
+
+    </div>

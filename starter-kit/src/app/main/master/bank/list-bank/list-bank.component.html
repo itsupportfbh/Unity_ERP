@@ -1,0 +1,160 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <!-- Header row -->
+        <div class="row">
+          <div class="col-md-6 col-12">
+            <h4 class="card-text"
+                style="margin-left:0.85rem;margin-top:0.75rem;
+                       font-size:1.25rem;font-weight:600;color:#2E5F73;">
+              Bank List
+            </h4>
+
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center">Show
+                <select class="form-control mx-25" [(ngModel)]="selectedOption">
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="25">25</option>
+                  <option [ngValue]="50">50</option>
+                  <option [ngValue]="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+              <label class="d-flex align-items-center ml-1 ml-md-0">
+                Search:
+                <input [(ngModel)]="searchValue"
+                       name="searchValue"
+                       type="search"
+                       class="form-control ml-25"
+                       (keyup)="filterUpdate($event)"
+                       (search)="filterUpdate($event)" />
+              </label>
+
+              <button class="btn btn-primary m-1" (click)="Add()">
+                <i data-feather="plus" class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
+                <span class="d-none d-sm-inline-block">Add</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <ngx-datatable class="bootstrap core-bootstrap"
+                       [rows]="bankListFiltered"
+                       [rowHeight]="50"
+                       [headerHeight]="50"
+                       [footerHeight]="50"
+                       [limit]="selectedOption"
+                       [columnMode]="'force'"
+                       [scrollbarH]="true"
+                       [reorderable]="true">
+
+          <!-- Bank Name -->
+          <ngx-datatable-column name="Bank" [width]="200">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row?.bankName || '—' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Account Holder -->
+          <ngx-datatable-column name="Account Holder" [width]="180">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row?.accountHolderName || '—' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Account No -->
+          <ngx-datatable-column name="Account No" [width]="180">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row?.accountNo || '—' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Account Type -->
+          <ngx-datatable-column name="Account Type" [width]="150">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ getAccountTypeName(row?.accountType) }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Branch -->
+          <ngx-datatable-column name="Branch" [width]="150">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row?.branch || '—' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- IFSC -->
+          <ngx-datatable-column name="IFSC" [width]="150">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row?.ifsc || '—' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Routing -->
+          <ngx-datatable-column name="Routing" [width]="150">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row?.routing || '—' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Primary Contact -->
+          <ngx-datatable-column name="Primary Contact" [width]="160">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row?.primaryContact || '—' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Email -->
+          <ngx-datatable-column name="Email" [width]="220">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row?.email || '—' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Contact No -->
+          <ngx-datatable-column name="Contact No" [width]="150">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row?.contactNo || '—' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Active -->
+          <ngx-datatable-column name="Status" [width]="120">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span class="badge rounded-pill"
+                    [ngClass]="row?.isActive ? 'bg-success' : 'bg-secondary'">
+                {{ row?.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Actions -->
+          <ngx-datatable-column name="Actions"
+                                [width]="120"
+                                [sortable]="false"
+                                [canAutoResize]="false"
+                                [draggable]="false">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="d-flex align-items-center">
+                <i class="fas fa-pen text-primary mr-2" style="cursor:pointer"
+                   (click)="onEdit(row)"></i>
+                <i class="fas fa-trash text-danger" style="cursor:pointer"
+                   (click)="confirmDeleteBank(row)"></i>
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+        </ngx-datatable>
+
+      </div>
+    </section>
+  </div>
+</div>

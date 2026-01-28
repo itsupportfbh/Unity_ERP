@@ -1,0 +1,118 @@
+<!-- app/main/master/vehicle/vehicle.component.html -->
+<div class="row">
+  <!-- List -->
+  <div class="col-lg-6 col-md-3">
+    <div class="card card-transaction">
+      <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff; padding:12px 20px;">
+        <h4 class="card-title" style="display:flex; align-items:center; gap:10px; margin:0; font-size:1.25rem; font-weight:600; color:#2E5F73;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; background:#e5f0f3; border-radius:50%;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2E5F73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
+              <path d="M3 12h18M4 17h16M5 7h14" />
+            </svg>
+          </span>
+          Vehicle List
+        </h4>
+
+        <button (click)="createVehicle()"
+                style="background:#2E5F73; color:#fff; border:none; padding:6px 14px; font-size:.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+          <i data-feather="plus-circle" class="w-4 h-4"></i>
+          Create
+        </button>
+      </div>
+
+      <div class="card-body">
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let v of vehicleList">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center w-100">
+              <div style="display:flex; align-items:center; gap:8px; padding:4px 10px;">
+                <div class="avatar" style="background:#2E5F73; color:#fff; width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                  <i class="fas fa-truck"></i>
+                </div>
+                <div>
+                  <h6 style="margin:0; font-weight:600; font-size:1rem;">{{ v.vehicleNo }}</h6>
+                  <small class="text-muted">
+                    {{ v.vehicleType || '—' }} •
+                    {{ (v.capacity || 0) | number:'1.0-2' }} {{ v.capacityUom || '' }}
+                  </small>
+                </div>
+              </div>
+
+              <div class="mt-md-0 mt-1 d-flex justify-content-md-end">
+                <button type="button" class="btn btn-outline-primary p-0 d-flex align-items-center justify-content-center"
+                        style="width:28px; height:28px;" (click)="editVehicle(v)">
+                  <i data-feather="edit" style="width:14px; height:14px;"></i>
+                </button>
+                <button type="button" class="btn btn-outline-danger p-0 d-flex align-items-center justify-content-center ml-1"
+                        style="width:28px; height:28px;" (click)="confirmDelete(v)" [disabled]="isEditMode">
+                  <i data-feather="trash" style="width:14px; height:14px;"></i>
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="col-sm-12 col-xs-12 col-lg-6 col-md-6" *ngIf="isDisplay">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">{{ isEditMode ? 'Edit Vehicle' : 'Create Vehicle' }}</h4>
+      </div>
+      <div class="card-body">
+        <form #addForm="ngForm" class="form" (ngSubmit)="onSubmit(addForm)">
+          <div class="form-group">
+            <label>Vehicle No</label>
+            <input type="text" class="form-control" placeholder="e.g. TN09 AB 1234"
+                   name="vehicleNo" [(ngModel)]="vehicleNo" required maxlength="20" />
+          </div>
+
+          <div class="form-group">
+            <label>Vehicle Type</label>
+            <select class="form-control" name="vehicleType" [(ngModel)]="vehicleType">
+              <option value="" disabled selected>Select type</option>
+              <option>Truck</option>
+              <option>Van</option>
+              <option>TwoWheeler</option>
+              <option>Car</option>
+              <option>Tempo</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Capacity</label>
+            <div class="d-flex" style="gap:6px;">
+              <input type="number" class="form-control" placeholder="Capacity" name="capacity"
+                     [(ngModel)]="capacity" step="0.01" min="0" />
+              <select class="form-control" name="capacityUom" [(ngModel)]="capacityUom">
+                <option>KG</option>
+                <option>CBM</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row justify-content-start p-1">
+            <button type="submit" class="btn mr-1" [disabled]="!addForm.form.valid"
+                    style="background:#2E5F73; color:#fff; padding:6px 14px; font-size:.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+              <i data-feather="check-circle" class="w-4 h-4"></i>
+              Submit
+            </button>
+
+            <button type="button" class="btn btn-danger mr-1" (click)="cancel()"
+                    style="padding:6px 14px; font-size:.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+              <i data-feather="x-circle" class="w-4 h-4"></i>
+              Cancel
+            </button>
+
+            <button type="button" class="btn btn-secondary" (click)="reset()"
+                    style="padding:6px 14px; font-size:.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
+              <i data-feather="rotate-ccw" class="w-4 h-4"></i>
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

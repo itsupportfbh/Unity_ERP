@@ -1,0 +1,247 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <div class="row">
+          <!-- Title + page size -->
+          <div class="col-md-6 col-12">
+            <h4 class="card-text page-title">
+              Delivery Order List
+            </h4>
+
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center gap-1">
+                Show
+                <select class="form-control mx-25" (change)="onLimitChange($event)">
+                  <option [selected]="selectedOption===10" value="10">10</option>
+                  <option [selected]="selectedOption===25" value="25">25</option>
+                  <option [selected]="selectedOption===50" value="50">50</option>
+                  <option [selected]="selectedOption===100" value="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+
+            <div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+            </div>
+          </div>
+
+          <!-- Search + buttons -->
+          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+
+              <label class="d-flex align-items-center ml-1 ml-md-0">
+                Search:
+                <input
+                  [(ngModel)]="searchValue"
+                  name="searchValue"
+                  type="search"
+                  class="form-control ml-25"
+                  (keyup)="filterUpdate($event)"
+                  (search)="filterUpdate($event)"
+                  placeholder="DO number / route / driver / status"
+                />
+              </label>
+
+              <button
+                (click)="goToCreate()"
+                class="btn m-1 d-inline-flex align-items-center"
+                style="background-color:#2E5F73;color:white;gap:6px;"
+                [disabled]="isPeriodLocked"
+                [attr.title]="isPeriodLocked
+                  ? (currentPeriodName
+                      ? 'Period ' + currentPeriodName + ' is locked'
+                      : 'Accounting period is locked')
+                  : 'Create Delivery Order'">
+                <i data-feather="plus-circle" class="w-4 h-4"></i>
+                <span>Add</span>
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Main datatable -->
+        <ngx-datatable
+          class="bootstrap core-bootstrap"
+          [rows]="rows"
+          [rowHeight]="50"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="selectedOption"
+          [columnMode]="'force'"
+          [scrollbarH]="true"
+          [reorderable]="true">
+
+          <!-- View lines -->
+          <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false" [canAutoResize]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span (click)="openLinesModal(row)" title="View Details" class="eye">
+                <i class="fas fa-eye"></i>
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="DO No" prop="doNumber" [width]="160"></ngx-datatable-column>
+
+          <ngx-datatable-column name="SO No" [width]="160">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.salesOrderNo || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Driver" [width]="180">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ getDriverName(row.driverId) || ('#' + row.driverId) }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Driver Contact" [width]="170">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.driverMobileNo || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Received Person" [width]="200">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.receivedPersonName || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Received Contact" [width]="170">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.receivedPersonMobileNo || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Vehicle" [width]="160">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="po-wrap-cell" [title]="row.vehicleId">
+                {{ getVehicleNo(row.vehicleId) || '-' }}
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Location" [width]="200">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.routeName || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="170">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.deliveryDate | date:'dd-MM-yyyy' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Posted" [width]="120">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <span class="badge badge-pill" [ngClass]="row.isPosted ? 'badge-success' : 'badge-secondary'">
+                {{ row.isPosted ? 'Yes' : 'No' }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Action -->
+          <ngx-datatable-column name="Action" [width]="210">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="actions">
+
+                <!-- EDIT / DELETE disabled when Posted OR Period Locked -->
+                <ng-container *ngIf="row?.isPosted || isPeriodLocked; else editDeleteEnabled">
+                  <i class="fas fa-pen text-muted me-2"
+                     [attr.title]="isPeriodLocked ? 'Period locked' : 'Posted - Edit disabled'"
+                     style="pointer-events:none; opacity:.45;"></i>
+
+                  <i class="fas fa-trash text-muted me-2"
+                     [attr.title]="isPeriodLocked ? 'Period locked' : 'Posted - Delete disabled'"
+                     style="pointer-events:none; opacity:.45;"></i>
+                </ng-container>
+
+                <ng-template #editDeleteEnabled>
+                  <i class="fas fa-pen text-primary me-2"
+                     (click)="editDo(row.id)"
+                     title="Edit"
+                     style="cursor:pointer;"></i>
+
+                  <i class="fas fa-trash text-danger me-2"
+                     (click)="deleteDo(row.id)"
+                     title="Delete"
+                     style="cursor:pointer;"></i>
+                </ng-template>
+
+                <!-- PRINT always enabled (prints from modal data if opened, else loads lines and prints) -->
+                <i class="fas fa-print text-info"
+                   (click)="printFromRow(row)"
+                   title="Print"
+                   style="cursor:pointer;"></i>
+
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+        </ngx-datatable>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- DO Lines Modal -->
+<div *ngIf="showLinesModal" (click)="closeLinesModal()" class="overlay">
+  <div (click)="$event.stopPropagation()" class="modal-card">
+    <div class="modal-head">
+      <h3>DO Lines — {{ activeDo?.doNumber }}</h3>
+
+      <div class="modal-head-actions">
+        <!-- <button type="button" class="btn-print" (click)="printLines()">
+          <i class="fas fa-print"></i> Print
+        </button> -->
+
+        <button (click)="closeLinesModal()" aria-label="Close" class="close-btn">×</button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <div class="table-wrap">
+        <table class="lines-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>UOM</th>
+              <th class="ta-right">Qty</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of modalLines; let i = index" [class.zebra]="i % 2 === 0">
+              <td>{{ l.itemName || getItemName(l.itemId) || l.itemId }}</td>
+              <td>{{ l.uom || getUomName(l.uomId) || '-' }}</td>
+              <td class="ta-right">{{ l.qty | number:'1.0-3' }}</td>
+              <td>{{ l.notes || '-' }}</td>
+            </tr>
+            <tr *ngIf="!modalLines?.length">
+              <td colspan="4" class="empty">No lines</td>
+            </tr>
+          </tbody>
+          <tfoot *ngIf="modalLines?.length">
+            <tr>
+              <td colspan="2" class="fw-700">Total Qty</td>
+              <td class="ta-right fw-700">{{ modalTotalQty | number:'1.0-3' }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button (click)="closeLinesModal()" class="btn-primary">Close</button>
+    </div>
+  </div>
+</div>
+
+

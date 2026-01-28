@@ -1,0 +1,183 @@
+/* ===== Aging wrapper ===== */
+.ap-aging-wrapper {
+  padding: 0.75rem 0.75rem 1rem;
+}
+
+/* ===== SUMMARY CARDS (small version) ===== */
+
+/* ================== SMALL SUMMARY CARDS (same style as AP screen) ================== */
+
+.ap-aging-summary {
+  margin-top: 0.75rem;
+}
+
+/* base card */
+.ap-aging-summary .ap-summary-card {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;        // smaller height
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  background: #ffffff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ap-aging-summary .ap-summary-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+/* icon circle */
+.ap-aging-summary .ap-summary-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+  background: rgba(46, 95, 115, 0.06);
+}
+
+.ap-aging-summary .ap-summary-icon i {
+  font-size: 18px;
+  color: #2e5f73;
+}
+
+/* text */
+.ap-aging-summary .ap-summary-text .label {
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 0.1rem;
+}
+
+.ap-aging-summary .ap-summary-text .value {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* ==== specific colors to match first row cards ==== */
+
+/* Total Outstanding -> light blue */
+.ap-aging-summary .ap-summary-outstanding {
+  background: #e9f1ff;
+  border-color: #d4e2ff;
+}
+.ap-aging-summary .ap-summary-outstanding .ap-summary-icon {
+  background: #d4e2ff;
+}
+.ap-aging-summary .ap-summary-outstanding .value {
+  color: #1d4ed8;
+}
+
+/* 0–30 days -> mint green */
+.ap-aging-summary .ap-summary-0-30 {
+  background: #ecfff7;
+  border-color: #bbf7d0;
+}
+.ap-aging-summary .ap-summary-0-30 .ap-summary-icon {
+  background: #bbf7d0;
+}
+.ap-aging-summary .ap-summary-0-30 .value {
+  color: #15803d;
+}
+
+/* 31–60 days -> pale yellow */
+.ap-aging-summary .ap-summary-31-60 {
+  background: #fff7d1;
+  border-color: #fde68a;
+}
+.ap-aging-summary .ap-summary-31-60 .ap-summary-icon {
+  background: #fde68a;
+}
+.ap-aging-summary .ap-summary-31-60 .value {
+  color: #b45309;
+}
+
+/* 61+ days -> soft red/pink */
+.ap-aging-summary .ap-summary-61plus {
+  background: #ffe4e6;
+  border-color: #fecaca;
+}
+.ap-aging-summary .ap-summary-61plus .ap-summary-icon {
+  background: #fecaca;
+}
+.ap-aging-summary .ap-summary-61plus .value {
+  color: #b91c1c;
+}
+
+/* keep your existing table / detail styles below this */
+
+
+/* ===== TABLE & DETAIL (keep as you had, shortened) ===== */
+
+.ap-table thead th {
+  background-color: #2e5f73;
+  color: #ffffff;
+  font-size: 0.8rem;
+  border-bottom: 0;
+}
+
+.ap-table tbody td {
+  font-size: 0.82rem;
+  vertical-align: middle;
+}
+
+.ap-aging-detail .ap-table tbody td {
+  font-size: 0.8rem;
+}
+
+.ap-table-wrap {
+  margin-top: 0.5rem;
+}
+
+/* responsive tweaks */
+@media (max-width: 767.98px) {
+  .ap-aging-summary .ap-summary-card {
+    margin-bottom: 0.4rem;
+  }
+}
+/* Header wrapper */
+.aging-header {
+  padding-right: 0.25rem;
+}
+
+/* Export buttons container (same as GST / AR) */
+.aging-header .gst-export {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aging-header .gst-export .btn {
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 1.1rem;
+  border-color: #e5e7eb;
+  background-color: #ffffff;
+  color: #6b7280;
+  box-shadow: none;
+  line-height: 1.2;
+}
+
+.aging-header .gst-export .btn i {
+  font-size: 0.9rem;
+  margin-right: 0.25rem;
+}
+
+.aging-header .gst-export .btn:hover:not(:disabled),
+.aging-header .gst-export .btn:focus-visible:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+.aging-header .gst-export .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

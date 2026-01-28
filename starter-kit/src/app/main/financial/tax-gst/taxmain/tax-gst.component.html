@@ -1,0 +1,54 @@
+<div class="content-wrapper container-xxl p-0">
+  <div class="content-body">
+    <section id="basic-tabs-components">
+      <div class="row match-height">
+        <div class="col-xl-12 col-lg-12">
+
+          <div class="card">
+            <div class="card-header">
+              <h4 class="card-title mb-0">Tax & Gst</h4>
+            </div>
+
+            <div class="card-body">
+              <!-- 🔹 TAB STRIP WRAPPER -->
+          <div class="tax-tab-strip">
+  <ul
+    ngbNav
+    #nav="ngbNav"
+    class="nav ap-tabs tax-tabs"
+  >
+    <li ngbNavItem>
+      <a ngbNavLink>Tax Codes</a>
+      <ng-template ngbNavContent>
+        <app-finance-taxcodes></app-finance-taxcodes>
+      </ng-template>
+    </li>
+
+    <li ngbNavItem>
+      <a ngbNavLink>GST F5 Returns</a>
+      <ng-template ngbNavContent>
+        <app-finance-gstreturns></app-finance-gstreturns>
+      </ng-template>
+    </li>
+
+    <li ngbNavItem>
+      <a ngbNavLink>GST Details</a>
+      <ng-template ngbNavContent>
+        <app-finance-gstdetails></app-finance-gstdetails>
+      </ng-template>
+    </li>
+  </ul>
+
+  <!-- if you use ngbNavOutlet, keep it here -->
+  <!-- <div [ngbNavOutlet]="nav" class="mt-1"></div> -->
+</div>
+
+              <div [ngbNavOutlet]="nav" class="mt-2"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

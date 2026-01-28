@@ -1,0 +1,160 @@
+<div class="pp-card shadow-sm">
+  <!-- Header -->
+  <div class="pp-header d-flex justify-content-between align-items-center">
+    <h5 class="m-0">Picking &amp; Packing</h5>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary" (click)="cancelForm()">Cancel</button>
+      <button class="btn btn-primary" (click)="DownloadPickingList()">Download Pick List</button>
+    </div>
+  </div>
+
+  <div class="pp-body">
+    <!-- Top row (Sales Order + Codes) -->
+    <div class="row g-3 mb-2">
+      <div class="col-lg-4 col-md-6">
+        <label class="form-label">Sales Order</label>
+        <ng-select [items]="soList" bindLabel="number" bindValue="id" [(ngModel)]="selectedSoId" name="soId"
+          [searchable]="true" [clearable]="true" placeholder="Select SO…" (change)="onSoChanged(selectedSoId)"
+          [disabled]="isEdit" >
+          <ng-template ng-label-tmp let-item="item" >
+            {{ item.salesOrderNo }} — {{ item.customerName }}
+          </ng-template>
+          <ng-template ng-option-tmp let-item="item">
+            {{ item.salesOrderNo }} — {{ item.customerName }}
+          </ng-template>
+        </ng-select>
+      </div>
+
+      <div class="col-lg-4 col-md-6">
+        <label class="form-label">SO Date</label>
+        <input class="form-control" [value]="soHdr?.soDate ? (soHdr?.soDate | date:'dd-MM-yyyy') : ''" readonly />
+      </div>
+
+       <div class="col-lg-4 col-md-6">
+        <label class="form-label">Delivery Date</label>
+        <input class="form-control" [value]="soHdr?.deliveryDate ? (soHdr?.deliveryDate | date:'dd-MM-yyyy') : ''" readonly />
+      </div>
+
+      <!-- BARCODE -->
+      <div class="col-lg-4 col-md-6">
+        <label class="form-label">Bar Code</label>
+
+        <div class="code-box">
+          <img *ngIf="barCodeSrc; else noBar" [src]="barCodeSrc" alt="Bar Code" class="barcode-img" />
+
+          <ng-template #noBar>
+            <div class="placeholder">No barcode</div>
+          </ng-template>
+
+          <!-- text BELOW the image -->
+          <div class="code-caption" *ngIf="soHdr?.barCode as code">
+            <div class="mono">{{ code }}</div>
+
+            <div class="btn-row">
+              <button type="button" class="btn btn-link btn-sm p-0" (click)="copy(code)">Copy</button>
+              <span class="mx-1">·</span>
+              <button type="button" class="btn btn-link btn-sm p-0"
+                (click)="downloadImage(barCodeSrc, code + '-BAR.png')">
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR -->
+      <div class="col-lg-4 col-md-6">
+        <label class="form-label">QR Code</label>
+
+        <div class="code-box">
+          <img *ngIf="qrCodeSrc; else noQr" [src]="qrCodeSrc" alt="QR Code" class="qrcode-img" />
+
+          <ng-template #noQr>
+            <div class="placeholder">No QR</div>
+          </ng-template>
+
+          <!-- show the SAME short code below QR -->
+          <div class="code-caption" *ngIf="soHdr?.barCode as code">
+            <div class="mono">{{ code }}</div>
+
+            <div class="btn-row">
+              <button type="button" class="btn btn-link btn-sm p-0" (click)="copy(code)">Copy</button>
+              <span class="mx-1">·</span>
+              <button type="button" class="btn btn-link btn-sm p-0"
+                (click)="downloadImage(qrCodeSrc, code + '-QR.png')">
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- Grid -->
+      <div class="table-responsive mt-4">
+        <table class="table align-middle pp-table">
+          <thead class="text-white">
+            <tr>
+              <th>Item</th>
+              <th style="width:170px">Warehouse</th>
+              <th style="width:170px">Supplier</th>
+              <th style="width:170px">Bin</th>
+              <th class="text-end" style="width:140px">Qty</th>
+              <th style="width:220px">Pack to Carton</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let r of rows; trackBy: trackByLine">
+              <td class="pp-item">
+                <div class="fw-semibold">{{ r.itemName }}</div>
+                <div class="text-muted small">
+                  {{ r.sku }}&nbsp;•&nbsp;{{ r.uom }}
+                </div>
+              </td>
+
+              <td>{{ r.warehouseName }}</td>
+              <td>{{ r.supplierName }}</td>
+              <td>{{ r.pickBin || r.bin }}</td>
+
+              <td class="text-end">
+                <input type="number" class="form-control text-end" [(ngModel)]="r.quantity" [min]="0"
+                  (ngModelChange)="recalcTotals()" disabled>
+              </td>
+
+              <td>
+                <ng-select [items]="cartonOptions" bindLabel="name" bindValue="id" [(ngModel)]="r.cartonId"
+                  placeholder="Select carton…">
+                </ng-select>
+              </td>
+            </tr>
+
+            <tr *ngIf="!selectedSoId">
+              <td colspan="6" class="text-center text-muted">Choose a Sales Order to view items</td>
+            </tr>
+            <tr *ngIf="selectedSoId && !rows?.length">
+              <td colspan="6" class="text-center text-muted">No pickable lines for this Sales Order</td>
+            </tr>
+          </tbody>
+
+          <tfoot *ngIf="rows?.length">
+            <tr class="table-light">
+              <th colspan="4" class="text-end">Total Qty</th>
+              <th class="text-end">{{ totalDeliverQty | number:'1.0-2' }}</th>
+              <th></th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Bottom right CTA -->
+      <div class="d-flex justify-content-end mt-3 ms-auto">
+        <button class="btn btn-primary" (click)="saveDo()" [disabled]="!selectedSoId || !hasAnyDeliverQty()">
+          <i class="fa fa-truck me-2" aria-hidden="true"></i>
+          Generate DO
+        </button>
+      </div>
+    </div>
+  </div>

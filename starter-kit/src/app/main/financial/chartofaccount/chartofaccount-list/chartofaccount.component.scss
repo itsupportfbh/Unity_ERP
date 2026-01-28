@@ -1,0 +1,159 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import '@core/scss/angular/libs/sweet-alerts.component.scss';
+
+/* -------------------------------
+   Theme tokens (edit as needed)
+--------------------------------*/
+$coa-header-bg: #2E5F73;   // Header background color
+$coa-header-fg: #ffffff;   // Header text/icon color
+
+/* ================================================
+   Chart of Accounts Table Styling (ngx-datatable)
+   ================================================ */
+.coa-table {
+  /* CSS custom props used inside rows/children */
+  --toggle-width: 48px;  /* chevron column */
+  --row-h: 50px;         /* row height */
+  --indent-width: 12px;  /* child name indent */
+
+  /* --------------------------------
+     HEADER (background only)
+     We use ::ng-deep to pierce view encapsulation.
+  ----------------------------------*/
+  ::ng-deep .datatable-header {
+    background-color: $coa-header-bg !important;  /* full header bar */
+    border-bottom: none !important;               /* remove default line */
+  }
+
+  ::ng-deep .datatable-header .datatable-header-cell {
+    background-color: transparent !important;     /* inherit bar color */
+    color: $coa-header-fg !important;
+    font-weight: 600;
+    border-bottom: none !important;
+    /* optional: subtle vertical separators between header cells */
+    box-shadow: inset -1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  /* Keep sort icons visible on dark header */
+  ::ng-deep .datatable-header .sort-btn,
+  ::ng-deep .datatable-header .datatable-icon-up,
+  ::ng-deep .datatable-header .datatable-icon-down {
+    color: $coa-header-fg !important;
+    opacity: 0.85;
+  }
+
+  /* Resize handles match header fg so they’re visible */
+  ::ng-deep .datatable-header .resize-handle {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+  }
+
+  /* --------------------------------
+     Row detail area (padding reset)
+  ----------------------------------*/
+  ::ng-deep .datatable-row-detail {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* --------------------------------
+     Body rows
+  ----------------------------------*/
+  .datatable-body-row .datatable-body-cell {
+    vertical-align: middle;
+  }
+
+  .datatable-body-row {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  /* Amount fields - centered numerals */
+  .amount {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    padding-right: 86px; /* your layout offset */
+  }
+
+  /* ================================================
+     Child Rows (scoped under .coa-table)
+     ================================================ */
+  .child-table {
+    width: 100%;
+    background: #fafafa;
+  }
+
+  .child-row {
+    display: grid;
+    grid-template-columns:
+      var(--toggle-width) /* spacer for chevron */
+      1fr                 /* Head Code */
+      2fr                 /* Head Name */
+      1fr                 /* Opening Balance */
+      1fr                 /* Balance */
+      1fr;                /* Action */
+    align-items: center;
+    height: var(--row-h);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 0 8px;
+  }
+
+  .child-row .cell.name {
+    padding-left: var(--indent-width);
+    display: flex;
+    align-items: center;
+  }
+
+  .child-row .cell.name .icon-child {
+    margin-right: 6px;
+    color: #6c757d;
+  }
+
+  .child-row .cell.money {
+    display: flex;
+    justify-content: flex-end;
+    text-align: right;
+    width: 100%;
+  }
+
+  .child-row .cell.actions {
+    display: flex;
+    gap: 10px;
+    padding-left: 1px;
+  }
+
+  /* “No child accounts” placeholder */
+  .no-child {
+    padding-left: calc(var(--toggle-width) + var(--indent-width));
+    font-style: italic;
+    color: #999;
+    font-size: 0.9rem;
+  }
+
+  /* Chevron toggle button */
+  .toggle-btn {
+    color: #4b4b57;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--toggle-width);
+    height: var(--row-h);
+    cursor: pointer;
+  }
+
+  /* --------------------------------
+     Responsive tweaks
+  ----------------------------------*/
+  @media (max-width: 768px) {
+    .child-row { padding: 0 6px; }
+  }
+}
+
+/* --------------------------------
+   SweetAlert spacing (global)
+----------------------------------*/
+.swal2-actions { gap: .5rem !important; }
+.swal2-actions .swal2-styled { margin: 0 .5rem !important; }

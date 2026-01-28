@@ -1,0 +1,495 @@
+<div class="space-y-5">
+  <div class="bg-white rounded-2xl shadow p-3 border border-gray-100">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-semibold text-gray-800">Supplier Profile</h2>
+      <div class="flex items-center gap-3 justify-end">
+        <button type="button" class="btn" style="background-color:#0e3a4c; color: white;" (click)="save()">Save</button>
+        <button type="button" class="btn btn-outline-success" (click)="new()">Reset</button>
+        <button type="button" class="btn btn-outline-primary" (click)="cancel()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Row 1 : Basic -->
+    <div [ngClass]="gridColsClass(4)">
+      <div>
+        <label class="text-xs font-medium text-gray-600">Supplier Name *</label>
+        <input
+          class="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+          [(ngModel)]="supplier.name"
+          placeholder="e.g., FreshFoods Pte Ltd"
+        />
+      </div>
+
+      <!-- Country -->
+      <div class="relative">
+        <label class="text-xs font-medium text-gray-600">Country</label>
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="countrySearch"
+            (input)="filterCountry()"
+            (focus)="countryDropdownOpen = true"
+            placeholder="Search Country..."
+            class="w-full rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring"
+            style="border-color:#0e3a4c"
+          />
+          <button
+            type="button"
+            (click)="countryDropdownOpen = !countryDropdownOpen"
+            class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-1 text-xs"
+          >▼</button>
+
+          <ul
+            *ngIf="countryDropdownOpen && filteredCountry.length"
+            class="absolute left-0 top-full mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto z-50"
+          >
+            <li
+              *ngFor="let t of filteredCountry"
+              (click)="selectCountry(t)"
+              class="px-2 py-1 hover:bg-blue-100 cursor-pointer text-sm"
+            >
+              {{ t.countryName }}
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="relative">
+        <label class="text-xs font-medium text-gray-600">Status</label>
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="statusSearch"
+            (input)="filterStatus()"
+            (focus)="statusDropdownOpen = true"
+            placeholder="Search Status..."
+            class="w-full rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring"
+            style="border-color:#0e3a4c"
+          />
+          <button
+            type="button"
+            (click)="statusDropdownOpen = !statusDropdownOpen"
+            class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-1 text-xs"
+          >▼</button>
+
+          <ul
+            *ngIf="statusDropdownOpen && filteredStatus.length > 0"
+            class="absolute z-10 w-full mt-1 max-h-40 overflow-auto rounded-md border bg-white shadow"
+          >
+            <li
+              *ngFor="let s of filteredStatus"
+              (click)="selectStatus(s)"
+              class="px-2 py-1 cursor-pointer hover:bg-blue-100"
+            >
+              {{ s.name }}
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Lead Time -->
+      <div>
+        <label class="text-xs font-medium text-gray-600">Lead Time (days)</label>
+        <input
+          type="number"
+          [(ngModel)]="supplier.leadTime"
+          placeholder="7"
+          min="0"
+          class="w-full rounded-md border border-gray-300 px-2 py-1 text-sm
+                 focus:outline-none focus:ring-2 focus:ring-emerald-400
+                 focus:border-emerald-500"
+        />
+      </div>
+    </div>
+
+    <!-- Row 2 : Terms / Currency / Tax / Incoterms -->
+    <div [ngClass]="gridColsClass(4)">
+      <!-- Payment Terms -->
+      <div class="relative">
+        <label class="text-xs font-medium text-gray-600">Payment Terms</label>
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="termsSearch"
+            (input)="filterTerms()"
+            (focus)="termsDropdownOpen = true"
+            placeholder="Search Terms..."
+            class="w-full rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring"
+            style="border-color:#0e3a4c"
+          />
+          <button
+            type="button"
+            (click)="termsDropdownOpen = !termsDropdownOpen"
+            class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-1 text-xs"
+          >▼</button>
+
+          <ul
+            *ngIf="termsDropdownOpen && filteredTerms.length"
+            class="absolute left-0 top-full mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto z-50"
+          >
+            <li
+              *ngFor="let t of filteredTerms"
+              (click)="selectTerm(t)"
+              class="px-2 py-1 hover:bg-blue-100 cursor-pointer text-sm"
+            >
+              {{ t.paymentTermsName }}
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Currency -->
+      <div class="relative">
+        <label class="text-xs font-medium text-gray-600">Currency</label>
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="currencySearch"
+            (input)="filterCurrencies()"
+            (focus)="currencyDropdownOpen = true"
+            placeholder="Search Currency..."
+            class="w-full rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring"
+            style="border-color:#0e3a4c"
+          />
+          <button
+            type="button"
+            (click)="currencyDropdownOpen = !currencyDropdownOpen"
+            class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-1 text-xs"
+          >▼</button>
+        </div>
+
+        <ul
+          *ngIf="currencyDropdownOpen && filteredCurrencies.length"
+          class="absolute top-full left-0 right-0 bg-white border rounded-md mt-1 shadow z-10 max-h-40 overflow-y-auto"
+        >
+          <li
+            *ngFor="let c of filteredCurrencies"
+            (click)="selectCurrency(c)"
+            class="px-2 py-1 hover:bg-blue-100 cursor-pointer text-sm"
+          >
+            {{ c.currencyName }}
+          </li>
+        </ul>
+      </div>
+
+      <!-- Tax Reg -->
+      <div>
+        <label class="text-xs font-medium text-gray-600">Tax Reg No</label>
+        <input
+          class="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+          [(ngModel)]="supplier.taxReg"
+          placeholder="GST/UEN"
+        />
+      </div>
+
+      <!-- Incoterms -->
+      <div class="relative">
+        <label class="text-xs font-medium text-gray-600">Incoterms</label>
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="incotermSearch"
+            (input)="filterIncoterms()"
+            (focus)="incotermDropdownOpen = true"
+            placeholder="Search Incoterm..."
+            class="w-full rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring"
+            style="border-color:#0e3a4c"
+          />
+          <button
+            type="button"
+            (click)="incotermDropdownOpen = !incotermDropdownOpen"
+            class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-1 text-xs"
+          >▼</button>
+        </div>
+
+        <ul
+          *ngIf="incotermDropdownOpen && filteredIncoterms.length"
+          class="absolute top-full left-0 right-0 bg-white border rounded-md mt-1 shadow z-10 max-h-40 overflow-y-auto"
+        >
+          <li
+            *ngFor="let i of filteredIncoterms"
+            (click)="selectIncoterm(i)"
+            class="px-2 py-1 hover:bg-blue-100 cursor-pointer text-sm"
+          >
+            {{ i.incotermsName }}
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Row 3 : Budget Line + Contact + Email + Phone -->
+    <div [ngClass]="gridColsClass(4)">
+      <!-- Budget Line / Account -->
+   <div class="relative">
+    <label class="text-xs font-medium text-gray-600">Ledger Name / Account</label>
+    <div class="relative">
+      <input
+        type="text"
+        [(ngModel)]="BudgetSearch"
+        (input)="filterBudget()"
+        (focus)="budgetDropdownOpen = true"
+        placeholder="Search Ledger..."
+        class="w-full rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring"
+        style="border-color:#0e3a4c"
+      />
+      <button
+        type="button"
+        (click)="budgetDropdownOpen = !budgetDropdownOpen"
+        class="absolute inset-y-0 right-2 flex items-center text-gray-500 px-1 text-xs"
+      >▼</button>
+    </div>
+
+    <ul
+      *ngIf="budgetDropdownOpen && BudgetFiltered.length"
+      class="absolute top-full left-0 right-0 bg-white border rounded-md mt-1 shadow z-10 max-h-40 overflow-y-auto"
+    >
+      <li
+        *ngFor="let b of BudgetFiltered"
+        (click)="selectBudget(b)"
+        class="px-2 py-1 hover:bg-blue-100 cursor-pointer text-sm"
+      >
+        {{ b.headCodeName || (b.headCode + ' - ' + b.headName) }}
+      </li>
+    </ul>
+  </div>
+
+      <!-- Contact Name -->
+      <div>
+        <label class="text-xs font-medium text-gray-600">Contact Name</label>
+        <input
+          class="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+          [(ngModel)]="supplier.contact"
+        />
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label class="text-xs font-medium text-gray-600">Email</label>
+        <input
+          type="email"
+          class="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+          [(ngModel)]="supplier.email"
+        />
+      </div>
+
+      <!-- Phone -->
+      <div>
+        <label class="text-xs font-medium text-gray-600">Phone</label>
+        <input
+          class="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+          [(ngModel)]="supplier.phone"
+        />
+      </div>
+    </div>
+
+    <!-- Row 4 : Preferred Items + Address -->
+    <div [ngClass]="gridColsClass(2)">
+      <!-- Preferred Items -->
+      <div>
+        <label class="text-xs font-medium text-gray-600">Preferred Items</label>
+        <div class="flex flex-wrap items-center gap-2 rounded-md border border-gray-300 px-2 py-1 relative">
+          <span
+            *ngFor="let t of preferredItems; let i = index; trackBy: trackByIndex"
+            class="px-2 py-0.5 rounded-full text-xs bg-gray-100 border flex items-center"
+          >
+            {{ t.itemName }}
+            <button
+              class="ml-1 text-gray-500 hover:text-red-600"
+              (click)="removePreferred(i)"
+              title="Remove"
+              type="button"
+            >×</button>
+          </span>
+
+          <input
+            class="flex-1 min-w-[140px] outline-none text-sm"
+            [(ngModel)]="preferredText"
+            (input)="filterItems()"
+            (keydown.enter)="selectFirstFilteredItem($event)"
+            placeholder="Type to search items..."
+          />
+
+          <ul
+            *ngIf="preferredText && filteredItems.length"
+            class="absolute left-0 top-full mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto z-50"
+          >
+            <li
+              *ngFor="let item of filteredItems"
+              (click)="selectPreferred(item)"
+              class="px-2 py-1 hover:bg-gray-100 cursor-pointer text-sm"
+            >
+              {{ item.itemName }}
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Address -->
+      <div>
+        <label class="text-xs font-medium text-gray-600">Address</label>
+        <textarea
+          class="w-full min-h-[90px] rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+          [(ngModel)]="supplier.address"
+          placeholder="Billing + Shipping address"
+        ></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bank & Compliance -->
+  <div class="bg-white rounded-2xl shadow p-3 border border-gray-100 ui-compact">
+    <h2 class="text-lg font-semibold text-gray-800 mb-3">Bank &amp; Compliance</h2>
+
+    <div [ngClass]="gridColsClass(4)">
+      <div>
+        <label class="text-xs font-medium text-gray-600">Bank Name</label>
+        <input
+          class="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+          [(ngModel)]="supplier.bank.name"
+        />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-600">Account No</label>
+        <input
+          class="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+          [(ngModel)]="supplier.bank.acc"
+        />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-600">SWIFT/IFSC</label>
+        <input
+          class="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+          [(ngModel)]="supplier.bank.swift"
+        />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-600">Branch</label>
+        <input
+          class="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+          [(ngModel)]="supplier.bank.branch"
+        />
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <label class="text-xs font-medium text-gray-600">Compliance Documents</label>
+
+      <div class="space-y-3 mt-2">
+        <div
+          *ngFor="let d of docs; let i = index; trackBy: trackByIndex"
+          class="grid [grid-template-columns:minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.8fr)_auto] gap-3 items-end"
+        >
+          <!-- Document -->
+          <div class="min-w-0">
+            <label class="text-xs font-medium text-gray-600">Document</label>
+            <input
+              class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+              [(ngModel)]="d.name"
+            />
+          </div>
+
+          <!-- Number -->
+          <div class="min-w-0">
+            <label class="text-xs font-medium text-gray-600">Number</label>
+            <input
+              class="w-full rounded-md border border-gray-300 px-2 py-2 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+              [(ngModel)]="d.number"
+            />
+          </div>
+
+          <!-- Expiry -->
+          <div class="min-w-0">
+            <label class="text-xs font-medium text-gray-600">Expiry</label>
+            <input
+              type="date"
+              class="w-full min-w-[10.5rem] rounded-md border border-gray-300 px-2 pr-10 py-2 text-sm focus:outline-none focus:ring focus:ring-emerald-400"
+              style="height:40px"
+              [(ngModel)]="d.expiry"
+            />
+          </div>
+
+          <!-- Upload -->
+          <div class="min-w-0">
+            <label class="text-xs font-medium text-gray-600">Upload</label>
+
+            <div class="flex items-center gap-3">
+              <!-- Hidden native input -->
+              <input
+                type="file"
+                [id]="'file_' + i"
+                (change)="onFileSelected($event, i)"
+                class="sr-only"
+                multiple
+              />
+
+              <!-- Button -->
+              <label
+                [attr.for]="'file_' + i"
+                class="inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium text-white cursor-pointer"
+                style="background-color:#0e3a4c; min-width:120px;"
+              >
+                Choose file
+              </label>
+
+              <!-- Filenames -->
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 max-w-[360px]">
+                <ng-container *ngIf="d.files?.length; else noneChosen">
+                  <ng-container *ngFor="let f of d.files; let k = index">
+                    <a
+                      *ngIf="f['dataUrl']"
+                      [href]="f['dataUrl']"
+                      [attr.download]="f.name"
+                      class="underline text-sm text-gray-600 truncate max-w-[150px]"
+                      [title]="f.name"
+                    >
+                      {{ f.name }}
+                    </a>
+                    <span *ngIf="!f['dataUrl']" class="text-sm text-gray-600 truncate max-w-[150px]">
+                      {{ f.name }}
+                    </span>
+
+                    <button
+                      type="button"
+                      class="text-xs text-gray-500 hover:text-red-600"
+                      (click)="removeFile(i, k)"
+                    >
+                      ×
+                    </button>
+                  </ng-container>
+                </ng-container>
+
+                <ng-template #noneChosen>
+                  <span class="text-sm text-gray-400">No file chosen</span>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Remove row -->
+          <div class="flex items-end justify-end">
+            <button
+              class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 border border-transparent"
+              (click)="removeDoc(i)"
+              type="button"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <button
+          class="px-3 py-1 rounded-md text-sm font-medium text-white mt-2"
+          style="background-color:#0e3a4c;"
+          (mouseenter)="hover=true" (mouseleave)="hover=false"
+          [style.background-color]="hover ? '#0b2e3d' : '#0e3a4c'"
+          (click)="addDoc()"
+          type="button"
+        >
+          + Add document
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

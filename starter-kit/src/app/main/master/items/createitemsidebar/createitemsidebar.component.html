@@ -1,0 +1,143 @@
+<div class="slideout-content">
+  <!-- Modal to add new user starts-->
+  <div class="modalsd modal-slide-in sdfade new-user-modal" id="modals-slide-in">
+    <div class="modal-dialog">
+      <form class="add-new-user modal-content pt-0" (ngSubmit)="(newItemForm.form.valid)" #newItemForm="ngForm">
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+          (click)="toggleSidebar('app-createitemsidebar')"
+        >
+          ×
+        </button>
+        <div class="modal-header mb-1">
+          <h5 class="modal-title" id="exampleModalLabel">New Item</h5>
+        </div>
+       <div class="modal-body flex-grow-1">
+  <!-- Item Code -->
+  <div class="form-group">
+    <label class="form-label" for="item-code">Item Code</label>
+    <input
+      type="text"
+      class="form-control"
+      id="item-code"
+      name="itemCode"
+      placeholder="Enter Item Code"
+      [(ngModel)]="itemCode"
+      [class.error]="newItemForm.submitted && itemCodeRef.invalid"
+      #itemCodeRef="ngModel"
+      required
+    />
+    <span *ngIf="newItemForm.submitted && itemCodeRef.invalid" class="invalid-form">
+      <small class="text-danger" *ngIf="itemCodeRef.errors?.required">This field is required!</small>
+    </span>
+  </div>
+
+  <!-- Item Name -->
+  <div class="form-group">
+    <label class="form-label" for="item-name">Item Name</label>
+    <input
+      type="text"
+      class="form-control"
+      id="item-name"
+      name="itemName"
+      placeholder="Enter Item Name"
+      [(ngModel)]="itemName"
+      [class.error]="newItemForm.submitted && itemNameRef.invalid"
+      #itemNameRef="ngModel"
+      required
+    />
+    <span *ngIf="newItemForm.submitted && itemNameRef.invalid" class="invalid-form">
+      <small class="text-danger" *ngIf="itemNameRef.errors?.required">This field is required!</small>
+    </span>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="category">Category</label>
+    <select
+      id="category"
+      class="form-control"
+      name="category"
+      [(ngModel)]="category"
+      [class.error]="newItemForm.submitted && categoryRef.invalid"
+      #categoryRef="ngModel"
+      required
+    >
+      <option value="" disabled selected>Select Category</option>
+      <option *ngFor="let category of CategoryList" [value]="category.id">{{ category.catagoryName }}</option>
+    </select>
+    <span *ngIf="newItemForm.submitted && categoryRef.invalid" class="invalid-form">
+      <small class="text-danger" *ngIf="categoryRef.errors?.required">This field is required!</small>
+    </span>
+  </div>
+  <!-- Unit of Measure (UOM) -->
+  <div class="form-group">
+    <label class="form-label" for="uom">Unit of Measure (UOM)</label>
+    <select
+      id="uom"
+      class="form-control"
+      name="uom"
+      [(ngModel)]="uom"
+      [class.error]="newItemForm.submitted && uomRef.invalid"
+      #uomRef="ngModel"
+      required
+    >
+      <option value="" disabled selected>Select UOM</option>
+      <option *ngFor="let unit of uomList" [value]="unit.id">{{ unit.name }}</option>
+    </select>
+    <span *ngIf="newItemForm.submitted && uomRef.invalid" class="invalid-form">
+      <small class="text-danger" *ngIf="uomRef.errors?.required">This field is required!</small>
+    </span>
+  </div>
+
+  <!-- Budget Line -->
+ <div class="form-group mb-2">
+  <label class="form-label" for="budgetLine">Ledger Name</label>
+
+  <ng-select
+  id="budgetLine"
+  class="w-100"
+  [items]="parentHeadList"
+  bindLabel="label"
+  bindValue="value"
+  [(ngModel)]="budgetLine"
+  name="budgetLine"
+  #budgetLineRef="ngModel"
+  required
+  [searchable]="true"
+  [clearable]="false"
+  placeholder="Search / choose Ledger Name..."
+  [class.is-invalid]="newItemForm.submitted && budgetLineRef.invalid">
+
+  <!-- dropdown option -->
+  <ng-template ng-option-tmp let-item="item">
+    <span class="budgetline-option" [title]="item.label">
+      {{ item.label }}
+    </span>
+  </ng-template>
+
+  <!-- selected value (when chosen) -->
+  <ng-template ng-label-tmp let-item="item">
+    <span class="budgetline-selected" [title]="item.label">
+      {{ item.label }}
+    </span>
+  </ng-template>
+
+</ng-select>
+
+  <span *ngIf="newItemForm.submitted && budgetLineRef.invalid" class="invalid-form">
+    <small class="text-danger">This field is required!</small>
+  </span>
+</div>
+
+  <!-- Submit & Cancel Buttons -->
+  <button type="submit" class="btn mr-1" style="background-color: #2E5F73; color: white; " (click)="onSubmit(newItemForm)" rippleEffect>Submit</button>
+  <button type="reset" class="btn btn-outline-danger" (click)="toggleSidebar('app-createitemsidebar')" rippleEffect>Cancel</button>
+</div>
+
+      </form>
+    </div>
+  </div>
+  <!-- Modal to add new user Ends-->
+</div>

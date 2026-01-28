@@ -1,0 +1,117 @@
+/* ===== Advance Summary Card ===== */
+.ap-advance-summary-card {
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  padding: 14px 18px;
+  min-height: 210px;
+  font-size: 13px;
+}
+
+.ap-advance-summary-card .text-brand {
+  color: #2E5F73;
+  font-weight: 700;
+}
+
+/* small icon on the right of the title */
+.ap-advance-summary-card > .d-flex i {
+  font-size: 15px;
+  color: #2E5F73;
+}
+
+/* rows */
+.ap-advance-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.ap-advance-summary-row .label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.ap-advance-summary-row .value {
+  color: #111827;
+  font-weight: 600;
+  text-align: right;
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* divider line */
+.ap-advance-summary-divider {
+  border-top: 1px dashed #d1d5db;
+  margin: 8px 0;
+}
+
+/* total row (amount) */
+.ap-advance-summary-row.total .label {
+  color: #111827;
+  font-weight: 700;
+}
+
+.ap-advance-summary-row.total .value {
+  color: #2E5F73;
+  font-size: 15px;
+}
+
+/* mobile spacing – push summary below form nicely */
+@media (max-width: 991.98px) {
+  .ap-advance-summary-card {
+    margin-top: 10px;
+  }
+}
+/* ap-advance.component.scss */
+
+.grn-combobox {
+  position: relative;
+}
+
+.grn-toggle-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  color: #6b7280;
+  padding: 0;
+  cursor: pointer;
+}
+
+.grn-dropdown-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-top: 2px;
+  max-height: 12rem;
+  overflow: auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.35rem;
+  z-index: 1050;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.grn-dropdown-item {
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.grn-dropdown-item:hover {
+  background-color: #eff6ff;
+}
+
+.grn-dropdown-empty {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #9ca3af;
+}

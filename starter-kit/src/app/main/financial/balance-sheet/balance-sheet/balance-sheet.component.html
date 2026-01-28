@@ -1,0 +1,196 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <app-financereports></app-financereports>
+      <div class="card shadow-sm pl-card">
+        <div class="card-body">
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h4 class="pl-title">{{ headerTitle }}</h4>
+
+  <div class="d-flex align-items-center report-export-actions">
+    <button
+      type="button"
+      class="btn btn-sm d-flex align-items-center report-btn report-btn-excel"
+      (click)="exportExcelSimple()">
+      <i data-feather="file-text" class="me-50"></i>
+      <span>Export Excel</span>
+    </button>
+
+    <button
+      type="button"
+      class="btn btn-sm d-flex align-items-center report-btn report-btn-pdf"
+      (click)="exportPdfSimple()">
+      <i data-feather="file" class="me-50"></i>
+      <span>Export PDF</span>
+    </button>
+  </div>
+</div>
+
+
+
+
+          <!-- ================= TOP SUMMARY CARDS ================= -->
+          <div class="row bs-summary-row">
+            <!-- Total Liabilities card -->
+            <div class="col-md-6 col-12 mb-1">
+              <div class="summary-card bs-liab-card">
+                <div class="summary-icon">
+                  <i data-feather="trending-down"></i>
+                </div>
+                <div>
+                  <div class="summary-label">Total Liabilities</div>
+                  <div class="summary-value">
+                    {{ displayLiabilitiesTotal | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Assets card -->
+            <div class="col-md-6 col-12 mb-1">
+              <div class="summary-card bs-asset-card">
+                <div class="summary-icon">
+                  <i data-feather="trending-up"></i>
+                </div>
+                <div>
+                  <div class="summary-label">Total Assets</div>
+                  <div class="summary-value">
+                    {{ displayAssetsTotal | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Main two-column Balance Sheet (with center divider) ===== -->
+          <div class="row row-with-divider">
+            <!-- Center vertical divider -->
+            <div class="vertical-divider d-none d-md-block"></div>
+
+            <!-- ================= Left: Liabilities ================= -->
+            <div class="col-md-6 col-12 mb-2">
+              <div class="pl-column">
+                <div class="pl-column-header">
+                  <h5>Liabilities</h5>
+                </div>
+
+                <!-- list area -->
+                <ul class="pl-list">
+                  <li class="pl-item"
+                      *ngFor="let acc of liabilityAccounts"
+                      [ngClass]="{ 'bs-balance-row': acc.isSynthetic }"
+                      (click)="acc.hasChildren && toggleLiability(acc, $event)">
+
+                    <div class="pl-item-left"
+                         [ngStyle]="{'padding-left.px': 12 + (acc.level || 0) * 16}">
+
+                      <span class="toggle-icon me-25"
+                            *ngIf="acc.hasChildren && !acc.isSynthetic">
+                        <i data-feather="chevron-down" *ngIf="acc.expanded"></i>
+                        <i data-feather="chevron-right" *ngIf="!acc.expanded"></i>
+                      </span>
+
+                      <span class="drag-icon"
+                            *ngIf="!acc.hasChildren && !acc.isSynthetic">
+                        <i data-feather="minus"></i>
+                      </span>
+
+                      <div class="pl-text ms-25">
+                        <div class="pl-name">{{ acc.headName }}</div>
+                      </div>
+                    </div>
+
+                    <div class="pl-item-right">
+                      <span class="pl-amount">
+                        <ng-container *ngIf="displayAmount(acc.amount) as amt">
+                          {{ amt | number:'1.2-2' }}
+                        </ng-container>
+                      </span>
+
+                      <!-- no avatar for balancing row -->
+                      <div class="avatar-circle"
+                           *ngIf="!acc.isSynthetic"
+                           [style.background-color]="'#ff9f43'">
+                        <span>{{ (acc.headName || '?').substring(0,2).toUpperCase() }}</span>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+
+                <!-- liabilities total row -->
+                <div class="pl-total-row pl-total-purchase">
+                  <div class="pl-total-label">Total Liabilities</div>
+                  <div class="pl-total-amount">
+                    {{ displayLiabilitiesTotal | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ================= Right: Assets ================= -->
+            <div class="col-md-6 col-12 mb-2">
+              <div class="pl-column">
+                <div class="pl-column-header">
+                  <h5>Assets</h5>
+                </div>
+
+                <!-- list area -->
+                <ul class="pl-list">
+                  <li class="pl-item"
+                      *ngFor="let acc of assetAccounts"
+                      [ngClass]="{ 'bs-balance-row': acc.isSynthetic }"
+                      (click)="acc.hasChildren && toggleAsset(acc, $event)">
+
+                    <div class="pl-item-left"
+                         [ngStyle]="{'padding-left.px': 12 + (acc.level || 0) * 16}">
+
+                      <span class="toggle-icon me-25"
+                            *ngIf="acc.hasChildren && !acc.isSynthetic">
+                        <i data-feather="chevron-down" *ngIf="acc.expanded"></i>
+                        <i data-feather="chevron-right" *ngIf="!acc.expanded"></i>
+                      </span>
+
+                      <span class="drag-icon"
+                            *ngIf="!acc.hasChildren && !acc.isSynthetic">
+                        <i data-feather="minus"></i>
+                      </span>
+
+                      <div class="pl-text ms-25">
+                        <div class="pl-name">{{ acc.headName }}</div>
+                      </div>
+                    </div>
+
+                    <div class="pl-item-right">
+                      <span class="pl-amount">
+                        <ng-container *ngIf="displayAmount(acc.amount) as amt">
+                          {{ amt | number:'1.2-2' }}
+                        </ng-container>
+                      </span>
+
+                      <div class="avatar-circle"
+                           *ngIf="!acc.isSynthetic"
+                           [style.background-color]="'#28c76f'">
+                        <span>{{ (acc.headName || '?').substring(0,2).toUpperCase() }}</span>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+
+                <!-- assets total row -->
+                <div class="pl-total-row pl-total-sales">
+                  <div class="pl-total-label">Total Assets</div>
+                  <div class="pl-total-amount">
+                    {{ displayAssetsTotal | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,298 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import '@core/scss/angular/libs/sweet-alerts.component.scss';
+
+/* Narrow page like your 2nd screenshot */
+.pin-page {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+/* Title color/weight */
+.pin-title {
+  margin: .75rem .85rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2E5F73;
+}
+
+/* Eye icon style */
+.pin-eye {
+  cursor: pointer;
+  font-size: 18px;
+  color: #2E5F73;
+}
+
+/* Make ngx-datatable header dark teal with white text  */
+.pin-table .datatable-header {
+  background: #2E5F73;
+  color: #fff;
+
+  .datatable-header-cell {
+    background: #2E5F73 !important;
+    color: #fff !important;
+    font-weight: 600;
+    border-bottom: none;
+  }
+}
+
+/* Optional: row hover */
+.pin-table .datatable-body-row:hover {
+  background: #f7fafc;
+}
+
+/* Overlay shared for both modals */
+.pin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pin-modal {
+  width: 900px;
+  max-width: 95vw;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .25);
+}
+
+.pin-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eef2f7;
+
+  h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #374151;
+  }
+
+  button {
+    border: 0;
+    background: transparent;
+    font-size: 22px;
+    cursor: pointer;
+    color: #6b7280;
+  }
+}
+
+.pin-modal-body {
+  padding: 16px 20px;
+}
+
+.pin-modal-table {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    color: #111827;
+  }
+
+  thead tr {
+    background: #2E5F73;
+    color: #fff;
+  }
+
+  th,
+  td {
+    padding: 10px 12px;
+  }
+
+  td.text-right,
+  th.text-right {
+    text-align: right;
+  }
+
+  .truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 420px;
+  }
+
+  tbody tr.alt {
+    background: #fcfdff;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  tbody td.empty {
+    text-align: center;
+    color: #6b7280;
+  }
+
+  tfoot tr {
+    background: #f3f4f6;
+    border-top: 1px solid #e5e7eb;
+    font-weight: 700;
+  }
+}
+
+.pin-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #eef2f7;
+
+  button {
+    background: #2E5F73;
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}
+
+/* SweetAlert buttons spacing */
+.swal2-actions {
+  gap: .5rem !important;
+}
+
+.swal2-actions .swal2-styled {
+  margin: 0 !important;
+}
+
+:host ::ng-deep .swal2-actions {
+  padding: 14px 16px 20px;
+}
+
+/* 3-Way match modal layout */
+.match-modal {
+  max-width: 900px;
+}
+
+.match-body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.match-card {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+
+  h4 {
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  p {
+    margin-bottom: 4px;
+  }
+}
+
+/* colors like sample */
+.match-card-po h4 {
+  color: #0f62fe; /* blue */
+}
+
+.match-card-grn h4 {
+  color: #198038; /* green */
+}
+
+.match-card-pin h4 {
+  color: #8a3ffc; /* purple */
+}
+
+.match-footer {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid #eef2f7;
+}
+
+.text-success {
+  color: #198038;
+}
+
+.text-danger {
+  color: #da1e28;
+}
+/* ===== KPI CARDS (TOP 4) ===== */
+
+.pin-kpi-card {
+  background: #ffffff;                 /* smooth white panel */
+  border-radius: 20px;                 /* rounded corners */
+  padding: 14px 18px;
+  min-height: 90px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  border: 1px solid #eef2f7;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);  /* soft shadow */
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+/* tiny hover lift so they feel clickable */
+.pin-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.10);
+  border-color: #e0e7ff;
+}
+
+/* title: medium weight, calm color */
+.pin-kpi-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+/* value: big + bold */
+.pin-kpi-value {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+/* accent colors for each number */
+.pin-kpi-card .text-warning {  /* Total Pending */
+  color: #d97706 !important;   /* orange */
+}
+
+.pin-kpi-card .text-success {  /* Auto-Matched */
+  color: #059669 !important;   /* green */
+}
+
+.pin-kpi-card .text-danger {   /* Mismatched */
+  color: #dc2626 !important;   /* red */
+}
+
+.pin-kpi-card .text-primary {  /* Awaiting Approval */
+  color: #2563eb !important;   /* blue */
+}
+
+/* small screen spacing */
+@media (max-width: 767.98px) {
+  .pin-kpi-card {
+    margin-bottom: 8px;
+  }
+}

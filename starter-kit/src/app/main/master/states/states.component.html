@@ -1,0 +1,113 @@
+<div class="row">
+  <div class="col-lg-6 col-md-6">
+    <div class="card card-transaction">
+      <div class="card-header">
+<h4 class="card-title"
+    style="display:flex;align-items:center;gap:10px;margin:0;font-size:1.25rem;font-weight:600;color:#2E5F73;">
+  <span
+    style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background-color:#e5f0f3;border-radius:50%;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#2E5F73"
+         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+         style="width:18px;height:18px;">
+      <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z"></path>
+      <path d="M9 3v15"></path>
+      <path d="M15 6v15"></path>
+    </svg>
+  </span>
+  State List
+</h4>
+
+
+        <button  (click)="createState()"   style="background-color: #2E5F73; color: white; border: none; padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;">Create</button>
+      </div>
+      <div class="card-body">
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let item of StateList">
+            <div class="avatar bg-light-primary mr-2 align-items-center avatar-lg">
+              <div class="avatar-content">
+                <!-- If you want to use an icon as avatar: -->
+                <span data-feather="globe" style="width: 2rem; height: 2rem; font-size: 1.5rem;"></span>
+              </div>
+            </div>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center w-100">
+              <div class="m-l-16 m-r-auto">
+                <h6 class="mat-subtitle-1 f-s-16 f-w-600">{{ item.stateName }}</h6>
+              </div>
+             <div class="mt-md-0 mt-1 d-flex justify-content-md-end">
+  <!-- Edit Button -->
+  <button type="button"
+          class="btn btn-outline-primary p-0 d-flex align-items-center justify-content-center"
+          style="width: 28px; height: 28px;"
+          (click)="getStateDetails(item.id)">
+    <i data-feather="edit" style="width: 14px; height: 14px;"></i>
+  </button>
+
+  <!-- Delete Button -->
+  <button type="button"
+          class="btn btn-outline-danger p-0 d-flex align-items-center justify-content-center ml-1"
+          style="width: 28px; height: 28px;"
+          (click)="deleteState(item.id)"
+          [disabled]="isEditMode">
+    <i data-feather="trash" style="width: 14px; height: 14px;"></i>
+  </button>
+</div>
+
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-12 col-xs-12 col-lg-6 col-md-6 " *ngIf="isDisplay">
+    <div class="card ">
+      <div class="card-header">
+        <h4 class="card-title">{{modeHeader}}</h4>
+      </div>
+      <div class="card-body">
+        <form class="form" (ngSubmit)="stateForm.form.valid" #stateForm="ngForm">
+          <div class="form-group">
+            <label for="first-name-column">State Name</label>
+            <input type="text" id="first-name-column" class="form-control" placeholder="State Name" name="fname-column"
+              [(ngModel)]="stateName" [maxlength]="50" required />
+          </div>
+          
+  <div class="form-group">
+  <label for="country-select">Select Country</label>
+  <select
+    id="country-select"
+    class="form-control"
+    name="country"
+    [(ngModel)]="selectedCountry"
+    required
+  >
+    <option [ngValue]="null" disabled>Select a country</option>
+    <option *ngFor="let country of rows" [ngValue]="country.id">
+      {{ country.countryName }}
+    </option>
+  </select>
+</div>
+
+
+
+              <div class="row justify-content-start p-1">
+                        <button type="submit" rippleEffect class="btn mr-1" [disabled]="!stateForm.form.valid"
+                            (click)="CreateState()"
+                            style="background-color: #2E5F73;color: white;padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;">
+                            Submit
+                        </button>
+
+                        <button type="cancel" rippleEffect class="btn btn-danger mr-1" (click)="cancel()"
+                            style="padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;">
+                            Cancel
+                        </button>
+
+                        <button type="reset" rippleEffect class="btn btn-secondary" *ngIf="resetButton"  (click)="reset()"
+                            style="padding: 6px 14px; font-size: 0.9rem; border-radius: 4px;">
+                            Reset
+                        </button>
+                    </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

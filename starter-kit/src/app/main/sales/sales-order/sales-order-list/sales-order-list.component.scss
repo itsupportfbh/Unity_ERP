@@ -1,0 +1,205 @@
+/* app/main/sales/sales-order/list/sales-order-list.component.scss */
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import '@core/scss/angular/libs/sweet-alerts.component.scss';
+
+$brand: #2E5F73;
+$green: #0F766E;
+
+/* Heading */
+.heading { margin-left:.85rem; margin-top:.75rem; font-size:1.25rem; font-weight:600; color:$brand; }
+
+/* Controls row: auto | 1fr | auto */
+.so-controls{
+  display:grid; grid-template-columns:auto 1fr auto;
+  align-items:center; gap:20px; padding:6px 16px 10px;
+}
+
+/* Search smaller + right-aligned inside middle cell */
+.search-wrap{ display:flex; justify-content:flex-end; align-items:center; }
+.so-search{
+  height:44px; border-radius:12px;
+  width:420px; max-width:36vw; min-width:260px;
+}
+
+/* Buttons group (right) */
+.actions{ display:flex; align-items:center; gap:14px; }
+
+/* Drafts (outline) + badge */
+.btn-drafts{
+  position:relative;
+  height:44px; padding:0 16px; border-radius:12px;
+  border:2px solid $green; background:#fff; color:$green;
+  display:inline-flex; align-items:center; gap:6px; font-weight:600;
+}
+.btn-drafts .notif-count{
+  position:absolute; top:-8px; right:-8px;
+  min-width:20px; height:20px; padding:0 6px;
+  background:#DC2626; color:#fff; border-radius:999px;
+  font-size:12px; line-height:20px; text-align:center;
+  box-shadow:0 0 0 2px #fff;
+}
+
+/* ngx-datatable overrides */
+:host ::ng-deep .so-table .datatable-header{
+  background:$brand !important; border-top-left-radius:8px; border-top-right-radius:8px;
+}
+:host ::ng-deep .so-table .datatable-header .datatable-header-cell{ color:#fff !important; font-weight:700; }
+:host ::ng-deep .so-table .datatable-header .datatable-icon-up,
+:host ::ng-deep .so-table .datatable-header .datatable-icon-down,
+:host ::ng-deep .so-table .datatable-header .sort-btn,
+:host ::ng-deep .so-table .datatable-header .sort-btn i{ color:#fff !important; fill:#fff !important; }
+:host ::ng-deep .so-table .datatable-body{ background:#fff !important; color:#334155 !important; }
+:host ::ng-deep .so-table .datatable-body-row .datatable-body-cell{ color:#334155 !important; border-bottom:1px solid #eef2f7; }
+:host ::ng-deep .so-table .datatable-footer{ color:#475569 !important; background:#f8fafc; border-bottom-left-radius:8px; border-bottom-right-radius:8px; }
+:host ::ng-deep ngx-datatable{ margin-top:8px; }
+
+/* Modal shell */
+.backdrop{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.45);
+  z-index:1050;
+  display:flex; align-items:center; justify-content:center;
+  padding: 18px;
+}
+.modal-card{
+  width:900px; max-width:95vw;
+  background:#fff; border-radius:14px; overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,.25);
+}
+.modal-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px; border-bottom:1px solid #eef2f7;
+}
+.modal-head h3{ margin:0; font-size:20px; font-weight:700; color:#374151; }
+.modal-close{ border:0; background:transparent; font-size:22px; line-height:1; cursor:pointer; color:#6b7280; }
+.modal-body{ padding:16px 20px; }
+.modal-foot{ display:flex; justify-content:flex-end; gap:8px; padding:12px 20px; border-top:1px solid #eef2f7; }
+.btn-close{ background:$brand; color:#fff; border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer; }
+
+/* Lines table (modal) */
+.lines-wrap{ max-height:60vh; overflow:auto; border:1px solid #eef2f7; border-radius:10px; }
+.lines-table{ width:100%; border-collapse:separate; border-spacing:0; font-size:14px; color:#111827; table-layout:auto; }
+.lines-table thead th{ position:sticky; top:0; z-index:1; padding:10px 12px; text-align:left; font-weight:600; background:$brand; color:#fff; white-space:nowrap; }
+.lines-table td{ padding:10px 12px; border-bottom:1px solid #f1f5f9; }
+.lines-table td.num, .lines-table th.num{ text-align:right; }
+.lines-table tbody tr.alt{ background:#fcfdff; }
+.lines-table tfoot td{ padding:10px 12px; background:#f3f4f6; border-top:1px solid #e5e7eb; }
+.lines-table .total-label, .lines-table .total-val{ font-weight:700; }
+
+/* Responsive */
+@media (max-width:768px){
+  .so-controls{ grid-template-columns:1fr; gap:12px; }
+  .search-wrap{ justify-content:stretch; }
+  .so-search{ width:100%; max-width:none; }
+}
+
+::ng-deep .ngx-datatable .datatable-body-cell .datatable-body-cell-label{
+  white-space: normal !important;
+  line-height: 1.2;
+}
+
+.po-wrap-cell{
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* ==============================
+   ✅ PDF Preview modal (Screenshot style)
+   ============================== */
+.modal-xl{
+  width: min(1400px, 96vw);
+  height: min(92vh, 900px);
+  display:flex;
+  flex-direction:column;
+}
+
+.pv-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pv-title{
+  font-size: 20px;
+  font-weight: 800;
+  color:#111827;
+}
+.pv-docno{ font-weight: 800; }
+
+.pv-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.pv-btn{
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  cursor:pointer;
+}
+.pv-btn-outline{
+  background:#fff;
+  border-color:#d1d5db;
+  color:#374151;
+}
+.pv-btn-primary{
+  background:#2E5F73;
+  color:#fff;
+}
+
+.pv-x{
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background:#fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor:pointer;
+}
+
+.pv-body{
+  flex:1;
+  background:#f3f4f6;
+  padding: 14px;
+}
+
+.pv-loading{
+  height: 100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#6b7280;
+  font-weight:700;
+}
+
+.pv-frame{
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 12px;
+  background:#fff;
+}
+
+.pv-foot{
+  border-top: 1px solid #e5e7eb;
+  padding: 12px 18px;
+  display:flex;
+  justify-content:flex-end;
+}
+.pv-close{
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 18px;
+  background:#6b7280;
+  color:#fff;
+  font-weight:800;
+  cursor:pointer;
+}

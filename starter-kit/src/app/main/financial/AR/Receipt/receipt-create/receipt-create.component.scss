@@ -1,0 +1,68 @@
+$brand: #2E5F73;
+
+.page-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: $brand;
+}
+
+.btn-brand {
+  background-color: $brand;
+  border-color: $brand;
+  color: #fff;
+}
+
+.gap-1 { gap: .25rem; }
+.mr-25 { margin-right: .25rem !important; }
+.form-select {
+  width: 100%;       // make sure it fills the column
+  min-width: 120px;  // so the text & caret never get clipped
+}
+.bank-select .ng-select-container {
+  border: 1px solid #d8d6de;
+  border-radius: 0.357rem;
+  min-height: 38px;
+}
+
+.bank-select.ng-select-focused .ng-select-container {
+  border-color: #2E5F73;
+  box-shadow: 0 0 0 0.2rem rgba(46, 95, 115, 0.15);
+}
+.ap-table thead tr th {
+  background-color: #2E5F73 !important;
+  color: #fff !important;
+}
+/* Make the ng-select bank dropdown match Bootstrap inputs */
+:host ::ng-deep ng-select.bank-select .ng-select-container {
+  height: 38px;                /* same as .form-control */
+  min-height: 38px;
+  border-radius: 0.25rem;
+  border: 1px solid #ced4da;
+  padding: 0 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Remove excessive internal padding so text vertically centers */
+:host ::ng-deep ng-select.bank-select .ng-value-container {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Dropdown panel width = input width, no overflow */
+:host ::ng-deep ng-select.bank-select .ng-dropdown-panel {
+  width: 100% !important;
+}
+
+/* Available / After Payment text sits closer to dropdown */
+.bank-field {
+  position: relative;
+}
+
+.bank-balance-text {
+  position: absolute;
+  top: 100%;      /* just below the ng-select container */
+  left: 0;
+  margin-top: 2px;
+  line-height: 1.3;
+}

@@ -1,0 +1,34 @@
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+  <div class="lg:col-span-3 card">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="text-xl font-semibold">Customer Master</h2>
+      <button class="btn" (click)="new()">New</button>
+    </div>
+    <div class="space-y-2">
+      <div class="grid grid-cols-6 text-xs text-gray-500">
+        <div class="col-span-2">Name</div><div>KYC</div><div>Credit</div><div>Price Level</div><div>Terms</div>
+      </div>
+      <div *ngFor="let c of list" class="grid grid-cols-6 items-center border rounded-xl px-3 py-2 hover:bg-gray-50 cursor-pointer" (click)="select(c)">
+        <div class="col-span-2">{{c.name}}</div>
+        <div><span class="badge" [class]="c.kycStatus==='Verified'?'badge border-green-400 text-green-700':'badge border-amber-400 text-amber-700'">{{c.kycStatus}}</span></div>
+        <div>{{c.creditLimit | number}}</div>
+        <div>{{c.priceLevel}}</div>
+        <div>{{c.terms}}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lg:col-span-2 card space-y-3">
+    <h3 class="font-semibold">{{selected? 'Edit' : 'New'}} Customer</h3>
+    <input class="input" placeholder="Name" [(ngModel)]="editing.name"/>
+    <div class="grid grid-cols-2 gap-2">
+      <select class="input" [(ngModel)]="editing.kycStatus"><option>Pending</option><option>Verified</option></select>
+      <input type="number" class="input" placeholder="Credit Limit" [(ngModel)]="editing.creditLimit"/>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <input class="input" placeholder="Price Level" [(ngModel)]="editing.priceLevel"/>
+      <input class="input" placeholder="Terms" [(ngModel)]="editing.terms"/>
+    </div>
+    <button class="btn w-full" (click)="save()">Save</button>
+  </div>
+</div>

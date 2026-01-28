@@ -1,0 +1,34 @@
+::ng-deep .budgetline-option,
+::ng-deep .budgetline-selected {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis; /* keep UI clean */
+  white-space: nowrap;
+  cursor: help; /* indicates tooltip */
+}
+
+/* Dropdown options wrap */
+::ng-deep .ng-dropdown-panel .ng-option .ng-option-label {
+  white-space: wrap !important;   /* allow next line */
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-break: break-word !important;
+  line-height: 1.25rem;
+}
+
+/* Selected value wrap inside input */
+::ng-deep .ng-select .ng-value-container .ng-value-label {
+  white-space: wrap !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-break: break-word !important;
+  line-height: 1.25rem;
+}
+
+/* give a bit more height for each option */
+::ng-deep .ng-dropdown-panel .ng-option {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+

@@ -1,0 +1,902 @@
+<button (click)="onGoToItemList()"
+        class="btn position-relative d-flex align-items-center justify-content-center"
+        style="background-color:#2E5F73; color:white; padding-left:2.25rem;">
+  <i class="fas fa-arrow-left position-absolute"
+     style="left:0.75rem; top:50%; transform:translateY(-50%);"
+     aria-hidden="true"></i>
+  <span>Go to ItemMaster list</span>
+</button>
+
+<section class="space-y-1 mt-1 ui-compact pr-typography">
+  <div class="bg-white rounded-2xl shadow p-1 border border-gray-100">
+
+    <!-- Header -->
+    <div class="sticky top-0 z-10 bg-white border-b px-1 py-1">
+      <h2 class="text-xl font-semibold text-[#2E5F73]">
+        {{ isEdit ? 'Edit Item Master' : 'Create Item Master' }}
+        <ng-container *ngIf="isEdit && item?.id">
+          <span class="text-gray-500 font-normal">#{{ item.id }}</span>
+        </ng-container>
+      </h2>
+      <p class="text-xs text-gray-500" *ngIf="isEdit">
+        Editing: {{ item?.name || '—' }} (SKU: {{ item?.sku || '—' }})
+      </p>
+    </div>
+
+    <!-- Body -->
+    <div class="p-2 space-y-4">
+
+      <!-- Steps -->
+      <div class="flex items-center gap-3">
+        <ng-container *ngFor="let s of stepsView; let i = index">
+          <div class="flex items-center gap-2">
+            <div
+              class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
+              [ngClass]="i <= step ? 'text-white' : 'text-gray-600 bg-gray-200'"
+              [ngStyle]="{ 'background-color': i <= step ? '#0e3a4c' : '' }">
+              {{ i + 1 }}
+            </div>
+            <span class="text-sm" [ngClass]="i === step ? 'font-semibold text-[#0e3a4c]' : 'text-gray-500'">{{ s }}</span>
+          </div>
+          <div *ngIf="i < stepsView.length - 1" class="w-10 h-px bg-gray-300"></div>
+        </ng-container>
+      </div>
+
+      <!-- STEP 0: SUMMARY -->
+     <div *ngIf="step === 0" class="rounded-xl border p-1 space-y-4">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+    <!-- Item Code -->
+    <div class="md:col-span-1">
+      <label class="text-xs font-semibold text-gray-600 block">Item Code <span class="text-red-500">*</span></label>
+      <input
+        type="text"
+        class="w-full rounded-xl border px-3 py-2 text-sm"
+        [(ngModel)]="item.itemCode"
+        name="itemCode"
+        placeholder="Enter Item Code"
+        required />
+    </div>
+
+    <!-- Item Name -->
+    <div class="md:col-span-1">
+      <label class="text-xs font-semibold text-gray-600 block">Item Name <span class="text-red-500">*</span></label>
+      <input
+        type="text"
+        class="w-full rounded-xl border px-3 py-2 text-sm"
+        [(ngModel)]="item.itemName"
+        name="itemName"
+        placeholder="Enter Item Name"
+        required />
+    </div>
+
+    <!-- Item Type -->
+    <div class="md:col-span-1">
+      <label class="text-xs font-semibold text-gray-600 block">Item Type <span class="text-red-500">*</span></label>
+      <select
+  class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
+  [(ngModel)]="item.itemType"
+  name="itemType"
+  [compareWith]="compareById"
+  required>
+
+  <option [ngValue]="null" disabled>Select Item Type</option>
+
+  <option *ngFor="let i of ItemTypeList" [ngValue]="i.id">
+    {{ i.itemTypeName }}
+  </option>
+</select>
+
+    </div>
+
+    <!-- Category -->
+    <div class="md:col-span-1">
+      <label class="text-xs font-semibold text-gray-600 block">Category <span class="text-red-500">*</span></label>
+      <select
+        class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
+        [(ngModel)]="item.categoryId"
+        name="categoryId"
+        required>
+        <option [ngValue]="null" disabled>Select Category</option>
+        <option *ngFor="let c of CategoryList" [ngValue]="c.id">
+          {{ c.catagoryName }}
+        </option>
+      </select>
+    </div>
+
+    <!-- UOM -->
+    <div class="md:col-span-1">
+      <label class="text-xs font-semibold text-gray-600 block">UOM <span class="text-red-500">*</span></label>
+      <select
+        class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
+        [(ngModel)]="item.uomId"
+        name="uomId"
+        required>
+        <option [ngValue]="null" disabled>Select UOM</option>
+        <option *ngFor="let u of uomList" [ngValue]="u.id">
+          {{ u.name }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Budget Line -->
+    <div class="md:col-span-3">
+      <label class="text-xs font-semibold text-gray-600 block">Ledger Name<span class="text-red-500">*</span></label>
+
+      <ng-select
+        class="w-full"
+        [items]="parentHeadList"
+        bindLabel="label"
+        bindValue="value"
+        [(ngModel)]="item.budgetLineId"
+        name="budgetLineId"
+        [searchable]="true"
+        [clearable]="false"
+        placeholder="Search / choose Ledger Name..."
+        required>
+
+        <ng-template ng-option-tmp let-it="item">
+          <span [title]="it.label">{{ it.label }}</span>
+        </ng-template>
+
+        <ng-template ng-label-tmp let-it="item">
+          <span [title]="it.label">{{ it.label }}</span>
+        </ng-template>
+      </ng-select>
+    </div>
+
+    <!-- Costing -->
+    <div>
+      <label class="text-xs font-semibold text-gray-600">Costing Method</label>
+      <select class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
+              [(ngModel)]="item.costingMethodId"
+              name="costingMethodId"
+              (change)="onCostingSelectedId(item.costingMethodId)">
+        <option [ngValue]="null" disabled>Select costing</option>
+        <option *ngFor="let c of costingMethodList" [ngValue]="c.id">{{ c.name }}</option>
+      </select>
+    </div>
+
+    <!-- Tax -->
+    <div>
+      <label class="text-xs font-semibold text-gray-600">Recurring</label>
+      <select class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
+              [(ngModel)]="item.taxCodeId"
+              name="taxCodeId"
+              (change)="onTaxSelectedId(item.taxCodeId)">
+        <option [ngValue]="null" disabled>Select Recurring</option>
+        <option *ngFor="let t of taxCodeList" [ngValue]="t.id">{{ t.recurringName }}</option>
+      </select>
+    </div>
+
+    <!-- Expiry -->
+    <div>
+      <label class="text-xs font-semibold text-gray-600">Expiry Date</label>
+      <input
+        type="date"
+        class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
+        [(ngModel)]="item.expiryDate"
+        name="expiryDate"
+        [min]="minDate"
+        (change)="onExpiryChange($event)" />
+    </div>
+
+    <!-- Specs -->
+    <div class="md:col-span-2">
+      <label class="text-xs font-semibold text-gray-600">Specifications</label>
+      <textarea
+        class="w-full rounded-xl border px-3 py-2 text-sm"
+        rows="2"
+        [(ngModel)]="item.specs"
+        name="specs"
+        placeholder="Add specs or notes..."></textarea>
+    </div>
+
+  </div>
+</div>
+
+
+      <!-- STEP 1: WAREHOUSES -->
+      <div *ngIf="step === 1" class="rounded-xl border p-2">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-semibold text-gray-800">Per-warehouse Stock</h3>
+        </div>
+
+        <div class="overflow-auto rounded-xl border">
+          <table class="w-full table-auto">
+            <thead class="bg-[#0e3a4c] text-white">
+              <tr>
+                <th class="px-3 py-2 text-center">Warehouse</th>
+                <th class="px-3 py-2 text-center">Bin / Location</th>
+                <th class="px-3 py-2 text-center">Frequency</th>
+                <th class="px-3 py-2 text-center">On Hand</th>
+                <th class="px-3 py-2 text-center">Reserved</th>
+                <th class="px-3 py-2 text-center">Available</th>
+                <th class="px-3 py-2 text-center">Min</th>
+                <th class="px-3 py-2 text-center">Max</th>
+                <th class="px-3 py-2 text-center">Reorder / Lead</th>
+                <th class="px-3 py-2">Tracking</th>
+                <th class="px-3 py-2 text-center">Action Buttons</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of itemStocks; let i=index; trackBy: trackByIdx" class="border-b">
+                <td class="px-3 py-2 text-center">{{ getWarehouseName(r.warehouseId) }}</td>
+                <td class="px-3 py-2 text-center">{{ getBinName(r.binId) }}</td>
+                <td class="px-3 py-2 text-center">{{ getStrategyName(r.strategyId) }}</td>
+                <td class="px-3 py-2 text-center">{{ r.onHand }}</td>
+                <td class="px-3 py-2 text-center">{{ r.reserved }}</td>
+                <td class="px-3 py-2 text-center">{{ r.available }}</td>
+                <td class="px-3 py-2 text-center">{{ r.min ?? 0 }}</td>
+                <td class="px-3 py-2 text-center">{{ r.max ?? 0 }}</td>
+                <td class="px-3 py-2 text-center">{{ r.reorderQty ?? 0 }} / {{ r.leadTimeDays ?? 0 }}</td>
+                <td class="px-3 py-2">
+                  <span *ngIf="r.batchFlag" class="mr-1">Batch</span>
+                  <span *ngIf="r.serialFlag">Serial</span>
+                  <span *ngIf="!r.batchFlag && !r.serialFlag" class="text-gray-400">—</span>
+                </td>
+                <td class="px-3 py-2 text-center">
+                  <button type="button" (click)="editLine(i)" class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 mr-1" title="Edit">
+                    <i class="fas fa-pen text-blue-600"></i>
+                  </button>
+                  <button type="button" (click)="removeWarehouseRow(i)" class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100" title="Remove">
+                    <i class="fas fa-trash text-red-500"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="!itemStocks?.length">
+                <td colspan="11" class="px-3 py-6 text-center text-gray-400">No lines yet. Click “Add Line”.</td>
+              </tr>
+            </tbody>
+            <tfoot *ngIf="itemStocks?.length">
+              <tr class="bg-gray-50 font-semibold">
+                <td class="px-3 py-2 text-center" colspan="3">Totals</td>
+                <td class="px-3 py-2 text-center">{{ totals.onHand }}</td>
+                <td class="px-3 py-2 text-center">{{ totals.reserved }}</td>
+                <td class="px-3 py-2 text-center">{{ totals.available }}</td>
+                <td class="px-3 py-2 text-right"></td>
+                <td class="px-3 py-2 text-right"></td>
+                <td class="px-3 py-2 text-right"></td>
+                <td class="px-3 py-2"></td>
+                <td class="px-3 py-2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <button class="px-3 py-2 mt-1 rounded-xl bg-[#0e3a4c] text-white text-sm font-medium hover:bg-[#0b2e3d]"
+                (click)="openWhModal()"
+                *ngIf="!isEdit">+ Add Line</button>
+      </div>
+
+      <!-- STEP 2: SUPPLIERS -->
+      <div *ngIf="isEdit && step === 2" class="rounded-xl border p-2 prl-card-allow-overflow" #supplierSearchBox>
+        <div class="flex items-center justify-between mb-1">
+          <h3 class="text-sm font-semibold text-gray-800">Unit Prices</h3>
+        </div>
+
+        <div class="rounded-xl border prl-table-overflow">
+          <table class="text-sm w-full">
+            <thead class="bg-[#0e3a4c] text-white">
+              <tr>
+                <th class="px-3 py-2 text-left">Supplier</th>
+                <th class="px-3 py-2 text-left">Price</th>
+                <th class="px-3 py-2 text-left">Qty</th> <!-- NEW -->
+                <th class="px-3 py-2 text-left">Barcode</th>
+                <!-- <th class="px-3 py-2 text-left">Accepted Qty</th> -->
+                <th class="px-3 py-2 text-left">Faulted Qty</th>
+                <th class="px-3 py-2 text-left">FaultedReason</th>
+                <th class="px-3 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <!-- <tbody>
+              <tr *ngFor="let p of prices; let i = index; trackBy: trackByIdx" class="border-b">
+                <td>
+                  <div class="relative flex-1 prl-dropdown">
+                    <input
+                      type="text"
+                      name="supplierSearch-{{i}}"
+                      [(ngModel)]="p.supplierSearch"
+                      (focus)="supplierDropdownOpen = true; activePriceIndex = i; filterSuppliersForRow(i)"
+                      (input)="filterSuppliersForRow(i)"
+                      autocomplete="off"
+                      class="prl-input"
+                      placeholder="Search supplier" />
+                    <div *ngIf="supplierDropdownOpen && filteredSuppliers?.length && activePriceIndex===i" class="prl-menu">
+                      <div
+                        *ngFor="let s of filteredSuppliers; trackBy: trackBySupplierId"
+                        (click)="selectSupplierForRow(i, s, $event)"
+                        class="prl-mi prl-mi-split">
+                        <span class="truncate">{{ s.name }}</span>
+                        <small class="prl-muted ml-3">#{{ s.code || s.id }}</small>
+                      </div>
+                    </div>
+                    <div *ngIf="supplierDropdownOpen && activePriceIndex===i && (!filteredSuppliers?.length) && p.supplierSearch?.trim()?.length"
+                         class="prl-menu">
+                      <div class="prl-mi text-gray-400">No matches</div>
+                    </div>
+                  </div>
+                </td>
+
+                <td class="px-3 py-2">
+                  <input type="number" class="w-full rounded-xl border px-3 py-2 text-sm"
+                         [(ngModel)]="p.price" name="price-{{i}}" min="0" step="0.01" placeholder="0.00">
+                </td>
+                <td class="px-3 py-2">
+                  <input type="number" class="w-full rounded-xl border px-3 py-2 text-sm"
+                         [(ngModel)]="p.qty"
+                         (ngModelChange)="p.qty = ($event === null || $event === '' ? null : Number($event))"
+                         name="qty-{{i}}" min="0" step="1" placeholder="0">
+                </td>
+
+                <td class="px-3 py-2">
+                  <input class="w-full rounded-xl border px-3 py-2 text-sm"
+                         [(ngModel)]="p.barcode" name="barcode-{{i}}" placeholder="Comma-separated if multiple"/>
+                </td>
+<td></td>
+<td></td>
+<td></td>
+                <td class="px-3 py-2">
+                  <button class="px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50" (click)="removePriceLine(i)">
+                    <i class="fa fa-trash mr-1"></i> 
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="!prices?.length">
+                <td colspan="4" class="px-3 py-6 text-center text-gray-400">No price lines. Add one above.</td>
+              </tr>
+            </tbody> -->
+            <tbody>
+  <tr *ngFor="let p of prices; let i = index; trackBy: trackByIdx" class="border-b">
+    <!-- Supplier -->
+    <td class="px-3 py-2">
+      <span class="text-gray-800">{{ p.supplierName || p.supplierSearch || '-' }}</span>
+    </td>
+
+    <!-- Price -->
+    <td class="px-3 py-2">
+      <span class="text-gray-800">{{ p.price != null ? (p.price | number:'1.2-2') : '-' }}</span>
+    </td>
+
+    <!-- Qty -->
+    <td class="px-3 py-2">
+      <span class="text-gray-800">{{ p.qty || '-' }}</span>
+    </td>
+
+    <!-- Barcode -->
+    <td class="px-3 py-2">
+      <span class="text-gray-800">{{ p.barcode || '-' }}</span>
+    </td>
+
+    <!-- Extra columns (empty or future data placeholders) -->
+    <!-- <td><span class="text-gray-800">{{ p.countedQty || '-' }}</span></td> -->
+    <td><span class="text-gray-800">{{ (p.badCountedQty ?? 0) }}</span></td>
+    <td><span class="text-gray-800">{{ getReason(p.reasonId)  || '-' }}</span></td>
+
+    <!-- Delete button -->
+    <td class="px-3 py-2 text-right">
+      <button class="px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50" (click)="removePriceLine(i)">
+        <i class="fa fa-trash mr-1"></i>
+      </button>
+    </td>
+  </tr>
+
+  <tr *ngIf="!prices?.length">
+    <td colspan="8" class="px-3 py-6 text-center text-gray-400">
+      No price lines. Add one above.
+    </td>
+  </tr>
+</tbody>
+
+          </table>
+        </div>
+
+        <button class="px-3 py-2 mt-1 rounded-xl bg-[#0e3a4c] text-white text-sm font-medium hover:bg-[#0b2e3d]"
+                (click)="addPriceLine()"
+                *ngIf="!isEdit">+ Add Line</button>
+      </div>
+
+      <!-- STEP 3: BOM (EDIT) -->
+      <div *ngIf="isEdit && step === 3" class="rounded-xl border p-2 prl-card-allow-overflow">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <h3 class="text-sm font-semibold text-gray-800">Bill of Materials</h3>
+            <span class="text-xs text-gray-500">for</span>
+            <span class="text-sm font-semibold text-[#0e3a4c]">{{ item?.name || '-' }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- optional BOM actions -->
+          </div>
+        </div>
+
+        <div class="rounded-xl border prl-table-overflow">
+          <table class="w-full text-sm">
+            <thead class="bg-[#0e3a4c] text-white">
+              <tr>
+                <th class="px-3 py-2 text-left">#</th>
+                <th class="px-3 py-2 text-left">Supplier</th>
+                <th class="px-3 py-2 text-right">Existing Cost</th>
+                <th class="px-3 py-2 text-right">Unit Cost</th>
+                <th class="px-3 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of bomRows; let i=index; trackBy: trackByIdx" class="border-b">
+                <td class="px-3 py-2">{{ i + 1 }}</td>
+                <td class="px-3 py-2">
+                  <div class="text-sm">{{ r.supplierName || '—' }}</div>
+                </td>
+<td class="px-3 py-2">
+  <!-- get the ARRAY; don't take .length here -->
+  <ng-container *ngIf="(getLast3CostsForSupplier(r.supplierId) || []) as last3">
+    <div class="flex flex-wrap gap-1 items-center" *ngIf="last3.length; else noHist">
+      <!-- Chips -->
+      <ng-container *ngFor="let h of last3; let idx = index">
+        <span
+          class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap"
+          [ngClass]="isCurrentCost(r.unitCost, h.value) ? 'text-white' : 'text-slate-900'"
+          [ngStyle]="isCurrentCost(r.unitCost, h.value)
+                      ? {'background':'#2E5F73','border-color':'#2E5F73'}
+                      : {'background':'#f8fafc','border-color':'#cbd5e1'}"
+          [title]="isCurrentCost(r.unitCost, h.value) ? 'Current price' : 'Previous price'">
+
+          <i *ngIf="isCurrentCost(r.unitCost, h.value)"
+             class="fas fa-star text-[10px] mr-1" aria-hidden="true"></i>
+
+          {{ h.value | number:'1.2-4' }}
+          <small class="ml-1 text-[10px]"
+                 [ngStyle]="{'color': isCurrentCost(r.unitCost, h.value) ? 'rgba(255,255,255,.9)' : '#64748b'}">
+            {{ h.when | date:'yy-MM-dd' }}
+          </small>
+        </span>
+
+        <!-- Delta badge only next to current (vs previous) -->
+        <ng-container *ngIf="isCurrentCost(r.unitCost, h.value) && last3.length > 1">
+          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ml-1"
+                [ngStyle]="deltaColorStyle(deltaVsPrev(r.supplierId, r.unitCost))"
+                [title]="deltaVsPrev(r.supplierId, r.unitCost).tooltip">
+            <i class="fas mr-1 text-[10px]"
+               [class.fa-arrow-up]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'up'"
+               [class.fa-arrow-down]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'down'"
+               [class.fa-minus]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'flat'"></i>
+            {{ deltaVsPrev(r.supplierId, r.unitCost).abs | number:'1.2-4' }}
+            <small class="ml-1 text-[10px]">
+              ({{ deltaVsPrev(r.supplierId, r.unitCost).pct | number:'1.0-2' }}%)
+            </small>
+          </span>
+        </ng-container>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <ng-template #noHist>
+    <span class="text-gray-400 text-xs">No history</span>
+  </ng-template>
+</td>
+
+
+
+                <td class="px-3 py-2">
+                  <input type="number"
+                         class="w-full rounded-xl border px-3 py-2 text-sm"
+                         [(ngModel)]="r.unitCost"
+                         name="bom-unit-{{i}}"
+                         min="0" step="0.0001"
+                         (input)="recomputeBomTotalsInline()" />
+                </td>
+                <td class="px-3 py-2">
+                  <button class="px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50" (click)="removeBomRow(i)">
+                    <i class="fa fa-trash mr-1"></i> Remove
+                  </button>
+                </td>
+              </tr>
+
+              <tr *ngIf="!bomRows?.length">
+                <td colspan="5" class="px-3 py-6 text-center text-gray-400">No components. (Use prices to seed.)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-2 flex items-center justify-between">
+          <div class="text-sm text-gray-700">
+            <b>Rolled-up Cost:</b> {{ bomTotals.rollup | number:'1.2-4' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: AUDIT (EDIT) -->
+   
+
+  <!-- Header -->
+  
+
+  <ng-container *ngIf="item?.id">
+
+  <div *ngIf="isEdit && step === 4" class="aud2">
+
+  <!-- header -->
+  <div class="aud2-head">
+    <div>
+      <div class="aud2-title">Audit trail</div>
+      <div class="aud2-sub" *ngIf="item?.id">Item #{{ item.id }}</div>
+    </div>
+    <button class="aud2-btn" (click)="loadAudits()">
+      <i class="fas fa-rotate-right"></i>
+      Refresh
+    </button>
+  </div>
+
+  <div *ngIf="!item?.id" class="aud2-empty">
+    Save the item first to see its audit history.
+  </div>
+
+  <ng-container *ngIf="item?.id">
+
+    <div *ngIf="!audits?.length" class="aud2-empty">No audit entries yet.</div>
+
+    <!-- audit cards -->
+    <div class="aud2-list" *ngIf="audits?.length">
+
+      <div class="aud2-card" *ngFor="let a of audits; trackBy: trackByIdx">
+
+        <!-- card top row -->
+        <div class="aud2-cardtop">
+          <div class="aud2-left">
+            <span class="aud2-chip" [ngStyle]="chipStyle(a.action)">{{ a.action }}</span>
+
+            <span class="aud2-dot"></span>
+
+            <span class="aud2-time">
+              {{ a.occurredAtUtc | date:'yyyy-MM-dd HH:mm:ss' }} UTC
+            </span>
+
+            <span class="aud2-dot light"></span>
+
+            <ng-container *ngIf="a.userId || a.userName">
+              <span class="aud2-avatar" [ngStyle]="avatarStyle(a.userName)">
+                {{ initials(a.userName || ('User ' + a.userId)) }}
+              </span>
+              <span class="aud2-user">{{ a.userName || ('User #' + a.userId) }}</span>
+            </ng-container>
+
+            <ng-container *ngIf="a.remarks">
+              <span class="aud2-dot light"></span>
+              <span class="aud2-remarks">{{ a.remarks }}</span>
+            </ng-container>
+          </div>
+
+          <button class="aud2-link" (click)="toggleDetails(a.auditId)">
+            {{ expandedAudit[a.auditId] ? 'Hide' : 'View' }}
+            <i class="fas"
+              [class.fa-chevron-up]="expandedAudit[a.auditId]"
+              [class.fa-chevron-down]="!expandedAudit[a.auditId]"></i>
+          </button>
+        </div>
+
+        <!-- body -->
+        <div *ngIf="expandedAudit[a.auditId]" class="aud2-body">
+
+          <!-- UPDATE -->
+          <ng-container *ngIf="isUpdate(a); else aud2SnapshotOnly">
+
+            <div class="aud2-sectiontitle">Changed fields</div>
+
+            <!-- changed fields list -->
+            <div class="aud2-changes">
+              <div class="aud2-change" *ngFor="let d of diffs(a)">
+
+                <div class="aud2-field">{{ d.field }}</div>
+
+                <div class="aud2-values">
+                  <div class="aud2-col">
+                    <div class="aud2-label">Before</div>
+                    <div class="aud2-pillbox">
+                      <span class="aud2-pill muted">
+                        {{ fieldSummary(d.before) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="aud2-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                  </div>
+
+                  <div class="aud2-col">
+                    <div class="aud2-label">After</div>
+                    <div class="aud2-pillbox">
+                      <span class="aud2-pill warn">
+                        {{ fieldSummary(d.after) }}
+                      </span>
+                      <span *ngIf="fieldDeltaHint(d.before, d.after)" class="aud2-hint">
+                        {{ fieldDeltaHint(d.before, d.after) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- <div class="aud2-actions">
+                  <button class="aud2-mini"
+                          
+                          (click)="openField(a, d.field)">
+                    View details
+                  </button>
+                </div> -->
+
+              </div>
+            </div>
+
+            <div class="aud2-footer">
+              <button class="aud2-mini" (click)="openSnapshot(a)">
+                View full snapshots
+              </button>
+
+              <div class="aud2-rightbtns">
+                <button class="aud2-mini" [disabled]="busy[a.auditId]" (click)="copyAuditData(a)">
+                  {{ busy[a.auditId] ? 'Copying…' : 'Copy data' }}
+                </button>
+                <button class="aud2-mini" (click)="downloadAuditData(a)">Download</button>
+                <span *ngIf="copied[a.auditId]" class="aud2-copied">Copied!</span>
+              </div>
+            </div>
+
+          </ng-container>
+
+          <!-- CREATE/DELETE -->
+          <ng-template #aud2SnapshotOnly>
+            <div class="aud2-sectiontitle">Snapshot</div>
+
+            <div class="aud2-footer">
+              <button class="aud2-mini" (click)="openSnapshot(a)">
+                View snapshot
+              </button>
+
+              <div class="aud2-rightbtns">
+                <button class="aud2-mini" [disabled]="busy[a.auditId]" (click)="copyAuditData(a)">
+                  {{ busy[a.auditId] ? 'Copying…' : 'Copy data' }}
+                </button>
+                <button class="aud2-mini" (click)="downloadAuditData(a)">Download</button>
+                <span *ngIf="copied[a.auditId]" class="aud2-copied">Copied!</span>
+              </div>
+            </div>
+          </ng-template>
+
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Drawer / Modal -->
+  <div class="aud2-drawer-backdrop" *ngIf="drawer.open" (click)="closeDrawer()"></div>
+
+  <div class="aud2-drawer" *ngIf="drawer.open">
+    <div class="aud2-drawer-head">
+      <div>
+        <div class="aud2-drawer-title">{{ drawer.title }}</div>
+        <div class="aud2-drawer-sub">Audit #{{ drawer.auditId }}</div>
+      </div>
+      <button class="aud2-close" (click)="closeDrawer()"><i class="fas fa-xmark"></i></button>
+    </div>
+
+    <div class="aud2-drawer-tabs">
+     <button class="aud2-tab" [class.active]="drawer.tab==='before'" (click)="setDrawerTab('before')">Before</button>
+<button class="aud2-tab" [class.active]="drawer.tab==='after'" (click)="setDrawerTab('after')">After</button>
+
+    </div>
+
+    <div class="aud2-drawer-body">
+
+      <ng-container *ngIf="drawer.data as snap">
+        <!-- object -->
+        <ng-container *ngIf="snap.kind === 'object'">
+          <!-- <div class="aud2-kv">
+            <div class="aud2-kvrow" *ngFor="let r of snap.rows">
+              <div class="aud2-k">{{ r.key }}</div>
+              <div class="aud2-v">{{ r.value }}</div>
+            </div>
+          </div> -->
+
+          <div class="aud2-arr" *ngFor="let arr of snap.arrays">
+            <div class="aud2-arrhead">{{ arr.key }} ({{ arr.items.length }})</div>
+            <div class="aud2-tablewrap">
+              <table class="aud2-table">
+                <thead>
+                  <tr><th *ngFor="let c of arr.columns">{{ c }}</th></tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of arr.items">
+                    <td *ngFor="let c of arr.columns">{{ row[c] }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- array root -->
+        <ng-container *ngIf="snap.kind === 'array'">
+          <div class="aud2-tablewrap">
+            <table class="aud2-table">
+              <thead><tr><th *ngFor="let c of snap.columns">{{ c }}</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let row of snap.items">
+                  <td *ngFor="let c of snap.columns">{{ row[c] }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+
+        <div *ngIf="snap.kind==='empty'" class="aud2-empty">No data</div>
+      </ng-container>
+
+    </div>
+  </div>
+</div>
+
+  </ng-container>
+
+
+
+      <!-- STEP 5: REVIEW -->
+      <div *ngIf="isEdit && step === lastStepIndex" class="rounded-xl border p-2 space-y-3">
+
+        <!-- Item summary -->
+        <div class="rounded-md border overflow-hidden mb-2">
+          <div class="px-3 py-1 bg-[#0e3a4c] text-white text-[11px] font-semibold rounded-t-md">Summary</div>
+          <div class="p-2 text-sm grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div><b>Item:</b> {{ item.name || '-' }}</div>
+            <div><b>SKU:</b> {{ item.sku || '-' }}</div>
+            <div><b>Category:</b> {{ item.category || '-' }}</div>
+            <div><b>UOM:</b> {{ item.uom || '-' }}</div>
+            <div><b>Costing:</b> {{ getById(costingMethodList,item.costingMethodId)?.name || '-' }}</div>
+            <div><b>Tax:</b> {{ getById(taxCodeList,item.taxCodeId)?.name || '-' }}</div>
+            <div class="md:col-span-2"><b>Specs:</b> {{ item.specs || '-' }}</div>
+          </div>
+        </div>
+
+        <!-- Warehouses review -->
+        <div class="rounded-md bg-white border border-gray-200 shadow-sm mb-2">
+          <div class="px-3 py-1 bg-[#0e3a4c] text-white text-[11px] font-semibold rounded-t-md">
+            Warehouses
+          </div>
+          <div class="p-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-[12px]">
+              <div *ngFor="let r of itemStocks; trackBy: trackByIdx" class="border border-gray-100 rounded-md p-2.5 bg-gray-50 hover:shadow-sm transition">
+                <div class="font-medium text-gray-800">{{ getWarehouseName(r.warehouseId) }}</div>
+                <div class="text-[10px] text-gray-500 mb-1">{{ getBinName(r.binId) }}</div>
+                <div class="grid grid-cols-3 gap-x-2 text-[12px] mb-1">
+                  <div><span class="text-gray-500 block text-[10px]">On Hand</span><div class="font-semibold text-blue-600">{{ r.onHand }}</div></div>
+                  <div><span class="text-gray-500 block text-[10px]">Reserved</span><div class="font-semibold text-amber-600">{{ r.reserved }}</div></div>
+                  <div><span class="text-gray-500 block text-[10px]">Available</span><div class="font-semibold text-green-600">{{ r.available }}</div></div>
+                </div>
+                <div class="grid grid-cols-3 gap-x-2 text-[12px] mb-1">
+                  <div><span class="text-gray-500 block text-[10px]">Min</span><div>{{ r.min ?? 0 }}</div></div>
+                  <div><span class="text-gray-500 block text-[10px]">Max</span><div>{{ r.max ?? 0 }}</div></div>
+                  <div><span class="text-gray-500 block text-[10px]">Reorder/Lead</span><div>{{ r.reorderQty ?? 0 }} / {{ r.leadTimeDays ?? 0 }}</div></div>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!itemStocks?.length" class="text-center text-gray-400 py-2 text-xs">No warehouse data.</div>
+          </div>
+        </div>
+
+        <!-- Pricing review -->
+        <div class="rounded-md bg-white border border-gray-200 shadow-sm">
+          <div class="px-3 py-1 bg-[#0e3a4c] text-white text-[11px] font-semibold rounded-t-md">Suppliers</div>
+          <div class="p-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div *ngFor="let p of prices; let i = index; trackBy: trackByIdx"
+                   class="border border-gray-200 bg-gray-50 rounded-md px-2 py-1.5 flex justify-between items-center text-[11px] hover:shadow-sm transition">
+                <div class="font-semibold text-gray-800 truncate">{{ p.supplierName || '-' }}</div>
+                <div class="text-gray-700 font-medium">₹{{ p.price || '0.00' }}</div>
+              </div>
+            </div>
+            <div *ngIf="!prices?.length" class="text-center text-gray-400 py-2 text-xs">No price lines available.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="border-t px-1 py-1 flex justify-between bg-white">
+      <button class="px-1 py-1 rounded-xl border text-gray-700 hover:bg-gray-50" (click)="prev()" [disabled]="step===0 || stepsView.length===1">← Back</button>
+      <button class="px-1 py-1 rounded-xl bg-[#0e3a4c] text-white font-medium hover:bg-[#0b2e3d]"
+              (click)="next()" *ngIf="step<stepsView.length-1">Next →</button>
+      <button (click)="onSave()" class="px-1 py-1 rounded-lg bg-[#2E5F73] text-white font-medium hover:opacity-90"
+              *ngIf="step===stepsView.length-1">
+        <i class="fa fa-save"></i> Save
+      </button>
+    </div>
+    <div #bottomOfWizard style="height:1px;"></div>
+  </div>
+
+  <!-- ===== Warehouse Add/Edit Modal ===== -->
+  <div *ngIf="showWhModal" class="prl-overlay" aria-modal="true" role="dialog">
+    <div class="prl-modal" (click)="onModalRootClick($event)" role="dialog" aria-labelledby="wh-title">
+      <div class="prl-head">
+        <h2 id="wh-title" class="prl-title">{{ isEditMode ? 'Edit Warehouse Line' : 'Add Warehouse Line' }}</h2>
+        <button type="button" class="prl-close" (click)="closeWhModal()" aria-label="Close">✕</button>
+      </div>
+
+      <form #whForm="ngForm" (ngSubmit)="submitWarehouse(true)">
+        <div class="prl-grid">
+          <div class="prl-col-12 prl-md-6">
+            <label class="prl-label">Warehouse</label>
+            <select class="prl-input" [(ngModel)]="whDraft.warehouseId" name="warehouseId" (change)="getBinsForWarehouse(whDraft.warehouseId)" required>
+              <option [ngValue]="null" disabled>Select warehouse</option>
+              <option *ngFor="let w of warehouseList" [ngValue]="w.id">{{ w.name }}</option>
+            </select>
+          </div>
+
+          <div class="prl-col-12 prl-md-6">
+            <label class="prl-label">Bin / Location</label>
+            <select class="prl-input" [(ngModel)]="whDraft.binId" name="binId" [disabled]="!whDraft.warehouseId" required>
+              <option [ngValue]="null" disabled>Select bin</option>
+              <option *ngFor="let b of binList" [ngValue]="b.binID">{{ b.binName }}</option>
+            </select>
+          </div>
+
+          <div class="prl-col-12 prl-md-6">
+            <label class="prl-label">Frequency</label>
+            <select class="prl-input" [(ngModel)]="whDraft.strategyId" name="strategyId" required>
+              <option [ngValue]="null" disabled>Select Frequency</option>
+              <option *ngFor="let s of strategyList" [ngValue]="s.id">{{ s.strategyName }}</option>
+            </select>
+          </div>
+
+          <div class="prl-col-12 prl-md-3">
+            <label class="prl-label">On Hand</label>
+            <input type="number" class="prl-input" [(ngModel)]="whDraft.onHand" name="onHand" min="0" (input)="recalcDraft()">
+          </div>
+          <div class="prl-col-12 prl-md-3">
+            <label class="prl-label">Reserved</label>
+            <input type="number" class="prl-input" [(ngModel)]="whDraft.reserved" name="reserved" min="0" (input)="recalcDraft()">
+          </div>
+          <div class="prl-col-12 prl-md-3">
+            <label class="prl-label">Available</label>
+            <input type="number" class="prl-input prl-input-disabled" [(ngModel)]="whDraft.available" name="available" disabled readonly>
+          </div>
+
+          <div class="prl-col-12 prl-md-3">
+            <label class="prl-label">Reorder Qty</label>
+            <input type="number" class="prl-input" [(ngModel)]="whDraft.reorderQty" name="reorderQty" min="0">
+          </div>
+          <div class="prl-col-12 prl-md-3">
+            <label class="prl-label">Min</label>
+            <input type="number" class="prl-input" [(ngModel)]="whDraft.min" name="min" min="0">
+          </div>
+          <div class="prl-col-12 prl-md-3">
+            <label class="prl-label">Max</label>
+            <input type="number" class="prl-input" [(ngModel)]="whDraft.max" name="max" min="0">
+          </div>
+          <div class="prl-col-12 prl-md-3">
+            <label class="prl-label">Lead time (days)</label>
+            <input type="number" class="prl-input" [(ngModel)]="whDraft.leadTimeDays" name="leadTimeDays" min="0">
+          </div>
+
+          <div class="prl-col-12 prl-md-3">
+            <label class="prl-label">Tracking</label>
+            <div class="flex items-center gap-6 mt-1">
+              <label class="inline-flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="whDraft.batchFlag" name="batchFlag" (change)="whDraft.batchFlag && (whDraft.serialFlag = false)">
+                <span>Batch</span>
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input type="checkbox" [(ngModel)]="whDraft.serialFlag" name="serialFlag" (change)="whDraft.serialFlag && (whDraft.batchFlag = false)">
+                <span>Serial</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="prl-foot">
+          <button type="button" class="prl-btn prl-btn-outline-brand" (click)="submitWarehouse(false)">Add Another</button>
+          <button type="submit" class="prl-btn prl-btn-primary" [disabled]="whForm.invalid">Add &amp; Close</button>
+          <button type="button" class="prl-btn" (click)="closeWhModal()">Close</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

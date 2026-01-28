@@ -1,0 +1,207 @@
+<div class="slideout-content">
+  <!-- Modal to add new user starts-->
+  <div class="modalsd modal-slide-in sdfade new-user-modal" id="modals-slide-in">
+    <div class="modal-dialog">
+      <form class="add-new-user modal-content pt-0" (ngSubmit)="submit(newWarehouseForm)" #newWarehouseForm="ngForm">
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+          (click)="toggleSidebar('app-warehouse-create')"
+        >
+          ×
+        </button>
+        <div class="modal-header mb-1">
+          <h5 class="modal-title" id="exampleModalLabel">{{ isEdit ? 'Edit Warehouse' : 'New Warehouse' }}</h5>
+        </div>
+        <div class="modal-body flex-grow-1">
+          <div class="form-group">
+            <label class="form-label" for="basic-icon-default-name">Warehouse Name</label>
+            <input
+              type="text"
+              class="form-control dt-name"
+              id="basic-icon-default-name"
+              placeholder="Name"
+              name="name"
+              [(ngModel)]="name"
+              [class.error]="newWarehouseForm.submitted && nameRef.invalid"
+              #nameRef="ngModel"
+              required
+              aria-label="John Doe"
+              aria-describedby="basic-icon-default-name"
+            />
+            <span *ngIf="newWarehouseForm.submitted && nameRef.invalid" class="invalid-form">
+              <small class="form-text text-danger" *ngIf="nameRef.errors.required">This field is required!</small>
+            </span>
+          </div>
+
+          <div class="form-group mb-2">
+  <label class="form-label" for="bin">Bin</label>
+
+  <ng-select
+    id="bin"
+    name="binIds"
+    [items]="binList"
+    bindLabel="binName"        
+    bindValue="id"
+    [multiple]="true"
+    [closeOnSelect]="false"
+    [searchable]="true"
+    [clearable]="true"
+    [maxSelectedItems]="10"
+    placeholder="Select one or more bins"
+    [(ngModel)]="selectedBinIds"
+    [class.error]="newWarehouseForm.submitted && binRef?.invalid"
+    #binRef="ngModel">
+    <!-- Optional: show a checkbox-like marker -->
+    <ng-template ng-option-tmp let-item="item" let-item$="item$" let-index="index">
+      <div class="d-flex align-items-center">
+      
+        <div class="d-flex flex-column">
+          <span>{{ item.binName }}</span>
+          <small class="text-muted" *ngIf="item.code">Code: {{ item.code }}</small>
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Optional: selected items appearance -->
+    <ng-template ng-multi-label-tmp let-items="items">
+      <div class="ng-value" *ngFor="let it of items">
+        <span class="ng-value-label">{{ it.binName }}</span>
+      </div>
+      <div *ngIf="items.length > 3" class="text-muted small ml-1">
+        +{{ items.length - 3 }} more
+      </div>
+    </ng-template>
+  </ng-select>
+</div>
+          <div class="form-group mb-2">
+          <label class="form-label" for="country">Country</label>
+          <select
+            id="country"
+            class="form-control"
+            name="countryId"
+            [(ngModel)]="countryId"
+            (change)="onCountryChange(countryId)"
+            [class.error]="newWarehouseForm.submitted && countryRef.invalid"
+            #countryRef="ngModel"
+            required
+          >
+            <option [ngValue]="null" disabled>Select Country</option>
+            <option *ngFor="let item of countryList" [ngValue]="item.id">
+              {{ item.countryName }}
+            </option>
+          </select>
+          <span *ngIf="newWarehouseForm.submitted && countryRef.invalid" class="invalid-form">
+            <small class="text-danger" *ngIf="countryRef.errors?.required">This field is required!</small>
+          </span>
+        </div>
+
+        <div class="form-group mb-2">
+          <label class="form-label" for="state">State</label>
+          <select
+            id="state"
+            class="form-control"
+            name="stateId"
+            [(ngModel)]="stateId"
+            (change)="onStateChange(stateId)"
+            [class.error]="newWarehouseForm.submitted && stateRef.invalid"
+            #stateRef="ngModel"
+            required
+          >
+            <option [ngValue]="null" disabled>Select State</option>
+            <option *ngFor="let item of stateUpdatedList" [ngValue]="item.id">
+              {{ item.stateName }}
+            </option>
+          </select>
+          <span *ngIf="newWarehouseForm.submitted && stateRef.invalid" class="invalid-form">
+            <small class="text-danger" *ngIf="stateRef.errors?.required">This field is required!</small>
+          </span>
+        </div>
+         <div class="form-group mb-2">
+          <label class="form-label" for="city">City</label>
+          <select
+            id="city"
+            class="form-control"
+            name="cityId"
+            [(ngModel)]="cityId"
+            [class.error]="newWarehouseForm.submitted && cityRef.invalid"
+            #cityRef="ngModel"
+            required
+          >
+            <option [ngValue]="null" disabled>Select City</option>
+            <option *ngFor="let item of cityUpdatedList" [ngValue]="item.id">
+              {{ item.cityName }}
+            </option>
+          </select>
+          <span *ngIf="newWarehouseForm.submitted && cityRef.invalid" class="invalid-form">
+            <small class="text-danger" *ngIf="cityRef.errors?.required">This field is required!</small>
+          </span>
+        </div>
+
+           <div class="form-group">
+            <label class="form-label" for="basic-icon-default-phone">Phone</label>
+            <input
+              type="text"
+              class="form-control dt-phone"
+              id="basic-icon-default-phone"
+              placeholder="Phone"
+              name="phone"
+              [(ngModel)]="phone"
+              [class.error]="newWarehouseForm.submitted && phoneRef.invalid"
+              #phoneRef="ngModel"
+              required
+              aria-label="John Doe"
+              aria-describedby="basic-icon-default-name"
+            />
+            <span *ngIf="newWarehouseForm.submitted && phoneRef.invalid" class="invalid-form">
+              <small class="form-text text-danger" *ngIf="phoneRef.errors.required">This field is required!</small>
+            </span>
+          </div>
+
+           <div class="form-group">
+            <label class="form-label" for="basic-icon-default-address">Address</label>
+            <textarea
+              type="text"
+              class="form-control dt-address"
+              id="basic-icon-default-address"
+              name="address"
+              [(ngModel)]="address"
+              #addressRef="ngModel"
+              aria-label="John Doe"
+              aria-describedby="basic-icon-default-name"
+            ></textarea>
+           </div>
+           <div class="form-group">
+            <label class="form-label" for="basic-icon-default-description">Description</label>
+            <textarea
+              type="text"
+              class="form-control dt-description"
+              id="basic-icon-default-description"
+              name="description"
+              [(ngModel)]="description"
+              #descriptionRef="ngModel"
+              aria-label="John Doe"
+              aria-describedby="basic-icon-default-name"
+            ></textarea>
+           </div>
+
+         <button type="submit" class="btn btn-primary mr-1" [disabled]="loading" rippleEffect>
+  {{ isEdit ? 'Update' : 'Submit' }}
+</button>
+          <button
+            type="reset"
+            class="btn btn-outline-secondary"
+            (click)="toggleSidebar('app-warehouse-create')"
+            rippleEffect
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- Modal to add new user Ends-->
+</div>
+

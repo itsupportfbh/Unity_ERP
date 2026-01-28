@@ -1,0 +1,187 @@
+<button (click)="onGoToRecipeList()"
+        class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
+        style="background-color:#2E5F73; color:white; padding-left:2.25rem;">
+  <i class="fas fa-arrow-left position-absolute"
+     style="left:0.75rem; top:50%; transform:translateY(-50%);"
+     aria-hidden="true"></i>
+  <span>Go to Production Planlist</span>
+</button>
+<div class="pp2">
+  <!-- ===== Header / Action Bar ===== -->
+  <div class="pp2-header">
+    <div class="pp2-titlewrap">
+      <div class="pp2-title">Production Planning</div>
+      <div class="pp2-sub">Create plan + check ingredient shortage quickly</div>
+    </div>
+
+    <div class="pp2-actions">
+      <button class="pp2-btn ghost"
+              type="button"
+              (click)="onSoChange()"
+              [disabled]="!selectedSoId || isLoading">
+        Refresh
+      </button>
+
+      <button class="pp2-btn primary"
+              type="button"
+              (click)="savePlan()"
+              [disabled]="!selectedSoId || isLoading">
+        <span class="pp2-ic">💾</span>
+        Save Plan
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== Filters + Summary ===== -->
+  <div class="pp2-bar">
+    <div class="pp2-filter">
+      <label class="pp2-label">Sales Order</label>
+
+      <select class="pp2-select"
+              [(ngModel)]="selectedSoId"
+              (change)="onSoChange()">
+        <option [ngValue]="null">-- Select Sales Order --</option>
+        <option *ngFor="let so of soList" [ngValue]="so.id">
+          {{ so.salesOrderNo }} ({{ so.deliveryDate | date:'yyyy-MM-dd' }})
+        </option>
+      </select>
+
+      <div class="pp2-loading" *ngIf="isLoading">Loading…</div>
+    </div>
+
+    <div class="pp2-kpis">
+      <div class="pp2-kpi">
+        <div class="pp2-kpi-label">Recipes</div>
+        <div class="pp2-kpi-val">{{ planRows?.length || 0 }}</div>
+      </div>
+
+      <div class="pp2-kpi">
+        <div class="pp2-kpi-label">Ingredients</div>
+        <div class="pp2-kpi-val">{{ ingredients?.length || 0 }}</div>
+      </div>
+
+      <!-- ✅ FIXED: no filter() in template -->
+      <div class="pp2-kpi warn">
+        <div class="pp2-kpi-label">Shortage</div>
+        <div class="pp2-kpi-val">{{ shortageCountVal }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Content Grid ===== -->
+  <div class="pp2-grid">
+    <!-- ===== Left: Plan ===== -->
+    <div class="pp2-card">
+      <div class="pp2-cardhead">
+        <div>
+          <div class="pp2-cardtitle">Plan</div>
+          <div class="pp2-cardhint">Recipes from selected Sales Order</div>
+        </div>
+      </div>
+
+      <div class="pp2-tablewrap">
+        <table class="pp2-table">
+          <thead>
+            <tr>
+              <th style="width:46%;">Recipe</th>
+              <th style="width:27%;" class="num">Planned Qty</th>
+              <th style="width:27%;" class="num">Expected Output</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let r of planRows">
+              <td>
+                <div class="pp2-main">{{ r.recipeName }}</div>
+              </td>
+
+              <td class="num">
+                <span class="pp2-chip">
+                  {{ fmt(r.plannedQty) }}
+                </span>
+              </td>
+
+              <td class="num">
+                <span class="pp2-chip soft">
+                  {{ fmt(r.expectedOutput) }}
+                </span>
+              </td>
+            </tr>
+
+            <tr *ngIf="!planRows.length">
+              <td colspan="3" class="pp2-empty">
+                Select Sales Order to load recipes…
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== Right: Ingredient Explosion ===== -->
+    <div class="pp2-card">
+      <div class="pp2-cardhead split">
+        <div>
+          <div class="pp2-cardtitle">Ingredient Explosion</div>
+          <div class="pp2-cardhint">Required vs Available stock</div>
+        </div>
+
+        <button class="pp2-btn danger"
+                type="button"
+                (click)="createPR()"
+                [disabled]="!ingredients.length || disableCreateButton">
+          <span class="pp2-ic">🛒</span>
+          Create PR
+        </button>
+      </div>
+
+      <div class="pp2-tablewrap">
+        <table class="pp2-table">
+          <thead>
+            <tr>
+              <th>Ingredient</th>
+              <th class="num" style="width:22%;">Required</th>
+              <th class="num" style="width:22%;">Available</th>
+              <th style="width:18%;">Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let i of ingredients">
+              <td>
+                <div class="pp2-main">{{ i.itemName }}</div>
+                <div class="pp2-subline">{{ i.uom }}</div>
+              </td>
+
+              <td class="num">
+                <span class="pp2-chip">{{ fmt(i.requiredQty) }}</span>
+              </td>
+
+              <td class="num">
+                <span class="pp2-chip soft">{{ fmt(i.availableQty) }}</span>
+              </td>
+
+              <td>
+                <span class="pp2-badge"
+                      [ngClass]="i.status === 'OK' ? 'ok' : 'short'">
+                  <span class="dot"></span>
+                  {{ i.status }}
+                </span>
+              </td>
+            </tr>
+
+            <tr *ngIf="!ingredients.length">
+              <td colspan="4" class="pp2-empty">
+                No ingredients yet…
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pp2-foot" *ngIf="ingredients.length">
+        Tip: create PR only for items with <b>Shortage</b>.
+      </div>
+    </div>
+  </div>
+</div>

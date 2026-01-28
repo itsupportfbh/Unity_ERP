@@ -1,0 +1,355 @@
+.mrq-page {
+  padding: 18px;
+  background: #f6f8fc;
+  min-height: 100vh;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.mrq-card {
+  background: #ffffff;
+  border: 1px solid #e6edf7;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(16, 24, 40, 0.06);
+  overflow: visible !important;
+}
+
+/* Action bar */
+.mrq-actions {
+  display: flex;
+  padding: 14px;
+  border-bottom: 1px solid #eef2f7;
+  background: #fbfcff;
+  width: 100%;
+}
+
+/* ✅ Force right end */
+.mrq-actions-end {
+  justify-content: flex-end !important;
+  gap: 12px;
+}
+
+.mrq-btn {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 12px;
+  padding: 9px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+    transform: translateY(-1px);
+  }
+}
+
+.mrq-btn-primary {
+  background: #2e5f73;
+  color: #fff;
+  border-color: #2e5f73;
+
+  &:hover {
+    box-shadow: 0 6px 18px rgba(46, 95, 115, 0.25);
+  }
+}
+
+.mrq-btn-light {
+  background: #ffffff;
+}
+
+.ico {
+  font-size: 14px;
+}
+
+/* Header */
+.mrq-form {
+  padding: 16px 14px 8px 14px;
+  display: grid;
+  gap: 14px;
+}
+
+.mrq-form-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+.mrq-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.mrq-input {
+  width: 100%;
+  border: 1px solid #e6edf7;
+  background: #fff;
+  border-radius: 14px;
+  padding: 11px 12px;
+  font-size: 14px;
+  outline: none;
+
+  &:focus {
+    border-color: #b9d7e3;
+    box-shadow: 0 0 0 4px rgba(46, 95, 115, 0.08);
+  }
+
+  &[readonly] {
+    background: #f8fafc;
+    color: #111827;
+  }
+}
+
+.mrq-date {
+  position: relative;
+
+  .mrq-date-ico {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  input {
+    padding-right: 38px;
+  }
+}
+
+/* Grid */
+.mrq-grid-wrap {
+  padding: 12px 14px 16px 14px;
+  overflow: visible !important;
+}
+
+.mrq-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #e6edf7;
+  border-radius: 14px;
+  overflow: hidden;
+
+  thead th {
+   background: #2E5F73 !important;
+  color: #ffffff !important;
+    font-size: 13px;
+    font-weight: 800;
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #255264;
+  }
+
+  tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eef2f7;
+    vertical-align: middle;
+    background: #fff;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.col-no {
+  width: 50px;
+  color: #334155;
+  font-weight: 700;
+}
+
+.col-item {
+  width: 44%;
+}
+
+.col-sku,
+.col-uom {
+  width: 18%;
+}
+
+.col-qty {
+  width: 20%;
+}
+
+.qty {
+  text-align: right;
+}
+
+.col-act {
+  width: 90px;
+  text-align: center;
+}
+
+.mrq-row-remove {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid #fee2e2;
+  background: #fff;
+  color: #b91c1c;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.12s ease;
+
+  &:hover {
+    background: #fff1f2;
+    box-shadow: 0 6px 16px rgba(185, 28, 28, 0.12);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+.mrq-grid-footer {
+  display: flex;
+  gap: 14px;
+    padding: 14px 4px 0 4px;
+}
+
+.mrq-link {
+  background: transparent;
+  border: none;
+  color: #2e5f73;
+  font-weight: 800;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* =========================
+   ✅ Item ng-select styling
+========================= */
+:host ::ng-deep .mrq-ng .ng-select-container {
+  border: 1px solid #e6edf7;
+  border-radius: 14px;
+  min-height: 44px;
+  box-shadow: none;
+}
+
+:host ::ng-deep .mrq-ng.ng-select-focused .ng-select-container {
+  border-color: #b9d7e3;
+  box-shadow: 0 0 0 4px rgba(46, 95, 115, 0.08);
+}
+
+:host ::ng-deep .mrq-ng .ng-value-container {
+  padding-left: 12px;
+}
+
+:host ::ng-deep .mrq-ng .ng-dropdown-panel {
+  border-radius: 12px;
+  border: 1px solid #e6edf7;
+  overflow: hidden;
+}
+
+.opt-row { padding: 6px 2px; }
+.opt-name { font-weight: 700; color: #111827; }
+.opt-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+/* =========================
+   ✅ Outlet ng-select outline remove
+   (remove the "inner outline" you showed)
+========================= */
+:host ::ng-deep .mrq-outlet-ng .ng-select-container {
+  border: 1px solid #e6edf7;   /* keep single border */
+  border-radius: 14px;
+  min-height: 44px;
+  box-shadow: none !important;
+}
+
+/* ✅ remove inner/extra outline border */
+:host ::ng-deep .mrq-outlet-ng .ng-input > input {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* ✅ remove focused blue/gray outline */
+:host ::ng-deep .mrq-outlet-ng.ng-select-focused .ng-select-container {
+  border-color: #b9d7e3;
+  box-shadow: 0 0 0 4px rgba(46, 95, 115, 0.08) !important;
+}
+
+/* z-index for appended dropdown */
+:host ::ng-deep .ng-dropdown-panel {
+  z-index: 9999 !important;
+}
+
+.mrq-topbar{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  padding: 16px 14px;
+  border-bottom: 1px solid #eef2f7;
+  background:#ffffff;
+}
+
+.mrq-heading{
+  margin:0;
+  font-size: 28px;
+  font-weight: 800;
+  color:#1f2a37;
+  letter-spacing: 0.2px;
+}
+
+.mrq-subheading{
+  margin-top: 6px;
+  font-size: 15px;
+  color:#64748b;
+}
+
+.mrq-topbar-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.mrq-addline-btn {
+  background: #2E5F73;
+  color: #fff;
+  border: none;
+  border-radius: 12px;        // 16 → 12
+  padding: 8px 14px;          // 12px 22px → 8px 14px
+  font-weight: 600;           // 700 → 600
+  font-size: 14px;            // 16px → 14px
+  cursor: pointer;
+  transition: 0.15s ease;
+  box-shadow: 0 6px 12px rgba(46, 95, 115, 0.18); // reduce shadow
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 14px rgba(46, 95, 115, 0.25);
+  }
+
+  &:active {
+    transform: translateY(0px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+.mrq-subheading {
+  color: #2E5F73;   /* same theme color */
+  font-size: 16px;
+  font-weight: 600;
+}

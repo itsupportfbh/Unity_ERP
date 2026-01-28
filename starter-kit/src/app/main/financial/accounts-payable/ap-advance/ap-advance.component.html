@@ -1,0 +1,267 @@
+<!-- src/app/main/financial/accounts-payable/ap-advance-create/ap-advance.component.html -->
+
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card ap-card">
+
+        <!-- ===== Page Header ===== -->
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="card-text page-title mb-0">
+            New Supplier Advance
+          </h4>
+
+          <div class="d-flex gap-50">
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm mr-1"
+              (click)="goBack()">
+              <i class="fas fa-arrow-left mr-25"></i>
+              Back
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-sm"
+              style="background-color:#2E5F73; color:white;"
+              (click)="saveAdvance()"
+              [disabled]="saving || !canSave()">
+              <i class="fas fa-check-circle mr-25"></i>
+              Save Advance
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== Card Body ===== -->
+        <div class="card-body ap-advance-body">
+
+          <div class="row">
+
+            <!-- ================= LEFT COLUMN – FORM ================= -->
+            <div class="col-lg-7 col-md-7 col-12">
+
+              <!-- Supplier -->
+              <div class="form-group mb-1">
+                <label class="ap-label">
+                  Supplier <span class="text-danger">*</span>
+                </label>
+
+                <ng-select
+                  [(ngModel)]="supplierId"
+                  name="supplierId"
+                  [items]="suppliers"
+                  bindLabel="name"
+                  bindValue="id"
+                  [searchable]="true"
+                  [clearable]="true"
+                  placeholder="Search supplier..."
+                  (change)="onSupplierChange()">
+                </ng-select>
+              </div>
+
+              <!-- Date + Amount + Reference -->
+              <div class="form-row row mb-1">
+                <div class="col-md-4 col-12 mb-1 mb-md-0">
+                  <label class="ap-label">Advance Date</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    [(ngModel)]="advanceDate"
+                    name="advanceDate"
+                    (change)="onDateChange()" />
+                </div>
+
+                <div class="col-md-4 col-12 mb-1 mb-md-0">
+                  <label class="ap-label">
+                    Amount <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    class="form-control text-right"
+                    [(ngModel)]="amount"
+                    name="amount"
+                    min="0"
+                    step="0.01"
+                    (input)="onAmountChange()" />
+                </div>
+
+                <div class="col-md-4 col-12">
+                  <label class="ap-label">
+                    Reference No
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [(ngModel)]="referenceNo"
+                    name="referenceNo"
+                    placeholder="e.g. Advance Ref / Internal No" />
+                </div>
+              </div>
+
+              <!-- GRN combobox row -->
+              <div class="form-row row mb-1">
+                <div class="col-md-6 col-12">
+                  <div class="relative grn-combobox">
+                    <label class="ap-label d-block">GRN #</label>
+
+                    <div class="relative">
+                      <input type="text"
+                             [value]="grnSearch"
+                             (input)="onGrnSearch($event)"
+                             (focus)="onGrnFocus()"
+                             placeholder="Search GRN…"
+                             class="form-control"
+                             [attr.aria-autocomplete]="'list'"
+                             [attr.aria-expanded]="grnOpen" />
+
+                      <button type="button"
+                              class="grn-toggle-btn"
+                              (click)="toggleGrnDropdown($event)"
+                              aria-label="Toggle GRN list">
+                        ▼
+                      </button>
+                    </div>
+
+                    <!-- dropdown -->
+                    <ul *ngIf="grnOpen"
+                        class="grn-dropdown-list">
+                      <li *ngFor="let g of grnFiltered; trackBy: trackByGrn"
+                          (click)="selectGrn(g)"
+                          class="grn-dropdown-item">
+                        <span class="font-weight-semibold">{{ g.grnNo }}</span>
+                        <small class="text-muted ml-25" *ngIf="g.poNo">· PO: {{ g.poNo }}</small>
+                        <small class="text-muted ml-25" *ngIf="g.supplierName">· {{ g.supplierName }}</small>
+                      </li>
+
+                      <li *ngIf="!grnFiltered?.length"
+                          class="grn-dropdown-empty">
+                        No results
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Method + Bank -->
+              <div class="form-row row mb-1">
+                <div class="col-md-4 col-12 mb-1 mb-md-0">
+                  <label class="ap-label">Method</label>
+                  <select
+                    class="form-control"
+                    [(ngModel)]="methodId"
+                    name="methodId"
+                    (change)="onMethodChange()">
+                    <option [ngValue]="1">Cash</option>
+                    <option [ngValue]="2">Bank Transfer</option>
+                    <option [ngValue]="3">Cheque</option>
+                    <option [ngValue]="4">Other</option>
+                  </select>
+                </div>
+
+                <!-- Bank (only for bank / cheque) -->
+                <div class="col-md-8 col-12" *ngIf="methodId === 2 || methodId === 3">
+                  <label class="ap-label">
+                    Bank Account <span class="text-danger">*</span>
+                  </label>
+                  <select
+                    class="form-control"
+                    [(ngModel)]="bankHeadId"
+                    name="bankHeadId"
+                    (change)="onBankChange()">
+                    <option [ngValue]="null">-- Select Bank --</option>
+                    <option *ngFor="let b of bankAccounts" [ngValue]="b.id">
+                      {{ b.headName }}
+                    </option>
+                  </select>
+
+                  <div class="mt-25 text-muted small" *ngIf="bankAvailableBalance !== null">
+                    <div>
+                      Available:
+                      <strong>{{ bankAvailableBalance | number:'1.2-2' }}</strong>
+                    </div>
+                    <div *ngIf="amount > 0">
+                      After Advance:
+                      <strong>{{ bankBalanceAfterAdvance | number:'1.2-2' }}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notes -->
+              <div class="form-group mb-1">
+                <label class="ap-label">Notes</label>
+                <textarea
+                  class="form-control"
+                  rows="2"
+                  [(ngModel)]="notes"
+                  name="notes"
+                  placeholder="Remarks / description for this advance...">
+                </textarea>
+              </div>
+
+            </div>
+
+            <!-- ================= RIGHT COLUMN – SUMMARY ================= -->
+            <div class="col-lg-5 col-md-5 col-12 mt-2 mt-md-0">
+              <div class="ap-advance-summary-card">
+                <div class="d-flex justify-content-between align-items-center mb-25">
+                  <h6 class="mb-0 text-brand">
+                    Advance Summary
+                  </h6>
+                  <i class="fas fa-money-check-alt"></i>
+                </div>
+
+                <div class="ap-advance-summary-row">
+                  <span class="label">Supplier</span>
+                  <span class="value">
+                    {{ supplierName || '-' }}
+                  </span>
+                </div>
+
+                <div class="ap-advance-summary-row">
+                  <span class="label">Advance Date</span>
+                  <span class="value">
+                    {{ advanceDate | date:'dd-MMM-yyyy' }}
+                  </span>
+                </div>
+
+                <div class="ap-advance-summary-row">
+                  <span class="label">Method</span>
+                  <span class="value">
+                    {{ getMethodName(methodId) }}
+                  </span>
+                </div>
+
+                <div class="ap-advance-summary-row" *ngIf="methodId === 2 || methodId === 3">
+                  <span class="label">Bank Account</span>
+                  <span class="value">
+                    {{ bankName || '-' }}
+                  </span>
+                </div>
+
+                <div class="ap-advance-summary-row">
+                  <span class="label">GRN No</span>
+                  <span class="value">
+                    {{ grnNo || '-' }}
+                  </span>
+                </div>
+
+                <div class="ap-advance-summary-divider"></div>
+
+                <div class="ap-advance-summary-row total">
+                  <span class="label">Advance Amount</span>
+                  <span class="value">
+                    {{ amount || 0 | number:'1.2-2' }}
+                  </span>
+                </div>
+
+              </div>
+            </div>
+
+          </div> <!-- /row -->
+
+        </div> <!-- /card-body -->
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,455 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import '@core/scss/angular/libs/sweet-alerts.component.scss';
+
+/* ========= PAGE / CARD ========= */
+
+.gst-page {
+  background: #f3f4f6;
+}
+
+.gst-card {
+  border-radius: 1.5rem;
+  border: none;
+  overflow: hidden;
+}
+
+.gst-header {
+  border-bottom: none;
+  padding: 0.9rem 1.5rem 0.4rem 1.5rem;
+  background: #ffffff;
+}
+
+.gst-title {
+  color: #2e5f73;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.gst-subtitle {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #9ca3af;
+  letter-spacing: 0.16em;
+  margin-bottom: 0.1rem;
+}
+
+.gst-export .btn {
+  border-radius: 999px;
+}
+
+.gst-body {
+  background: linear-gradient(to bottom, #f9fafb 0%, #ffffff 80%);
+  border-radius: 0 0 1.5rem 1.5rem;
+  padding: 1.2rem 1.5rem 1.25rem 1.5rem;
+}
+
+/* ========= SUMMARY CARDS ========= */
+
+.gst-summary-row {
+  margin-top: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.gst-summary-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.3rem;
+  border-radius: 1.4rem;
+  background-color: #ffffff;
+  position: relative;
+  overflow: hidden;
+
+  /* darker border so full outline clearly visible */
+  border: 1px solid #d1d5db;
+
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gst-summary-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  border-bottom-left-radius: 1.4rem;
+  border-bottom-right-radius: 1.4rem;
+}
+
+.gst-summary-card:hover {
+  transform: translateY(-2px);
+}
+
+.gst-summary-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+
+  i {
+    font-size: 1.4rem;
+  }
+}
+
+.gst-summary-text {
+  .gst-summary-label {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-bottom: 0.05rem;
+  }
+
+  .gst-summary-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.1;
+  }
+
+  .gst-summary-caption {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.1rem;
+  }
+}
+
+/* ---- individual colours ---- */
+
+/* Total Taxable – orange */
+.gst-summary-taxable::after {
+  background: #ffb4a4;
+}
+
+.gst-summary-icon-taxable {
+  background: #fff3f1;
+
+  i {
+    color: #f97373;
+  }
+}
+
+/* Total Tax – blue */
+.gst-summary-tax::after {
+  background: #9bd5ff;
+}
+
+.gst-summary-icon-tax {
+  background: #eff8ff;
+
+  i {
+    color: #2563eb;
+  }
+}
+
+/* Total Net – green */
+.gst-summary-net::after {
+  background: #7ce2a8;
+}
+
+.gst-summary-icon-net {
+  background: #ecfdf5;
+
+  i {
+    color: #16a34a;
+  }
+}
+
+/* ========= FILTER CARD ========= */
+
+.gst-filter-card {
+  background: #ffffff;
+  border-radius: 1.25rem;
+  padding: 1.25rem 1.75rem;
+  border: 1px solid #eef0f5;
+  box-shadow: 0 6px 18px rgba(15, 34, 58, 0.06);
+  margin-top: 0.35rem;
+}
+
+.gst-filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+/* inputs / selects */
+.gst-filter-card .form-control,
+.gst-filter-card select {
+  font-size: 0.85rem;
+  height: 40px;
+  border-radius: 0.9rem;
+  border: 1px solid #e3e6ee;
+  padding: 0.35rem 0.9rem;
+}
+
+/* reduce vertical gap between rows in this card only */
+.gst-filter-card .mb-1 {
+  margin-bottom: 0.5rem !important;
+}
+
+/* buttons area */
+.gst-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* common button style inside filter card */
+.gst-filter-actions .btn {
+  height: 40px;
+  border-radius: 999px;
+  padding: 0 1.4rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* brand filter button */
+.btn.btn-brand {
+  background-color: #2e5f73;
+  border-color: #2e5f73;
+  color: #ffffff;
+  border-radius: 999px;
+}
+
+/* reset button – light border like screenshot */
+.gst-filter-actions .btn-outline-secondary {
+  border-radius: 0.9rem;
+  border-color: #d1d5db;
+}
+
+/* gap between Filter & Reset buttons */
+.gst-filter-actions .btn + .btn {
+  margin-left: 0.5rem;
+}
+
+/* ========= TABLE ========= */
+
+.gst-table-wrapper {
+  margin-top: 0.3rem;
+}
+
+.gst-table thead th {
+  background-color: #2e5f73;
+  color: #fff;
+  border-bottom: none;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.gst-table th,
+.gst-table td {
+  vertical-align: middle;
+  border-top: none;
+  font-size: 0.82rem;
+}
+
+.gst-table tbody tr:nth-child(odd) {
+  background-color: #f9fafb;
+}
+
+.gst-table tbody tr:hover {
+  background-color: #e5f2f6;
+}
+
+.gst-table .text-nowrap {
+  white-space: nowrap;
+}
+
+/* TYPE badges */
+.gst-type-badge {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+}
+
+.gst-type-sales {
+  background-color: #2e5f73;
+  color: #fff;
+}
+
+.gst-type-supplier {
+  background-color: #00c8ff;
+  color: #fff;
+}
+
+/* ========= PAGINATION ========= */
+
+.gst-pagination-bar {
+  padding: 0.35rem 0.9rem 0.2rem 0.9rem;
+  background: transparent;
+}
+
+.gst-pagination {
+  padding: 0.75rem 0.9rem 0.9rem 0.9rem;
+  background: #ffffff;
+  border-radius: 0 0 1.5rem 1.5rem;
+}
+
+.pagination .page-link {
+  color: #2e5f73;
+  border-radius: 999px !important;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #2e5f73;
+  border-color: #2e5f73;
+  color: #fff;
+}
+
+/* ========= LOADER ========= */
+
+.gst-loader-wrap {
+  padding: 1.5rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  font-size: 0.85rem;
+}
+
+/* ========= EXPORT MODAL ========= */
+
+.gst-export-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+}
+
+.gst-export-modal {
+  width: 420px;
+  max-width: 90%;
+  border-radius: 18px;
+  padding: 0;
+}
+
+.gst-export-modal .card-header {
+  border-bottom: none;
+  padding: 0.75rem 1rem;
+}
+
+.gst-export-modal .card-body {
+  padding: 0.75rem 1rem 1rem;
+}
+
+.gst-export-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e3f2fd;
+  color: #2e5f73;
+  font-size: 14px;
+}
+
+.gst-export-modal .btn-icon {
+  border: none;
+  background: transparent;
+  color: #6b7280;
+}
+
+.gst-export-modal .btn-success,
+.gst-export-modal .btn-danger {
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* ========= RESPONSIVE ========= */
+
+@media (max-width: 991.98px) {
+  .gst-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.4rem;
+  }
+
+  .gst-export {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.4rem;
+  }
+
+  /* mobile / tablet – buttons second row left side, little inside */
+  .gst-filter-actions {
+    justify-content: flex-start;
+    padding-left: 0.4rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .gst-filter-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .gst-summary-card {
+    padding: 0.8rem 0.95rem;
+  }
+
+  .gst-summary-text .gst-summary-value {
+    font-size: 1.25rem;
+  }
+
+  .gst-pagination {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.4rem;
+  }
+}
+
+
+/* ========= EXPORT MODAL BUTTONS ========= */
+
+.gst-export-actions {
+  display: flex;
+  gap: 0.75rem;         // space between buttons
+  margin-top: 1rem;
+}
+
+.gst-export-actions .btn {
+  flex: 1 1 0;
+  height: 46px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Green Excel button */
+.btn-export-excel {
+  background-color: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+/* Red PDF button */
+.btn-export-pdf {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.btn-export-excel:hover {
+  background-color: #15803d;
+  border-color: #15803d;
+}
+
+.btn-export-pdf:hover {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}

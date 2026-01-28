@@ -1,0 +1,188 @@
+/* ========== EXISTING TABLE + FILTERS (kept) ========== */
+
+.aging-table thead tr th {
+  background-color: #2E5F73 !important;
+  color: #fff !important;
+}
+
+.aging-filters {
+  gap: 1rem;
+}
+
+.aging-filter-item {
+  white-space: nowrap;
+}
+
+.aging-filter-label {
+  font-size: 0.85rem;
+  margin-right: 0.35rem;
+  color: #555;
+}
+
+.aging-filter-control {
+  width: 180px;
+}
+
+/* ========== AR SUMMARY CARDS (same feel as AP) ========== */
+
+.ar-summary-row {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ar-summary-card {
+    display: flex;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: #ffffff; /* overridden per card below */
+  box-shadow: 0 4px 14px rgba(20, 47, 66, 0.05);
+  border: 1px solid #d4dde8;   // 🔹 added border
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.ar-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(20, 47, 66, 0.12);
+  border-color: #b8c4d8;   
+}
+
+/* round icon holder */
+.ar-summary-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+  background: rgba(46, 95, 115, 0.06); /* default, overridden below */
+}
+
+/* feather replaces <i> with <svg>, so style svg */
+.ar-summary-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: #2e5f73;
+}
+
+.ar-summary-content {
+  flex: 1;
+}
+
+.ar-summary-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7c8895;
+  margin-bottom: 0.15rem;
+}
+
+.ar-summary-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #2e5f73;
+}
+
+
+
+/* ========== Card-specific colours (match invoice cards) ========== */
+
+/* 1) Total Outstanding  -> like TOTAL INVOICE AMOUNT (peach / orange) */
+.ar-card-total {
+  background: #fff3e8;                 /* light peach */
+  border-color: #ffd7b8;
+}
+.ar-card-total .ar-summary-icon {
+  background: #ffe0c2;                 /* peach circle */
+}
+.ar-card-total .ar-summary-value {
+  color: #f97316;                      /* orange text */
+}
+
+/* 2) 0–30 days -> like TOTAL PAID (mint / green) */
+.ar-card-030 {
+  background: #ecfdf3;                 /* mint card */
+  border-color: #bbf7d0;
+}
+.ar-card-030 .ar-summary-icon {
+  background: #bbf7d0;                 /* mint circle */
+}
+.ar-card-030 .ar-summary-value {
+  color: #16a34a;                      /* green text */
+}
+
+/* 3) 31–60 days -> like TOTAL CREDIT NOTES (soft yellow) */
+.ar-card-3160 {
+  background: #fef9c3;                 /* pale yellow card */
+  border-color: #fde68a;
+}
+.ar-card-3160 .ar-summary-icon {
+  background: #fde68a;                 /* yellow circle */
+}
+.ar-card-3160 .ar-summary-value {
+  color: #ca8a04;                      /* amber text */
+}
+
+/* 4) 61–90 & 90+ -> like NET OUTSTANDING (lavender / blue) */
+.ar-card-90 {
+  background: #eef2ff;                 /* light lavender card */
+  border-color: #e0e7ff;
+}
+.ar-card-90 .ar-summary-icon {
+  background: #e0e7ff;                 /* lavender circle */
+}
+.ar-card-90 .ar-summary-value {
+  color: #4f46e5;                      /* indigo text */
+}
+
+
+/* Optional: table row hover to match AP */
+.aging-table tbody tr:hover {
+  background-color: #f5f7fa;
+}
+
+/* Header wrapper */
+.aging-header {
+  padding-right: 0.25rem;
+}
+
+/* Export buttons container (same as GST) */
+.aging-header .gst-export {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;        // space between PDF & Excel
+}
+
+.aging-header .gst-export .btn {
+  border-radius: 999px;
+  font-size: 0.8rem;          // was 0.75rem
+  font-weight: 500;
+  padding: 0.35rem 1.1rem;    // slightly more height + width
+  border-color: #e5e7eb;
+  background-color: #ffffff;
+  color: #6b7280;
+  box-shadow: none;
+  line-height: 1.2;
+}
+
+.aging-header .gst-export .btn i {
+  font-size: 0.9rem;          // make icon a bit bigger
+  margin-right: 0.25rem;
+}
+
+
+/* Hover / focus – light grey, like GST */
+.aging-header .gst-export .btn:hover:not(:disabled),
+.aging-header .gst-export .btn:focus-visible:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+/* Disabled state */
+.aging-header .gst-export .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

@@ -1,0 +1,66 @@
+@import '@core/scss/core.scss';
+@import './assets/scss/styles';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Compact form controls (PR Wizard) ===== */
+.ui-compact{
+  --ctl-fs: 14px;     /* text size */
+  --ctl-h: 40px;      /* input/button height */
+  --ctl-px: 12px;     /* horizontal padding */
+  --ctl-py: 8px;      /* vertical padding */
+  --ctl-radius: 12px; /* softer, not pill */
+
+  /* Inputs / selects / textareas */
+  input, select, textarea, .form-control, .form-select{
+    font-size: var(--ctl-fs) !important;
+    height: var(--ctl-h) !important;
+    min-height: var(--ctl-h) !important;
+    padding: var(--ctl-py) var(--ctl-px) !important;
+    border-radius: var(--ctl-radius) !important;
+    line-height: 1.25 !important;
+  }
+
+  /* Buttons */
+  button, .btn{
+    font-size: var(--ctl-fs) !important;
+    height: var(--ctl-h) !important;
+    padding: var(--ctl-py) var(--ctl-px) !important;
+    border-radius: var(--ctl-radius) !important;
+  }
+
+  /* Tailwind utilities you used (shrink them only inside this page) */
+  .rounded-xl, .rounded-2xl { border-radius: var(--ctl-radius) !important; }
+  .px-4 { padding-left: var(--ctl-px) !important;  padding-right: var(--ctl-px) !important; }
+  .px-3 { padding-left: 10px !important;           padding-right: 10px !important; }
+  .py-2 { padding-top: var(--ctl-py) !important;    padding-bottom: var(--ctl-py) !important; }
+  .text-sm { font-size: var(--ctl-fs) !important; }
+
+  /* Reduce vertical and grid spacing to match image-2 */
+  .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: .75rem !important; } /* 12px */
+  .gap-3 { gap: .75rem !important; } /* 12px */
+
+  /* Your custom dropdown inputs & lists */
+  .dropdown-wrapper input{
+    height: var(--ctl-h) !important;
+    padding: var(--ctl-py) var(--ctl-px) !important;
+    font-size: var(--ctl-fs) !important;
+    border-radius: var(--ctl-radius) !important;
+  }
+  .dropdown-wrapper ul li{ padding: 6px 8px !important; font-size: 12px !important; }
+
+  /* Date inputs (native / libs) */
+  input[type="date"], .flatpickr-input, .mat-datepicker-input, .bs-datepicker input{
+    height: var(--ctl-h) !important;
+    min-height: var(--ctl-h) !important;
+    font-size: var(--ctl-fs) !important;
+    padding: var(--ctl-py) var(--ctl-px) !important;
+  }
+
+  /* Table cells */
+  table th, table td{ padding: 8px 10px !important; font-size: 14px !important; }
+  
+}
+

@@ -1,0 +1,150 @@
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <!-- Header / Controls -->
+        <div class="row align-items-center">
+          <div class="col-md-6 col-12">
+            <h4 class="card-text"
+                style="margin-left: 0.85rem; margin-top: 0.75rem;
+                       font-size: 1.25rem; font-weight: 600; color: #2E5F73;">
+              {{ headervalue || 'Chart Of Account' }}
+            </h4>
+
+            <div class="d-flex align-items-center m-1">
+              <label class="d-flex align-items-center mb-0">
+                Show
+                <select class="form-control mx-25" [(ngModel)]="selectedOption">
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="25">25</option>
+                  <option [ngValue]="50">50</option>
+                  <option [ngValue]="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+            <div class="d-flex align-items-center justify-content-end pr-2 pb-1 pb-md-0">
+              <label class="d-flex align-items-center ml-1 ml-md-0 mb-0">
+                Search:
+                <input
+                  [(ngModel)]="searchValue"
+                  name="searchValue"
+                  type="search"
+                  class="form-control ml-25"
+                  (keyup)="filterUpdate()"
+                  (search)="filterUpdate()" />
+              </label>
+
+              <button
+                class="btn m-1"
+                style="background-color: #2E5F73; color: white;"
+                (click)="toggleSidebar('app-chartofaccountcreate')">
+                <i data-feather="plus"
+                   class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
+                <span class="d-none d-sm-inline-block">Add</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <ngx-datatable
+          #table
+          class="bootstrap core-bootstrap coa-table"
+          [rows]="displayRows"
+          [rowHeight]="40"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="selectedOption"
+          [columnMode]="'flex'"
+          [scrollbarH]="false"
+          [reorderable]="true">
+
+          <!-- Head Code -->
+          <ngx-datatable-column name="HEAD CODE" [flexGrow]="1">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <span class="coa-code">{{ row.headCode }}</span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Head Name (tree) -->
+          <ngx-datatable-column name="HEAD NAME" [flexGrow]="2">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="d-flex align-items-center">
+
+                <!-- indent -->
+                <span [style.paddingLeft.px]="row.level * 20"></span>
+
+                <!-- expand / collapse button -->
+                <button
+                  *ngIf="row.hasChildren"
+                  type="button"
+                  class="btn btn-link p-0 mr-25"
+                  (click)="toggleNode(row)"
+                  title="Expand / Collapse">
+                  <i class="fa"
+                     [ngClass]="row.expanded ? 'fa-minus-square' : 'fa-plus-square'">
+                  </i>
+                </button>
+
+                <!-- placeholder when no children -->
+                <span *ngIf="!row.hasChildren"
+                      style="display:inline-block; width:18px;"></span>
+
+                <span class="ml-25">{{ row.headName }}</span>
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Opening Balance -->
+          <!-- <ngx-datatable-column name="OPENING BALANCE" [flexGrow]="1">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="amount text-right">
+                {{ row.openingBalance | number:'1.0-0' }}
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="BALANCE" [flexGrow]="1">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="amount text-right">
+                {{ row.balance | number:'1.0-0' }}
+              </div>
+            </ng-template>
+          </ngx-datatable-column> -->
+
+          <!-- Action -->
+          <ngx-datatable-column name="ACTION" [flexGrow]="1">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <i
+                class="fas fa-pen text-blue-600 mr-2"
+                style="cursor:pointer"
+                (click)="edit(row.id)"></i>
+              <i
+                class="fas fa-trash text-danger"
+                style="cursor:pointer"
+                (click)="confirmDeleteCoa(row.id)"></i>
+            </ng-template>
+          </ngx-datatable-column>
+        </ngx-datatable>
+
+        <div *ngIf="isLoading" class="p-2 text-center text-muted">Loading…</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Sidebar -->
+  <core-sidebar
+    class="modal modal-slide-in sidebar-todo-modal fade"
+    name="app-chartofaccountcreate"
+    overlayClass="modal-backdrop">
+    <app-chartofaccountcreate
+      [editId]="selectedCoaId"
+      (onDepartmentChange)="load()">
+    </app-chartofaccountcreate>
+  </core-sidebar>
+</div>

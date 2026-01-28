@@ -13,6 +13,8 @@ import { RecipeMasterListComponent } from './recipe-master-list/recipe-master-li
 import { ProductionPlanningComponent } from './production-planning/createproductionplanning/production-planning.component';
 
 import { ProductionPlanningListComponent } from './production-planning/production-planning-list/production-planning-list.component';
+import { BatchProductionCreateComponent } from './batch-production/batch-production-create/batch-production-create.component';
+import { BatchProductionListComponent } from './batch-production/batch-production-list/batch-production-list.component';
 
 const routes: Routes = [
   { path: 'recipecreate', component: RecipemastercreateComponent },
@@ -21,10 +23,12 @@ const routes: Routes = [
   { path: 'productionplanningcreate', component: ProductionPlanningComponent },
   { path: 'productionplanninglist', component: ProductionPlanningListComponent },
   { path: 'productionplanningedit/:id', component: ProductionPlanningComponent },
+   { path: 'batchproductionlist', component: BatchProductionListComponent },
+  { path: 'batchproductioncreate', component: BatchProductionCreateComponent },
 ];
 
 @NgModule({
-  declarations: [RecipemastercreateComponent, RecipeMasterListComponent, ProductionPlanningComponent, ProductionPlanningListComponent],
+  declarations: [RecipemastercreateComponent, RecipeMasterListComponent, ProductionPlanningComponent, ProductionPlanningListComponent, BatchProductionCreateComponent, BatchProductionListComponent],
   imports: [
     CommonModule, RouterModule.forChild(routes),
           NgxDatatableModule,

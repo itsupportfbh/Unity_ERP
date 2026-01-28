@@ -121,7 +121,7 @@ export const menu: any[] = [
     children: [
       { id: 'recipe', title: 'Recipe Master', type: 'item', icon: 'circle', url: '/Recipe/recipelist',  approvalRoles: ['Super Admin'] },
        { id: 'recipe', title: 'Production Planning', type: 'item', icon: 'circle', url: '/Recipe/productionplanninglist',  approvalRoles: ['Super Admin'] },
-     
+      { id: 'recipe', title: 'Batch Production', type: 'item', icon: 'circle', url: '/Recipe/batchproductionlist',  approvalRoles: ['Super Admin'] },
     ]
   },
 

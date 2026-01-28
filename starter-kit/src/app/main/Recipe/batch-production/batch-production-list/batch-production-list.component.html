@@ -1,0 +1,218 @@
+
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <!-- ==================== HEADER ROW ==================== -->
+        <div class="row">
+          <!-- Title + page size -->
+          <div class="col-md-3 col-12">
+            <h4 class="card-text bp-title">
+              Batch Production List
+            </h4>
+
+            <div class="d-flex justify-content-between align-items-center m-1">
+              <label class="d-flex align-items-center">
+                Show
+                <select class="form-control mx-25" (change)="onLimitChange($event)">
+                  <option [selected]="selectedOption===10" value="10">10</option>
+                  <option [selected]="selectedOption===25" value="25">25</option>
+                  <option [selected]="selectedOption===50" value="50">50</option>
+                  <option [selected]="selectedOption===100" value="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+          </div>
+
+          <!-- Search + Add -->
+        <!-- Search + Add -->
+        <div class="col-md-9 col-12">
+        <div class="bp-head-right">
+
+            <!-- Search -->
+            <div class="bp-search">
+            <label class="mb-0">Search:</label>
+            <input
+                [(ngModel)]="searchValue"
+                name="searchValue"
+                type="search"
+                class="form-control bp-search-input"
+                (keyup)="filterUpdate($event)"
+                (search)="filterUpdate($event)" />
+            </div>
+
+            <!-- Add -->
+            <button
+            type="button"
+            (click)="goToCreate()"
+            class="btn bp-addbtn"
+            title="Create Batch">
+            <i class="fas fa-plus-circle"></i>
+            <span>Add</span>
+            </button>
+
+        </div>
+        </div>
+
+        </div>
+
+        <!-- ==================== MAIN DATATABLE ==================== -->
+        <ngx-datatable
+          class="bootstrap core-bootstrap"
+          [rows]="rows"
+          [rowHeight]="50"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="selectedOption"
+          [columnMode]="'force'"
+          [scrollbarH]="false"
+          [reorderable]="true">
+
+          <!-- View details -->
+          <ngx-datatable-column
+            [width]="50"
+            [resizeable]="false"
+            [sortable]="false"
+            [draggable]="false"
+            [canAutoResize]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span
+                (click)="openLinesModal(row)"
+                title="View Batch Lines"
+                class="bp-eye">
+                <i class="fas fa-eye"></i>
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Batch No" prop="batchNo" [width]="160"></ngx-datatable-column>
+
+          <ngx-datatable-column name="Plan" prop="planName" [width]="220">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.planName || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Plan Date" prop="planDate" [width]="150">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.planDate ? (row.planDate | date:'yyyy-MM-dd') : '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Outlet" prop="outletName" [width]="190">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.outletName || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Status" prop="status" [width]="140">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="badge badge-pill status-pill"
+                   [ngClass]="{
+                     'badge-secondary': (row.status || '').toLowerCase() === 'draft',
+                     'badge-info'     : (row.status || '').toLowerCase() === 'inprogress',
+                     'badge-success'  : (row.status || '').toLowerCase() === 'posted',
+                     'badge-warning'  : (row.status || '').toLowerCase() === 'cancelled'
+                   }">
+                {{ row.status || 'Draft' }}
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Action" [width]="170" [sortable]="false">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="bp-actions">
+
+                <!-- Execute/Edit -->
+                <i class="fas fa-pen text-primary"
+                   style="cursor:pointer;"
+                   (click)="editBatch(row.id)"
+                   title="Open / Execute"></i>
+
+                <!-- Post -->
+                <i class="fas fa-check-circle text-success"
+                   style="cursor:pointer;"
+                   (click)="quickPost(row)"
+                   [style.opacity]="(row.status || '').toLowerCase() === 'posted' ? 0.35 : 1"
+                   [style.pointerEvents]="(row.status || '').toLowerCase() === 'posted' ? 'none' : 'auto'"
+                   title="Post to Inventory"></i>
+
+                <!-- Delete -->
+                <i class="fas fa-trash text-danger"
+                   style="cursor:pointer;"
+                   (click)="deleteBatch(row.id)"
+                   title="Delete"></i>
+
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+        </ngx-datatable>
+
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ==================== LINES POPUP ==================== -->
+<div
+  *ngIf="showLinesModal"
+  (click)="closeLinesModal()"
+  class="bp-modal-backdrop">
+
+  <div (click)="$event.stopPropagation()" class="bp-modal">
+
+    <!-- Header -->
+    <div class="bp-modal-head">
+      <h3 class="bp-modal-title">Batch Details</h3>
+
+      <button (click)="closeLinesModal()" aria-label="Close" class="bp-modal-x">×</button>
+    </div>
+
+    <!-- Body -->
+    <div class="bp-modal-body">
+
+      <div class="bp-modal-meta">
+        <div><b>Batch No:</b> {{ selectedBatch?.batchNo || '-' }}</div>
+        <div><b>Plan:</b> {{ selectedBatch?.planName || '-' }}</div>
+        <div><b>Status:</b> {{ selectedBatch?.status || '-' }}</div>
+      </div>
+
+      <div class="bp-modal-tablewrap">
+        <table class="bp-modal-table">
+          <thead>
+            <tr>
+              <th>Recipe</th>
+              <th class="num" style="width:140px;">Planned</th>
+              <th class="num" style="width:160px;">Actual Produced</th>
+              <th class="num" style="width:120px;">Variance</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngIf="!selectedLines?.length">
+              <td colspan="4" class="bp-empty">No lines</td>
+            </tr>
+
+            <tr *ngFor="let l of selectedLines; let i = index"
+                [style.background]="i % 2 === 0 ? '#fcfdff' : '#ffffff'">
+              <td class="bp-ellipsis">{{ l.recipeName || '-' }}</td>
+              <td class="num">{{ l.plannedQty ?? 0 }}</td>
+              <td class="num">{{ l.actualQty ?? 0 }}</td>
+              <td class="num" [style.fontWeight]="700">{{ (l.actualQty ?? 0) - (l.plannedQty ?? 0) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="bp-modal-foot">
+      <button (click)="closeLinesModal()" class="bp-btn">Close</button>
+    </div>
+
+  </div>
+</div>

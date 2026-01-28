@@ -1,0 +1,118 @@
+<div class="bp2 card">
+  <!-- Header row (same feel as your recipe list) -->
+  <div class="bp2-head">
+    <div>
+      <div class="bp2-title">Batch Production Execution</div>
+      <div class="bp2-sub">Select plan, enter actual produced, then post to inventory</div>
+    </div>
+
+    <div class="bp2-actions">
+      <button class="bp2-btn ghost"
+              type="button"
+              (click)="reloadPlan()"
+              [disabled]="!selectedPlanId || isLoading">
+        Refresh
+      </button>
+
+      <button class="bp2-btn primary"
+              type="button"
+              (click)="saveDraft()"
+              [disabled]="!selectedPlanId || !lines.length || isLoading">
+        <i class="fas fa-save mr-50"></i>
+        Save Draft
+      </button>
+
+      <button class="bp2-btn success"
+              type="button"
+              (click)="postToInventory()"
+              [disabled]="!canPost()">
+        <i class="fas fa-check-circle mr-50"></i>
+        Post & Save to Inventory
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bp2-bar">
+    <div class="bp2-field">
+      <label class="bp2-label">Select Plan</label>
+
+      <select class="bp2-select"
+              [(ngModel)]="selectedPlanId"
+              (change)="onPlanChange()">
+        <option [ngValue]="null">-- Select Plan --</option>
+        <option *ngFor="let p of plans" [ngValue]="p.id">
+          {{ p.planName }}
+        </option>
+      </select>
+
+      <div class="bp2-loading" *ngIf="isLoading">Loading…</div>
+    </div>
+
+    <div class="bp2-kpis">
+      <div class="bp2-kpi">
+        <div class="k-lbl">Recipes</div>
+        <div class="k-val">{{ lines.length || 0 }}</div>
+      </div>
+
+      <div class="bp2-kpi warn">
+        <div class="k-lbl">Variance Items</div>
+        <div class="k-val">{{ varianceCount }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bp2-tablewrap">
+    <table class="bp2-table">
+      <thead>
+        <tr>
+          <th style="width:50%;">Recipe</th>
+          <th class="num" style="width:16%;">Planned</th>
+          <th class="num" style="width:18%;">Actual Produced</th>
+          <th class="num" style="width:16%;">Variance</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngIf="!lines.length">
+          <td colspan="4" class="bp2-empty">Select Plan to load recipes…</td>
+        </tr>
+
+        <tr *ngFor="let r of lines; let i = index">
+          <td>
+            <div class="bp2-main">{{ r.recipeName }}</div>
+            <div class="bp2-mini">{{ r.uom || 'UOM' }}</div>
+          </td>
+
+          <td class="num">
+            <span class="bp2-chip">{{ fmt(r.plannedQty) }}</span>
+          </td>
+
+          <td class="num">
+            <input type="number"
+                   class="bp2-input"
+                   [ngModel]="r.actualQty"
+                   (ngModelChange)="onActualChange(i, $event)"
+                   min="0"
+                   step="0.001" />
+          </td>
+
+          <td class="num">
+            <span class="bp2-badge"
+                  [ngClass]="getVarClass(r)">
+              {{ fmt((r.actualQty ?? 0) - (r.plannedQty ?? 0)) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer note -->
+  <div class="bp2-foot" *ngIf="lines.length">
+    Tip: Variance auto calculated = <b>Actual - Planned</b>
+  </div>
+</div>
+
+

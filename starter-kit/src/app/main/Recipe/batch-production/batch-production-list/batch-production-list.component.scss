@@ -1,0 +1,203 @@
+@import '@core/scss/angular/libs/datatables.component.scss';
+@import '@core/scss/base/pages/app-user.scss';
+@import '@core/scss/angular/libs/select.component.scss';
+@import '@core/scss/angular/libs/sweet-alerts.component.scss';
+
+
+:host {
+  --brand:#2E5F73;
+  --line:#eef2f7;
+  --muted:#6b7280;
+}
+
+.bp-title{
+  margin-left:0.85rem;
+  margin-top:0.75rem;
+  font-size:1.25rem;
+  font-weight:600;
+  color:var(--brand);
+}
+
+.bp-addbtn{
+  background-color: var(--brand);
+  color: white;
+  gap: 6px;
+}
+
+.bp-eye{
+  cursor:pointer;
+  font-size:18px;
+  color:var(--brand);
+}
+
+.bp-actions{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:12px;
+}
+
+.status-pill{
+  padding:.35rem .8rem;
+  font-weight:700;
+  letter-spacing:.2px;
+}
+
+/* ========= Modal ========= */
+.bp-modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  z-index:1050;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.bp-modal{
+  width:900px;
+  max-width:95vw;
+  background:#fff;
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,.25);
+}
+
+.bp-modal-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:16px 20px;
+  border-bottom:1px solid var(--line);
+}
+
+.bp-modal-title{
+  margin:0;
+  font-size:20px;
+  font-weight:800;
+  color:#374151;
+}
+
+.bp-modal-x{
+  border:0;
+  background:transparent;
+  font-size:22px;
+  cursor:pointer;
+  color:var(--muted);
+}
+
+.bp-modal-body{
+  padding:16px 20px;
+}
+
+.bp-modal-meta{
+  display:flex;
+  gap:18px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+  color:#111827;
+}
+
+.bp-modal-tablewrap{
+  max-height:60vh;
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+
+.bp-modal-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+  color:#111827;
+}
+
+.bp-modal-table thead tr{
+  background: var(--brand);
+  color:#fff;
+}
+
+.bp-modal-table th{
+  padding:10px 12px;
+  text-align:left;
+  font-weight:700;
+}
+
+.bp-modal-table td{
+  padding:10px 12px;
+  border-bottom:1px solid #f1f5f9;
+}
+
+.bp-empty{
+  padding:14px 12px;
+  text-align:center;
+  color:var(--muted);
+}
+
+.num{
+  text-align:right;
+  font-variant-numeric: tabular-nums;
+}
+
+.bp-ellipsis{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:520px;
+}
+
+.bp-modal-foot{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  padding:12px 20px;
+  border-top:1px solid var(--line);
+}
+
+.bp-btn{
+  background: var(--brand);
+  color:#fff;
+  border:0;
+  border-radius:10px;
+  padding:10px 16px;
+  font-weight:800;
+  cursor:pointer;
+}
+/* ===== Force header right layout ===== */
+.bp-head-right{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:12px;
+  padding: 10px 12px 12px;
+  flex-wrap: nowrap;
+  overflow: visible !important;  /* ✅ prevents clipping */
+}
+
+.bp-search{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.bp-search-input{
+  width: 240px;
+}
+
+/* ✅ Force button always visible */
+.bp-addbtn{
+  background:#2E5F73 !important;
+  color:#fff !important;
+  font-weight:800;
+  border:0 !important;
+  border-radius:10px;
+  padding:10px 14px;
+  display:inline-flex !important;
+  align-items:center;
+  gap:8px;
+  white-space:nowrap;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative;
+  z-index: 5;
+}

@@ -760,7 +760,7 @@ export class QuotationscreateComponent implements OnInit {
       deliveryDate: this.header.deliveryDate,
       validityDate: this.header.deliveryDate,
       lineSource: this.header.lineSource,
-
+ itemSetIds: (this.selectedItemSets || []).map(x => x.id),
       lines: this.lines
         .filter(l => !l.isSetHeader)
         .map(l => ({

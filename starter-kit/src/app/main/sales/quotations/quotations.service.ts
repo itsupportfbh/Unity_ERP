@@ -36,7 +36,7 @@ export interface QuotationHeader {
   needsHodApproval: boolean;
   remarks?: string | null;
   lines: QuotationLine[];
-
+ itemSetIds?: number[];
 }
 @Injectable({
   providedIn: 'root'

@@ -235,3 +235,29 @@ input[type="number"]{ text-align:right; }
   height: 38px;
   border-radius: 10px;
 }
+
+
+.so-chipbox{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  min-height: 42px;
+  align-items:center;
+  padding:8px 10px;   // so-inp already has maybe, ok adjust if needed
+  overflow: visible;  // important
+  white-space: normal;
+}
+
+.so-chip{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 10px;
+  border-radius:9999px;
+  border:1px solid #cbd5e1;
+  background:#f8fafc;
+  font-size: 12px;
+  line-height: 1.2;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+}

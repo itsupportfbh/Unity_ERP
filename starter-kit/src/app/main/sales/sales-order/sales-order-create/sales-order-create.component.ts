@@ -57,23 +57,7 @@ type SoLine = {
   filteredOptions?: any[];
 };
 
-type PreviewPiece = {
-  warehouseId?: number;
-  supplierId?: number;
-  binId?: number | null;
-  warehouseName?: string | null;
-  supplierName?: string | null;
-  binName?: string | null;
-  qty: number;
-};
-
-type PreviewLine = {
-  itemId: number;
-  requestedQty: number;
-  allocatedQty: number;
-  fullyAllocated: boolean;
-  allocations: PreviewPiece[];
-};
+type ItemSetRef = { id: number; name: string };
 
 @Component({
   selector: 'app-sales-order-create',
@@ -97,6 +81,10 @@ export class SalesOrderCreateComponent implements OnInit {
     // ✅ NEW
     deliveryTo: '',
     remarks: '',
+
+    // ✅ Header extra
+    lineSourceId: 1,                // 1 = Individual Item, 2 = ItemSet
+    itemSets: [] as ItemSetRef[],   // ✅ normalized list (mapping table)
 
     shipping: 0,
     discount: 0,
@@ -143,11 +131,7 @@ export class SalesOrderCreateComponent implements OnInit {
 
   requiredKeys: Array<'quotationNo' | 'customer'> = ['quotationNo', 'customer'];
 
-  showPreview = false;
-  previewData: PreviewLine[] = [];
-
   countries: any[] = [];
-
   todayStr = this.toInputDate(new Date());
 
   constructor(
@@ -159,6 +143,25 @@ export class SalesOrderCreateComponent implements OnInit {
     private salesOrderService: SalesOrderService
   ) {
     this.userId = localStorage.getItem('id');
+  }
+
+  /* ================= HEADER UI GETTERS ================= */
+  get showItemSetBox(): boolean {
+    return Number(this.soHdr.lineSourceId || 1) === 2;
+  }
+
+  get sourceLineText(): string {
+    return Number(this.soHdr.lineSourceId || 1) === 1 ? 'Individual Item' : 'Item Set';
+  }
+
+  get itemSetNamesText(): string {
+    const arr = (this.soHdr.itemSets ?? []) as ItemSetRef[];
+    return arr.length ? arr.map(x => x.name).join(', ') : '';
+  }
+
+  get itemSetIdsText(): string {
+    const arr = (this.soHdr.itemSets ?? []) as ItemSetRef[];
+    return arr.length ? arr.map(x => x.id).join(', ') : '';
   }
 
   ngOnInit(): void {
@@ -270,6 +273,60 @@ export class SalesOrderCreateComponent implements OnInit {
     }
   }
 
+  /* ================= NEW: lineSourceId + ItemSets (mapping-table style) ================= */
+  private setHeaderLineSourceAndItemSets(head: any) {
+    let srcId = Number(head?.lineSourceId ?? head?.LineSourceId ?? 0);
+
+    const itemSetCount = Number(head?.itemSetCount ?? head?.ItemSetCount ?? 0);
+    const itemSetIdsStr = String(head?.itemSetIds ?? head?.ItemSetIds ?? '').trim(); // "2" or "2,3"
+    const itemSetsJsonTxt = String(head?.itemSetsJson ?? head?.ItemSetsJson ?? '').trim();
+
+    const hasCsv = itemSetIdsStr !== '' && itemSetIdsStr !== '0' && itemSetIdsStr.toLowerCase() !== 'null';
+    const hasJson = itemSetsJsonTxt !== '' && itemSetsJsonTxt !== '[]' && itemSetsJsonTxt.toLowerCase() !== 'null';
+    const hasItemSet = itemSetCount > 0 || hasCsv || hasJson;
+
+    if (!isFinite(srcId) || srcId <= 0) srcId = hasItemSet ? 2 : 1;
+    this.soHdr.lineSourceId = srcId;
+
+    // collect itemSets: {id,name}
+    const map = new Map<number, string>();
+
+    // JSON rows
+    if (hasJson) {
+      const rows = safeJsonParse<any[]>(itemSetsJsonTxt, []);
+      rows.forEach(r => {
+        const id = Number(r?.ItemSetId ?? r?.itemSetId ?? r?.id ?? 0);
+        const nm = String(r?.ItemSetName ?? r?.itemSetName ?? r?.name ?? '').trim();
+        if (id > 0) map.set(id, nm || `ItemSet ${id}`);
+      });
+    }
+
+    // array rows
+    const arr = head?.itemSets ?? head?.ItemSets;
+    if (Array.isArray(arr)) {
+      arr.forEach((x: any) => {
+        const id = Number(x?.ItemSetId ?? x?.itemSetId ?? x?.id ?? 0);
+        const nm = String(x?.ItemSetName ?? x?.itemSetName ?? x?.name ?? '').trim();
+        if (id > 0) map.set(id, nm || `ItemSet ${id}`);
+      });
+    }
+
+    // csv ids only
+    if (hasCsv) {
+      itemSetIdsStr.split(',')
+        .map(s => Number(s.trim()))
+        .filter(n => n > 0)
+        .forEach(id => { if (!map.has(id)) map.set(id, `ItemSet ${id}`); });
+    }
+
+    this.soHdr.itemSets = Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+
+    // Individual item => clear
+    if (Number(this.soHdr.lineSourceId || 1) === 1) {
+      this.soHdr.itemSets = [];
+    }
+  }
+
   /* ============ Load SO (Edit) ============ */
   private loadSOForEdit(id: number) {
     this.salesOrderService.getSOById(id).subscribe({
@@ -285,9 +342,11 @@ export class SalesOrderCreateComponent implements OnInit {
         this.soHdr.requestedDate = this.toInputDate(head.requestedDate);
         this.soHdr.deliveryDate  = this.toInputDate(head.deliveryDate);
 
-        // ✅ NEW
         this.soHdr.deliveryTo = head.deliveryTo ?? head.DeliveryTo ?? '';
         this.soHdr.remarks    = head.remarks    ?? head.Remarks    ?? '';
+
+        // ✅ mapping load
+        this.setHeaderLineSourceAndItemSets(head);
 
         this.soHdr.shipping = Number(head.shipping ?? 0);
         this.soHdr.discount = Number(head.discount ?? 0);
@@ -306,55 +365,32 @@ export class SalesOrderCreateComponent implements OnInit {
           const qty   = Number(l.quantity ?? 0);
           const price = Number(l.unitPrice ?? 0);
           const mode  = this.canonicalTaxMode(l.tax, gst);
-          const totalDb = Number(l.total ?? 0);
-          const sub  = qty * price;
 
-          let discAmt = 0;
-          if (sub > 0) {
-            if (mode === 'Standard-Rated') {
-              const rate = gst / 100;
-              const netFromTotal = rate > 0 ? totalDb / (1 + rate) : totalDb;
-              discAmt = sub - netFromTotal;
-            } else {
-              discAmt = sub - totalDb;
-            }
-            if (discAmt < 0) discAmt = 0;
-            if (discAmt > sub) discAmt = sub;
-          }
-
-          const discPct = sub > 0 ? (discAmt * 100) / sub : 0;
+          const discPct = Number(l.discount ?? 0);
           const amt = this.calcAmounts(qty, price, discPct, mode, gst);
 
           return {
             __id: Number(l.id || l.Id || 0) || undefined,
-
             item: l.itemName || l.item || '',
             itemId: Number(l.itemId ?? 0) || undefined,
             uom: l.uom || l.uomName || '',
-
             description: l.description ?? l.Description ?? '',
-
             quantity: qty,
             unitPrice: price,
-
-            discount: this.round2(discPct),
+            discount: discPct,
             discountType: 'PCT',
-
             tax: mode,
-
             lineGross: amt.gross,
             lineNet:   amt.net,
             lineTax:   amt.tax,
             total:     amt.total,
-            lineDiscount: this.round2(discAmt),
-
+            lineDiscount: amt.discountAmt,
             __origQty: qty,
             __origGross: amt.gross,
             __origNet:   amt.net,
             __origTax:   amt.tax,
             __origTotal: amt.total,
-            __origDiscount: this.round2(discAmt),
-
+            __origDiscount: amt.discountAmt,
             warehouses: [],
             dropdownOpen: '',
             filteredOptions: []
@@ -362,7 +398,6 @@ export class SalesOrderCreateComponent implements OnInit {
         });
 
         this.enforceTaxModesByGst();
-        this.filteredLists.warehouse = [...this.warehousesMaster];
         this.recalcTotals();
       },
       error: (err) => {
@@ -393,13 +428,9 @@ export class SalesOrderCreateComponent implements OnInit {
 
   toggleDropdown(field: 'quotationNo' | 'customer' | 'warehouse', open?: boolean) {
     this.dropdownOpen[field] = open !== undefined ? open : !this.dropdownOpen[field];
-    if (field === 'quotationNo') {
-      this.filteredLists[field] = [...this.quotationList];
-    } else if (field === 'customer') {
-      this.filteredLists[field] = [...this.customers];
-    } else {
-      this.filteredLists[field] = [...this.warehousesMaster];
-    }
+    if (field === 'quotationNo') this.filteredLists[field] = [...this.quotationList];
+    if (field === 'customer') this.filteredLists[field] = [...this.customers];
+    if (field === 'warehouse') this.filteredLists[field] = [...this.warehousesMaster];
   }
 
   filter(field: 'quotationNo' | 'customer' | 'warehouse') {
@@ -433,10 +464,11 @@ export class SalesOrderCreateComponent implements OnInit {
         const lines = (head?.lines ?? []) as any[];
 
         this.soHdr.deliveryDate = this.toInputDate(head?.deliveryDate ?? head?.DeliveryDate);
-
-        // ✅ optional: take from quotation if you have it
         this.soHdr.deliveryTo = (head?.deliveryTo ?? head?.DeliveryTo ?? this.soHdr.deliveryTo ?? '');
         this.soHdr.remarks    = (head?.remarks ?? head?.Remarks ?? this.soHdr.remarks ?? '');
+
+        // ✅ mapping
+        this.setHeaderLineSourceAndItemSets(head);
 
         this.soHdr.gstPct = Number(head?.gstPct ?? head?.gst ?? 0);
         const gst = Number(this.soHdr.gstPct || 0);
@@ -481,11 +513,6 @@ export class SalesOrderCreateComponent implements OnInit {
           } as SoLine;
         });
 
-        const seen = new Map<number, string>();
-        this.soLines.forEach(l => (l.warehouses || []).forEach(w => seen.set(w.warehouseId, w.warehouseName)));
-        this.warehousesMaster = Array.from(seen.entries()).map(([id, warehouseName]) => ({ id, warehouseName }));
-        this.filteredLists.warehouse = [...this.warehousesMaster];
-
         this.enforceTaxModesByGst();
         this.recalcTotals();
       });
@@ -499,15 +526,7 @@ export class SalesOrderCreateComponent implements OnInit {
       this.soHdr.customerId = item.id;
       this.searchTexts['customer'] = item.customerName ?? item.name ?? '';
       this.dropdownOpen['customer'] = false;
-      return;
     }
-  }
-
-  onClearWarehouse() {
-    this.searchTexts['warehouse'] = '';
-    this.selectedWarehouseId = null;
-    this.selectedWarehouseName = '';
-    this.dropdownOpen['warehouse'] = false;
   }
 
   onClearSearch(field: 'quotationNo' | 'customer') {
@@ -516,6 +535,10 @@ export class SalesOrderCreateComponent implements OnInit {
     this.dropdownOpen[field] = false;
     if (field === 'quotationNo') this.soHdr.quotationNo = 0;
     if (field === 'customer') this.soHdr.customerId = 0;
+
+    // reset extra header
+    this.soHdr.lineSourceId = 1;
+    this.soHdr.itemSets = [];
   }
 
   /* ============ Close dropdowns ============ */
@@ -560,7 +583,6 @@ export class SalesOrderCreateComponent implements OnInit {
       this.soLines[i].itemId = opt.id;
       this.soLines[i].uom = opt.defaultUom || this.soLines[i].uom || '';
       if (!this.soLines[i].unitPrice) this.soLines[i].unitPrice = Number(opt.price || 0);
-
       if (!this.soLines[i].description && opt.description) {
         this.soLines[i].description = String(opt.description);
       }
@@ -589,9 +611,7 @@ export class SalesOrderCreateComponent implements OnInit {
     this.computeLineFromQty(i);
   }
 
-  onDiscountChange(i: number) {
-    this.computeLineFromQty(i);
-  }
+  onDiscountChange(i: number) { this.computeLineFromQty(i); }
 
   onUnitPriceChange(i: number) {
     const L = this.soLines[i];
@@ -665,7 +685,6 @@ export class SalesOrderCreateComponent implements OnInit {
       return false;
     }
 
-    // ✅ NEW required field
     if (this.isEmpty(this.soHdr.deliveryTo)) {
       this.submitted = true;
       Swal.fire({ icon: 'warning', title: 'Required', text: 'Delivery To is required.' });
@@ -676,6 +695,7 @@ export class SalesOrderCreateComponent implements OnInit {
       Swal.fire({ icon: 'warning', title: 'Required', text: 'Please add at least one line.' });
       return false;
     }
+
     const bad = this.soLines.find(l => !l.itemId || !(Number(l.quantity) >= 0));
     if (bad) {
       Swal.fire({ icon: 'warning', title: 'Required', text: 'Each line needs Item and a valid Qty.' });
@@ -694,9 +714,14 @@ export class SalesOrderCreateComponent implements OnInit {
       requestedDate: this.soHdr.requestedDate,
       deliveryDate: this.soHdr.deliveryDate,
 
-      // ✅ NEW
       deliveryTo: (this.soHdr.deliveryTo || '').toString(),
       remarks: (this.soHdr.remarks || '').toString(),
+
+      // ✅ header
+      lineSourceId: Number(this.soHdr.lineSourceId || 1),
+
+      // ✅ mapping table save
+      itemSetIds: (this.soHdr.itemSets || []).map((x: any) => Number(x.id)).filter((n: number) => n > 0),
 
       shipping: Number(this.soHdr.shipping || 0),
 
@@ -773,32 +798,6 @@ export class SalesOrderCreateComponent implements OnInit {
       });
     }
   }
-
-  /* ============ Preview ============ */
-  previewAlloc(): void {
-    const req = this.soLines
-      .filter(l => !!l.itemId && Number(l.quantity) > 0)
-      .map(l => ({ itemId: l.itemId as number, quantity: Number(l.quantity) || 0 }));
-
-    if (req.length === 0) {
-      Swal.fire({ icon: 'info', title: 'Nothing to preview', text: 'Add at least one valid line.' });
-      return;
-    }
-
-    this.salesOrderService.previewAllocation(req).subscribe({
-      next: (res: any) => {
-        const linesFromWrapper = res?.data?.lines;
-        const linesDirect = res?.lines;
-        this.previewData = (linesFromWrapper ?? linesDirect ?? []) as PreviewLine[];
-        this.showPreview = true;
-      },
-      error: () => {
-        Swal.fire({ icon: 'error', title: 'Preview failed', text: 'Cannot preview allocation now.' });
-      }
-    });
-  }
-
-  closePreview(): void { this.showPreview = false; }
 
   removeLine(i: number) {
     this.soLines.splice(i, 1);

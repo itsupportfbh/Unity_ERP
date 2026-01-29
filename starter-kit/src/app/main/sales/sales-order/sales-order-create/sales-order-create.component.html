@@ -46,6 +46,34 @@
         </p>
       </div>
 
+      <!-- ✅ Source Line (readonly) -->
+      <div>
+        <label class="lbl">Source Line</label>
+        <input class="so-inp" type="text" [value]="sourceLineText" disabled />
+      </div>
+
+      <!-- ✅ Item Set chips (only when lineSourceId = 2) -->
+      <div *ngIf="showItemSetBox" class="md:col-span-2">
+        <label class="lbl">Item Set Name</label>
+
+        <div class="so-inp so-chipbox" title="{{ itemSetNamesText }}">
+          <ng-container *ngIf="soHdr.itemSets?.length; else noItemSet">
+            <span class="so-chip" *ngFor="let s of soHdr.itemSets">
+              {{ s.name }}
+            </span>
+          </ng-container>
+
+          <ng-template #noItemSet>
+            <span class="dim">—</span>
+          </ng-template>
+        </div>
+
+        <!-- optional show IDs -->
+        <div class="dim xs mt-1" *ngIf="soHdr.itemSets?.length">
+          IDs: {{ itemSetIdsText }}
+        </div>
+      </div>
+
       <!-- GST -->
       <div>
         <label class="lbl">GST (%)</label>
@@ -60,21 +88,19 @@
                disabled [ngModelOptions]="{ standalone: true }"/>
       </div>
 
-      <!-- Delivery Date + Preview button under it -->
+      <!-- Delivery Date -->
       <div class="col-span-1 md:col-span-1">
         <label class="lbl">Delivery Date</label>
         <div class="field-stack">
-          <input class="so-inp" type="date" [(ngModel)]="soHdr.deliveryDate" [disabled]="true"/>
-          <button type="button"
-                  class="btn-outline sm btn-preview-under"
-                  *ngIf="!editMode"
-                  (click)="previewAlloc()">
-            Preview Allocation
-          </button>
+          <input class="so-inp"
+                 type="date"
+                 [(ngModel)]="soHdr.deliveryDate"
+                 [ngModelOptions]="{ standalone: true }"
+                 readonly />
         </div>
       </div>
 
-      <!-- ✅ NEW: Delivery To -->
+      <!-- Delivery To -->
       <div class="md:col-span-2">
         <label class="lbl">Delivery To</label>
         <textarea
@@ -88,7 +114,7 @@
         </p>
       </div>
 
-      <!-- ✅ NEW: Remarks -->
+      <!-- Remarks -->
       <div class="md:col-span-2">
         <label class="lbl">Remarks</label>
         <textarea
@@ -123,7 +149,7 @@
           </tr>
 
           <tr *ngFor="let ln of soLines; let i=index; trackBy: trackByIndex">
-            <!-- Item (disabled in edit mode) -->
+            <!-- Item -->
             <td class="relative dropdown-input so-line-dd">
               <input
                 type="text"
@@ -294,51 +320,4 @@
     </div>
   </div>
 
-  <!-- Allocation Preview Modal -->
-  <div class="modal-backdrop" *ngIf="showPreview"></div>
-  <div class="modal" *ngIf="showPreview" role="dialog" aria-modal="true">
-    <div class="modal-card modal-slim">
-      <div class="modal-head modal-brand">
-        <div class="title">Allocation Preview</div>
-        <button type="button" class="btn-icon btn-close-head" (click)="closePreview()" aria-label="Close">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div *ngIf="!previewData?.length" class="empty-state">No allocations available.</div>
-
-        <div *ngFor="let p of previewData" class="pv-line">
-          <div class="pv-line-head">
-            <span><b>Item Id:</b> {{ p.itemId }}</span>
-            <span><b>Requested:</b> {{ p.requestedQty }}</span>
-            <span class="alloc-badge" [class.ok]="p.fullyAllocated" [class.bad]="!p.fullyAllocated">
-              Allocated: {{ p.allocatedQty }} • {{ p.fullyAllocated ? 'Full' : 'Partial' }}
-            </span>
-          </div>
-
-          <div class="pv-grid">
-            <div *ngFor="let a of p.allocations" class="pv-chip">
-              <div class="pv-chip-top">
-                <span class="pv-chip-tag">{{ a.warehouseName || ('WH ' + (a.warehouseId ?? '—')) }}</span>
-                <span class="pv-dot"></span>
-                <span class="pv-chip-tag">{{ a.supplierName || ('SUP ' + (a.supplierId ?? '—')) }}</span>
-              </div>
-              <div class="pv-chip-bottom">
-                <span>{{ a.binName || (a.binId ?? '—') }}</span>
-                <span class="pv-dot"></span>
-                <b>QTY {{ a.qty }}</b>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-foot">
-        <button class="btn-dark" (click)="closePreview()">Close</button>
-      </div>
-    </div>
-  </div>
 </div>

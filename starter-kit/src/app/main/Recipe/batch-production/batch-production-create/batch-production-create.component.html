@@ -1,36 +1,26 @@
 <div class="bp2 card">
   <!-- Header row (same feel as your recipe list) -->
   <div class="bp2-head">
-    <div>
-      <div class="bp2-title">Batch Production Execution</div>
-      <div class="bp2-sub">Select plan, enter actual produced, then post to inventory</div>
-    </div>
-
-    <div class="bp2-actions">
-      <button class="bp2-btn ghost"
-              type="button"
-              (click)="reloadPlan()"
-              [disabled]="!selectedPlanId || isLoading">
-        Refresh
-      </button>
-
-      <button class="bp2-btn primary"
-              type="button"
-              (click)="saveDraft()"
-              [disabled]="!selectedPlanId || !lines.length || isLoading">
-        <i class="fas fa-save mr-50"></i>
-        Save Draft
-      </button>
-
-      <button class="bp2-btn success"
-              type="button"
-              (click)="postToInventory()"
-              [disabled]="!canPost()">
-        <i class="fas fa-check-circle mr-50"></i>
-        Post & Save to Inventory
-      </button>
-    </div>
+  <div class="bp2-head-left">
+    <div class="bp2-title">Batch Production Execution</div>
   </div>
+
+  <div class="bp2-actions">
+    <button class="bp2-btn primary" type="button" (click)="cancel()">
+      <i data-feather="x-circle" class="bp2-ico"></i>
+      <span>Cancel</span>
+    </button>
+
+    <button class="bp2-btn success"
+            type="button"
+            (click)="postToInventory()"
+            [disabled]="!canPost()">
+      <i class="fas fa-check-circle bp2-ico"></i>
+      <span>Post &amp; Save to Inventory</span>
+    </button>
+  </div>
+</div>
+
 
   <!-- Filters -->
   <div class="bp2-bar">
@@ -41,9 +31,9 @@
               [(ngModel)]="selectedPlanId"
               (change)="onPlanChange()">
         <option [ngValue]="null">-- Select Plan --</option>
-        <option *ngFor="let p of plans" [ngValue]="p.id">
-          {{ p.planName }}
-        </option>
+      <option *ngFor="let p of plans" [ngValue]="p.id">
+        {{ p.label }}
+      </option>
       </select>
 
       <div class="bp2-loading" *ngIf="isLoading">Loading…</div>
@@ -109,10 +99,7 @@
     </table>
   </div>
 
-  <!-- Footer note -->
-  <div class="bp2-foot" *ngIf="lines.length">
-    Tip: Variance auto calculated = <b>Actual - Planned</b>
-  </div>
+
 </div>
 
 

@@ -2,19 +2,47 @@ import { Component, OnInit } from '@angular/core';
 import Swal from 'sweetalert2';
 import { Router, ActivatedRoute } from '@angular/router';
 import { BatchProductionService } from '../batch-production-service';
+import { ProductionPlanService } from '../../production-planning/production-plan.service';
 
-interface PlanDto {
+type PlanLineDto = {
   id: number;
-  planName: string;
-}
+  productionPlanId: number;
+  recipeId: number;
+  finishedItemId: number;
+  finishedItemName: string;
+  plannedQty: number;
+  expectedOutput: number;
+  totalShortage?: number;
+};
 
-interface BatchLineDto {
+type ProductionPlanDto = {
+  id: number;
+  salesOrderId: number;
+  salesOrderNo: string;
+  planDate: string;
+  status: string;
+  createdBy: string;
+  createdDate: string;
+  totalShortage: number;
+  productionPlanNo: string;
+  lines: PlanLineDto[];
+   warehouseId: number;
+};
+
+type PlanOption = {
+  id: number;
+  label: string;
+};
+
+type BatchLineDto = {
   recipeId: number;
   recipeName: string;
   uom?: string;
   plannedQty: number;
   actualQty: number;
-}
+  expectedOutput?: number;
+  finishedItemId?: number;
+};
 
 @Component({
   selector: 'app-batch-production-create',
@@ -22,26 +50,34 @@ interface BatchLineDto {
   styleUrls: ['./batch-production-create.component.scss']
 })
 export class BatchProductionCreateComponent implements OnInit {
-  plans: PlanDto[] = [];
-  selectedPlanId: number | null = null;
 
+  // dropdown options
+  plans: PlanOption[] = [];
+
+  // keep full plans (with lines)
+  private planCache: ProductionPlanDto[] = [];
+
+  selectedPlanId: number | null = null;
   isLoading = false;
 
-  // execution lines
   lines: BatchLineDto[] = [];
 
-  // if edit mode
   batchId: number | null = null;
   status: string = 'Draft';
+
+  private pendingApplySelectedPlan = false;
+  selectedWarehouseId: number | null = null;
+  selectedPlanNo: string | null = null;
+
 
   constructor(
     private api: BatchProductionService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private srv: ProductionPlanService,
   ) {}
 
   ngOnInit(): void {
-    // optional: /edit/:id
     const id = Number(this.route.snapshot.paramMap.get('id') || 0);
     this.batchId = id > 0 ? id : null;
 
@@ -53,155 +89,220 @@ export class BatchProductionCreateComponent implements OnInit {
   }
 
   get varianceCount(): number {
-    return (this.lines || []).filter(x => Math.abs(((x.actualQty ?? 0) - (x.plannedQty ?? 0))) > 0).length;
+    return (this.lines || []).filter(x => Math.abs((x.actualQty ?? 0) - (x.plannedQty ?? 0)) > 0).length;
   }
 
+  // =============================
+  // 1) Load plans (with lines)
+  // =============================
   loadPlans(): void {
-    // API: list plans for dropdown
-    this.api.listPlans().subscribe({
-      next: (res: any) => {
-        const data = res?.data ?? res ?? [];
-        this.plans = Array.isArray(data) ? data : [];
-      },
-      error: () => Swal.fire('Error', 'Failed to load plans', 'error')
-    });
-  }
-
-  loadBatch(id: number): void {
     this.isLoading = true;
-    this.api.getBatchById(id).subscribe({
-      next: (res: any) => {
-        const dto = res?.data ?? res ?? {};
-        this.status = dto?.status || 'Draft';
-        this.selectedPlanId = dto?.planId ?? null;
 
-        const l = dto?.lines ?? dto?.batchLines ?? [];
-        this.lines = (l || []).map((x: any) => ({
-          recipeId: Number(x.recipeId || 0),
-          recipeName: x.recipeName || x.finishedItemName || '-',
-          uom: x.uom || x.uomName || '',
-          plannedQty: Number(x.plannedQty ?? 0),
-          actualQty: Number(x.actualQty ?? 0)
+    this.srv.getProductionPlanList().subscribe({
+      next: (res: any) => {
+        const data: ProductionPlanDto[] = res?.data ?? res ?? [];
+        this.planCache = Array.isArray(data) ? data : [];
+
+        // build dropdown labels (PR001 - SO-0002 - Draft - 2026-01-28)
+        this.plans = this.planCache.map(p => ({
+          id: p.id,
+          label: `${p.productionPlanNo || 'PLAN'} - ${p.salesOrderNo || ''} - ${p.status || ''}`
         }));
 
         this.isLoading = false;
+
+        // if batch loaded earlier & selectedPlanId already set, apply now
+        if (this.pendingApplySelectedPlan && this.selectedPlanId) {
+          this.pendingApplySelectedPlan = false;
+          this.applyPlanLinesFromCache(this.selectedPlanId);
+        }
       },
       error: () => {
         this.isLoading = false;
-        Swal.fire('Error', 'Failed to load batch', 'error');
+        Swal.fire('Error', 'Failed to load plans', 'error');
       }
     });
   }
 
+  // =============================
+  // 2) When user selects plan
+  // =============================
   onPlanChange(): void {
     if (!this.selectedPlanId) {
       this.lines = [];
       return;
     }
-
-    this.isLoading = true;
-
-    // API: get plan recipes for execution table
-    this.api.getPlanLines(this.selectedPlanId).subscribe({
-      next: (res: any) => {
-        const data = res?.data ?? res ?? [];
-        this.lines = (Array.isArray(data) ? data : []).map((x: any) => ({
-          recipeId: Number(x.recipeId || x.id || 0),
-          recipeName: x.recipeName || x.finishedItemName || '-',
-          uom: x.uom || x.uomName || '',
-          plannedQty: Number(x.plannedQty ?? x.qty ?? 0),
-          actualQty: Number(x.actualQty ?? (x.plannedQty ?? x.qty ?? 0)) // default = planned
-        }));
-        this.isLoading = false;
-      },
-      error: () => {
-        this.isLoading = false;
-        Swal.fire('Error', 'Failed to load plan lines', 'error');
-      }
-    });
+    this.applyPlanLinesFromCache(this.selectedPlanId);
   }
+
+ private applyPlanLinesFromCache(planId: number): void {
+  const plan = (this.planCache || []).find(x => Number(x.id) === Number(planId));
+
+  if (!plan) {
+    this.lines = [];
+    this.selectedWarehouseId = null;
+    this.selectedPlanNo = null;
+    return;
+  }
+
+  // ✅ warehouseId comes from ProductionPlan
+  this.selectedWarehouseId = (plan as any).warehouseId ?? null;
+  this.selectedPlanNo = (plan as any).productionPlanNo ?? null;
+
+  const plines = plan.lines || [];
+  this.lines = plines.map(l => ({
+    recipeId: Number(l.recipeId || 0),
+    recipeName: l.finishedItemName || '-',
+    plannedQty: Number(l.plannedQty ?? 0),
+    actualQty: Number(l.plannedQty ?? 0),
+    expectedOutput: Number(l.expectedOutput ?? 0),
+    finishedItemId: Number(l.finishedItemId ?? 0),
+    uom: ''
+  }));
+}
+
 
   reloadPlan(): void {
     if (!this.selectedPlanId) return;
-    this.onPlanChange();
+    this.applyPlanLinesFromCache(this.selectedPlanId);
   }
+
+  // =============================
+  // Edit mode load (draft)
+  // =============================
+ loadBatch(id: number): void {
+  this.isLoading = true;
+
+  this.api.getBatchById(id).subscribe({
+    next: (res: any) => {
+      // API -> { isSuccess:true, data:{ header:{...}, lines:[...] } }
+      const dto = res?.data ?? {};
+
+      const header = dto?.header ?? dto?.Header ?? null;
+      const lines = dto?.lines ?? dto?.Lines ?? [];
+
+      // ---------- Header ----------
+      this.status = header?.status || header?.Status || 'Draft';
+
+      // IMPORTANT: backend uses ProductionPlanId, NOT planId
+      this.selectedPlanId = Number(header?.productionPlanId ?? header?.ProductionPlanId ?? 0) || null;
+
+      // warehouse is already stored in batch header
+      this.selectedWarehouseId = Number(header?.warehouseId ?? header?.WarehouseId ?? 0) || null;
+
+      // optional display
+      this.selectedPlanNo = header?.batchNo || header?.BatchNo || null;
+
+      // ---------- Lines ----------
+      this.lines = (Array.isArray(lines) ? lines : []).map((x: any) => ({
+        recipeId: Number(x.recipeId ?? x.RecipeId ?? 0),
+        recipeName: x.finishedItemName || x.FinishedItemName || x.recipeName || x.RecipeName || '-',
+        uom: x.uom || x.uomName || x.Uom || x.UomName || '',
+        plannedQty: Number(x.plannedQty ?? x.PlannedQty ?? 0),
+        actualQty: Number(x.actualQty ?? x.ActualQty ?? 0),
+        expectedOutput: Number(x.expectedOutput ?? x.ExpectedOutput ?? 0),
+        finishedItemId: Number(x.finishedItemId ?? x.FinishedItemId ?? 0) || undefined
+      }));
+
+      this.isLoading = false;
+
+      // If batch lines missing, fallback load from selected plan (optional)
+      if ((!this.lines || this.lines.length === 0) && this.selectedPlanId) {
+        if (this.planCache.length) {
+          this.applyPlanLinesFromCache(this.selectedPlanId);
+        } else {
+          this.pendingApplySelectedPlan = true;
+        }
+      }
+    },
+    error: (e) => {
+      console.error(e);
+      this.isLoading = false;
+      Swal.fire('Error', 'Failed to load batch', 'error');
+    }
+  });
+}
+
 
   onActualChange(index: number, value: any): void {
     const n = Number(value ?? 0);
     this.lines[index].actualQty = isNaN(n) ? 0 : n;
   }
 
-  canPost(): boolean {
-    if (this.isLoading) return false;
-    if (!this.selectedPlanId) return false;
-    if (!this.lines.length) return false;
-    if ((this.status || '').toLowerCase() === 'posted') return false;
-    return true;
+canPost(): boolean {
+  if (this.isLoading) return false;
+  if (!this.selectedPlanId) return false;
+  if (!this.lines.length) return false;
+  if ((this.status || '').toLowerCase() === 'posted') return false;
+  return true;
+}
+
+
+  cancel(): void {
+  this.router.navigateByUrl('/Recipe/batchproductionlist')
+}
+
+postToInventory(): void {
+  if (!this.selectedPlanId || !this.lines.length) return;
+
+  if (!this.selectedWarehouseId) {
+    Swal.fire('Error', 'WarehouseId not found in selected production plan', 'error');
+    return;
   }
 
-  saveDraft(): void {
-    if (!this.selectedPlanId || !this.lines.length) return;
+  Swal.fire({
+    title: 'Post & Save?',
+    text: 'This will save the batch and reduce ingredient stock.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, post'
+  }).then(r => {
+    if (!r.isConfirmed) return;
+
+    const user = (localStorage.getItem('username') || 'admin').trim();
 
     const payload = {
-      id: this.batchId,
-      planId: this.selectedPlanId,
-      status: 'Draft',
-      createdBy: (localStorage.getItem('username') || 'admin').trim(),
+      id: this.batchId, // null => create, else update
+      productionPlanId: this.selectedPlanId,
+      warehouseId: this.selectedWarehouseId,
+      batchNo: null,
+      status: 'Posted',
+      user,
       lines: this.lines.map(x => ({
         recipeId: x.recipeId,
+        finishedItemId: x.finishedItemId ?? null,
         plannedQty: x.plannedQty,
         actualQty: x.actualQty
       }))
     };
 
-    this.api.saveBatchDraft(payload).subscribe({
+    this.isLoading = true;
+
+    this.api.postAndSave(payload).subscribe({
       next: (res: any) => {
-        const newId = Number(res?.id || res?.batchId || 0);
-        if (newId > 0 && !this.batchId) {
-          this.batchId = newId;
-        }
-        this.status = 'Draft';
-        Swal.fire('Saved', 'Draft saved', 'success');
+        this.isLoading = false;
+
+        const newId = Number(res?.batchId || res?.id || 0);
+        if (newId > 0) this.batchId = newId;
+
+        this.status = 'Posted';
+        Swal.fire('Posted', 'Batch saved and inventory updated', 'success');
+
+        // optional: redirect
+        this.router.navigate(['/BatchProduction/list']);
       },
-      error: () => Swal.fire('Error', 'Save failed', 'error')
+      error: (e) => {
+        this.isLoading = false;
+        console.error(e);
+        Swal.fire('Error', e?.error?.message || 'Post failed', 'error');
+      }
     });
-  }
+  });
+}
 
-  postToInventory(): void {
-    if (!this.canPost()) return;
 
-    Swal.fire({
-      title: 'Post & Save?',
-      text: 'This will update inventory stock.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, post'
-    }).then(r => {
-      if (!r.isConfirmed) return;
 
-      const payload = {
-        id: this.batchId,
-        planId: this.selectedPlanId,
-        status: 'Posted',
-        postedBy: (localStorage.getItem('username') || 'admin').trim(),
-        lines: this.lines.map(x => ({
-          recipeId: x.recipeId,
-          plannedQty: x.plannedQty,
-          actualQty: x.actualQty
-        }))
-      };
-
-      this.api.postBatchToInventory(payload).subscribe({
-        next: () => {
-          this.status = 'Posted';
-          Swal.fire('Posted', 'Inventory updated', 'success');
-          this.router.navigate(['/BatchProduction/list']); // adjust route
-        },
-        error: () => Swal.fire('Error', 'Post failed', 'error')
-      });
-    });
-  }
-
+ 
   getVarClass(r: BatchLineDto): string {
     const v = (r.actualQty ?? 0) - (r.plannedQty ?? 0);
     if (v === 0) return 'ok';
@@ -214,10 +315,4 @@ export class BatchProductionCreateComponent implements OnInit {
     const x = Math.round(n * 1000) / 1000;
     return x.toString();
   }
-
 }
-
-
-
-
-

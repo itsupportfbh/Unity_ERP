@@ -2,7 +2,7 @@
 .pp2{
    min-height: auto !important;   /* remove 100vh */
   height: auto !important;
-  padding: 18px;
+  padding: 2px;
   font-family: "Segoe UI", Arial, sans-serif;
   background: #f6f8fc;
   color:#0f172a;
@@ -352,4 +352,12 @@
   .pp2-actions{ width:100%; justify-content:flex-start; flex-wrap:wrap; }
   .pp2-bar{ flex-direction: column; align-items: stretch; }
   .pp2-filter{ min-width: unset; }
+}
+.pp2-filterrow{
+  display:flex;
+  gap:16px;
+}
+.pp2-col{ flex:1; }
+@media(max-width: 900px){
+  .pp2-filterrow{ flex-direction:column; }
 }

@@ -1,11 +1,7 @@
-// production-planning.component.ts  ✅ FULL (Create + Edit mode)
-// - Create mode: select SO -> preview planRows + ingredients -> Save (create)
-// - Edit mode: if route has :id -> load plan by id -> show same UI -> Save (update)
-// - Delete works in edit mode too
-
 import { Component, OnInit } from '@angular/core';
 import Swal from 'sweetalert2';
 import { Router, ActivatedRoute } from '@angular/router';
+
 import {
   IngredientRowDto,
   PlanRowDto,
@@ -13,52 +9,115 @@ import {
   SoHeaderDto
 } from '../production-plan.service';
 
+import { WarehouseService } from 'app/main/master/warehouse/warehouse.service'; // ✅ adjust path if different
+
+type WarehouseDto = { id: number; name: string };
+
 @Component({
   selector: 'app-production-planning',
   templateUrl: './production-planning.component.html',
   styleUrls: ['./production-planning.component.scss']
 })
 export class ProductionPlanningComponent implements OnInit {
+
+  // SO
   soList: SoHeaderDto[] = [];
   selectedSoId: number | null = null;
 
-  warehouseId = 1;
-  outletId = 1;
+  // ✅ Warehouses
+  warehouseList: WarehouseDto[] = [];
+  warehouseId: number | null = null;
 
+  // other
+  outletId = 1;
   isLoading = false;
 
   planRows: PlanRowDto[] = [];
   ingredients: IngredientRowDto[] = [];
-
   shortageCountVal = 0;
-  currentPlanId: number | null = null;
 
-  // ✅ edit mode
+  currentPlanId: number | null = null;
   isEditMode = false;
 
-  // optional fields if you want
   status = 'Draft';
   planDate: Date = new Date();
-  disableCreateButton: boolean;
+
+  disableCreateButton = false;
 
   constructor(
     private api: ProductionPlanService,
+    private whApi: WarehouseService,     // ✅
     private router: Router,
     private route: ActivatedRoute
   ) {}
 
- ngOnInit(): void {
-  const id = Number(this.route.snapshot.paramMap.get('id') || 0);
+  ngOnInit(): void {
+    const id = Number(this.route.snapshot.paramMap.get('id') || 0);
 
-  if (id > 0) {
-    this.isEditMode = true;
-    this.currentPlanId = id;
-    this.loadPlanById(id);          // load plan -> then loadSalesOrders(includeSoId)
-  } else {
-    this.loadSalesOrders();         // create mode normal
+    // ✅ Load warehouse list first (needed for dropdown)
+    this.loadWarehouses(() => {
+      if (id > 0) {
+        this.isEditMode = true;
+        this.currentPlanId = id;
+        this.loadPlanById(id);
+      } else {
+        // create mode
+        this.setDefaultWarehouseIfNeeded();
+        this.loadSalesOrders();
+      }
+    });
   }
-}
 
+  // -----------------------------
+  // ✅ Warehouses
+  // -----------------------------
+  private loadWarehouses(done?: () => void): void {
+    this.whApi.getWarehouse().subscribe({
+      next: (res: any) => {
+        // map to {id,name}
+        this.warehouseList = (res.data || []).map(x => ({
+          id: Number(x.id ?? x.Id ?? 0),
+          name: String(x.name ?? x.Name ?? '')
+        })).filter(x => x.id > 0);
+
+        // if still null, set first as default
+        this.setDefaultWarehouseIfNeeded();
+
+        done?.();
+      },
+      error: () => {
+        this.warehouseList = [];
+        this.setDefaultWarehouseIfNeeded();
+        done?.();
+      }
+    });
+  }
+
+  private setDefaultWarehouseIfNeeded(): void {
+    // ✅ If already has warehouseId no need
+    if (this.warehouseId && this.warehouseId > 0) return;
+
+    // 1) try user default warehouse (if you store in localStorage)
+    const userWh = Number(localStorage.getItem('defaultWarehouseId') || 0);
+    if (userWh > 0) {
+      this.warehouseId = userWh;
+      return;
+    }
+
+    // 2) else take first warehouse from list
+    if (this.warehouseList.length > 0) {
+      this.warehouseId = this.warehouseList[0].id;
+    } else {
+      this.warehouseId = 0; // fallback
+    }
+  }
+
+  onWarehouseChange(): void {
+    // warehouse change → refresh preview if SO selected
+    if (this.selectedSoId) {
+      this.onSoChange();
+    }
+  }
 
   // -----------------------------
   // Helpers
@@ -67,18 +126,18 @@ export class ProductionPlanningComponent implements OnInit {
     this.shortageCountVal = (this.ingredients || []).filter(i => (i?.status || '') !== 'OK').length;
   }
 
-private loadSalesOrders(includeSoId?: number): void {
-  this.api.getSalesOrders(includeSoId).subscribe({
-    next: (res) => (this.soList = res || []),
-    error: () => Swal.fire('Error', 'Failed to load Sales Orders', 'error')
-  });
-}
-
-
   private clearScreen(): void {
     this.planRows = [];
     this.ingredients = [];
     this.shortageCountVal = 0;
+    this.disableCreateButton = false;
+  }
+
+  private loadSalesOrders(includeSoId?: number): void {
+    this.api.getSalesOrders(includeSoId).subscribe({
+      next: (res) => (this.soList = res || []),
+      error: () => Swal.fire('Error', 'Failed to load Sales Orders', 'error')
+    });
   }
 
   // -----------------------------
@@ -91,9 +150,13 @@ private loadSalesOrders(includeSoId?: number): void {
       return;
     }
 
+    if (!this.warehouseId) {
+      Swal.fire('Select Warehouse', 'Please select Production Warehouse', 'warning');
+      return;
+    }
+
     this.isLoading = true;
 
-    // preview only (does not return productionPlanId)
     this.api.getBySo(this.selectedSoId, this.warehouseId).subscribe({
       next: (res) => {
         this.planRows = res?.planRows || [];
@@ -113,27 +176,22 @@ private loadSalesOrders(includeSoId?: number): void {
   }
 
   refresh(): void {
-    // In edit mode, refresh should reload current plan from DB
     if (this.isEditMode && this.currentPlanId) {
       this.loadPlanById(this.currentPlanId);
       return;
     }
-    // In create mode, refresh is preview by SO
     this.onSoChange();
   }
 
   // -----------------------------
   // ✅ Edit-mode load by Id
-  // expects API: GET /ProductionPlan/{id}
-  // return: { isSuccess:true, data:{ header:{...}, lines:[...] } }
   // -----------------------------
   loadPlanById(id: number): void {
-    debugger
     this.isLoading = true;
 
     this.api.getPlanById(id).subscribe({
       next: (res: any) => {
-        const data = res?.data || res; // support if backend returns direct dto
+        const data = res?.data || res;
         const h = data?.header || data?.Header;
 
         if (!h) {
@@ -144,19 +202,22 @@ private loadSalesOrders(includeSoId?: number): void {
 
         this.currentPlanId = Number(h.id || h.Id || id);
         this.selectedSoId = Number(h.salesOrderId || h.SalesOrderId || 0) || null;
-        if (this.selectedSoId) {
-  this.loadSalesOrders(this.selectedSoId);
-} else {
-  this.loadSalesOrders();
-}
+
+        // ✅ set warehouse from plan
+        const wh = Number(h.warehouseId || h.WarehouseId || 0);
+        if (wh > 0) this.warehouseId = wh;
+        this.setDefaultWarehouseIfNeeded();
+
         this.outletId = Number(h.outletId || h.OutletId || this.outletId);
-        this.warehouseId = Number(h.warehouseId || h.WarehouseId || this.warehouseId);
         this.status = String(h.status || h.Status || 'Draft');
         this.planDate = h.planDate ? new Date(h.planDate) : new Date();
 
-        const lines = (data?.lines || data?.Lines || []) as any[];
+        // load SO list include selected SO
+        if (this.selectedSoId) this.loadSalesOrders(this.selectedSoId);
+        else this.loadSalesOrders();
 
-        // map lines -> planRows (same UI)
+        // lines -> planRows
+        const lines = (data?.lines || data?.Lines || []) as any[];
         this.planRows = lines.map(l => ({
           recipeId: Number(l.recipeId ?? l.RecipeId ?? 0),
           finishedItemId: Number(l.finishedItemId ?? l.FinishedItemId ?? 0),
@@ -167,11 +228,8 @@ private loadSalesOrders(includeSoId?: number): void {
           headerYieldPct: 0
         }));
 
-        // if you want ingredients also in edit mode:
-        // - either call getBySo again using selectedSoId
-        // - or make backend return ingredients too
-        // For now: we recompute ingredients from current SO preview (optional)
-        if (this.selectedSoId) {
+        // ingredients preview for edit mode
+        if (this.selectedSoId && this.warehouseId) {
           this.api.getBySo(this.selectedSoId, this.warehouseId).subscribe({
             next: (x) => {
               this.ingredients = x?.ingredients || [];
@@ -203,9 +261,13 @@ private loadSalesOrders(includeSoId?: number): void {
   savePlan(): void {
     if (!this.selectedSoId) return;
 
+    if (!this.warehouseId) {
+      Swal.fire('Select Warehouse', 'Please select Production Warehouse', 'warning');
+      return;
+    }
+
     const userName = (localStorage.getItem('username') || '').trim() || 'admin';
 
-    // build lines payload from planRows
     const lines = (this.planRows || []).map(r => ({
       recipeId: Number(r.recipeId || 0),
       finishedItemId: Number(r.finishedItemId || 0),
@@ -218,7 +280,7 @@ private loadSalesOrders(includeSoId?: number): void {
       return;
     }
 
-    // ✅ UPDATE (Edit mode OR already has planId)
+    // UPDATE
     if (this.isEditMode && this.currentPlanId) {
       this.api.updatePlan({
         id: this.currentPlanId,
@@ -239,7 +301,7 @@ private loadSalesOrders(includeSoId?: number): void {
       return;
     }
 
-    // ✅ CREATE
+    // CREATE
     this.api.savePlan({
       salesOrderId: this.selectedSoId,
       outletId: this.outletId,
@@ -248,11 +310,7 @@ private loadSalesOrders(includeSoId?: number): void {
     }).subscribe({
       next: (res: any) => {
         const pid = Number(res?.productionPlanId || res?.id || 0);
-        if (pid > 0) {
-          this.currentPlanId = pid;
-          // optional: switch to edit mode after save
-          // this.isEditMode = true;
-        }
+        if (pid > 0) this.currentPlanId = pid;
         Swal.fire('Saved', `Production Plan Id: ${pid}`, 'success');
       },
       error: () => Swal.fire('Error', 'Save failed', 'error')
@@ -260,88 +318,41 @@ private loadSalesOrders(includeSoId?: number): void {
   }
 
   // -----------------------------
-  // ✅ Edit button (navigate)
+  // PR
   // -----------------------------
-  editPlan(): void {
-    if (!this.currentPlanId) {
-      Swal.fire('Info', 'Please save the plan first (no Plan Id).', 'info');
-      return;
-    }
-    this.router.navigate(['/Recipe/productionplanningedit', this.currentPlanId]);
-  }
+  createPR(): void {
+    const payload = {
+      salesOrderId: this.selectedSoId,
+      warehouseId: this.warehouseId,
+      outletId: this.outletId,
+      userId: Number(localStorage.getItem('id') || 0),
+      userName: (localStorage.getItem('username') || '').trim(),
+      deliveryDate: null,
+      note: `Auto from Production Planning SO:${this.selectedSoId}`
+    };
 
-  // -----------------------------
-  // ✅ Delete (uses api.deletePlan)
-  // -----------------------------
-  deletePlan(): void {
-    if (!this.currentPlanId) {
-      Swal.fire('Info', 'No saved plan to delete.', 'info');
-      return;
-    }
-
-    Swal.fire({
-      title: 'Delete Plan?',
-      text: `Plan Id: ${this.currentPlanId}`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, delete'
-    }).then(r => {
-      if (!r.isConfirmed) return;
-
-      this.api.deletePlan(this.currentPlanId!).subscribe({
-        next: () => {
-          Swal.fire('Deleted', 'Production plan deleted', 'success');
-
-          // if edit screen, go back to list
-          if (this.isEditMode) {
-            this.router.navigate(['/Recipe/productionplanninglist']); // adjust route
-            return;
-          }
-
-          // else clear screen
-          this.currentPlanId = null;
-          this.selectedSoId = null;
-          this.clearScreen();
-        },
-        error: (e) => Swal.fire('Error', e?.error?.message || 'Delete failed', 'error')
-      });
+    this.api.createPrFromRecipeShortage(payload).subscribe({
+      next: (res) => {
+        if (res?.prId > 0) {
+          this.disableCreateButton = true;
+          Swal.fire('Success', `PR created. PR Id: ${res.prId}`, 'success');
+        } else {
+          this.disableCreateButton = false;
+          Swal.fire('Info', res?.message || 'No shortage items', 'info');
+        }
+      },
+      error: (err) => {
+        Swal.fire('Error', err?.error?.message || 'Failed', 'error');
+      }
     });
   }
-
-  createPR() {
-  const payload = {
-  salesOrderId: this.selectedSoId,
-  warehouseId: this.warehouseId,
-  outletId: this.outletId,
-  userId: Number(localStorage.getItem('id') || 0),
-  userName: (localStorage.getItem('username') || '').trim(),
-  deliveryDate: null,
-  note: `Auto from Production Planning SO:${this.selectedSoId}`
-};
- 
-  this.api.createPrFromRecipeShortage(payload).subscribe({
-    next: (res) => {
-      if (res?.prId > 0) {
-        this.disableCreateButton = true
-        Swal.fire('Success', `PR created. PR Id: ${res.prId}`, 'success');
-      } else {
-        this.disableCreateButton = false
-        Swal.fire('Info', res?.message || 'No shortage items', 'info');
-      }
-    },
-    error: (err) => {
-      Swal.fire('Error', err?.error?.message || 'Failed', 'error');
-    }
-  });
-}
- 
- 
 
   fmt(v: any): string {
     const n = Number(v ?? 0);
     return (Math.round(n * 1000) / 1000).toString();
   }
-   onGoToRecipeList(): void {
+
+  onGoToRecipeList(): void {
     this.router.navigate(['/Recipe/productionplanninglist']);
   }
 }

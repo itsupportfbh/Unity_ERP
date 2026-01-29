@@ -6,6 +6,7 @@
      aria-hidden="true"></i>
   <span>Go to Production Planlist</span>
 </button>
+
 <div class="pp2">
   <!-- ===== Header / Action Bar ===== -->
   <div class="pp2-header">
@@ -17,7 +18,7 @@
     <div class="pp2-actions">
       <button class="pp2-btn ghost"
               type="button"
-              (click)="onSoChange()"
+              (click)="refresh()"
               [disabled]="!selectedSoId || isLoading">
         Refresh
       </button>
@@ -34,21 +35,43 @@
 
   <!-- ===== Filters + Summary ===== -->
   <div class="pp2-bar">
+    <!-- LEFT FILTERS -->
     <div class="pp2-filter">
-      <label class="pp2-label">Sales Order</label>
+      <!-- Sales Order -->
+      <div class="pp2-filterrow">
+        <div class="pp2-col">
+          <label class="pp2-label">Sales Order</label>
 
-      <select class="pp2-select"
-              [(ngModel)]="selectedSoId"
-              (change)="onSoChange()">
-        <option [ngValue]="null">-- Select Sales Order --</option>
-        <option *ngFor="let so of soList" [ngValue]="so.id">
-          {{ so.salesOrderNo }} ({{ so.deliveryDate | date:'yyyy-MM-dd' }})
-        </option>
-      </select>
+          <select class="pp2-select"
+                  [(ngModel)]="selectedSoId"
+                  (change)="onSoChange()">
+            <option [ngValue]="null">-- Select Sales Order --</option>
+            <option *ngFor="let so of soList" [ngValue]="so.id">
+              {{ so.salesOrderNo }} ({{ so.deliveryDate | date:'yyyy-MM-dd' }})
+            </option>
+          </select>
+        </div>
+
+        <!-- ✅ Production Warehouse -->
+        <div class="pp2-col">
+          <label class="pp2-label">Production Warehouse</label>
+
+          <select class="pp2-select"
+                  [(ngModel)]="warehouseId"
+                  (change)="onWarehouseChange()"
+                  [disabled]="isLoading">
+            <option [ngValue]="null">-- Select Warehouse --</option>
+            <option *ngFor="let w of warehouseList" [ngValue]="w.id">
+              {{ w.name }}
+            </option>
+          </select>
+        </div>
+      </div>
 
       <div class="pp2-loading" *ngIf="isLoading">Loading…</div>
     </div>
 
+    <!-- RIGHT KPIs -->
     <div class="pp2-kpis">
       <div class="pp2-kpi">
         <div class="pp2-kpi-label">Recipes</div>
@@ -60,7 +83,6 @@
         <div class="pp2-kpi-val">{{ ingredients?.length || 0 }}</div>
       </div>
 
-      <!-- ✅ FIXED: no filter() in template -->
       <div class="pp2-kpi warn">
         <div class="pp2-kpi-label">Shortage</div>
         <div class="pp2-kpi-val">{{ shortageCountVal }}</div>
@@ -68,7 +90,6 @@
     </div>
   </div>
 
-  
   <!-- ===== Content Grid ===== -->
   <div class="pp2-grid">
     <!-- ===== Left: Plan ===== -->
@@ -83,37 +104,37 @@
       <div class="pp2-tablewrap">
         <table class="pp2-table">
           <thead>
-            <tr>
-              <th style="width:46%;">Recipe</th>
-              <th style="width:27%;" class="num">Planned Qty</th>
-              <th style="width:27%;" class="num">Expected Output</th>
-            </tr>
+          <tr>
+            <th style="width:46%;">Recipe</th>
+            <th style="width:27%;" class="num">Planned Qty</th>
+            <th style="width:27%;" class="num">Expected Output</th>
+          </tr>
           </thead>
 
           <tbody>
-            <tr *ngFor="let r of planRows">
-              <td>
-                <div class="pp2-main">{{ r.recipeName }}</div>
-              </td>
+          <tr *ngFor="let r of planRows">
+            <td>
+              <div class="pp2-main">{{ r.recipeName }}</div>
+            </td>
 
-              <td class="num">
-                <span class="pp2-chip">
-                  {{ fmt(r.plannedQty) }}
-                </span>
-              </td>
+            <td class="num">
+              <span class="pp2-chip">
+                {{ fmt(r.plannedQty) }}
+              </span>
+            </td>
 
-              <td class="num">
-                <span class="pp2-chip soft">
-                  {{ fmt(r.expectedOutput) }}
-                </span>
-              </td>
-            </tr>
+            <td class="num">
+              <span class="pp2-chip soft">
+                {{ fmt(r.expectedOutput) }}
+              </span>
+            </td>
+          </tr>
 
-            <tr *ngIf="!planRows.length">
-              <td colspan="3" class="pp2-empty">
-                Select Sales Order to load recipes…
-              </td>
-            </tr>
+          <tr *ngIf="!planRows.length">
+            <td colspan="3" class="pp2-empty">
+              Select Sales Order to load recipes…
+            </td>
+          </tr>
           </tbody>
         </table>
       </div>
@@ -139,43 +160,43 @@
       <div class="pp2-tablewrap">
         <table class="pp2-table">
           <thead>
-            <tr>
-              <th>Ingredient</th>
-              <th class="num" style="width:22%;">Required</th>
-              <th class="num" style="width:22%;">Available</th>
-              <th style="width:18%;">Status</th>
-            </tr>
+          <tr>
+            <th>Ingredient</th>
+            <th class="num" style="width:22%;">Required</th>
+            <th class="num" style="width:22%;">Available</th>
+            <th style="width:18%;">Status</th>
+          </tr>
           </thead>
 
           <tbody>
-            <tr *ngFor="let i of ingredients">
-              <td>
-                <div class="pp2-main">{{ i.itemName }}</div>
-                <div class="pp2-subline">{{ i.uom }}</div>
-              </td>
+          <tr *ngFor="let i of ingredients">
+            <td>
+              <div class="pp2-main">{{ i.itemName }}</div>
+              <div class="pp2-subline">{{ i.uom }}</div>
+            </td>
 
-              <td class="num">
-                <span class="pp2-chip">{{ fmt(i.requiredQty) }}</span>
-              </td>
+            <td class="num">
+              <span class="pp2-chip">{{ fmt(i.requiredQty) }}</span>
+            </td>
 
-              <td class="num">
-                <span class="pp2-chip soft">{{ fmt(i.availableQty) }}</span>
-              </td>
+            <td class="num">
+              <span class="pp2-chip soft">{{ fmt(i.availableQty) }}</span>
+            </td>
 
-              <td>
-                <span class="pp2-badge"
-                      [ngClass]="i.status === 'OK' ? 'ok' : 'short'">
-                  <span class="dot"></span>
-                  {{ i.status }}
-                </span>
-              </td>
-            </tr>
+            <td>
+              <span class="pp2-badge"
+                    [ngClass]="i.status === 'OK' ? 'ok' : 'short'">
+                <span class="dot"></span>
+                {{ i.status }}
+              </span>
+            </td>
+          </tr>
 
-            <tr *ngIf="!ingredients.length">
-              <td colspan="4" class="pp2-empty">
-                No ingredients yet…
-              </td>
-            </tr>
+          <tr *ngIf="!ingredients.length">
+            <td colspan="4" class="pp2-empty">
+              No ingredients yet…
+            </td>
+          </tr>
           </tbody>
         </table>
       </div>

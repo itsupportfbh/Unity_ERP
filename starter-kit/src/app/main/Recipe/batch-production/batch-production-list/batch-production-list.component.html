@@ -1,4 +1,3 @@
-
 <div class="content-wrapper p-0">
   <div class="content-body">
     <section class="users-list-wrapper">
@@ -8,9 +7,7 @@
         <div class="row">
           <!-- Title + page size -->
           <div class="col-md-3 col-12">
-            <h4 class="card-text bp-title">
-              Batch Production List
-            </h4>
+            <h4 class="card-text bp-title">Batch Production List</h4>
 
             <div class="d-flex justify-content-between align-items-center m-1">
               <label class="d-flex align-items-center">
@@ -27,35 +24,33 @@
           </div>
 
           <!-- Search + Add -->
-        <!-- Search + Add -->
-        <div class="col-md-9 col-12">
-        <div class="bp-head-right">
+          <div class="col-md-9 col-12">
+            <div class="bp-head-right">
 
-            <!-- Search -->
-            <div class="bp-search">
-            <label class="mb-0">Search:</label>
-            <input
-                [(ngModel)]="searchValue"
-                name="searchValue"
-                type="search"
-                class="form-control bp-search-input"
-                (keyup)="filterUpdate($event)"
-                (search)="filterUpdate($event)" />
+              <!-- Search -->
+              <div class="bp-search">
+                <label class="mb-0">Search:</label>
+                <input
+                  [(ngModel)]="searchValue"
+                  name="searchValue"
+                  type="search"
+                  class="form-control bp-search-input"
+                  (keyup)="filterUpdate($event)"
+                  (search)="filterUpdate($event)" />
+              </div>
+
+              <!-- Add -->
+              <button
+                type="button"
+                (click)="goToCreate()"
+                class="btn bp-addbtn"
+                title="Create Batch">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add</span>
+              </button>
+
             </div>
-
-            <!-- Add -->
-            <button
-            type="button"
-            (click)="goToCreate()"
-            class="btn bp-addbtn"
-            title="Create Batch">
-            <i class="fas fa-plus-circle"></i>
-            <span>Add</span>
-            </button>
-
-        </div>
-        </div>
-
+          </div>
         </div>
 
         <!-- ==================== MAIN DATATABLE ==================== -->
@@ -91,7 +86,7 @@
 
           <ngx-datatable-column name="Plan" prop="planName" [width]="220">
             <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.planName || '-' }}
+              {{ row.productionPlanNo || '-' }}
             </ng-template>
           </ngx-datatable-column>
 
@@ -103,7 +98,7 @@
 
           <ngx-datatable-column name="Outlet" prop="outletName" [width]="190">
             <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.outletName || '-' }}
+              {{ row.name || '-' }}
             </ng-template>
           </ngx-datatable-column>
 
@@ -156,62 +151,68 @@
   </div>
 </div>
 
-<!-- ==================== LINES POPUP ==================== -->
-<div
-  *ngIf="showLinesModal"
-  (click)="closeLinesModal()"
-  class="bp-modal-backdrop">
+<!-- ==================== MODAL (LIKE PRODUCTION PLAN UI) ==================== -->
+<div *ngIf="showLinesModal" class="bp-modal-backdrop" (click)="closeLinesModal()">
 
-  <div (click)="$event.stopPropagation()" class="bp-modal">
+  <div class="bp-modal2" (click)="$event.stopPropagation()">
 
-    <!-- Header -->
-    <div class="bp-modal-head">
-      <h3 class="bp-modal-title">Batch Details</h3>
+    <!-- Top Header -->
+    <div class="bp2-head">
+      <div class="bp2-title">
+        Batch Details - {{ selectedBatch?.batchNo || '-' }} / {{ selectedBatch?.productionPlanNo || '-' }}
+      </div>
 
-      <button (click)="closeLinesModal()" aria-label="Close" class="bp-modal-x">×</button>
+      <button class="bp2-x" (click)="closeLinesModal()" aria-label="Close">×</button>
     </div>
 
-    <!-- Body -->
-    <div class="bp-modal-body">
-
-      <div class="bp-modal-meta">
-        <div><b>Batch No:</b> {{ selectedBatch?.batchNo || '-' }}</div>
-        <div><b>Plan:</b> {{ selectedBatch?.planName || '-' }}</div>
-        <div><b>Status:</b> {{ selectedBatch?.status || '-' }}</div>
+    <!-- Meta row -->
+    <div class="bp2-meta" *ngIf="selectedBatch">
+      <div><b>Batch No:</b> {{ selectedBatch?.batchNo || '-' }}</div>
+      <div><b>Plan:</b> {{ selectedBatch?.productionPlanNo || '-' }}</div>
+      <div>
+        <b>Status:</b>
+        <span class="bp2-status"
+              [ngClass]="{
+                'st-draft': (selectedBatch?.status || '').toLowerCase() === 'draft',
+                'st-posted': (selectedBatch?.status || '').toLowerCase() === 'posted'
+              }">
+          {{ selectedBatch?.status || '-' }}
+        </span>
       </div>
+    </div>
 
-      <div class="bp-modal-tablewrap">
-        <table class="bp-modal-table">
-          <thead>
-            <tr>
-              <th>Recipe</th>
-              <th class="num" style="width:140px;">Planned</th>
-              <th class="num" style="width:160px;">Actual Produced</th>
-              <th class="num" style="width:120px;">Variance</th>
-            </tr>
-          </thead>
+    <!-- Table -->
+    <div class="bp2-tablewrap">
+      <table class="bp2-table">
+        <thead>
+          <tr>
+            <th>Recipe</th>
+            <th class="num">Planned Qty</th>
+            <th class="num">Actual Produced</th>
+            <th class="num">Variance</th>
+          </tr>
+        </thead>
 
-          <tbody>
-            <tr *ngIf="!selectedLines?.length">
-              <td colspan="4" class="bp-empty">No lines</td>
-            </tr>
+        <tbody>
+          <tr *ngIf="!selectedLines?.length">
+            <td colspan="4" class="bp2-empty">No lines</td>
+          </tr>
 
-            <tr *ngFor="let l of selectedLines; let i = index"
-                [style.background]="i % 2 === 0 ? '#fcfdff' : '#ffffff'">
-              <td class="bp-ellipsis">{{ l.recipeName || '-' }}</td>
-              <td class="num">{{ l.plannedQty ?? 0 }}</td>
-              <td class="num">{{ l.actualQty ?? 0 }}</td>
-              <td class="num" [style.fontWeight]="700">{{ (l.actualQty ?? 0) - (l.plannedQty ?? 0) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
+          <tr *ngFor="let l of selectedLines; let i = index">
+            <td class="bp2-ellipsis">
+              {{ l.recipeName || l.finishedItemName || '-' }}
+            </td>
+            <td class="num">{{ l.plannedQty ?? 0 }}</td>
+            <td class="num">{{ l.actualQty ?? 0 }}</td>
+            <td class="num fw700">{{ (l.actualQty ?? 0) - (l.plannedQty ?? 0) }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Footer -->
-    <div class="bp-modal-foot">
-      <button (click)="closeLinesModal()" class="bp-btn">Close</button>
+    <div class="bp2-foot">
+      <button class="bp2-close" (click)="closeLinesModal()">Close</button>
     </div>
 
   </div>

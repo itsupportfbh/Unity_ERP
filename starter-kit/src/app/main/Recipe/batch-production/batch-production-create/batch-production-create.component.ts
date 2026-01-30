@@ -43,6 +43,14 @@ type BatchLineDto = {
   expectedOutput?: number;
   finishedItemId?: number;
 };
+type IngredientRowDto = {
+  ingredientItemId: number;
+  ingredientName: string;
+  requiredQty: number;
+  availableQty: number;
+  status: 'OK' | 'Shortage';
+};
+
 
 @Component({
   selector: 'app-batch-production-create',
@@ -68,6 +76,12 @@ export class BatchProductionCreateComponent implements OnInit {
   private pendingApplySelectedPlan = false;
   selectedWarehouseId: number | null = null;
   selectedPlanNo: string | null = null;
+
+  ingredientOpen = false;
+  ingredientTitle = '';
+  ingredientRows: IngredientRowDto[] = [];
+  ingredientLoading = false;
+
 
 
   constructor(
@@ -289,7 +303,7 @@ postToInventory(): void {
         Swal.fire('Posted', 'Batch saved and inventory updated', 'success');
 
         // optional: redirect
-        this.router.navigate(['/BatchProduction/list']);
+        this.router.navigate(['/Recipe/batchproductionlist']);
       },
       error: (e) => {
         this.isLoading = false;
@@ -298,6 +312,7 @@ postToInventory(): void {
       }
     });
   });
+  
 }
 
 
@@ -315,4 +330,43 @@ postToInventory(): void {
     const x = Math.round(n * 1000) / 1000;
     return x.toString();
   }
+
+  openIngredients(row: BatchLineDto): void {
+  if (!row?.recipeId) return;
+
+  if (!this.selectedWarehouseId) {
+    Swal.fire('Error', 'Warehouse not selected', 'error');
+    return;
+  }
+
+  const qty = Number(row.actualQty ?? 0);
+  this.ingredientTitle = row.recipeName || 'Ingredients';
+  this.ingredientOpen = true;
+  this.ingredientLoading = true;
+  this.ingredientRows = [];
+
+  // call API
+  this.api.getIngredientExplosion(row.recipeId, this.selectedWarehouseId, qty).subscribe({
+    next: (res: any) => {
+      this.ingredientLoading = false;
+      this.ingredientRows = (res?.data ?? []).map((x: any) => ({
+        ingredientItemId: Number(x.ingredientItemId ?? 0),
+        ingredientName: x.ingredientName || '-',
+        requiredQty: Number(x.requiredQty ?? 0),
+        availableQty: Number(x.availableQty ?? 0),
+        status: (x.status === 'Shortage' ? 'Shortage' : 'OK')
+      }));
+    },
+    error: (e) => {
+      this.ingredientLoading = false;
+      console.error(e);
+      Swal.fire('Error', 'Failed to load ingredient explosion', 'error');
+    }
+  });
+}
+
+closeIngredients(): void {
+  this.ingredientOpen = false;
+}
+
 }

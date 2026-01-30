@@ -113,4 +113,14 @@ export class BatchProductionService {
  postAndSave(payload: any) {
   return this.http.post(`${this.url}/BatchProduction/post`, payload);
 }
+getIngredientExplosion(recipeId: number, warehouseId: number, outputQty: number) {
+  return this.http.get<any>(`${this.url}/BatchProduction/ingredient-explosion`, {
+    params: {
+      recipeId: recipeId.toString(),
+      warehouseId: warehouseId.toString(),
+      outputQty: outputQty.toString()
+    }
+  });
+}
+
 }

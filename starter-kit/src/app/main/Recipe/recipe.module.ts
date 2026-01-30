@@ -25,6 +25,7 @@ const routes: Routes = [
   { path: 'productionplanningedit/:id', component: ProductionPlanningComponent },
    { path: 'batchproductionlist', component: BatchProductionListComponent },
   { path: 'batchproductioncreate', component: BatchProductionCreateComponent },
+   { path: 'batchproductionedit/:id', component: BatchProductionCreateComponent },
 ];
 
 @NgModule({

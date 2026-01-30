@@ -70,7 +70,7 @@
         </tr>
 
         <tr *ngFor="let r of lines; let i = index">
-          <td>
+          <td (click)="openIngredients(r)">
             <div class="bp2-main">{{ r.recipeName }}</div>
             <div class="bp2-mini">{{ r.uom || 'UOM' }}</div>
           </td>
@@ -101,5 +101,47 @@
 
 
 </div>
+
+<div class="bp2-modal" *ngIf="ingredientOpen">
+  <div class="bp2-modal-card">
+    <div class="bp2-modal-head">
+      <div class="bp2-modal-title">{{ ingredientTitle }}</div>
+      <button class="bp2-x" type="button" (click)="closeIngredients()">✕</button>
+    </div>
+
+    <div class="bp2-modal-body">
+      <div *ngIf="ingredientLoading" class="bp2-empty">Loading…</div>
+
+      <table class="bp2-table" *ngIf="!ingredientLoading">
+        <thead>
+          <tr>
+            <th>Ingredient</th>
+            <th class="num">Required</th>
+            <th class="num">Available</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngIf="!ingredientRows.length">
+            <td colspan="4" class="bp2-empty">No ingredients</td>
+          </tr>
+
+          <tr *ngFor="let x of ingredientRows">
+            <td>{{ x.ingredientName }}</td>
+            <td class="num">{{ fmt(x.requiredQty) }}</td>
+            <td class="num">{{ fmt(x.availableQty) }}</td>
+            <td>
+              <span class="bp2-pill" [ngClass]="x.status === 'Shortage' ? 'bad' : 'good'">
+                {{ x.status }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 
 

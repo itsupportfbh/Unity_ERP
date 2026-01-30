@@ -4,7 +4,6 @@ import Swal from 'sweetalert2';
 import { BatchProductionService } from '../batch-production-service';
 import * as feather from 'feather-icons';
 
-
 @Component({
   selector: 'app-batch-production-list',
   templateUrl: './batch-production-list.component.html',
@@ -13,7 +12,7 @@ import * as feather from 'feather-icons';
 })
 export class BatchProductionListComponent implements OnInit {
 
-   rows: any[] = [];
+  rows: any[] = [];
   tempRows: any[] = [];
 
   selectedOption = 10;
@@ -21,7 +20,7 @@ export class BatchProductionListComponent implements OnInit {
 
   // modal
   showLinesModal = false;
-  selectedBatch: any = null;
+  selectedBatch: any = null;  // header info
   selectedLines: any[] = [];
 
   constructor(
@@ -32,12 +31,12 @@ export class BatchProductionListComponent implements OnInit {
   ngOnInit(): void {
     this.loadList();
   }
+
   ngAfterViewInit() {
-  feather.replace();
-}
+    feather.replace();
+  }
 
   loadList(): void {
-    // API: list batches
     this.api.listBatches().subscribe({
       next: (res: any) => {
         const data = res?.data ?? res ?? [];
@@ -63,19 +62,19 @@ export class BatchProductionListComponent implements OnInit {
 
     this.rows = this.tempRows.filter((d: any) => {
       const batchNo = String(d.batchNo ?? '').toLowerCase();
-      const plan = String(d.planName ?? '').toLowerCase();
-      const outlet = String(d.outletName ?? '').toLowerCase();
-      const status = String(d.status ?? '').toLowerCase();
-      return batchNo.includes(val) || plan.includes(val) || outlet.includes(val) || status.includes(val);
+      const planNo  = String(d.productionPlanNo ?? '').toLowerCase();
+      const outlet  = String(d.name ?? '').toLowerCase();
+      const status  = String(d.status ?? '').toLowerCase();
+      return batchNo.includes(val) || planNo.includes(val) || outlet.includes(val) || status.includes(val);
     });
   }
 
   goToCreate(): void {
-    this.router.navigate(['Recipe/batchproductioncreate']); // adjust route
+    this.router.navigate(['Recipe/batchproductioncreate']);
   }
 
   editBatch(id: number): void {
-    this.router.navigate(['Recipe/batchproductionedit', id]); // adjust route
+    this.router.navigate(['Recipe/batchproductionedit', id]);
   }
 
   deleteBatch(id: number): void {
@@ -101,7 +100,6 @@ export class BatchProductionListComponent implements OnInit {
     });
   }
 
-  // quick post from list
   quickPost(row: any): void {
     const id = Number(row?.id || 0);
     if (!id) return;
@@ -128,16 +126,36 @@ export class BatchProductionListComponent implements OnInit {
     });
   }
 
-  // ========== Lines modal ==========
+  // ✅ modal open
   openLinesModal(row: any): void {
     const id = Number(row?.id || 0);
     if (!id) return;
 
+    // take header from list row first
+    this.selectedBatch = {
+      batchNo: row?.batchNo ?? '-',
+      productionPlanNo: row?.productionPlanNo ?? '-',
+      status: row?.status ?? '-'
+    };
+
     this.api.getBatchById(id).subscribe({
       next: (res: any) => {
         const dto = res?.data ?? res ?? {};
-        this.selectedBatch = dto;
-        this.selectedLines = dto?.lines ?? dto?.batchLines ?? [];
+
+        // if API returns header, override
+        const header = dto?.header ?? dto?.Header ?? null;
+        if (header) {
+          this.selectedBatch = {
+            batchNo: header?.batchNo ?? header?.BatchNo ?? this.selectedBatch.batchNo,
+            productionPlanNo: header?.productionPlanNo ?? header?.ProductionPlanNo ?? this.selectedBatch.productionPlanNo,
+            status: header?.status ?? header?.Status ?? this.selectedBatch.status
+          };
+        }
+
+        // lines
+        const lines = dto?.lines ?? dto?.Lines ?? dto?.batchLines ?? dto?.BatchLines ?? [];
+        this.selectedLines = Array.isArray(lines) ? lines : [];
+
         this.showLinesModal = true;
       },
       error: (e) => console.error(e)
@@ -149,10 +167,4 @@ export class BatchProductionListComponent implements OnInit {
     this.selectedBatch = null;
     this.selectedLines = [];
   }
-
 }
-
-
-
-
-

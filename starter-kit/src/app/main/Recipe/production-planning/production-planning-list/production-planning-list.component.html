@@ -98,6 +98,12 @@
           <ngx-datatable-column name="Action" [width]="160">
             <ng-template ngx-datatable-cell-template let-row="row">
               <div style="display:flex;justify-content:center;gap:12px;align-items:center;">
+
+                  <!-- PDF icon -->
+              <i class="fas fa-file-pdf text-danger"
+                style="cursor:pointer;font-size:18px;"
+                (click)="downloadPdf(row.id)"
+                title="Download PDF"></i>
                 <!-- Edit icon -->
                 <i class="fas fa-pen text-primary"
                    style="cursor:pointer;"

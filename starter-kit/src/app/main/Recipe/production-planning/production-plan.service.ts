@@ -53,6 +53,50 @@ export interface ProductionPlanResponseDto {
   ingredients: IngredientRowDto[];
 }
 
+
+export interface PlanPrintHeaderDto {
+  id: number;
+  productionPlanNo: string;
+  salesOrderId: number;
+  salesOrderNo: string;
+  planDate: string;     // ISO
+  status: string;
+  warehouseId: number;
+  warehouseName: string;
+  outletId: number;
+}
+
+export interface PlanPrintLineDto {
+  productionPlanId: number;
+  recipeId: number;
+  recipeName: string;
+  finishedItemId: number;
+  finishedItemName: string;
+  plannedQty: number;
+  expectedOutput: number;
+}
+
+export interface PlanPrintIngredientDto {
+  productionPlanId: number;
+  recipeId: number;
+  recipeName: string;
+
+  ingredientItemId: number;
+  ingredientItemName: string;
+  uom: string;
+
+  requiredQty: number;
+  availableQty: number;
+  status: string; // OK / Shortage
+}
+
+export interface ProductionPlanPrintDto {
+  header: PlanPrintHeaderDto;
+  lines: PlanPrintLineDto[];
+  ingredients: PlanPrintIngredientDto[];
+}
+
+
 @Injectable({ providedIn: 'root' })
 export class ProductionPlanService {
  private url = environment.apiUrl; 
@@ -110,4 +154,9 @@ updatePlan(payload: any) {
 deletePlan(planId: number) {
   return this.http.delete<any>(`${this.url}/ProductionPlan/${planId}`);
 }
+ getPlanPrint(id: number): Observable<{ isSuccess: boolean; data: ProductionPlanPrintDto }> {
+    return this.http.get<{ isSuccess: boolean; data: ProductionPlanPrintDto }>(
+      `${this.url}/ProductionPlan/${id}/print`
+    );
+  }
 }

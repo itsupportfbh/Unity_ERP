@@ -76,7 +76,7 @@
     </ng-template>
   </ng-select>
 </div>
-          <div class="form-group mb-2">
+          <!-- <div class="form-group mb-2">
           <label class="form-label" for="country">Country</label>
           <select
             id="country"
@@ -138,7 +138,28 @@
           <span *ngIf="newWarehouseForm.submitted && cityRef.invalid" class="invalid-form">
             <small class="text-danger" *ngIf="cityRef.errors?.required">This field is required!</small>
           </span>
-        </div>
+        </div> -->
+
+        <div class="form-group mb-2">
+          <label class="form-label" for="locationId">Outlet</label>
+          <select
+            id="location"
+            class="form-control"
+            name="locationId"
+            [(ngModel)]="locationId"
+            [class.error]="newWarehouseForm.submitted && locationRef.invalid"
+            #locationRef="ngModel"
+            required
+          >
+            <option [ngValue]="null" disabled>Select Outlet</option>
+            <option *ngFor="let item of locationList" [ngValue]="item.id">
+              {{ item.name }}
+            </option>
+          </select>
+          <span *ngIf="newWarehouseForm.submitted && locationRef.invalid" class="invalid-form">
+            <small class="text-danger" *ngIf="locationRef.errors?.required">This field is required!</small>
+          </span>
+        </div> 
 
            <div class="form-group">
             <label class="form-label" for="basic-icon-default-phone">Phone</label>

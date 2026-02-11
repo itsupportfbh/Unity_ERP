@@ -18,6 +18,7 @@ import { StatesService } from '../../states/states.service';
 import { CitiesService } from '../../cities/cities.service';
 import { WarehouseService } from '../warehouse.service';
 import { BinService } from '../../bin/bin.service';
+import { LocationService } from '../../location/location.service';
 
 interface BinDto {
   id: number | string;
@@ -42,9 +43,10 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
 
   // ===== form model =====
   public name: string | null = null;
-  public countryId: number | null = null;
-  public stateId: number | null = null;
-  public cityId: number | null = null;
+  // public countryId: number | null = null;
+  // public stateId: number | null = null;
+  // public cityId: number | null = null;
+  public locationId: number | null = null;
   public phone: string | null = null;
   public address: string | null = null;
   public description: string | null = null;
@@ -57,6 +59,7 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
   // dependent lists
   stateUpdatedList: any[] = [];
   cityUpdatedList: any[] = [];
+  locationList: any[] = [];
 
   // ===== Bin multiselect =====
   binList: BinDto[] = [];
@@ -68,7 +71,8 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
     private stateService: StatesService,
     private cityService: CitiesService,
     private warehouseService: WarehouseService,
-    private binService: BinService
+    private binService: BinService,
+    private _locationService : LocationService,
   ) {}
 
   // React when parent changes passData
@@ -79,6 +83,7 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
   ngOnInit(): void {
     this.getAllData();
     this.loadBin();
+    this.loadLocation()
   }
 
   // ===== Loaders =====
@@ -112,6 +117,13 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
       setTimeout(() => (window as any).feather?.replace?.(), 0);
     });
   }
+   private loadLocation(): void {
+    this._locationService.getLocationDetails().subscribe((res: any) => {
+      const raw = Array.isArray(res?.data) ? res.data : [];
+      this.locationList = raw
+       
+    });
+  }
 
   // ===== Mode & form helpers =====
   private enterCreateMode(): void {
@@ -122,9 +134,10 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
     Promise.resolve().then(() => {
       this.newWarehouseForm?.resetForm({
         name: null,
-        countryId: null,
-        stateId: null,
-        cityId: null,
+        // countryId: null,
+        // stateId: null,
+        // cityId: null,
+        locationId:null,
         phone: null,
         address: null,
         description: null,
@@ -135,7 +148,8 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
 
   private resetFormModel(): void {
     this.name = this.phone = this.address = this.description = null;
-    this.countryId = this.stateId = this.cityId = null;
+    // this.countryId = this.stateId = this.cityId = null;
+    this.locationId = null
     this.stateUpdatedList = [];
     this.cityUpdatedList = [];
   }
@@ -152,13 +166,14 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
       this.address     = this.passData.address ?? null;
       this.description = this.passData.description ?? null;
 
-      this.countryId = this.passData.countryId ?? null;
-      this.onCountryChange(this.countryId);
+      // this.countryId = this.passData.countryId ?? null;
+      // this.onCountryChange(this.countryId);
 
-      this.stateId = this.passData.stateId ?? null;
-      this.onStateChange(this.stateId);
+      // this.stateId = this.passData.stateId ?? null;
+      // this.onStateChange(this.stateId);
 
-      this.cityId = this.passData.cityId ?? null;
+      // this.cityId = this.passData.cityId ?? null;
+      this.locationId = this.passData.locationId ?? null;
 
       // --- KEY: hydrate bins from backend ---
       // Backend sends BinID as CSV (e.g., "1,3,4")
@@ -177,9 +192,10 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
       Promise.resolve().then(() => {
         this.newWarehouseForm?.resetForm({
           name: this.name,
-          countryId: this.countryId,
-          stateId: this.stateId,
-          cityId: this.cityId,
+          // countryId: this.countryId,
+          // stateId: this.stateId,
+          // cityId: this.cityId,
+          locationId: this.locationId,
           phone: this.phone,
           address: this.address,
           description: this.description,
@@ -193,8 +209,8 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
 
   // ===== Cascading selects =====
   onCountryChange(selectedCountryId: number | null): void {
-    this.stateId = null;
-    this.cityId = null;
+    // this.stateId = null;
+    // this.cityId = null;
     this.cityUpdatedList = [];
     this.stateUpdatedList = [];
     if (selectedCountryId == null) return;
@@ -233,9 +249,10 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
 
     const basePayload: any = {
       name: this.name?.trim(),
-      countryId: this.countryId,
-      stateId: this.stateId,
-      cityId: this.cityId,
+      // countryId: this.countryId,
+      // stateId: this.stateId,
+      // cityId: this.cityId,
+      locationId: this.locationId,
       phone: this.phone?.trim(),
       address: this.address?.trim() || null,
       description: this.description?.trim() || null,

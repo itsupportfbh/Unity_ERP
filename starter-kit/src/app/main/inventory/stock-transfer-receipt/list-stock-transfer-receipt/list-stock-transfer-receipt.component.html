@@ -56,7 +56,7 @@
     <div class="rcx-card-hdr">
       <div class="rcx-card-title">
         <i class="fas fa-boxes"></i>
-         Receipts
+        Receipts
       </div>
     </div>
 
@@ -90,24 +90,23 @@
         <ngx-datatable-column name="REQUESTED QTY" prop="requestQty" [width]="170"></ngx-datatable-column>
         <ngx-datatable-column name="RECEIVED QTY" prop="receivedQty" [width]="160"></ngx-datatable-column>
 
-      <ngx-datatable-column name="STATUS" [width]="180" [sortable]="false" [canAutoResize]="false">
-  <ng-template ngx-datatable-cell-template let-row="row">
-    <span class="st-badge"
-          [ngClass]="{
-            'st-in': row.status === 'IN_TRANSIT',
-            'st-rec': row.status === 'RECEIVED',
-            'st-can': row.status === 'CANCELLED'
-          }">
+        <ngx-datatable-column name="STATUS" [width]="180" [sortable]="false" [canAutoResize]="false">
+          <ng-template ngx-datatable-cell-template let-row="row">
+            <span class="st-badge"
+                  [ngClass]="{
+                    'st-in': row.status === 'IN_TRANSIT',
+                    'st-rec': row.status === 'RECEIVED',
+                    'st-can': row.status === 'CANCELLED'
+                  }">
+              <i class="fas"
+                 [ngClass]="row.status === 'IN_TRANSIT'
+                   ? 'fa-truck'
+                   : (row.status === 'RECEIVED' ? 'fa-check' : 'fa-ban')"></i>
 
-      <i class="fas"
-         [ngClass]="row.status === 'IN_TRANSIT'
-           ? 'fa-truck'
-           : (row.status === 'RECEIVED' ? 'fa-check' : 'fa-ban')"></i>
-
-      <span class="st-text">{{ row.statusLabel }}</span>
-    </span>
-  </ng-template>
-</ngx-datatable-column>
+              <span class="st-text">{{ row.statusLabel }}</span>
+            </span>
+          </ng-template>
+        </ngx-datatable-column>
 
         <ngx-datatable-column name="ACTION" [width]="160" [sortable]="false" [canAutoResize]="false">
           <ng-template ngx-datatable-cell-template let-row="row">
@@ -140,6 +139,7 @@
 
     </div>
   </div>
+
 </div>
 
 <!-- ✅ COMPACT MODAL -->
@@ -207,7 +207,6 @@
           </div>
         </div>
 
-        <!-- ✅ Receive Qty default 0 -->
         <div class="rcm-field">
           <label class="rcm-lbl">Receive Qty</label>
           <div class="rcm-inpwrap">

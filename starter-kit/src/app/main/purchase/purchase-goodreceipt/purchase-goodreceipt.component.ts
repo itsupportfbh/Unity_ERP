@@ -8,7 +8,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { forkJoin, of, Observable } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, tap } from 'rxjs/operators';
 import feather from 'feather-icons';
 
 import { PurchaseGoodreceiptService } from './purchase-goodreceipt.service';
@@ -56,7 +56,7 @@ export interface LineRow {
   defectLabels: string;
   damagedPackage: string;
   time: string;
-  initial: string;     // now stores username text
+  initial: string;
   remarks: string;
 
   createdAt: Date;
@@ -86,7 +86,6 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
   minDate = '';
   showSummary = false;
 
-  // 🔹 username of current logged-in user (from localStorage)
   currentUsername: string = '';
 
   imageViewer = { open: false, src: null as string | null };
@@ -125,7 +124,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       pestSign: '', drySpillage: '', odor: '',
       plateNumber: '', defectLabels: '', damagedPackage: '',
       time: '',
-      initial: '',                 // will be overridden by currentUsername on save
+      initial: '',
       remarks: '',
       createdAt: new Date(), photos: [],
       isFlagIssue: false, isPostInventory: false, flagIssueId: null
@@ -168,22 +167,33 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
   ngAfterViewChecked() { feather.replace(); }
 
   ngOnInit() {
-    // 🔹 get current username from localStorage
     this.currentUsername = localStorage.getItem('username') || '';
-
     this.setMinDate();
-    this.loadPOs();
-    this.loadWarehouses();
-    this.loadStrategy();
 
+    // loads for create list
+    this.loadPOs();
+    this.loadFlagIssues();
+
+    // IMPORTANT: if edit, load masters first -> then load GRN
     this.route.paramMap.subscribe(pm => {
       const idParam = pm.get('id');
       const id = idParam ? Number(idParam) : NaN;
-      if (!isNaN(id) && id > 0) {
-        this.editingGrnId = id;
-        this.loadForEdit(id);
-      }
+      if (!Number.isFinite(id) || id <= 0) return;
+
+      this.editingGrnId = id;
+
+      forkJoin([
+        this.loadWarehouses$(),
+        this.loadStrategy$()
+      ]).subscribe({
+        next: () => this.loadForEdit(id),
+        error: (err) => console.error('Master load failed', err)
+      });
     });
+
+    // If NOT edit mode, you still want masters for create mode dropdowns
+    // (so create form binds too)
+    forkJoin([this.loadWarehouses$(), this.loadStrategy$()]).subscribe();
   }
 
   setMinDate() {
@@ -193,9 +203,11 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     const dd = String(d.getDate()).padStart(2, '0');
     this.minDate = `${yyyy}-${mm}-${dd}`;
   }
+
   get isEditMode(): boolean { return !!this.editingGrnId; }
 
   goToDebitNoteList() { this.router.navigate(['/purchase/list-Purchasegoodreceipt']); }
+  goToList(): void { this.router.navigate(['/purchase/list-Purchasegoodreceipt']); }
 
   allowOnlyNumbers(event: KeyboardEvent): void {
     const allowedControl = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete', 'Home', 'End'];
@@ -238,7 +250,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       defectLabels: r.defectLabels,
       damagedPackage: r.damagedPackage,
       time: r.time,
-      initial: this.currentUsername,             // 🔹 save username as initial
+      initial: this.currentUsername,
       remarks: r.remarks,
       isFlagIssue: !!r.isFlagIssue,
       isPostInventory: !!r.isPostInventory,
@@ -311,8 +323,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     } as UpdateWarehouseAndSupplierPriceDto));
   }
 
-  private postOneRowToInventory(row: any, index: number) {
-    // 0) Validate minimal fields
+  private postOneRowToInventory(row: any, originalIndex: number) {
     if (!row?.itemCode) {
       Swal.fire('Missing item', 'Item code not found.', 'warning');
       return;
@@ -327,7 +338,6 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       return;
     }
 
-    // 1) Build single-line ApplyGrn request
     const applyReq: ApplyGrnRequest = {
       grnNo: this.generatedGRN?.grnNo || '',
       receptionDate: this.receiptDate || new Date(),
@@ -338,7 +348,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
         warehouseId: Number(row.warehouseId),
         binId: row.binId ?? null,
         strategyId: row.strategyId ?? null,
-        qtyDelta: row.qtyReceived,
+        qtyDelta: qty,
         batchFlag: !!row.batchSerial,
         serialFlag: false,
         barcode: row.batchSerial ?? row.barcode ?? null,
@@ -347,7 +357,6 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       } as ApplyGrnLine]
     };
 
-    // 2) Build single upsert for stock + price
     const upsert: UpdateWarehouseAndSupplierPriceDto = {
       itemCode: String(row.itemCode || '').trim(),
       warehouseId: Number(row.warehouseId),
@@ -363,7 +372,6 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       updatedBy: (localStorage.getItem('id') || undefined)
     };
 
-    // 3) Call backend in sequence
     this.inventoryService.applyGrnToInventory(applyReq).subscribe({
       next: () => {
         this.inventoryService.batchUpdateWarehouseAndSupplierPrice([upsert]).subscribe({
@@ -380,7 +388,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
             this.purchaseGoodReceiptService.applyGrnAndUpdateSalesOrder(alertReq).subscribe({
               next: () => {
                 this.updateRowAndPersist(
-                  index,
+                  originalIndex,
                   { isPostInventory: true, isFlagIssue: false, flagIssueId: 0 },
                   () => {
                     Swal.fire('Posted', 'Row posted to inventory & PurchaseAlert updated.', 'success');
@@ -429,7 +437,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
   }
 
   private updateRowAndPersist(
-    rowIndex: number,
+    originalIndex: number,
     changes: { isFlagIssue?: boolean; isPostInventory?: boolean; flagIssueId?: number | null },
     onSuccess?: () => void
   ) {
@@ -437,7 +445,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
 
     const prevRows = JSON.parse(JSON.stringify(this.generatedGRN.grnJson || []));
     const rows = (this.generatedGRN.grnJson || []).map((r: any, i: number) =>
-      i === rowIndex
+      i === originalIndex
         ? {
             ...r,
             isFlagIssue: Object.prototype.hasOwnProperty.call(changes, 'isFlagIssue')
@@ -455,10 +463,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
 
     this.generatedGRN = { ...this.generatedGRN, grnJson: rows };
 
-    const receptionDateValue =
-      this.receiptDate
-        ? new Date(this.receiptDate)
-        : new Date();
+    const receptionDateValue = this.receiptDate ? new Date(this.receiptDate) : new Date();
 
     const body: any = {
       id: this.generatedGRN.id,
@@ -484,9 +489,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     if (!call$) return;
 
     call$.subscribe({
-      next: () => {
-        if (onSuccess) onSuccess();
-      },
+      next: () => { if (onSuccess) onSuccess(); },
       error: (err) => {
         this.generatedGRN = { ...this.generatedGRN!, grnJson: prevRows };
         console.error('Update failed', err);
@@ -495,34 +498,36 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     });
   }
 
-  /* ====== Click handlers ====== */
-  onPostInventoryRow(row: any, index: number) {
-    this.postOneRowToInventory(row, index);
+  /* ====== Click handlers (use ORIGINAL index always) ====== */
+  onPostInventoryRow(row: any, originalIndex: number) {
+    this.postOneRowToInventory(row, originalIndex);
   }
 
-  onFlagIssuesRow(row: any, index: number) {
-    this.selectedRowForFlagIndex = index;
+  onFlagIssuesRow(row: any, originalIndex: number) {
+    this.selectedRowForFlagIndex = originalIndex;
     this.openFlagIssuesModal();
   }
 
   submitFlagIssue() {
     if (this.selectedRowForFlagIndex == null || !this.selectedFlagIssueId) return;
-    const index = this.selectedRowForFlagIndex;
-    const total = (this.generatedGRN?.grnJson?.length ?? this.grnRows.length) || 0;
-    const isLastRow = index === total - 1;
+    const originalIndex = this.selectedRowForFlagIndex;
 
-    this.updateRowAndPersist(index, { isFlagIssue: true, isPostInventory: false, flagIssueId: this.selectedFlagIssueId }, () => {
+    this.updateRowAndPersist(originalIndex, { isFlagIssue: true, isPostInventory: false, flagIssueId: this.selectedFlagIssueId }, () => {
       Swal.fire('Flagged', 'Row flagged successfully.', 'warning');
       this.closeFlagIssuesModal();
       this.selectedRowForFlagIndex = null;
-      if (this.isEditMode || isLastRow) this.goToDebitNoteList();
+      if (this.isEditMode) this.goToDebitNoteList();
     });
   }
 
-  /* ========= EDIT TABLE SOURCE ========= */
-  get editRows() {
-    return (this.generatedGRN?.grnJson ?? []).filter((r: any) => !r?.isPostInventory);
+  /* ========= EDIT TABLE SOURCE (KEEP ORIGINAL INDEX) ========= */
+  get editRowsWithIndex(): Array<{ row: any; idx: number }> {
+    const list = (this.generatedGRN?.grnJson ?? []);
+    return list
+      .map((r: any, idx: number) => ({ row: r, idx }))
+      .filter(x => !x.row?.isPostInventory);
   }
+
   get hiddenPostedCount(): number {
     return (this.generatedGRN?.grnJson ?? []).reduce((n, r: any) => n + (r?.isPostInventory ? 1 : 0), 0);
   }
@@ -650,7 +655,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
         defectLabels: 'No',
         damagedPackage: 'No',
         time: '',
-        initial: this.currentUsername,       // 🔹 username on each new row
+        initial: this.currentUsername,
         remarks: '',
         createdAt: new Date(),
         photos: [],
@@ -668,20 +673,25 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
 
   /* =================== Warehouse/Bin helpers =================== */
   onWarehouseChange(row: LineRow) {
-    if (row.warehouseId) this.ensureBinsLoaded(row.warehouseId);
+    if (row.warehouseId) this.loadBins$(row.warehouseId).subscribe();
+
     const valid = this.getBins(row.warehouseId).some(b => b.id === row.binId);
     if (!valid) row.binId = null;
+
     row.warehouseName = this.lookupWarehouseName(row.warehouseId);
     row.binName = this.lookupBinName(row.binId);
   }
+
   getBins(warehouseId: number | null | undefined) {
     if (!warehouseId) return [];
     return this.binsByWarehouse[warehouseId] ?? [];
   }
+
   lookupWarehouseName(id?: number | null) {
     if (!id) return '';
     return this.warehouses.find(w => w.id === id)?.name ?? '';
   }
+
   lookupBinName(id?: number | null) {
     if (!id) return '';
     for (const list of Object.values(this.binsByWarehouse)) {
@@ -690,49 +700,65 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     }
     return '';
   }
-  private ensureBinsLoaded(warehouseId: number) {
-    if (!warehouseId || this.binsByWarehouse[warehouseId]) return;
-    this.stockadjustmentService.GetBinDetailsbywarehouseID(warehouseId).subscribe({
-      next: (res: any) => {
-        const list = (res?.data ?? []).map((b: any) => ({
-          id: Number(b.id ?? b.binId ?? b.BinId),
-          binName: String(b.binName ?? b.name ?? b.bin ?? '')
-        }));
-        this.binsByWarehouse[warehouseId] = list;
-        this.cdRef.markForCheck();
-      },
-      error: err => console.error('Error loading bins for warehouse', warehouseId, err)
-    });
+
+  lookupStrategyName(id?: number | null): string {
+    if (!id) return '';
+    return this.strategies.find(s => s.id === id)?.name ?? '';
   }
 
-  /* ================= Loaders ================= */
-  private loadWarehouses() {
-    this.warehouseService.getWarehouse().subscribe({
-      next: (res: any) => {
+  /* ================= Loaders (OBSERVABLE versions) ================= */
+  private loadWarehouses$(): Observable<void> {
+    return this.warehouseService.getWarehouse().pipe(
+      tap((res: any) => {
         const arr = res?.data ?? res ?? [];
         this.warehouses = arr.map((w: any) => ({
           id: Number(w.id ?? w.Id),
           name: String(w.name ?? w.warehouseName ?? w.WarehouseName ?? '')
         })).filter((w: any) => !!w.id && !!w.name);
-      },
-      error: (err) => console.error('Warehouses load failed', err)
-    });
+      }),
+      map(() => void 0),
+      catchError(err => {
+        console.error('Warehouses load failed', err);
+        return of(void 0);
+      })
+    );
   }
-  private loadStrategy() {
-    this.strategyService.getStrategy().subscribe({
-      next: (res: any) => {
+
+  private loadStrategy$(): Observable<void> {
+    return this.strategyService.getStrategy().pipe(
+      tap((res: any) => {
         const data = res?.data ?? res ?? [];
         this.strategies = data.map((s: any) => ({
           id: Number(s.id ?? s.strategyId ?? s.Id),
           name: String(s.name ?? s.strategyName ?? s.StrategyName ?? '')
         })).filter((x: any) => !!x.id && !!x.name);
-      },
-      error: (err) => console.error('Strategy load failed', err)
-    });
+      }),
+      map(() => void 0),
+      catchError(err => {
+        console.error('Strategy load failed', err);
+        return of(void 0);
+      })
+    );
   }
-  lookupStrategyName(id?: number | null): string {
-    if (!id) return '';
-    return this.strategies.find(s => s.id === id)?.name ?? '';
+
+  private loadBins$(warehouseId: number): Observable<void> {
+    if (!warehouseId) return of(void 0);
+    if (this.binsByWarehouse[warehouseId]) return of(void 0);
+
+    return this.stockadjustmentService.GetBinDetailsbywarehouseID(warehouseId).pipe(
+      tap((res: any) => {
+        const list = (res?.data ?? []).map((b: any) => ({
+          id: Number(b.id ?? b.binId ?? b.BinId),
+          binName: String(b.binName ?? b.name ?? b.bin ?? '')
+        }));
+        this.binsByWarehouse[warehouseId] = list;
+      }),
+      map(() => void 0),
+      catchError(err => {
+        console.error('Error loading bins for warehouse', warehouseId, err);
+        return of(void 0);
+      })
+    );
   }
 
   /* ================= Utils ================= */
@@ -761,7 +787,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
         pestSign: '', drySpillage: '', odor: '',
         plateNumber: '', defectLabels: '', damagedPackage: '',
         time: '',
-        initial: this.currentUsername,      // keep username for new blank row
+        initial: this.currentUsername,
         remarks: '',
         createdAt: new Date(), photos: [],
         isFlagIssue: false, isPostInventory: false, flagIssueId: null
@@ -771,8 +797,6 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
 
   trackByIndex = (i: number) => i;
 
-  goToList(): void { this.router.navigate(['/purchase/list-Purchasegoodreceipt']); }
-
   private toDateInput(d: any): string {
     const dt = new Date(d);
     if (isNaN(+dt)) return '';
@@ -781,96 +805,30 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     const dd = String(dt.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
   }
+
   private toNum(v: any): number | null {
     const n = Number(v);
     return Number.isFinite(n) && n > 0 ? n : null;
   }
+
   private coerceNumberOrNull(v: any): number | null {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
   }
+
   private coerceQuality(v: any): 'pass' | 'fail' | 'notverify' | '' {
     const t = String(v ?? '').toLowerCase().trim();
     if (t === 'pass' || t === 'fail' || t === 'notverify') return t;
     if (t === 'not verify' || t === 'not_verified' || t === 'not-verify') return 'notverify';
     return '';
   }
+
   private getNumberOrNull(v: any): number | null {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
   }
 
-  /* ===== Optional: Post all rows already marked as isPostInventory (bulk) ===== */
-  postAllSelectedRows() {
-    const rows = (this.generatedGRN?.grnJson ?? this.grnRows ?? [])
-      .map((r: any, i: number) => ({ r, i }))
-      .filter(x => x.r?.isPostInventory === true);
-
-    if (!rows.length) {
-      Swal.fire('Nothing to post', 'Mark rows as “Post to inventory” first.', 'info');
-      return;
-    }
-
-    const run = async () => {
-      for (const { r, i } of rows) {
-        await new Promise<void>(resolve => {
-          const qty = Number(r?.qtyReceived || 0);
-          if (!r?.itemCode || !r?.warehouseId || !Number.isFinite(qty) || qty <= 0) return resolve();
-
-          const applyReq: ApplyGrnRequest = {
-            grnNo: this.generatedGRN?.grnNo || '',
-            receptionDate: this.receiptDate || new Date(),
-            updatedBy: (localStorage.getItem('id') || ''),
-            lines: [{
-              itemCode: String(r.itemCode || '').trim(),
-              supplierId: r.supplierId ?? this.currentSupplierId ?? null,
-              warehouseId: Number(r.warehouseId),
-              binId: r.binId ?? null,
-              strategyId: r.strategyId ?? null,
-              qtyDelta: qty,
-              batchFlag: !!r.batchSerial,
-              serialFlag: false,
-              barcode: r.barcode ?? null,
-              price: this.getNumberOrNull(r.unitPrice),
-              remarks: r.remarks ?? null
-            }]
-          };
-
-          const up: UpdateWarehouseAndSupplierPriceDto = {
-            itemCode: String(r.itemCode || '').trim(),
-            warehouseId: Number(r.warehouseId),
-            binId: r.binId ?? null,
-            strategyId: r.strategyId ?? null,
-            qtyDelta: qty,
-            batchFlag: !!r.batchSerial,
-            serialFlag: false,
-            supplierId: r.supplierId ?? this.currentSupplierId ?? null,
-            price: this.getNumberOrNull(r.unitPrice),
-            barcode: r.barcode ?? null,
-            remarks: r.remarks ?? null,
-            updatedBy: (localStorage.getItem('id') || undefined)
-          };
-
-          this.inventoryService.applyGrnToInventory(applyReq).subscribe({
-            next: () => {
-              this.inventoryService.batchUpdateWarehouseAndSupplierPrice([up]).subscribe({
-                next: () => {
-                  this.updateRowAndPersist(i, { isPostInventory: true, isFlagIssue: false, flagIssueId: 0 }, resolve);
-                },
-                error: () => resolve()
-              });
-            },
-            error: () => resolve()
-          });
-        });
-      }
-      Swal.fire('Done', 'Selected rows posted.', 'success');
-    };
-
-    run();
-  }
-
-  /* ===== Summary after create (no posting here) ===== */
+  /* ===== Summary after create (no ng-select needed but keep correct names) ===== */
   private loadSummaryForCreate(id: number) {
     this.purchaseGoodReceiptService.getByIdGRN(id).subscribe({
       next: (res: any) => {
@@ -912,60 +870,25 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
             isFlagIssue: !!r?.isFlagIssue,
             isPostInventory: !!r?.isPostInventory,
             flagIssueId: r?.flagIssueId ?? null,
-            initial: r?.initial || this.currentUsername        // 🔹 ensure text initial
+            initial: r?.initial || this.currentUsername
           };
         });
 
-        this.generatedGRN = { id: data?.id, grnNo: data?.grnNo, poid: data?.poid ?? data?.POId, poNo: '', grnJson: rowsCoerced };
+        this.generatedGRN = {
+          id: data?.id,
+          grnNo: data?.grnNo,
+          poid: data?.poid ?? data?.POId,
+          poNo: '',
+          grnJson: rowsCoerced
+        };
 
-        const whSet = new Set<number>();
-        rowsCoerced.forEach(r => { if (r.warehouseId) whSet.add(r.warehouseId); });
-        whSet.forEach(id => this.ensureBinsLoaded(id));
-
-        const poId = Number(this.generatedGRN.poid);
-        if (poId) {
-          this.purchaseorderService.getPOById(poId).subscribe({
-            next: (poRes: any) => {
-              const po = poRes?.data ?? poRes;
-              const poNo =
-                po?.purchaseOrderNo ?? po?.PurchaseOrderNo ??
-                po?.[0]?.purchaseOrderNo ?? po?.[0]?.PurchaseOrderNo ?? '';
-              this.generatedGRN = { ...this.generatedGRN!, poNo };
-            },
-            error: (err) => console.error('Failed to load PO by id', err)
-          });
-        }
-
-        const ids = new Set<number>();
-        rowsCoerced.forEach(r => { const rid = this.toNum(r?.supplierId); if (rid) ids.add(rid); });
-        if (this.currentSupplierId) ids.add(this.currentSupplierId);
-
-        const lookups: Observable<[number, string]>[] = Array.from(ids).map(idNum =>
-          this._SupplierService.getSupplierById(idNum).pipe(
-            map((api: any) =>
-              api?.data?.name ?? api?.data?.supplierName ?? api?.name ?? api?.supplierName ?? ''
-            ),
-            catchError(() => of(''))
-          ).pipe(map(name => [idNum, name] as [number, string]))
-        );
-
-        forkJoin(lookups.length ? lookups : [of([0, ''] as [number, string])]).subscribe(pairs => {
-          this.supplierNameMap = new Map<number, string>(pairs.filter(p => !!p[0]));
-          this.generatedGRN = {
-            ...this.generatedGRN!,
-            grnJson: this.generatedGRN!.grnJson.map(r => ({
-              ...r,
-              supplierName: r.supplierName || (r.supplierId ? (this.supplierNameMap.get(r.supplierId) || '') : '')
-            }))
-          };
-          this.cdRef.markForCheck();
-        });
+        this.cdRef.detectChanges();
       },
       error: (err) => console.error('Create Summary load failed', err)
     });
   }
 
-  /* ===================== EDIT MODE ===================== */
+  /* ===================== EDIT MODE (FULL FIX) ===================== */
   private loadForEdit(id: number) {
     this.purchaseGoodReceiptService.getByIdGRN(id).subscribe({
       next: (res: any) => {
@@ -987,91 +910,117 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
         } catch { rows = []; }
         if (!rows.length) rows = [{}];
 
+        // Supplier name mapping
         const ids = new Set<number>();
         rows.forEach(r => { const rid = this.toNum(r?.supplierId); if (rid) ids.add(rid); });
         if (this.currentSupplierId) ids.add(this.currentSupplierId);
 
         const lookups: Observable<[number, string]>[] = Array.from(ids).map(idNum =>
           this._SupplierService.getSupplierById(idNum).pipe(
-            map((api: any) =>
-              api?.data?.name ?? api?.data?.supplierName ?? api?.name ?? api?.supplierName ?? ''
-            ),
+            map((api: any) => api?.data?.name ?? api?.data?.supplierName ?? api?.name ?? api?.supplierName ?? ''),
             catchError(() => of(''))
           ).pipe(map(name => [idNum, name] as [number, string]))
         );
 
-        forkJoin(lookups.length ? lookups : [of([0, ''] as [number, string])]).subscribe(pairs => {
-          this.supplierNameMap = new Map<number, string>(pairs.filter(p => !!p[0]));
+        forkJoin(lookups.length ? lookups : [of([0, ''] as [number, string])]).subscribe({
+          next: (pairs) => {
+            this.supplierNameMap = new Map<number, string>(pairs.filter(p => !!p[0]));
 
-          if (!this.currentSupplierId && this.selectedPO) {
-            const po = this.purchaseOrder.find(p => p.id === this.selectedPO);
-            if (po?.supplierId) this.currentSupplierId = po.supplierId;
-          }
-          this.currentSupplierName = this.currentSupplierId ? (this.supplierNameMap.get(this.currentSupplierId) || '') : '';
+            if (!this.currentSupplierId && this.selectedPO) {
+              const po = this.purchaseOrder.find(p => p.id === this.selectedPO);
+              if (po?.supplierId) this.currentSupplierId = po.supplierId;
+            }
+            this.currentSupplierName = this.currentSupplierId ? (this.supplierNameMap.get(this.currentSupplierId) || '') : '';
 
-          const rowsWithNames = rows.map((r: any) => {
-            const rid = this.toNum(r?.supplierId) ?? this.currentSupplierId ?? null;
-            const supplierName =
-              r?.supplierName ||
-              (rid ? (this.supplierNameMap.get(rid) || '') : '') ||
-              this.currentSupplierName || '';
+            // Coerce rows
+            const rowsWithNames = rows.map((r: any) => {
+              const rid = this.toNum(r?.supplierId) ?? this.currentSupplierId ?? null;
 
-            const warehouseId = this.toNum(r?.warehouseId);
-            const binId = this.toNum(r?.binId);
-            const strategyId = this.toNum(r?.strategyId);
+              const supplierName =
+                r?.supplierName ||
+                (rid ? (this.supplierNameMap.get(rid) || '') : '') ||
+                this.currentSupplierName || '';
 
-            return {
-              ...r,
-              supplierId: rid,
-              supplierName,
-              warehouseId,
-              binId,
-              strategyId,
-              warehouseName: r?.warehouseName ?? this.lookupWarehouseName(warehouseId),
-              binName: r?.binName ?? this.lookupBinName(binId),
-              strategyName: r?.strategyName ?? this.lookupStrategyName(strategyId),
-              qtyReceived: this.coerceNumberOrNull(r?.qtyReceived),
-              qualityCheck: this.coerceQuality(r?.qualityCheck),
-              batchSerial: r?.batchSerial ?? '',
-              expiry: r?.expiry ? this.toDateInput(r.expiry) : '',
-              unitPrice: this.getNumberOrNull(r?.unitPrice),
-              barcode: r?.barcode ?? null,
-              isFlagIssue: !!r?.isFlagIssue,
-              isPostInventory: !!r?.isPostInventory,
-              flagIssueId: r?.flagIssueId ?? null,
-              initial: r?.initial || this.currentUsername        // 🔹 username as fallback
-            };
-          });
+              const warehouseId = this.toNum(r?.warehouseId);
+              const binId = this.toNum(r?.binId);
+              const strategyId = this.toNum(r?.strategyId);
 
-          const whSet = new Set<number>();
-          rowsWithNames.forEach(r => { if (r.warehouseId) whSet.add(r.warehouseId); });
-          whSet.forEach(wid => this.ensureBinsLoaded(wid));
+              return {
+                ...r,
+                supplierId: rid,
+                supplierName,
+                warehouseId,
+                binId,
+                strategyId,
 
-          this.generatedGRN = { id: data?.id, grnNo: data?.grnNo, poid: data?.poid ?? data?.POId, poNo: '', grnJson: rowsWithNames };
+                // names fallback
+                warehouseName: r?.warehouseName ?? this.lookupWarehouseName(warehouseId),
+                binName: r?.binName ?? this.lookupBinName(binId),
+                strategyName: r?.strategyName ?? this.lookupStrategyName(strategyId),
 
-          const poId = Number(this.generatedGRN.poid);
-          if (poId) {
-            this.purchaseorderService.getPOById(poId).subscribe({
-              next: (poRes: any) => {
-                const po = poRes?.data ?? poRes;
-                const poNo =
-                  po?.purchaseOrderNo ?? po?.PurchaseOrderNo ??
-                  po?.[0]?.purchaseOrderNo ?? po?.[0]?.PurchaseOrderNo ?? '';
-                this.generatedGRN = { ...this.generatedGRN!, poNo };
-              },
-              error: (err) => console.error('Failed to load PO by id', err)
+                qtyReceived: this.coerceNumberOrNull(r?.qtyReceived),
+                qualityCheck: this.coerceQuality(r?.qualityCheck),
+                batchSerial: r?.batchSerial ?? '',
+                expiry: r?.expiry ? this.toDateInput(r.expiry) : '',
+                unitPrice: this.getNumberOrNull(r?.unitPrice),
+                barcode: r?.barcode ?? null,
+
+                isFlagIssue: !!r?.isFlagIssue,
+                isPostInventory: !!r?.isPostInventory,
+                flagIssueId: r?.flagIssueId ?? null,
+                initial: r?.initial || this.currentUsername
+              };
             });
-          }
 
-          this.cdRef.markForCheck();
+            // ✅ CRITICAL: Load bins for all warehouses BEFORE assigning generatedGRN
+            const whIds = Array.from(new Set(
+              rowsWithNames.map(r => Number(r.warehouseId)).filter(Boolean)
+            ));
+
+            forkJoin(whIds.map(wid => this.loadBins$(wid))).subscribe({
+              next: () => {
+                // Now all items exist -> ng-select will show selected values
+                this.generatedGRN = {
+                  id: data?.id,
+                  grnNo: data?.grnNo,
+                  poid: data?.poid ?? data?.POId,
+                  poNo: '',
+                  grnJson: rowsWithNames
+                };
+
+                // optional PO no
+                const poId = Number(this.generatedGRN.poid);
+                if (poId) {
+                  this.purchaseorderService.getPOById(poId).subscribe({
+                    next: (poRes: any) => {
+                      const po = poRes?.data ?? poRes;
+                      const poNo =
+                        po?.purchaseOrderNo ?? po?.PurchaseOrderNo ??
+                        po?.[0]?.purchaseOrderNo ?? po?.[0]?.PurchaseOrderNo ?? '';
+                      this.generatedGRN = { ...this.generatedGRN!, poNo };
+                      this.cdRef.detectChanges();
+                    },
+                    error: (err) => console.error('Failed to load PO by id', err)
+                  });
+                }
+
+                this.cdRef.detectChanges();
+              },
+              error: err => {
+                console.error('Bins load failed', err);
+                // even if bins fail, still set data
+                this.generatedGRN = { id: data?.id, grnNo: data?.grnNo, poid: data?.poid ?? data?.POId, poNo: '', grnJson: rowsWithNames };
+                this.cdRef.detectChanges();
+              }
+            });
+          },
+          error: (err) => console.error('Supplier lookup failed', err)
         });
       },
       error: (err) => console.error('Edit load failed', err)
     });
   }
 
-  // compare function used by ng-select in edit mode
-  byId(a: any, b: any) {
-    return a === b;
-  }
+  // keep simple compare if you ever need it
+  byId(a: any, b: any) { return Number(a) === Number(b); }
 }

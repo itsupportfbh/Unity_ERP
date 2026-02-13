@@ -9,6 +9,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { UserService } from '../user.service';
 import Swal from 'sweetalert2';
+import { LocationService } from 'app/main/master/location/location.service';
 
 /* ========= PASSWORD VALIDATOR ========= */
 const PASSWORD_REGEX =
@@ -36,11 +37,13 @@ export class UserformComponent implements OnInit {
 
   isSaving = false;
 departments: any[] = [];
+  locations: any;
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private svc: UserService
+    private svc: UserService,
+    private _locationserice: LocationService
   ) {}
 
   ngOnInit(): void {
@@ -49,8 +52,10 @@ departments: any[] = [];
       email: ['', [Validators.required, Validators.email]],
       password: [''],
       departmentId: [null, Validators.required], 
+      locationId: [ null, Validators.required],
       approvalLevelIds: [[]]
     });
+this.getAllLocations();
 
     this.svc.getApprovalLevels().subscribe((res: any) => {
       this.roles = res?.data || [];
@@ -87,6 +92,7 @@ departments: any[] = [];
             username: u.username,
             email: u.email,
            departmentId: u.departmentId ?? null,
+           locationId: u.locationId,
            approvalLevelIds: u.approvalLevelIds || []
           });
         });
@@ -150,7 +156,8 @@ departments: any[] = [];
     username: this.form.value.username,
     email: this.form.value.email,
      departmentId: this.form.value.departmentId,
-    approvalLevelIds: this.form.value.approvalLevelIds || []
+    approvalLevelIds: this.form.value.approvalLevelIds || [],
+    locationId: this.form.value.locationId
   };
 
   if (!this.isEdit || this.canEditPassword) {
@@ -218,5 +225,12 @@ departments: any[] = [];
     this.svc.getDepartments().subscribe((res: any) => {
   this.departments = res?.data || [];
 });
+  }
+    getAllLocations(): void {
+    this._locationserice.getLocationDetails().subscribe((response: any) => {
+      this.locations = response?.data ?? [];
+     
+      
+    });
   }
 }

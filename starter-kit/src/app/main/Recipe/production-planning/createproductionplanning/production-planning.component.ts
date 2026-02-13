@@ -258,64 +258,70 @@ export class ProductionPlanningComponent implements OnInit {
   // -----------------------------
   // ✅ Save (Create or Update)
   // -----------------------------
-  savePlan(): void {
-    if (!this.selectedSoId) return;
+ savePlan(): void {
+  if (!this.selectedSoId) return;
 
-    if (!this.warehouseId) {
-      Swal.fire('Select Warehouse', 'Please select Production Warehouse', 'warning');
-      return;
-    }
+  if (!this.warehouseId) {
+    Swal.fire('Select Warehouse', 'Please select Production Warehouse', 'warning');
+    return;
+  }
 
-    const userName = (localStorage.getItem('username') || '').trim() || 'admin';
+  const userName = (localStorage.getItem('username') || '').trim() || 'admin';
 
-    const lines = (this.planRows || []).map(r => ({
-      recipeId: Number(r.recipeId || 0),
-      finishedItemId: Number(r.finishedItemId || 0),
-      plannedQty: Number(r.plannedQty || 0),
-      expectedOutput: Number(r.expectedOutput || 0)
-    }));
+  const lines = (this.planRows || []).map(r => ({
+    recipeId: Number(r.recipeId || 0),
+    finishedItemId: Number(r.finishedItemId || 0),
+    plannedQty: Number(r.plannedQty || 0),
+    expectedOutput: Number(r.expectedOutput || 0)
+  }));
 
-    if (!lines.length) {
-      Swal.fire('Info', 'No plan lines to save', 'info');
-      return;
-    }
+  if (!lines.length) {
+    Swal.fire('Info', 'No plan lines to save', 'info');
+    return;
+  }
 
-    // UPDATE
-    if (this.isEditMode && this.currentPlanId) {
-      this.api.updatePlan({
-        id: this.currentPlanId,
-        salesOrderId: this.selectedSoId,
-        outletId: this.outletId,
-        warehouseId: this.warehouseId,
-        planDate: this.planDate,
-        status: this.status || 'Draft',
-        updatedBy: userName,
-        lines
-      }).subscribe({
-        next: (res: any) => {
-          const pid = Number(res?.productionPlanId || res?.id || this.currentPlanId || 0);
-          Swal.fire('Updated', `Production Plan Id: ${pid}`, 'success');
-        },
-        error: (e) => Swal.fire('Error', e?.error?.message || 'Update failed', 'error')
-      });
-      return;
-    }
+  const goList = () => this.router.navigate(['/Recipe/productionplanninglist']); // ✅ change route as your app
 
-    // CREATE
-    this.api.savePlan({
+  // UPDATE
+  if (this.isEditMode && this.currentPlanId) {
+    this.api.updatePlan({
+      id: this.currentPlanId,
       salesOrderId: this.selectedSoId,
       outletId: this.outletId,
       warehouseId: this.warehouseId,
-      createdBy: userName
+      planDate: this.planDate,
+      status: this.status || 'Draft',
+      updatedBy: userName,
+      lines
     }).subscribe({
       next: (res: any) => {
-        const pid = Number(res?.productionPlanId || res?.id || 0);
-        if (pid > 0) this.currentPlanId = pid;
-        Swal.fire('Saved', `Production Plan Id: ${pid}`, 'success');
+        const pid = Number(res?.productionPlanId || res?.id || this.currentPlanId || 0);
+        Swal.fire('Updated', `Production Plan Id: ${pid}`, 'success')
+          .then(() => goList());   // ✅ redirect after OK
       },
-      error: () => Swal.fire('Error', 'Save failed', 'error')
+      error: (e) => Swal.fire('Error', e?.error?.message || 'Update failed', 'error')
     });
+    return;
   }
+
+  // CREATE
+  this.api.savePlan({
+    salesOrderId: this.selectedSoId,
+    outletId: this.outletId,
+    warehouseId: this.warehouseId,
+    createdBy: userName
+  }).subscribe({
+    next: (res: any) => {
+      const pid = Number(res?.productionPlanId || res?.id || 0);
+      if (pid > 0) this.currentPlanId = pid;
+
+      Swal.fire('Saved', `Production Plan Id: ${pid}`, 'success')
+        .then(() => goList());     // ✅ redirect after OK
+    },
+    error: () => Swal.fire('Error', 'Save failed', 'error')
+  });
+}
+
 
   // -----------------------------
   // PR

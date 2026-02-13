@@ -2,3 +2,11 @@
 @import '@core/scss/base/pages/app-user.scss';
 @import '@core/scss/angular/libs/select.component.scss';
 @import '@core/scss/angular/libs/sweet-alerts.component.scss';
+
+.page-title {
+  margin-left: .85rem;
+  margin-top: .75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2E5F73;
+}

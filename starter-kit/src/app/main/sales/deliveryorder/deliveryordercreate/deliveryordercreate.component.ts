@@ -140,6 +140,7 @@ export class DeliveryordercreateComponent implements OnInit {
 
   /* ---------------- Lifecycle ---------------- */
   ngOnInit(): void {
+    debugger
     this.detectMode();
     this.loadUoms();
     this.loadDropdowns();
@@ -243,6 +244,7 @@ export class DeliveryordercreateComponent implements OnInit {
 
   /* ---------------- Load for edit ---------------- */
   private loadForEdit(id: number) {
+    debugger
     this.doSrv.get(id).subscribe((res: any) => {
       const hdr: DoHeaderDto = res?.data?.header ?? res?.header ?? res;
       const lines: DoLineDto[] = res?.data?.lines ?? res?.lines ?? [];

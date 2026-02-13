@@ -35,8 +35,12 @@ export class AuthService {
     }
   }
 
+  // isLoggedIn(): boolean {
+  //   return !!localStorage.getItem('token');
+  // }
   isLoggedIn(): boolean {
-    return !!localStorage.getItem('token');
+    const token = localStorage.getItem('token'); // ungaloda key name change pannunga
+    return !!token;
   }
 
 logout() {

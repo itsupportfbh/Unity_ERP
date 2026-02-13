@@ -278,13 +278,147 @@ export class QuotationscreateComponent implements OnInit {
     return ['Zero-Rated'];
   }
 
-  ngOnInit(): void {
-    this.setMinDate();
-    this.loadLookups();
+ngOnInit(): void {
+  this.setMinDate();
+  this.loadLookups();
 
-    const idStr = this.route.snapshot.paramMap.get('id');
-    this.editId = idStr ? +idStr : null;
+  const idStr = this.route.snapshot.paramMap.get('id');
+  this.editId = idStr ? +idStr : null;
+
+  if (this.editId && this.editId > 0) {
+    this.loadForEdit(this.editId);
   }
+}
+private loadForEdit(id: number) {
+  debugger
+  this.qt.getById(id).subscribe({
+    next: (res: any) => {
+      const dto = res?.data ?? res ?? null;
+      if (!dto) return;
+
+      // ✅ IMPORTANT: set header id (this is why edit not working)
+      this.header = {
+        ...this.header,
+        id: Number(dto.id ?? dto.Id ?? id),
+
+        status: Number(dto.status ?? dto.Status ?? 0),
+        customerId: Number(dto.customerId ?? dto.CustomerId ?? null),
+        currencyId: Number(dto.currencyId ?? dto.CurrencyId ?? 0),
+        fxRate: Number(dto.fxRate ?? dto.FxRate ?? 1),
+        paymentTermsId: Number(dto.paymentTermsId ?? dto.PaymentTermsId ?? 0),
+        deliveryDate: this.toDateInputValue(dto.deliveryDate ?? dto.DeliveryDate),
+
+
+        remarks: String(dto.remarks ?? dto.Remarks ?? ''),
+        deliveryTo: String(dto.deliveryTo ?? dto.DeliveryTo ?? ''),
+
+        rounding: Number(dto.rounding ?? dto.Rounding ?? 0),
+
+        // totals will recompute
+        subtotal: 0,
+        taxAmount: 0,
+        grandTotal: 0,
+        needsHodApproval: !!(dto.needsHodApproval ?? dto.NeedsHodApproval ?? false),
+
+        // keep your defaults
+        discountType: (dto.discountType ?? this.header.discountType) as any,
+        discountInput: Number(dto.discountInput ?? this.header.discountInput ?? 0),
+        discountManual: true, // edit mode = keep manual
+        lineSourceId: (Number(dto.lineSource ?? dto.LineSource ?? 1) as any)
+      };
+
+      // ✅ backfill dropdown text (optional)
+      const custName = dto.customerName ?? dto.CustomerName;
+      if (custName) this.customerSearch = String(custName);
+
+      const curName = dto.currencyName ?? dto.CurrencyName;
+      if (curName) { this.currencySearch = String(curName); this.header.currency = String(curName); }
+
+      const payName = dto.paymentTermsName ?? dto.PaymentTermsName;
+      if (payName) { this.paymentTermsSearch = String(payName); this.header.paymentTerms = String(payName); }
+
+      // ✅ set taxPct from country if available
+      const gst = Number(dto.taxPct ?? dto.GstPct ?? dto.gstPct ?? 0);
+      if (!Number.isNaN(gst)) this.header.taxPct = gst;
+
+      // ✅ load itemsets (if api returns ids)
+      const itemSetIds: number[] =
+        (dto.itemSetIds ?? dto.ItemSetIds ?? dto.itemSetIdsCsv ?? '')
+          ? String(dto.itemSetIds ?? dto.ItemSetIds ?? dto.itemSetIdsCsv)
+              .split(',')
+              .map((x: string) => +x)
+              .filter((x: number) => x > 0)
+          : (Array.isArray(dto.itemSetIds) ? dto.itemSetIds : []);
+
+      // reset lines
+      this.lines = [];
+
+      // ✅ if LineSource = ItemSet (2), load itemsets + append headers/items
+      if (this.header.lineSourceId === 2 && itemSetIds.length) {
+        this.selectedItemSets = itemSetIds
+          .map(id2 => this.itemSets.find(s => s.id === id2))
+          .filter(Boolean) as any;
+
+        // append sets
+        for (const sid of itemSetIds) {
+          const setName = this.itemSets.find(s => s.id === sid)?.setName ?? `Set ${sid}`;
+          this.loadItemSetItemsAndAppend(sid, setName);
+        }
+      }
+
+      // ✅ load normal lines from dto
+      const apiLines = dto.lines ?? dto.Lines ?? [];
+      for (const l of apiLines) {
+        const itemId = Number(l.itemId ?? l.ItemId ?? 0);
+        if (!itemId) continue;
+
+        const taxMode = (l.taxMode ?? l.TaxMode ?? 'Zero-Rated') as LineTaxMode;
+
+        const ui: UiLine = {
+          itemId,
+          itemName: String(l.itemName ?? l.ItemName ?? this.getItemName(itemId) ?? ''),
+          uomId: (l.uomId ?? l.UomId) != null ? Number(l.uomId ?? l.UomId) : null,
+          qty: Number(l.qty ?? l.Qty ?? 0),
+          unitPrice: Number(l.unitPrice ?? l.UnitPrice ?? 0),
+          discountPct: Number(l.discountPct ?? l.DiscountPct ?? 0),
+          description: String(l.description ?? l.Description ?? ''),
+          taxMode,
+          taxCodeId: Number(l.taxCodeId ?? l.TaxCodeId ?? this.taxModeToTaxCodeId(taxMode)),
+          isFromSet: !!(l.isFromSet ?? l.IsFromSet ?? false),
+          itemSetId: (l.itemSetId ?? l.ItemSetId) != null ? Number(l.itemSetId ?? l.ItemSetId) : null,
+          setName: String(l.setName ?? l.SetName ?? ''),
+          isSetHeader: false
+        };
+
+        this.computeLine(ui);
+        this.lines.push(ui);
+      }
+
+      // ✅ uom backfill + totals
+      this.backfillMissingUoms();
+      this.computeTotals();
+    },
+    error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Unable to load quotation for edit' })
+  });
+}
+
+private toDateInputValue(v: any): string | null {
+  if (!v) return null;
+
+  // already yyyy-mm-dd
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+
+  // "2026-01-30T00:00:00" -> "2026-01-30"
+  if (typeof v === 'string' && v.includes('T')) return v.split('T')[0];
+
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return null;
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
   // close dropdowns when clicking outside
   @HostListener('document:click', ['$event'])
@@ -784,24 +918,24 @@ export class QuotationscreateComponent implements OnInit {
     if (!dto.number || !dto.number.trim?.()) {
       dto.number = `QT-${new Date().toISOString().replace(/\D/g, '').slice(0, 14)}`;
     }
-
-    if (dto.id) {
-      this.qt.update(dto.id, dto).subscribe({
-        next: () => {
-          Swal.fire({ icon: 'success', title: 'Updated', text: 'Quotation Updated Successfully', confirmButtonColor: '#2E5F73' });
-          this.router.navigate(['/Sales/Quotation-list']);
-        },
-        error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Update failed', confirmButtonColor: '#d33' })
-      });
-    } else {
-      this.qt.create(dto).subscribe({
-        next: () => {
-          Swal.fire({ icon: 'success', title: 'Saved', text: 'Quotation Created Successfully', confirmButtonColor: '#2E5F73' });
-          this.router.navigate(['/Sales/Quotation-list']);
-        },
-        error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Create failed', confirmButtonColor: '#d33' })
-      });
-    }
+const id = Number(this.header?.id ?? this.editId ?? 0);
+  if (id > 0) {
+  this.qt.update(id, { ...dto, id }).subscribe({
+    next: () => {
+      Swal.fire({ icon: 'success', title: 'Updated', text: 'Quotation Updated Successfully', confirmButtonColor: '#2E5F73' })
+        .then(() => this.router.navigate(['/Sales/Quotation-list']));
+    },
+    error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Update failed', confirmButtonColor: '#d33' })
+  });
+} else {
+  this.qt.create(dto).subscribe({
+    next: () => {
+      Swal.fire({ icon: 'success', title: 'Saved', text: 'Quotation Created Successfully', confirmButtonColor: '#2E5F73' })
+        .then(() => this.router.navigate(['/Sales/Quotation-list']));
+    },
+    error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Create failed', confirmButtonColor: '#d33' })
+  });
+}
   }
 
   goToList() {

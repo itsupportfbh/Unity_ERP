@@ -1,25 +1,27 @@
-<!-- ========== ENTRY FORM (CREATE MODE ONLY) ========== -->
+<!-- =================== CREATE MODE (ENTRY FORM) =================== -->
 <div *ngIf="!isEditMode && !showSummary" class="ui-compact-slim">
-  <button class="btn mb-1 mt-1 btn-compact" style="background-color:#2E5F73;color:#fff" (click)="goToDebitNoteList()">
+
+  <button class="btn mb-1 mt-1 btn-compact"
+          style="background-color:#2E5F73;color:#fff"
+          (click)="goToDebitNoteList()">
     <i class="fa fa-arrow-left text-[13px]"></i>
     <span class="ml-1">Go to GRN list</span>
   </button>
 
   <div class="mb-6">
     <div class="card bg-white shadow-sm border border-gray-200">
+
       <!-- Title row -->
       <div class="title-row flex items-center justify-between">
         <h2 class="text-[18px] font-semibold" style="color:#2E5F73">Goods Receipt (GRN)</h2>
 
-        <button
-          type="button"
-          class="btn-compact inline-flex items-center gap-2 text-white transition"
-          (click)="saveGRN()"
-          (mouseenter)="hover = true"
-          (mouseleave)="hover = false"
-          [style.backgroundColor]="hover ? '#092f3f' : '#2E5F73'"
-          [disabled]="isPostInventoryDisabled"
-        >
+        <button type="button"
+                class="btn-compact inline-flex items-center gap-2 text-white transition"
+                (click)="saveGRN()"
+                (mouseenter)="hover = true"
+                (mouseleave)="hover = false"
+                [style.backgroundColor]="hover ? '#092f3f' : '#2E5F73'"
+                [disabled]="isPostInventoryDisabled">
           <i *ngIf="!editingGrnId" class="fa fa-save text-[13px]"></i>
           <i *ngIf="editingGrnId" class="fa fa-edit text-[13px]"></i>
           <span>{{ editingGrnId ? 'Update GRN' : 'Save GRN' }}</span>
@@ -28,14 +30,16 @@
 
       <!-- Header Inputs -->
       <div class="hdr-grid grid grid-cols-1 md:grid-cols-3">
+
         <!-- From PO -->
         <div>
           <label class="block text-gray-600">From PO</label>
-          <select [(ngModel)]="selectedPO" (ngModelChange)="onPOChange($event)"
+          <select [(ngModel)]="selectedPO"
+                  (ngModelChange)="onPOChange($event)"
                   class="ctl w-full border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/20 focus:border-[#0e3a4c]">
             <option [ngValue]="null" disabled>Select PO</option>
             <ng-container *ngFor="let po of purchaseOrder">
-              <option [ngValue]="po.id">{{ po.purchaseOrderNo }} - {{po.supplierName}}</option>
+              <option [ngValue]="po.id">{{ po.purchaseOrderNo }} - {{ po.supplierName }}</option>
             </ng-container>
           </select>
         </div>
@@ -43,38 +47,40 @@
         <!-- PO Date (auto-set from PO date in TS) -->
         <div (click)="!isPoDateDisabled && dateInput.showPicker()">
           <label class="block text-gray-600">PO Date</label>
-          <input
-            #dateInput
-            type="date"
-            [(ngModel)]="receiptDate"
-            [disabled]="isPoDateDisabled"
-            [readOnly]="isPoDateDisabled"
-            [min]="minDate"
-            class="ctl w-full border border-gray-300 bg-white focus:outline-none focus:ring-2
-                   focus:ring-[#0e3a4c]/20 focus:border-[#0e3a4c]"
-            [class.opacity-60]="isPoDateDisabled"
-            [class.cursor-not-allowed]="isPoDateDisabled"
-          />
+          <input #dateInput
+                 type="date"
+                 [(ngModel)]="receiptDate"
+                 [disabled]="isPoDateDisabled"
+                 [readOnly]="isPoDateDisabled"
+                 [min]="minDate"
+                 class="ctl w-full border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/20 focus:border-[#0e3a4c]"
+                 [class.opacity-60]="isPoDateDisabled"
+                 [class.cursor-not-allowed]="isPoDateDisabled" />
         </div>
 
         <!-- Over-receipt Tolerance -->
         <div>
           <label class="block text-gray-600">Over-receipt Tolerance (%)</label>
-          <input type="number" min="0" max="5" placeholder="0" [(ngModel)]="overReceiptTolerance"
+          <input type="number"
+                 min="0"
+                 max="5"
+                 placeholder="0"
+                 [(ngModel)]="overReceiptTolerance"
                  (keypress)="allowOnlyNumbers($event)"
                  class="ctl w-full border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/20 focus:border-[#0e3a4c]" />
         </div>
+
       </div>
 
       <!-- Lines Table (Create form) -->
       <div class="overflow-x-auto ring-1 ring-gray-300 mt-2">
         <table class="table-compact w-full min-w-[1900px] text-sm">
+
           <thead class="text-white" style="background-color:#2E5F73">
             <tr>
               <th class="text-left">Item / Product</th>
               <th class="text-left">Supplier Name</th>
 
-              <!-- NEW -->
               <th class="text-left">Warehouse</th>
               <th class="text-left">Bin</th>
               <th class="text-left">Frequency</th>
@@ -99,15 +105,18 @@
 
           <tbody class="bg-white">
             <tr *ngFor="let r of grnRows; let i = index; trackBy: trackByIndex" class="align-middle">
+
               <!-- Item -->
               <td>
-                <input [value]="r.itemText || ''" readonly
+                <input [value]="r.itemText || ''"
+                       readonly
                        class="ctl w-56 border border-gray-300 bg-gray-50 text-gray-800" />
               </td>
 
-              <!-- Supplier Name -->
+              <!-- Supplier -->
               <td>
-                <input [value]="r.supplierName || ''" readonly
+                <input [value]="r.supplierName || ''"
+                       readonly
                        class="ctl w-52 border border-gray-300 bg-gray-50 text-gray-800" />
               </td>
 
@@ -124,7 +133,6 @@
                   [clearable]="true"
                   placeholder="Select"
                   class="w-56 ctl wh-select">
-                  <ng-option [value]="null" disabled>Select</ng-option>
                 </ng-select>
               </td>
 
@@ -142,11 +150,10 @@
                   [clearable]="true"
                   placeholder="Select"
                   class="w-56 ctl wh-select">
-                  <ng-option [value]="null">Select</ng-option>
                 </ng-select>
               </td>
 
-              <!-- Strategy -->
+              <!-- Strategy / Frequency -->
               <td class="min-w-[16rem]">
                 <ng-select
                   [items]="strategies"
@@ -159,35 +166,29 @@
                   [clearable]="true"
                   placeholder="Select"
                   class="w-56 ctl">
-                  <ng-option [value]="null">Select</ng-option>
                 </ng-select>
               </td>
 
               <!-- Batch / Serial -->
               <td>
-                <input
-                  [(ngModel)]="r.batchSerial"
-                  placeholder="Batch / Serial"
-                  class="ctl w-44 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]"
-                />
+                <input [(ngModel)]="r.batchSerial"
+                       placeholder="Batch / Serial"
+                       class="ctl w-44 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
               </td>
 
-              <!-- Qty Received -->
+              <!-- Qty -->
               <td>
-                <input
-                  type="number"
-                  min="0"
-                  [(ngModel)]="r.qtyReceived"
-                  (keypress)="allowOnlyNumbers($event)"
-                  class="ctl w-28 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]"
-                />
+                <input type="number"
+                       min="0"
+                       [(ngModel)]="r.qtyReceived"
+                       (keypress)="allowOnlyNumbers($event)"
+                       class="ctl w-28 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
               </td>
 
-              <!-- Quality Check -->
+              <!-- Quality -->
               <td>
-                <select
-                  [(ngModel)]="r.qualityCheck"
-                  class="ctl w-36 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
+                <select [(ngModel)]="r.qualityCheck"
+                        class="ctl w-36 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
                   <option value="">Select</option>
                   <option value="pass">Pass</option>
                   <option value="fail">Fail</option>
@@ -195,7 +196,7 @@
                 </select>
               </td>
 
-              <!-- Storage type -->
+              <!-- Storage -->
               <td>
                 <select [(ngModel)]="r.storageType"
                         class="ctl w-40 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
@@ -208,23 +209,22 @@
 
               <!-- Surface Temp -->
               <td>
-                <input [(ngModel)]="r.surfaceTemp" placeholder="°C"
+                <input [(ngModel)]="r.surfaceTemp"
+                       placeholder="°C"
                        class="ctl w-28 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
               </td>
 
               <!-- Expiry -->
               <td (click)="expiryInput.showPicker()">
-                <input
-                  #expiryInput
-                  type="date"
-                  [(ngModel)]="r.expiry"
-                  [min]="minDate"
-                  required
-                  class="ctl w-40 border border-gray-300 bg-white cursor-pointer"
-                />
+                <input #expiryInput
+                       type="date"
+                       [(ngModel)]="r.expiry"
+                       [min]="minDate"
+                       required
+                       class="ctl w-40 border border-gray-300 bg-white cursor-pointer" />
               </td>
 
-              <!-- Pest Sign -->
+              <!-- Pest -->
               <td>
                 <select [(ngModel)]="r.pestSign"
                         class="ctl w-28 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
@@ -234,7 +234,7 @@
                 </select>
               </td>
 
-              <!-- Dry/Spillage -->
+              <!-- Dry -->
               <td>
                 <select [(ngModel)]="r.drySpillage"
                         class="ctl w-28 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
@@ -254,13 +254,13 @@
                 </select>
               </td>
 
-              <!-- Plate Number -->
+              <!-- Vehicle -->
               <td>
                 <input [(ngModel)]="r.plateNumber"
                        class="ctl w-36 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
               </td>
 
-              <!-- Defect Labels -->
+              <!-- Defect -->
               <td>
                 <select [(ngModel)]="r.defectLabels"
                         class="ctl w-32 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
@@ -270,7 +270,7 @@
                 </select>
               </td>
 
-              <!-- Damaged Package -->
+              <!-- Damaged -->
               <td>
                 <select [(ngModel)]="r.damagedPackage"
                         class="ctl w-32 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
@@ -282,16 +282,16 @@
 
               <!-- Time -->
               <td>
-                <input type="time" [(ngModel)]="r.time"
+                <input type="time"
+                       [(ngModel)]="r.time"
                        class="ctl w-32 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
               </td>
 
-              <!-- Initial = current username -->
+              <!-- Initial -->
               <td>
-                <input
-                  [value]="currentUsername"
-                  readonly
-                  class="ctl w-28 border border-gray-300 bg-gray-50 text-gray-800 text-xs font-semibold text-center" />
+                <input [value]="currentUsername"
+                       readonly
+                       class="ctl w-28 border border-gray-300 bg-gray-50 text-gray-800 text-xs font-semibold text-center" />
               </td>
 
               <!-- Remarks -->
@@ -299,8 +299,10 @@
                 <input [(ngModel)]="r.remarks"
                        class="ctl w-56 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
               </td>
+
             </tr>
           </tbody>
+
         </table>
       </div>
 
@@ -308,8 +310,11 @@
   </div>
 </div>
 
-<!-- ========== CREATE MODE: READ-ONLY GENERATED SUMMARY AFTER SAVE ========== -->
-<div *ngIf="!isEditMode && showSummary && generatedGRN" class="ui-compact-slim bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+
+<!-- =================== CREATE MODE SUMMARY (AFTER SAVE) =================== -->
+<div *ngIf="!isEditMode && showSummary && generatedGRN"
+     class="ui-compact-slim bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+
   <div class="flex items-center justify-between mb-2">
     <h3 class="text-[18px] font-semibold" style="color:#2E5F73">Generated GRN Summary</h3>
   </div>
@@ -321,12 +326,11 @@
 
   <div class="overflow-x-auto rounded-lg border border-gray-300">
     <table class="table-compact w-full min-w-[1900px] text-sm">
+
       <thead class="text-white" style="background-color:#2E5F73">
         <tr>
           <th class="text-left">Item Code</th>
           <th class="text-left">Supplier</th>
-
-          <!-- NEW -->
           <th class="text-left">Warehouse</th>
           <th class="text-left">Bin</th>
           <th class="text-left">Frequency</th>
@@ -353,10 +357,10 @@
 
       <tbody class="bg-white">
         <tr *ngFor="let row of generatedGRN.grnJson; let i = index">
+
           <td>{{ row.itemCode || row.item }}</td>
           <td>{{ row.supplierName }}</td>
 
-          <!-- NEW -->
           <td>{{ row.warehouseName || lookupWarehouseName(row.warehouseId) }}</td>
           <td>{{ row.binName || lookupBinName(row.binId) }}</td>
           <td>{{ row.strategyName || lookupStrategyName(row.strategyId) }}</td>
@@ -375,7 +379,6 @@
           <td>{{ row.damagedPackage }}</td>
           <td>{{ row.time }}</td>
 
-          <!-- Initial text -->
           <td>
             <span class="text-xs font-semibold text-gray-800">
               {{ row.initial || currentUsername }}
@@ -383,6 +386,7 @@
           </td>
 
           <td>{{ row.remarks }}</td>
+
           <td>
             <span class="pill"
                   [ngClass]="{
@@ -392,13 +396,16 @@
               {{ row.isFlagIssue ? 'Flagged' : (row.isPostInventory ? 'Posted' : '') }}
             </span>
           </td>
+
           <td>
             <div class="row-actions flex items-center justify-end">
               <button type="button"
                       class="btn-compact inline-flex items-center gap-2 text-white"
-                      style="background:#d97706" (click)="onFlagIssuesRow(row, i)">
+                      style="background:#d97706"
+                      (click)="onFlagIssuesRow(row, i)">
                 <i class="fa fa-flag text-[11px] opacity-90"></i> Flag Issues
               </button>
+
               <button type="button"
                       class="btn-compact inline-flex items-center gap-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                       style="background:#2E5F73"
@@ -408,34 +415,43 @@
               </button>
             </div>
           </td>
+
         </tr>
       </tbody>
+
     </table>
   </div>
 </div>
 
-<!-- ========== EDIT MODE: EDITABLE GRN SUMMARY (COMPACT) ========== -->
-<div *ngIf="isEditMode && generatedGRN" class="ui-compact-slim bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+
+<!-- =================== EDIT MODE SUMMARY (EDIT GRN) =================== -->
+<div *ngIf="isEditMode && generatedGRN"
+     class="ui-compact-slim bg-white rounded-xl shadow-sm border border-gray-200 p-4">
 
   <!-- Header -->
   <div class="mb-3">
     <div class="flex items-center justify-between">
       <h3 class="text-[18px] font-semibold" style="color:#2E5F73">Edit GRN</h3>
     </div>
+
     <div class="mt-1 flex flex-wrap gap-2">
       <span class="pill bg-gray-100 text-gray-700">GRN: {{ generatedGRN.grnNo }}</span>
       <span class="pill bg-gray-100 text-gray-700">PO: {{ generatedGRN.poNo || generatedGRN.poid }}</span>
+
+      <span *ngIf="hiddenPostedCount > 0" class="pill bg-yellow-100 text-yellow-800">
+        Posted hidden: {{ hiddenPostedCount }}
+      </span>
     </div>
   </div>
 
   <div class="overflow-x-auto rounded-lg border border-gray-300">
     <table class="table-compact w-full min-w-[1900px] text-sm">
+
       <thead class="text-white" style="background-color:#2E5F73">
         <tr>
           <th class="text-left">Item Code</th>
           <th class="text-left">Supplier</th>
 
-          <!-- NEW -->
           <th class="text-left">Warehouse</th>
           <th class="text-left">Bin</th>
           <th class="text-left">Frequency</th>
@@ -461,15 +477,17 @@
         </tr>
       </thead>
 
+      <!-- ✅ IMPORTANT: use editRowsWithIndex so indexes match original JSON -->
       <tbody class="bg-white">
-        <tr *ngFor="let row of editRows; let i = index; trackBy: trackByIndex"
+        <tr *ngFor="let x of editRowsWithIndex; trackBy: trackByIndex"
             class="hover:bg-gray-50"
-            [class.opacity-70]="row.isPostInventory">
+            [class.opacity-70]="x.row.isPostInventory">
 
-          <td>{{ row.itemCode || row.item }}</td>
+          <td>{{ x.row.itemCode || x.row.item }}</td>
 
           <td>
-            <input [(ngModel)]="row.supplierName" class="ctl w-48 border border-gray-300 bg-white" />
+            <input [(ngModel)]="x.row.supplierName"
+                   class="ctl w-48 border border-gray-300 bg-white" />
           </td>
 
           <!-- Warehouse (disabled) -->
@@ -478,8 +496,7 @@
               [items]="warehouses"
               bindLabel="name"
               bindValue="id"
-              [(ngModel)]="row.warehouseId"
-              [compareWith]="byId"
+              [(ngModel)]="x.row.warehouseId"
               [disabled]="true"
               [clearable]="false"
               [searchable]="false"
@@ -490,11 +507,10 @@
           <!-- Bin (disabled) -->
           <td class="min-w-[16rem]">
             <ng-select
-              [items]="getBins(row.warehouseId)"
+              [items]="getBins(x.row.warehouseId)"
               bindLabel="binName"
               bindValue="id"
-              [(ngModel)]="row.binId"
-              [compareWith]="byId"
+              [(ngModel)]="x.row.binId"
               [disabled]="true"
               [clearable]="false"
               [searchable]="false"
@@ -508,8 +524,7 @@
               [items]="strategies"
               bindLabel="name"
               bindValue="id"
-              [(ngModel)]="row.strategyId"
-              [compareWith]="byId"
+              [(ngModel)]="x.row.strategyId"
               [disabled]="true"
               [clearable]="false"
               [searchable]="false"
@@ -518,15 +533,18 @@
           </td>
 
           <td>
-            <input [(ngModel)]="row.batchSerial" class="ctl w-36 border border-gray-300 bg-white" />
+            <input [(ngModel)]="x.row.batchSerial" class="ctl w-36 border border-gray-300 bg-white" />
           </td>
 
           <td>
-            <input type="number" min="0" [(ngModel)]="row.qtyReceived" (keypress)="allowOnlyNumbers($event)" class="ctl w-24 border border-gray-300 bg-white" />
+            <input type="number" min="0"
+                   [(ngModel)]="x.row.qtyReceived"
+                   (keypress)="allowOnlyNumbers($event)"
+                   class="ctl w-24 border border-gray-300 bg-white" />
           </td>
 
           <td>
-            <select [(ngModel)]="row.qualityCheck" class="ctl w-28 border border-gray-300 bg-white">
+            <select [(ngModel)]="x.row.qualityCheck" class="ctl w-28 border border-gray-300 bg-white">
               <option value="">Select</option>
               <option value="pass">Pass</option>
               <option value="fail">Fail</option>
@@ -535,7 +553,7 @@
           </td>
 
           <td>
-            <select [(ngModel)]="row.storageType" class="ctl w-36 border border-gray-300 bg-white">
+            <select [(ngModel)]="x.row.storageType" class="ctl w-36 border border-gray-300 bg-white">
               <option value="">Select</option>
               <option>Frozen</option>
               <option>Chilled</option>
@@ -544,15 +562,16 @@
           </td>
 
           <td>
-            <input [(ngModel)]="row.surfaceTemp" class="ctl w-24 border border-gray-300 bg-white" />
-          </td>
-
-          <td (click)="expiryInput.showPicker()">
-            <input #expiryInput type="date" [(ngModel)]="row.expiry" [min]="minDate" required class="ctl w-40 border border-gray-300 bg-white cursor-pointer" />
+            <input [(ngModel)]="x.row.surfaceTemp" class="ctl w-24 border border-gray-300 bg-white" />
           </td>
 
           <td>
-            <select [(ngModel)]="row.pestSign" class="ctl w-28 border border-gray-300 bg-white">
+            <input type="date" [(ngModel)]="x.row.expiry" [min]="minDate"
+                   class="ctl w-40 border border-gray-300 bg-white" />
+          </td>
+
+          <td>
+            <select [(ngModel)]="x.row.pestSign" class="ctl w-28 border border-gray-300 bg-white">
               <option value="">Select</option>
               <option>Yes</option>
               <option>No</option>
@@ -560,7 +579,7 @@
           </td>
 
           <td>
-            <select [(ngModel)]="row.drySpillage" class="ctl w-28 border border-gray-300 bg-white">
+            <select [(ngModel)]="x.row.drySpillage" class="ctl w-28 border border-gray-300 bg-white">
               <option value="">Select</option>
               <option>Yes</option>
               <option>No</option>
@@ -568,7 +587,7 @@
           </td>
 
           <td>
-            <select [(ngModel)]="row.odor" class="ctl w-28 border border-gray-300 bg-white">
+            <select [(ngModel)]="x.row.odor" class="ctl w-28 border border-gray-300 bg-white">
               <option value="">Select</option>
               <option>Yes</option>
               <option>No</option>
@@ -576,11 +595,11 @@
           </td>
 
           <td>
-            <input [(ngModel)]="row.plateNumber" class="ctl w-28 border border-gray-300 bg-white" />
+            <input [(ngModel)]="x.row.plateNumber" class="ctl w-28 border border-gray-300 bg-white" />
           </td>
 
           <td>
-            <select [(ngModel)]="row.defectLabels" class="ctl w-28 border border-gray-300 bg-white">
+            <select [(ngModel)]="x.row.defectLabels" class="ctl w-28 border border-gray-300 bg-white">
               <option value="">Select</option>
               <option>Yes</option>
               <option>No</option>
@@ -588,7 +607,7 @@
           </td>
 
           <td>
-            <select [(ngModel)]="row.damagedPackage" class="ctl w-28 border border-gray-300 bg-white">
+            <select [(ngModel)]="x.row.damagedPackage" class="ctl w-28 border border-gray-300 bg-white">
               <option value="">Select</option>
               <option>Yes</option>
               <option>No</option>
@@ -596,65 +615,77 @@
           </td>
 
           <td>
-            <input type="time" [(ngModel)]="row.time" class="ctl w-28 border border-gray-300 bg-white" />
-          </td>
-
-          <!-- Initial = username, readonly -->
-          <td>
-            <input
-              [value]="row.initial || currentUsername"
-              readonly
-              class="ctl w-28 border border-gray-300 bg-gray-50 text-gray-800 text-xs font-semibold text-center" />
+            <input type="time" [(ngModel)]="x.row.time" class="ctl w-28 border border-gray-300 bg-white" />
           </td>
 
           <td>
-            <input [(ngModel)]="row.remarks" class="ctl w-56 border border-gray-300 bg-white" />
+            <input [value]="x.row.initial || currentUsername" readonly
+                   class="ctl w-28 border border-gray-300 bg-gray-50 text-gray-800 text-xs font-semibold text-center" />
+          </td>
+
+          <td>
+            <input [(ngModel)]="x.row.remarks" class="ctl w-56 border border-gray-300 bg-white" />
           </td>
 
           <td>
             <span class="pill"
                   [ngClass]="{
-                    'bg-red-100 text-red-800': row.isFlagIssue,
-                    'bg-green-100 text-green-800': !row.isFlagIssue && row.isPostInventory
+                    'bg-red-100 text-red-800': x.row.isFlagIssue,
+                    'bg-green-100 text-green-800': !x.row.isFlagIssue && x.row.isPostInventory
                   }">
-              {{ row.isFlagIssue ? 'Flagged' : (row.isPostInventory ? 'Posted' : '—') }}
+              {{ x.row.isFlagIssue ? 'Flagged' : (x.row.isPostInventory ? 'Posted' : '—') }}
             </span>
           </td>
 
           <td>
             <div class="row-actions flex items-center justify-end gap-2">
-              <button type="button" class="btn-compact inline-flex items-center gap-2 text-white" style="background:#d97706" (click)="onFlagIssuesRow(row, i)">
+              <button type="button"
+                      class="btn-compact inline-flex items-center gap-2 text-white"
+                      style="background:#d97706"
+                      (click)="onFlagIssuesRow(x.row, x.idx)">
                 <i class="fa fa-flag text-[11px] opacity-90"></i> Flag Issues
               </button>
 
-              <button type="button" class="btn-compact inline-flex items-center gap-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              <button type="button"
+                      class="btn-compact inline-flex items-center gap-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                       style="background:#2E5F73"
-                      (click)="onPostInventoryRow(row, i)"
-                      [disabled]="isPostInventoryDisabled || row.isPostInventory">
+                      (click)="onPostInventoryRow(x.row, x.idx)"
+                      [disabled]="isPostInventoryDisabled || x.row.isPostInventory">
                 <i class="fa fa-box text-[11px] opacity-90"></i> Post Inventory
               </button>
             </div>
           </td>
+
         </tr>
       </tbody>
+
     </table>
   </div>
 </div>
 
-<!-- ========== FLAG ISSUES MODAL ========== -->
-<div *ngIf="flagModal.open" class="ui-compact-slim fixed inset-0 z-[1000] flex items-center justify-center px-3 md:px-0" (keydown.escape)="closeFlagIssuesModal()">
-  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeFlagIssuesModal()"></div>
+
+<!-- =================== FLAG ISSUES MODAL =================== -->
+<div *ngIf="flagModal.open"
+     class="ui-compact-slim fixed inset-0 z-[1000] flex items-center justify-center px-3 md:px-0"
+     (keydown.escape)="closeFlagIssuesModal()">
+
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+       (click)="closeFlagIssuesModal()"></div>
 
   <div class="modal-box relative bg-white shadow-2xl p-4">
     <div class="flex items-center justify-between mb-2">
       <h3 class="text-[18px] font-semibold text-gray-800">🚩 Flag an Issue</h3>
-      <button type="button" class="h-8 w-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100" (click)="closeFlagIssuesModal()" aria-label="Close">
+      <button type="button"
+              class="h-8 w-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100"
+              (click)="closeFlagIssuesModal()"
+              aria-label="Close">
         <span class="text-lg">×</span>
       </button>
     </div>
 
     <div>
       <label class="block text-sm font-medium text-gray-700 mb-1">Select an Issue</label>
+
       <div class="relative">
         <select [(ngModel)]="selectedFlagIssueId"
                 class="ctl appearance-none w-full border border-gray-300 bg-white pr-9 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/30 focus:border-[#0e3a4c]">
@@ -663,24 +694,39 @@
             {{ fi.flagIssuesNames || fi.name || fi.flagIssueName || fi.FlagIssueName }}
           </option>
         </select>
+
         <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 24 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 24 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
       </div>
     </div>
 
     <div class="modal-actions mt-4 flex justify-center">
-      <button type="button" class="btn-compact text-white" style="background:#e74c3c" (click)="closeFlagIssuesModal()">
+      <button type="button"
+              class="btn-compact text-white"
+              style="background:#e74c3c"
+              (click)="closeFlagIssuesModal()">
         <i class="fa fa-times-circle text-[12px]"></i><span class="ml-1">Cancel</span>
       </button>
-      <button type="button" class="btn-compact text-white" style="background:#2E5F73" (click)="submitFlagIssue()">
+
+      <button type="button"
+              class="btn-compact text-white"
+              style="background:#2E5F73"
+              (click)="submitFlagIssue()">
         <i class="fa fa-check-circle text-[12px]"></i><span class="ml-1">Submit</span>
       </button>
     </div>
   </div>
 </div>
 
-<!-- ========== LIGHTBOX FOR IMAGES (used elsewhere if needed) ========== -->
-<div *ngIf="imageViewer.open" class="fixed inset-0 z-[1100] flex items-center justify-center bg-black/70" (click)="closeImage()">
-  <img *ngIf="imageViewer.src" [src]="imageViewer.src" class="max-h-[88vh] max-w-[88vw] object-contain" />
+
+<!-- =================== IMAGE VIEWER (LIGHTBOX) =================== -->
+<div *ngIf="imageViewer.open"
+     class="fixed inset-0 z-[1100] flex items-center justify-center bg-black/70"
+     (click)="closeImage()">
+  <img *ngIf="imageViewer.src"
+       [src]="imageViewer.src"
+       class="max-h-[88vh] max-w-[88vw] object-contain" />
 </div>

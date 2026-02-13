@@ -4,7 +4,11 @@ import Swal from 'sweetalert2';
 import { ProductionPlanLineDto, ProductionPlanPrintDto, ProductionPlanService } from '../production-plan.service';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-(pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
+const vfs = (pdfFonts as any)?.pdfMake?.vfs || (pdfFonts as any)?.vfs;
+if (!vfs) {
+  console.error('pdfmake vfs not found. Check vfs_fonts import', pdfFonts);
+}
+(pdfMake as any).vfs = vfs;
 
 @Component({
   selector: 'app-production-planning-list',

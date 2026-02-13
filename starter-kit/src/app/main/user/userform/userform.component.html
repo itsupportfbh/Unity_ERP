@@ -99,7 +99,7 @@
     </div>
 
     <!-- ROLES -->
-    <div class="col-md-6 mt-1">
+    <div class="col-md-4 mt-1">
       <label class="form-label small">Roles (Approval Levels)</label>
 
       <ng-select
@@ -112,7 +112,22 @@
         formControlName="approvalLevelIds">
       </ng-select>
     </div>
+  <div class="col-md-4 mt-1">
+      <label class="form-label small">Location</label>
+<ng-select
+  [items]="locations"
+  bindLabel="name"
+  bindValue="id"
+  formControlName="locationId"
+  placeholder="Select Location">
+</ng-select>
 
+
+      <div *ngIf="form.get('locationId')?.touched && form.get('locationId')?.invalid"
+           class="text-danger small mt-25">
+        Location is required
+      </div>
+    </div>
   </div>
 </form>
 

@@ -15,6 +15,7 @@ export interface UserView {
   isActive: boolean;
   approvalLevelIds: number[];
   departmentId : number;
+  locationId:number;
   approvalLevelNames: string[];
 }
 

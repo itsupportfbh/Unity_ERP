@@ -1,3 +1,89 @@
 .custom-white {
   color: #fff !important;
 }
+.nav-toggle .feather {
+  display: inline-block !important;
+  font-family: "feather" !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+}
+/* Header */
+.uw-sb-header{
+  padding-left: 25px !important;   /* 8px / 12px try */
+  padding-right: 12px !important;
+  height: 62px;                    /* fixed height */
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+/* remove default brand spacing */
+.uw-sb-header .navbar-brand{
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* if brand-text has extra left spacing */
+.uw-sb-header .brand-text,
+.uw-sb-header .uw-appname{
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* (optional) if icon items also have left padding */
+.uw-sb-header .nav{
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+/* Brand takes space but leaves room for icon */
+.uw-sb-brand{
+  width: 100%;
+  min-width: 0;
+  padding-right: 56px;          /* reserve for icon */
+}
+
+/* Brand link */
+.uw-brand{
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* ✅ App name LEFT + single line */
+.uw-appname{
+  margin: 0 !important;
+  color: #fff;
+  text-align: left;
+
+  white-space: nowrap !important;   /* ✅ no wrap */
+  overflow: hidden;                  /* ✅ cut */
+  text-overflow: ellipsis;           /* ✅ ... */
+  max-width: 100%;
+  line-height: 1;
+  font-size: 22px;
+}
+
+.uw-sb-toggle{
+  position: absolute !important;
+  right: 12px;
+  top: 63% !important;
+  transform: translateY(-50%) !important;
+  margin: 0 !important;
+  z-index: 9999;
+}
+
+.uw-sb-toggle .nav-link{
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 8px !important;
+  line-height: 1 !important;
+}
+
+.uw-sb-toggle .toggle-icon{
+  font-size: 22px;
+  color: #fff !important;
+}

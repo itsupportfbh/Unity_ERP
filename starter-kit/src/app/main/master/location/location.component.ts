@@ -70,6 +70,10 @@ constructor(private _locationService : LocationService, private _coreSidebarServ
   ngOnInit(): void {
     this.getAllLocations();
   }
+  addNew() {
+  this.selectedLocationId = null; // ✅ important for create mode
+  this.toggleSidebar('app-create-location');
+}
 
  toggleSidebar(name): void {
     this._coreSidebarService.getSidebarRegistry(name).toggleOpen();

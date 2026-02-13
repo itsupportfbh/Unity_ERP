@@ -22,6 +22,7 @@ export class CreateLocationComponent implements OnInit,OnChanges {
   StateList: any[];
   selectedState: number;
   CityList: any[];
+  submitted = false;
  @Output() onLocationChange = new EventEmitter<any>();
  @Input() locationId: number | null = null;
   constructor(private _countriesService: CountriesService, private fb: FormBuilder,
@@ -37,9 +38,38 @@ export class CreateLocationComponent implements OnInit,OnChanges {
   }
 
 ngOnChanges(changes: SimpleChanges): void {
-  if (changes['locationId'] && this.locationId) {
-    this.getLocationById(this.locationId);
+   if (changes['locationId']) {
+
+    // ✅ EDIT
+    if (this.locationId) {
+      this.getLocationById(this.locationId);
+      return;
+    }
+
+    // ✅ CREATE (Add New)
+    this.resetToCreateMode();
   }
+}
+resetToCreateMode() {
+  this.submitted = false;
+
+  this.locationForm.reset({
+    locationName: '',
+    countryId: '',
+    stateId: '',
+    cityId: '',
+    contactNumber: ''
+  });
+
+  this.StateList = [];
+  this.CityList = [];
+
+  this.locationForm.markAsPristine();
+  this.locationForm.markAsUntouched();
+  this.locationForm.updateValueAndValidity();
+
+  // ✅ reload each time (core-sidebar reuse)
+  this.getAllCountries();
 }
 
   getAllCountries() {
@@ -155,7 +185,7 @@ this.locationForm.reset({
       countryId: [null, Validators.required],
       stateId: [null, Validators.required],
       cityId: [null, Validators.required],
-      contactNumber: ['', Validators.required],
+      contactNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]]
      
     });
   }
@@ -173,49 +203,57 @@ this.locationForm.reset({
 }
 
 
- submit(formGroupRef: any) {
-  debugger
-  if (this.locationForm.valid) {
-    const isEdit = this.locationId && this.locationId > 0;
+ submit() {
+  this.submitted = true;
 
-    const obj: any = {
-      id: isEdit ? this.locationId : 0,
-      name: this.locationForm.controls['locationName'].value,
-      contactNumber: this.locationForm.controls['contactNumber'].value,
-      latitude: null,
-      longitude: null,
-      countryId: this.locationForm.controls['countryId'].value,
-      stateId: this.locationForm.controls['stateId'].value,
-      cityId: this.locationForm.controls['cityId'].value,
-      isActive: true,
-      createdBy: "1",
-      createdDate: isEdit ? undefined : new Date(), // Only set on create
-      updatedBy: "1",
-      updatedDate: new Date()
-    };
-
-    const request$ = isEdit
-      ? this._locationService.updateLocation(obj) // 👈 update path
-      : this._locationService.insertLocation(obj); // 👈 create path
-
-    request$.subscribe((res) => {
-      if (res.isSuccess) {
-        Swal.fire({
-          title: isEdit ? 'Updated' : 'Created',
-          text: res.message,
-          icon: 'success',
-          allowOutsideClick: false,
-        });
-
-        this.onLocationChange.emit();
-        this.toggleModal('app-create-location');
-
-        // ✅ Reset form and mode after submit
-        this.resetForm();
-        this.locationId = null;
-      }
-    });
+  if (this.locationForm.invalid) {
+    this.locationForm.markAllAsTouched();
+    return;
   }
-}
 
+  const isEdit = this.locationId && this.locationId > 0;
+
+  const obj: any = {
+    id: isEdit ? this.locationId : 0,
+    name: this.locationForm.value.locationName,
+    contactNumber: this.locationForm.value.contactNumber,
+    latitude: null,
+    longitude: null,
+    countryId: +this.locationForm.value.countryId,
+    stateId: +this.locationForm.value.stateId,
+    cityId: +this.locationForm.value.cityId,
+    isActive: true,
+    createdBy: "1",
+    createdDate: isEdit ? undefined : new Date(),
+    updatedBy: "1",
+    updatedDate: new Date()
+  };
+
+  const request$ = isEdit
+    ? this._locationService.updateLocation(obj)
+    : this._locationService.insertLocation(obj);
+
+  request$.subscribe((res) => {
+    if (res.isSuccess) {
+      Swal.fire({
+        title: isEdit ? 'Updated' : 'Created',
+        text: res.message,
+        icon: 'success',
+        allowOutsideClick: false,
+      });
+
+      this.onLocationChange.emit();
+      this.toggleModal('app-create-location');
+
+      this.resetToCreateMode();
+      this.locationId = null;
+    }
+  });
+}
+onlyDigits(event: any) {
+  const input = event.target as HTMLInputElement;
+  const v = (input.value || '').replace(/\D/g, '').slice(0, 10);
+  input.value = v;
+  this.locationForm.get('contactNumber')?.setValue(v, { emitEvent: false });
+}
 }

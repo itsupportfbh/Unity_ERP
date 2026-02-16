@@ -324,7 +324,7 @@ private loadForEdit(id: number) {
         discountType: (dto.discountType ?? this.header.discountType) as any,
         discountInput: Number(dto.discountInput ?? this.header.discountInput ?? 0),
         discountManual: true, // edit mode = keep manual
-        lineSourceId: (Number(dto.lineSource ?? dto.LineSource ?? 1) as any)
+        lineSourceId: (Number(dto.lineSourceId ?? dto.LineSource ?? 1) as any)
       };
 
       // ✅ backfill dropdown text (optional)
@@ -895,6 +895,7 @@ onLineSourceChange() {
 }
 
   save() {
+    debugger
     if (!this.validateBeforeSave()) return;
 
     const dto: any = {
@@ -903,7 +904,7 @@ onLineSourceChange() {
       deliveryTo: (this.header.deliveryTo || '').trim(),
       deliveryDate: this.header.deliveryDate,
       validityDate: this.header.deliveryDate,
-      lineSource: this.header.lineSourceId,
+      lineSourceId: this.header.lineSourceId,
  itemSetIds: (this.selectedItemSets || []).map(x => x.id),
       lines: this.lines
         .filter(l => !l.isSetHeader)

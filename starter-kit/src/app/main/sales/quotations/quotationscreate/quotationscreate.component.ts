@@ -26,7 +26,7 @@ type Customer = { id: number; name: string; countryId: number };
 type CurrencyRow = { id: number; name: string };
 type PaymentTermsRow = { id: number; name: string };
 type DiscountType = 'VALUE' | 'PERCENT';
-type LineSourceId = 1 | 2; 
+type LineSourceId = 1 | 2 | 3; // 3 = Mixed
 type ItemSetHeaderRow = { id: number; setName: string; description?: string };
 
 type UiLine = Omit<QuotationLine, 'uom' | 'uomId'> & {
@@ -466,15 +466,23 @@ private toDateInputValue(v: any): string | null {
   getUomName = (id?: number | null) => this.uomList.find(u => u.id === id)?.name ?? '';
 
   // switch source
- onLineSourceChange() {
+onLineSourceChange() {
   if (this.showModal) this.closeModal();
 
+  // 1 = Item only -> remove set lines
   if (this.header.lineSourceId === 1) {
     this.selectedItemSets = [];
     this.pendingItemSet = null;
     this.itemSetSearch = '';
     this.lines = this.lines.filter(l => !l.isFromSet && !l.isSetHeader);
   }
+
+  // 2 = Set only -> remove individual lines
+  if (this.header.lineSourceId === 2) {
+    this.lines = this.lines.filter(l => l.isFromSet || l.isSetHeader);
+  }
+
+  // 3 = Mixed -> keep everything (no filtering)
   this.computeTotals();
 }
 
@@ -866,26 +874,25 @@ private toDateInputValue(v: any): string | null {
     this.header.needsHodApproval = hod;
   }
 
-  private validateBeforeSave(): boolean {
-    if (this.header.lineSourceId === 2) {
-      for (const l of this.lines) {
-        if (l.isSetHeader) continue;
-        const q = l.qty === null || l.qty === undefined ? 0 : +l.qty;
-        const p = l.unitPrice === null || l.unitPrice === undefined ? 0 : +l.unitPrice;
+ private validateBeforeSave(): boolean {
+  for (const l of this.lines) {
+    if (l.isSetHeader) continue;
 
-        if (q <= 0 || p <= 0) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Enter Qty & Unit Price',
-            text: `Please enter Qty & Unit Price for item: ${l.itemName || this.getItemName(l.itemId)}`,
-            confirmButtonColor: '#2E5F73'
-          });
-          return false;
-        }
-      }
+    const q = l.qty == null ? 0 : +l.qty;
+    const p = l.unitPrice == null ? 0 : +l.unitPrice;
+
+    if (q <= 0 || p <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Enter Qty & Unit Price',
+        text: `Please enter Qty & Unit Price for item: ${l.itemName || this.getItemName(l.itemId)}`,
+        confirmButtonColor: '#2E5F73'
+      });
+      return false;
     }
-    return true;
   }
+  return true;
+}
 
   save() {
     if (!this.validateBeforeSave()) return;
@@ -948,7 +955,7 @@ const id = Number(this.header?.id ?? this.editId ?? 0);
   trackByItemId = (_: number, it: SimpleItem) => it.id;
 
   openAdd() {
-    if (this.header.lineSourceId !== 1) return;
+    if (!(this.header.lineSourceId === 1 || this.header.lineSourceId === 3)) return;
 
     this.editingIndex = null;
     this.modalPreview = null;
@@ -975,7 +982,7 @@ const id = Number(this.header?.id ?? this.editId ?? 0);
   }
 
   openEdit(i: number) {
-    if (this.header.lineSourceId !== 1) return;
+    if (!(this.header.lineSourceId === 1 || this.header.lineSourceId === 3)) return;
 
     const l = this.lines[i];
     if (!l || l.isSetHeader || l.isFromSet) return;

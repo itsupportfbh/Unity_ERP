@@ -123,8 +123,8 @@
 
       <!-- Line Source -->
       <div class="col-md-3">
-        <label class="form-label form-label-xs">Line Source</label>
-        <select
+       <label class="form-label form-label-xs">Line Source</label>
+<select
   class="form-control prl-input"
   [(ngModel)]="header.lineSourceId"
   name="lineSourceId"
@@ -132,13 +132,14 @@
 >
   <option [ngValue]="1">Individual Item</option>
   <option [ngValue]="2">Item Set</option>
+  <option [ngValue]="3">Mixed (Item + Set)</option>
 </select>
 
-        <small class="text-muted">Choose Item Master or Item Set</small>
+<small class="text-muted">Mixed allows adding item lines + item sets together.</small>
       </div>
 
       <!-- Multi Select Item Set -->
-      <div class="col-md-6" *ngIf="header.lineSourceId === 2">
+      <div class="col-md-6" *ngIf="header.lineSourceId === 2 || header.lineSourceId === 3">
         <label class="form-label form-label-xs">Select Item Set (Multi)</label>
 
         <div class="d-flex gap-2 align-items-start">
@@ -406,8 +407,8 @@
           (mouseleave)="hoverAdd=false"
           [style.background-color]="hoverAdd ? '#0b2e3d' : '#2E5F73'"
           (click)="openAdd()"
-          [disabled]="header.lineSourceId !== 1"
-          [class.opacity-50]="header.lineSourceId !== 1"
+         [disabled]="!(header.lineSourceId === 1 || header.lineSourceId === 3)"
+[class.opacity-50]="!(header.lineSourceId === 1 || header.lineSourceId === 3)"
         >
           + Add line
         </button>

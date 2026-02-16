@@ -55,9 +55,18 @@ type SoLine = {
   warehouses?: WarehouseInfo[];
   dropdownOpen?: '' | 'item' | 'tax';
   filteredOptions?: any[];
+
+  // ✅ optional (if backend later gives)
+  itemSetId?: number;
 };
 
 type ItemSetRef = { id: number; name: string };
+
+type SetGroup = {
+  itemSetId: number;
+  name: string;
+  lines: SoLine[];
+};
 
 @Component({
   selector: 'app-sales-order-create',
@@ -105,7 +114,11 @@ export class SalesOrderCreateComponent implements OnInit {
   selectedWarehouseId: number | null = null;
   selectedWarehouseName = '';
 
+  // ✅ Flat lines (for saving)
   soLines: SoLine[] = [];
+
+  // ✅ Grouped view for 2nd image table
+  setGroups: SetGroup[] = [];
 
   submitted = false;
 
@@ -288,15 +301,15 @@ export class SalesOrderCreateComponent implements OnInit {
     if (!isFinite(srcId) || srcId <= 0) srcId = hasItemSet ? 2 : 1;
     this.soHdr.lineSourceId = srcId;
 
-    // collect itemSets: {id,name}
+    // collect itemSets: {id,name} (unique by ItemSetId)
     const map = new Map<number, string>();
 
     // JSON rows
     if (hasJson) {
       const rows = safeJsonParse<any[]>(itemSetsJsonTxt, []);
       rows.forEach(r => {
-        const id = Number(r?.ItemSetId ?? r?.itemSetId ?? r?.id ?? 0);
-        const nm = String(r?.ItemSetName ?? r?.itemSetName ?? r?.name ?? '').trim();
+        const id = Number(r?.ItemSetId ?? r?.itemSetId ?? r?.ItemSetID ?? 0);
+        const nm = String(r?.ItemSetName ?? r?.itemSetName ?? '').trim();
         if (id > 0) map.set(id, nm || `ItemSet ${id}`);
       });
     }
@@ -305,8 +318,8 @@ export class SalesOrderCreateComponent implements OnInit {
     const arr = head?.itemSets ?? head?.ItemSets;
     if (Array.isArray(arr)) {
       arr.forEach((x: any) => {
-        const id = Number(x?.ItemSetId ?? x?.itemSetId ?? x?.id ?? 0);
-        const nm = String(x?.ItemSetName ?? x?.itemSetName ?? x?.name ?? '').trim();
+        const id = Number(x?.ItemSetId ?? x?.itemSetId ?? 0);
+        const nm = String(x?.ItemSetName ?? x?.itemSetName ?? '').trim();
         if (id > 0) map.set(id, nm || `ItemSet ${id}`);
       });
     }
@@ -325,6 +338,44 @@ export class SalesOrderCreateComponent implements OnInit {
     if (Number(this.soHdr.lineSourceId || 1) === 1) {
       this.soHdr.itemSets = [];
     }
+  }
+
+  /* ================= GROUPING: build setGroups for 2nd image ================= */
+  private buildSetGroups() {
+    const sets = (this.soHdr.itemSets || []) as ItemSetRef[];
+    const lines = (this.soLines || []) as SoLine[];
+
+    // No sets => one group
+    if (!sets.length) {
+      this.setGroups = lines.length
+        ? [{ itemSetId: 0, name: 'Items', lines: [...lines] }]
+        : [];
+      return;
+    }
+
+    // prepare map
+    const map = new Map<number, SetGroup>();
+    sets.forEach(s => map.set(s.id, { itemSetId: s.id, name: s.name, lines: [] }));
+
+    // If backend sends itemSetId inside line => perfect group
+    const hasLineSet = lines.some(l => Number((l as any).itemSetId || 0) > 0);
+    if (hasLineSet) {
+      lines.forEach(l => {
+        const sid = Number((l as any).itemSetId || 0);
+        if (sid > 0 && map.has(sid)) map.get(sid)!.lines.push(l);
+      });
+      this.setGroups = Array.from(map.values()).filter(g => g.lines.length);
+      return;
+    }
+
+    // Fallback grouping: round-robin assign by order
+    const setIds = sets.map(s => s.id);
+    lines.forEach((l, idx) => {
+      const sid = setIds[idx % setIds.length];
+      map.get(sid)!.lines.push(l);
+    });
+
+    this.setGroups = Array.from(map.values()).filter(g => g.lines.length);
   }
 
   /* ============ Load SO (Edit) ============ */
@@ -359,14 +410,14 @@ export class SalesOrderCreateComponent implements OnInit {
         this.soHdr.statusText = this.mapStatusText(this.soHdr.status);
 
         const gst = Number(this.soHdr.gstPct || 0);
-        const lines = (head.lineItems ?? []) as any[];
+        const lines = (head.lineItems ?? head.lines ?? []) as any[];
 
         this.soLines = lines.map((l: any) => {
-          const qty   = Number(l.quantity ?? 0);
+          const qty   = Number(l.quantity ?? l.qty ?? 0);
           const price = Number(l.unitPrice ?? 0);
-          const mode  = this.canonicalTaxMode(l.tax, gst);
+          const mode  = this.canonicalTaxMode(l.tax ?? l.taxMode, gst);
 
-          const discPct = Number(l.discount ?? 0);
+          const discPct = Number(l.discount ?? l.discountPct ?? 0);
           const amt = this.calcAmounts(qty, price, discPct, mode, gst);
 
           return {
@@ -393,12 +444,18 @@ export class SalesOrderCreateComponent implements OnInit {
             __origDiscount: amt.discountAmt,
             warehouses: [],
             dropdownOpen: '',
-            filteredOptions: []
+            filteredOptions: [],
+
+            // ✅ if backend sends later
+            itemSetId: Number(l.itemSetId ?? 0) || undefined
           } as SoLine;
         });
 
         this.enforceTaxModesByGst();
         this.recalcTotals();
+
+        // ✅ build grouped view
+        this.buildSetGroups();
       },
       error: (err) => {
         Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load Sales Order.' });
@@ -509,12 +566,18 @@ export class SalesOrderCreateComponent implements OnInit {
             __origDiscount: amt.discountAmt,
             warehouses: wh,
             dropdownOpen: '',
-            filteredOptions: []
+            filteredOptions: [],
+
+            // ✅ if backend sends later
+            itemSetId: Number(l.itemSetId ?? 0) || undefined
           } as SoLine;
         });
 
         this.enforceTaxModesByGst();
         this.recalcTotals();
+
+        // ✅ build grouped view
+        this.buildSetGroups();
       });
 
       this.dropdownOpen['quotationNo'] = false;
@@ -539,6 +602,11 @@ export class SalesOrderCreateComponent implements OnInit {
     // reset extra header
     this.soHdr.lineSourceId = 1;
     this.soHdr.itemSets = [];
+
+    // reset lines & groups
+    this.soLines = [];
+    this.setGroups = [];
+    this.recalcTotals();
   }
 
   /* ============ Close dropdowns ============ */
@@ -553,7 +621,7 @@ export class SalesOrderCreateComponent implements OnInit {
     });
   }
 
-  /* ============ Item/tax dropdowns ============ */
+  /* ============ Item/tax dropdowns (still available if you use old line input style) ============ */
   openDropdown(i: number, field: 'item' | 'tax') {
     this.soLines[i].dropdownOpen = field;
     this.soLines[i].filteredOptions = field === 'item' ? [...this.items] : [...this.taxCodes];
@@ -591,9 +659,16 @@ export class SalesOrderCreateComponent implements OnInit {
     }
     this.soLines[i].dropdownOpen = '';
     this.soLines[i].filteredOptions = [];
+    this.computeLineFromObj(this.soLines[i]);
   }
 
-  /* ============ Qty & Discount & UnitPrice change ============ */
+  /* ================= NEW: ByRef handlers for grouped table ================= */
+  onQtyChangeByRef(ln: SoLine) { this.computeLineFromObj(ln); }
+  onUnitPriceChangeByRef(ln: SoLine) { this.computeLineFromObj(ln); }
+  onDiscountChangeByRef(ln: SoLine) { this.computeLineFromObj(ln); }
+  onTaxChangeByRef(ln: SoLine) { this.computeLineFromObj(ln); }
+
+  /* ============ Qty & Discount & UnitPrice change (old) ============ */
   onQtyChange(i: number) {
     const L = this.soLines[i];
     const qtyNow = Number(L.quantity) || 0;
@@ -622,6 +697,11 @@ export class SalesOrderCreateComponent implements OnInit {
 
   private computeLineFromQty(i: number) {
     const L = this.soLines[i];
+    this.computeLineFromObj(L);
+  }
+
+  // ✅ core compute using object reference (works for grouped table also)
+  private computeLineFromObj(L: SoLine) {
     const qty      = Number(L.quantity) || 0;
     const price    = Number(L.unitPrice) || 0;
     const discPct  = Number(L.discount) || 0;
@@ -676,6 +756,68 @@ export class SalesOrderCreateComponent implements OnInit {
     };
   }
 
+  /* ================= NEW: Group actions ================= */
+  removeSet(g: SetGroup) {
+    // remove those lines from flat array
+    const toRemove = new Set(g.lines);
+    this.soLines = this.soLines.filter(l => !toRemove.has(l));
+
+    // remove group
+    this.setGroups = this.setGroups.filter(x => x !== g);
+
+    this.recalcTotals();
+  }
+
+  removeLineFromSet(g: SetGroup, ln: SoLine) {
+    g.lines = (g.lines || []).filter(x => x !== ln);
+    this.soLines = (this.soLines || []).filter(x => x !== ln);
+
+    // if group empty -> remove set
+    if (!g.lines.length) {
+      this.setGroups = this.setGroups.filter(x => x !== g);
+    }
+
+    this.recalcTotals();
+  }
+
+  addLine() {
+    const gst = Number(this.soHdr.gstPct || 0);
+    const mode = this.canonicalTaxMode('Standard-Rated', gst);
+
+    const newLine: SoLine = {
+      __id: undefined,
+      item: '',
+      itemId: undefined,
+      uom: '',
+      description: '',
+      quantity: 0,
+      unitPrice: 0,
+      discount: 0,
+      discountType: 'PCT',
+      tax: mode,
+      lineGross: 0,
+      lineNet: 0,
+      lineTax: 0,
+      total: 0,
+      lineDiscount: 0,
+      warehouses: [],
+      dropdownOpen: '',
+      filteredOptions: []
+    };
+
+    // flat
+    this.soLines.push(newLine);
+
+    // grouped (put in first group if exists)
+    if (!this.setGroups.length) {
+      this.setGroups = [{ itemSetId: 0, name: 'Items', lines: [newLine] }];
+    } else {
+      this.setGroups[0].lines.push(newLine);
+    }
+
+    this.recalcTotals();
+  }
+
   /* ============ Save ============ */
   private validateSO(): boolean {
     const missing = this.requiredKeys.filter(k => this.isEmpty(this.searchTexts[k]));
@@ -720,7 +862,7 @@ export class SalesOrderCreateComponent implements OnInit {
       // ✅ header
       lineSourceId: Number(this.soHdr.lineSourceId || 1),
 
-      // ✅ mapping table save
+      // ✅ mapping table save (set ids)
       itemSetIds: (this.soHdr.itemSets || []).map((x: any) => Number(x.id)).filter((n: number) => n > 0),
 
       shipping: Number(this.soHdr.shipping || 0),
@@ -799,12 +941,16 @@ export class SalesOrderCreateComponent implements OnInit {
     }
   }
 
+  /* ===== old removeLine still available (if you use old table) ===== */
   removeLine(i: number) {
     this.soLines.splice(i, 1);
     this.recalcTotals();
+    this.buildSetGroups();
   }
 
+  /* trackBy */
   trackByIndex = (i: number) => i;
+  trackByLineId = (i: number, ln: SoLine) => ln.__id ?? ln.itemId ?? i;
 
   gridColsClass(cols: number) {
     return {

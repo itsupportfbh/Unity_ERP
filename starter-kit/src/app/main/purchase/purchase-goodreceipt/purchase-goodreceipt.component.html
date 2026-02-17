@@ -1,721 +1,638 @@
 <!-- =================== CREATE MODE (ENTRY FORM) =================== -->
-<div *ngIf="!isEditMode && !showSummary" class="ui-compact-slim">
+<div *ngIf="!isEditMode && !showSummary" class="grn-ui">
 
-  <button class="btn mb-1 mt-1 btn-compact"
-          style="background-color:#2E5F73;color:#fff"
-          (click)="goToDebitNoteList()">
-    <i class="fa fa-arrow-left text-[13px]"></i>
-    <span class="ml-1">Go to GRN list</span>
-  </button>
+  <!-- Topbar -->
+  <div class="grn-topbar grn-topbar-3col">
 
-  <div class="mb-6">
-    <div class="card bg-white shadow-sm border border-gray-200">
+    <!-- LEFT -->
+    <div class="tb-left">
+      <button class="grn-btn grn-btn-ghost" type="button" (click)="goToDebitNoteList()">
+        <i class="fa fa-arrow-left"></i>
+        <span>Go to GRN list</span>
+      </button>
+    </div>
 
-      <!-- Title row -->
-      <div class="title-row flex items-center justify-between">
-        <h2 class="text-[18px] font-semibold" style="color:#2E5F73">Goods Receipt (GRN)</h2>
-
-        <button type="button"
-                class="btn-compact inline-flex items-center gap-2 text-white transition"
-                (click)="saveGRN()"
-                (mouseenter)="hover = true"
-                (mouseleave)="hover = false"
-                [style.backgroundColor]="hover ? '#092f3f' : '#2E5F73'"
-                [disabled]="isPostInventoryDisabled">
-          <i *ngIf="!editingGrnId" class="fa fa-save text-[13px]"></i>
-          <i *ngIf="editingGrnId" class="fa fa-edit text-[13px]"></i>
-          <span>{{ editingGrnId ? 'Update GRN' : 'Save GRN' }}</span>
-        </button>
+    <!-- CENTER -->
+    <div class="tb-center">
+      <div class="grn-title-wrap">
+        <div class="grn-title">Goods Receipt (GRN)</div>
+        <div class="grn-subtitle">Create GRN from Purchase Order and post inventory line-wise</div>
       </div>
+    </div>
 
-      <!-- Header Inputs -->
-      <div class="hdr-grid grid grid-cols-1 md:grid-cols-3">
+    <!-- RIGHT -->
+    <div class="tb-right">
+      <button type="button"
+              class="grn-btn grn-btn-primary"
+              (click)="saveGRN()"
+              [disabled]="isPostInventoryDisabled">
+        <i *ngIf="!editingGrnId" class="fa fa-save"></i>
+        <i *ngIf="editingGrnId" class="fa fa-edit"></i>
+        <span>{{ editingGrnId ? 'Update GRN' : 'Save GRN' }}</span>
+      </button>
+    </div>
 
-        <!-- From PO -->
-        <div>
-          <label class="block text-gray-600">From PO</label>
+  </div>
+
+  <!-- Header Card -->
+  <div class="grn-card">
+    <div class="grn-card-hdr">
+      <div class="grn-card-title">Header Details</div>
+      <div class="grn-badges">
+        <span class="grn-badge grn-badge-muted">Mode: Create</span>
+        <span class="grn-badge grn-badge-warn" *ngIf="isPostInventoryDisabled">Posting locked</span>
+      </div>
+    </div>
+
+    <div class="grn-form-grid">
+      <!-- From PO -->
+      <div class="grn-field">
+        <label>From PO</label>
+
+        <div class="grn-select-wrap">
           <select [(ngModel)]="selectedPO"
                   (ngModelChange)="onPOChange($event)"
-                  class="ctl w-full border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/20 focus:border-[#0e3a4c]">
+                  class="grn-ctl grn-ctl-select">
             <option [ngValue]="null" disabled>Select PO</option>
             <ng-container *ngFor="let po of purchaseOrder">
               <option [ngValue]="po.id">{{ po.purchaseOrderNo }} - {{ po.supplierName }}</option>
             </ng-container>
           </select>
+          <i class="fa fa-chevron-down grn-select-icon"></i>
         </div>
-
-        <!-- PO Date (auto-set from PO date in TS) -->
-        <div (click)="!isPoDateDisabled && dateInput.showPicker()">
-          <label class="block text-gray-600">PO Date</label>
-          <input #dateInput
-                 type="date"
-                 [(ngModel)]="receiptDate"
-                 [disabled]="isPoDateDisabled"
-                 [readOnly]="isPoDateDisabled"
-                 [min]="minDate"
-                 class="ctl w-full border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/20 focus:border-[#0e3a4c]"
-                 [class.opacity-60]="isPoDateDisabled"
-                 [class.cursor-not-allowed]="isPoDateDisabled" />
-        </div>
-
-        <!-- Over-receipt Tolerance -->
-        <div>
-          <label class="block text-gray-600">Over-receipt Tolerance (%)</label>
-          <input type="number"
-                 min="0"
-                 max="5"
-                 placeholder="0"
-                 [(ngModel)]="overReceiptTolerance"
-                 (keypress)="allowOnlyNumbers($event)"
-                 class="ctl w-full border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/20 focus:border-[#0e3a4c]" />
-        </div>
-
       </div>
 
-      <!-- Lines Table (Create form) -->
-      <div class="overflow-x-auto ring-1 ring-gray-300 mt-2">
-        <table class="table-compact w-full min-w-[1900px] text-sm">
+      <!-- PO Date -->
+      <div class="grn-field" (click)="!isPoDateDisabled && dateInput.showPicker()">
+        <label>PO Date</label>
+        <input #dateInput
+               type="date"
+               [(ngModel)]="receiptDate"
+               [disabled]="isPoDateDisabled"
+               [readOnly]="isPoDateDisabled"
+               [min]="minDate"
+               class="grn-ctl"
+               [class.grn-disabled]="isPoDateDisabled" />
+      </div>
 
-          <thead class="text-white" style="background-color:#2E5F73">
-            <tr>
-              <th class="text-left">Item / Product</th>
-              <th class="text-left">Supplier Name</th>
+      <!-- Over Receipt -->
+      <div class="grn-field">
+        <label>Over-receipt Tolerance (%)</label>
+        <input type="number"
+               min="0"
+               max="5"
+               placeholder="0"
+               [(ngModel)]="overReceiptTolerance"
+               (keypress)="allowOnlyNumbers($event)"
+               class="grn-ctl" />
+      </div>
+    </div>
+  </div>
 
-              <th class="text-left">Warehouse</th>
-              <th class="text-left">Bin</th>
-              <th class="text-left">Frequency</th>
-              <th class="text-left">Batch / Serial</th>
-              <th class="text-left">Qty Received</th>
+  <!-- Lines Card -->
+  <div class="grn-card">
+    <div class="grn-card-hdr">
+      <div class="grn-card-title">Receipt Lines</div>
+      <div class="grn-actions">
+        <span class="grn-chip">Lines: {{ grnRows?.length || 0 }}</span>
+        <span class="grn-chip grn-chip-info">Initial: {{ currentUsername }}</span>
+      </div>
+    </div>
 
-              <th class="text-left">Quality Check</th>
-              <th class="text-left">Frozen/Chilled/Dry</th>
-              <th class="text-left">Surface Temp</th>
-              <th class="text-left">Expiry</th>
-              <th class="text-left">No of pest / Sign</th>
-              <th class="text-left">Dry / Spillage</th>
-              <th class="text-left">Odor</th>
-              <th class="text-left">Vehicle Number</th>
-              <th class="text-left">Defective Labels</th>
-              <th class="text-left">Damaged Package</th>
-              <th class="text-left">Time</th>
-              <th class="text-left">Initial</th>
-              <th class="text-left">Remarks</th>
-            </tr>
-          </thead>
+    <div class="grn-table-wrap">
+      <table class="grn-table">
+        <thead>
+          <tr>
+            <th class="sticky-col th-item">Item / Product</th>
+            <th class="th-supplier">Supplier</th>
+            <th>Warehouse</th>
+            <th>Bin</th>
+            <th>Frequency</th>
+            <th>Batch / Serial</th>
+            <th class="th-num">Qty Received</th>
+            <th>Quality Check</th>
+            <th>Frozen/Chilled/Dry</th>
+            <th class="th-num">Surface Temp</th>
+            <th>Expiry</th>
+            <th>Pest / Sign</th>
+            <th>Dry / Spillage</th>
+            <th>Odor</th>
+            <th>Vehicle #</th>
+            <th>Defective Labels</th>
+            <th>Damaged Package</th>
+            <th>Time</th>
+            <th>Initial</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
 
-          <tbody class="bg-white">
-            <tr *ngFor="let r of grnRows; let i = index; trackBy: trackByIndex" class="align-middle">
+        <tbody>
+          <tr *ngFor="let r of grnRows; let i = index; trackBy: trackByIndex">
 
-              <!-- Item -->
-              <td>
-                <input [value]="r.itemText || ''"
-                       readonly
-                       class="ctl w-56 border border-gray-300 bg-gray-50 text-gray-800" />
-              </td>
+            <!-- Item -->
+            <td class="sticky-col td-item">
+              <div class="grn-itemcell">
+                <div class="code">{{ r.itemCode || '' }}</div>
+                <div class="name">{{ r.itemName || r.itemText || '' }}</div>
+              </div>
+            </td>
 
-              <!-- Supplier -->
-              <td>
-                <input [value]="r.supplierName || ''"
-                       readonly
-                       class="ctl w-52 border border-gray-300 bg-gray-50 text-gray-800" />
-              </td>
+            <!-- Supplier -->
+            <td class="td-supplier">
+              <div class="grn-itemcell">
+                <div class="name">{{ r.supplierName || '' }}</div>
+              </div>
+            </td>
 
-              <!-- Warehouse -->
-              <td class="min-w-[16rem]">
-                <ng-select
-                  [items]="warehouses"
-                  bindLabel="name"
-                  bindValue="id"
-                  [(ngModel)]="r.warehouseId"
-                  (change)="onWarehouseChange(r)"
-                  [appendTo]="'body'"
-                  [dropdownPosition]="'bottom'"
-                  [clearable]="true"
-                  placeholder="Select"
-                  class="w-56 ctl wh-select">
-                </ng-select>
-              </td>
+            <!-- Warehouse -->
+            <td class="w-240">
+              <ng-select
+                [items]="warehouses"
+                bindLabel="name"
+                bindValue="id"
+                [(ngModel)]="r.warehouseId"
+                (change)="onWarehouseChange(r)"
+                [appendTo]="'body'"
+                [dropdownPosition]="'bottom'"
+                [clearable]="true"
+                placeholder="Select Warehouse"
+                class="grn-ng">
+              </ng-select>
+            </td>
 
-              <!-- Bin -->
-              <td class="min-w-[16rem]">
-                <ng-select
-                  [items]="getBins(r.warehouseId)"
-                  bindLabel="binName"
-                  bindValue="id"
-                  [(ngModel)]="r.binId"
-                  (change)="r.binName = lookupBinName(r.binId)"
-                  [appendTo]="'body'"
-                  [dropdownPosition]="'bottom'"
-                  [searchable]="true"
-                  [clearable]="true"
-                  placeholder="Select"
-                  class="w-56 ctl wh-select">
-                </ng-select>
-              </td>
+            <!-- Bin -->
+            <td class="w-240">
+              <ng-select
+                [items]="getBins(r.warehouseId)"
+                bindLabel="binName"
+                bindValue="id"
+                [(ngModel)]="r.binId"
+                (change)="r.binName = lookupBinName(r.binId)"
+                [appendTo]="'body'"
+                [dropdownPosition]="'bottom'"
+                [searchable]="true"
+                [clearable]="true"
+                placeholder="Select Bin"
+                class="grn-ng">
+              </ng-select>
+            </td>
 
-              <!-- Strategy / Frequency -->
-              <td class="min-w-[16rem]">
-                <ng-select
-                  [items]="strategies"
-                  bindLabel="name"
-                  bindValue="id"
-                  [(ngModel)]="r.strategyId"
-                  (change)="r.strategyName = lookupStrategyName(r.strategyId)"
-                  [appendTo]="'body'"
-                  [dropdownPosition]="'bottom'"
-                  [clearable]="true"
-                  placeholder="Select"
-                  class="w-56 ctl">
-                </ng-select>
-              </td>
+            <!-- Frequency -->
+            <td class="w-240">
+              <ng-select
+                [items]="strategies"
+                bindLabel="name"
+                bindValue="id"
+                [(ngModel)]="r.strategyId"
+                (change)="r.strategyName = lookupStrategyName(r.strategyId)"
+                [appendTo]="'body'"
+                [dropdownPosition]="'bottom'"
+                [clearable]="true"
+                placeholder="Select Frequency"
+                class="grn-ng">
+              </ng-select>
+            </td>
 
-              <!-- Batch / Serial -->
-              <td>
-                <input [(ngModel)]="r.batchSerial"
-                       placeholder="Batch / Serial"
-                       class="ctl w-44 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
-              </td>
+            <!-- Batch -->
+            <td class="w-200">
+              <input [(ngModel)]="r.batchSerial"
+                     placeholder="Batch / Serial"
+                     class="grn-ctl" />
+            </td>
 
-              <!-- Qty -->
-              <td>
-                <input type="number"
-                       min="0"
-                       [(ngModel)]="r.qtyReceived"
-                       (keypress)="allowOnlyNumbers($event)"
-                       class="ctl w-28 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
-              </td>
+            <!-- Qty -->
+            <td class="w-150">
+              <input type="number"
+                     min="0"
+                     [(ngModel)]="r.qtyReceived"
+                     (keypress)="allowOnlyNumbers($event)"
+                     class="grn-ctl grn-ctl-num" />
+            </td>
 
-              <!-- Quality -->
-              <td>
-                <select [(ngModel)]="r.qualityCheck"
-                        class="ctl w-36 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
+            <!-- Quality -->
+            <td class="w-200">
+              <div class="grn-select-wrap">
+                <select [(ngModel)]="r.qualityCheck" class="grn-ctl grn-ctl-select">
                   <option value="">Select</option>
                   <option value="pass">Pass</option>
                   <option value="fail">Fail</option>
                   <option value="notverify">Not Verify</option>
                 </select>
-              </td>
+                <i class="fa fa-chevron-down grn-select-icon"></i>
+              </div>
+            </td>
 
-              <!-- Storage -->
-              <td>
-                <select [(ngModel)]="r.storageType"
-                        class="ctl w-40 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
+            <!-- Storage -->
+            <td class="w-220">
+              <div class="grn-select-wrap">
+                <select [(ngModel)]="r.storageType" class="grn-ctl grn-ctl-select">
                   <option value="">Select</option>
                   <option value="Frozen">Frozen</option>
                   <option value="Chilled">Chilled</option>
                   <option value="Dry">Dry</option>
                 </select>
-              </td>
+                <i class="fa fa-chevron-down grn-select-icon"></i>
+              </div>
+            </td>
 
-              <!-- Surface Temp -->
-              <td>
-                <input [(ngModel)]="r.surfaceTemp"
-                       placeholder="°C"
-                       class="ctl w-28 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
-              </td>
+            <!-- Temp -->
+            <td class="w-160">
+              <input [(ngModel)]="r.surfaceTemp" placeholder="°C" class="grn-ctl grn-ctl-num" />
+            </td>
 
-              <!-- Expiry -->
-              <td (click)="expiryInput.showPicker()">
-                <input #expiryInput
-                       type="date"
-                       [(ngModel)]="r.expiry"
-                       [min]="minDate"
-                       required
-                       class="ctl w-40 border border-gray-300 bg-white cursor-pointer" />
-              </td>
+            <!-- Expiry -->
+            <td class="w-200" (click)="expiryInput.showPicker()">
+              <input #expiryInput type="date" [(ngModel)]="r.expiry" [min]="minDate" class="grn-ctl" />
+            </td>
 
-              <!-- Pest -->
-              <td>
-                <select [(ngModel)]="r.pestSign"
-                        class="ctl w-28 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
+            <!-- Pest -->
+            <td class="w-160">
+              <div class="grn-select-wrap">
+                <select [(ngModel)]="r.pestSign" class="grn-ctl grn-ctl-select">
                   <option value="">Select</option>
                   <option>Yes</option>
                   <option>No</option>
                 </select>
-              </td>
+                <i class="fa fa-chevron-down grn-select-icon"></i>
+              </div>
+            </td>
 
-              <!-- Dry -->
-              <td>
-                <select [(ngModel)]="r.drySpillage"
-                        class="ctl w-28 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
+            <!-- Dry -->
+            <td class="w-180">
+              <div class="grn-select-wrap">
+                <select [(ngModel)]="r.drySpillage" class="grn-ctl grn-ctl-select">
                   <option value="">Select</option>
                   <option>Yes</option>
                   <option>No</option>
                 </select>
-              </td>
+                <i class="fa fa-chevron-down grn-select-icon"></i>
+              </div>
+            </td>
 
-              <!-- Odor -->
-              <td>
-                <select [(ngModel)]="r.odor"
-                        class="ctl w-28 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
+            <!-- Odor -->
+            <td class="w-160">
+              <div class="grn-select-wrap">
+                <select [(ngModel)]="r.odor" class="grn-ctl grn-ctl-select">
                   <option value="">Select</option>
                   <option>Yes</option>
                   <option>No</option>
                 </select>
-              </td>
+                <i class="fa fa-chevron-down grn-select-icon"></i>
+              </div>
+            </td>
 
-              <!-- Vehicle -->
-              <td>
-                <input [(ngModel)]="r.plateNumber"
-                       class="ctl w-36 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
-              </td>
+            <!-- Vehicle -->
+            <td class="w-180">
+              <input [(ngModel)]="r.plateNumber" class="grn-ctl" />
+            </td>
 
-              <!-- Defect -->
-              <td>
-                <select [(ngModel)]="r.defectLabels"
-                        class="ctl w-32 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
+            <!-- Defect -->
+            <td class="w-200">
+              <div class="grn-select-wrap">
+                <select [(ngModel)]="r.defectLabels" class="grn-ctl grn-ctl-select">
                   <option value="">Select</option>
                   <option>Yes</option>
                   <option>No</option>
                 </select>
-              </td>
+                <i class="fa fa-chevron-down grn-select-icon"></i>
+              </div>
+            </td>
 
-              <!-- Damaged -->
-              <td>
-                <select [(ngModel)]="r.damagedPackage"
-                        class="ctl w-32 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]">
+            <!-- Damaged -->
+            <td class="w-200">
+              <div class="grn-select-wrap">
+                <select [(ngModel)]="r.damagedPackage" class="grn-ctl grn-ctl-select">
                   <option value="">Select</option>
                   <option>Yes</option>
                   <option>No</option>
                 </select>
-              </td>
+                <i class="fa fa-chevron-down grn-select-icon"></i>
+              </div>
+            </td>
 
-              <!-- Time -->
-              <td>
-                <input type="time"
-                       [(ngModel)]="r.time"
-                       class="ctl w-32 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
-              </td>
+            <!-- Time -->
+            <td class="w-160">
+              <input type="time" [(ngModel)]="r.time" class="grn-ctl" />
+            </td>
 
-              <!-- Initial -->
-              <td>
-                <input [value]="currentUsername"
-                       readonly
-                       class="ctl w-28 border border-gray-300 bg-gray-50 text-gray-800 text-xs font-semibold text-center" />
-              </td>
+            <!-- Initial -->
+            <td class="w-160">
+              <input [value]="currentUsername" readonly class="grn-ctl grn-ctl-readonly grn-center" />
+            </td>
 
-              <!-- Remarks -->
-              <td>
-                <input [(ngModel)]="r.remarks"
-                       class="ctl w-56 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/15 focus:border-[#0e3a4c]" />
-              </td>
+            <!-- Remarks -->
+            <td class="w-280">
+              <input [(ngModel)]="r.remarks" class="grn-ctl" />
+            </td>
 
-            </tr>
-          </tbody>
-
-        </table>
-      </div>
-
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
+
 </div>
 
 
 <!-- =================== CREATE MODE SUMMARY (AFTER SAVE) =================== -->
-<div *ngIf="!isEditMode && showSummary && generatedGRN"
-     class="ui-compact-slim bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+<div *ngIf="!isEditMode && showSummary && generatedGRN" class="grn-ui grn-summary-ui">
 
-  <div class="flex items-center justify-between mb-2">
-    <h3 class="text-[18px] font-semibold" style="color:#2E5F73">Generated GRN Summary</h3>
+  <div class="grn-topbar grn-topbar-3col">
+    <div class="tb-left">
+      <button class="grn-btn grn-btn-ghost" type="button" (click)="goToDebitNoteList()">
+        <i class="fa fa-arrow-left"></i>
+        <span>Back</span>
+      </button>
+    </div>
+
+    <div class="tb-center">
+      <div class="grn-title-wrap">
+        <div class="grn-title">Generated GRN Summary</div>
+      </div>
+    </div>
+
+    <div class="tb-right grn-topbar-right">
+      <span class="grn-badge grn-badge-muted">GRN: {{ generatedGRN.grnNo }}</span>
+      <span class="grn-badge grn-badge-muted">PO: {{ generatedGRN.poNo || generatedGRN.poid }}</span>
+      <span class="grn-badge grn-badge-info">Total: {{ generatedGRN.grnJson?.length || 0 }}</span>
+    </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2 text-sm">
-    <div><span class="font-semibold text-gray-600">GRN No:</span> {{ generatedGRN.grnNo }}</div>
-    <div><span class="font-semibold text-gray-600">PO No:</span> {{ generatedGRN.poNo || generatedGRN.poid }}</div>
-  </div>
+  <div class="grn-card">
+    <div class="grn-card-hdr">
+      <div class="grn-card-title">Lines</div>
+      <div class="grn-actions">
+        <span class="grn-chip">Pending: {{ (generatedGRN.grnJson?.length || 0) - (postedCount || 0) }}</span>
+        <span class="grn-chip grn-chip-ok">Posted: {{ postedCount || 0 }}</span>
+      </div>
+    </div>
 
-  <div class="overflow-x-auto rounded-lg border border-gray-300">
-    <table class="table-compact w-full min-w-[1900px] text-sm">
+    <div class="grn-table-wrap">
+      <table class="grn-table grn-table-summary">
+        <thead>
+          <tr>
+            <th class="sticky-col th-item">Item</th>
+            <th class="th-supplier">Supplier</th>
+            <th>Warehouse</th>
+            <th>Bin</th>
+            <th>Frequency</th>
+            <th>Batch / Serial</th>
+            <th class="th-num">Qty</th>
+            <th>Status</th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
 
-      <thead class="text-white" style="background-color:#2E5F73">
-        <tr>
-          <th class="text-left">Item Code</th>
-          <th class="text-left">Supplier</th>
-          <th class="text-left">Warehouse</th>
-          <th class="text-left">Bin</th>
-          <th class="text-left">Frequency</th>
-          <th class="text-left">Batch / Serial</th>
-          <th class="text-left">Qty Rcvd</th>
+        <tbody>
+          <tr *ngFor="let row of generatedGRN.grnJson; let i = index">
 
-          <th class="text-left">Quality</th>
-          <th class="text-left">Storage Type</th>
-          <th class="text-left">Surface Temp</th>
-          <th class="text-left">Expiry</th>
-          <th class="text-left">Pest Sign</th>
-          <th class="text-left">Dry / Spillage</th>
-          <th class="text-left">Odor</th>
-          <th class="text-left">Plate #</th>
-          <th class="text-left">Defect Labels</th>
-          <th class="text-left">Damaged Pkg</th>
-          <th class="text-left">Time</th>
-          <th class="text-left">Initial</th>
-          <th class="text-left">Remarks</th>
-          <th class="text-left">Status</th>
-          <th class="text-left">Actions</th>
-        </tr>
-      </thead>
+            <td class="sticky-col td-item">
+              <div class="grn-itemcell">
+                <div class="code">{{ row.itemCode || '' }}</div>
+                <div class="name">{{ row.itemName || row.itemText || '' }}</div>
+              </div>
+            </td>
 
-      <tbody class="bg-white">
-        <tr *ngFor="let row of generatedGRN.grnJson; let i = index">
+            <td class="td-supplier">
+              <div class="grn-itemcell">
+                <div class="name">{{ row.supplierName || '' }}</div>
+              </div>
+            </td>
 
-          <td>{{ row.itemCode || row.item }}</td>
-          <td>{{ row.supplierName }}</td>
+            <td>{{ row.warehouseName || lookupWarehouseName(row.warehouseId) }}</td>
+            <td>{{ row.binName || lookupBinName(row.binId) }}</td>
+            <td>{{ row.strategyName || lookupStrategyName(row.strategyId) }}</td>
+            <td>{{ row.batchSerial }}</td>
+            <td class="td-num">{{ row.qtyReceived }}</td>
 
-          <td>{{ row.warehouseName || lookupWarehouseName(row.warehouseId) }}</td>
-          <td>{{ row.binName || lookupBinName(row.binId) }}</td>
-          <td>{{ row.strategyName || lookupStrategyName(row.strategyId) }}</td>
-          <td>{{ row.batchSerial }}</td>
-          <td>{{ row.qtyReceived }}</td>
+            <td>
+              <span class="grn-pill"
+                    [ngClass]="{
+                      'pill-red': row.isFlagIssue,
+                      'pill-green': !row.isFlagIssue && row.isPostInventory,
+                      'pill-gray': !row.isFlagIssue && !row.isPostInventory
+                    }">
+                {{ row.isFlagIssue ? 'Flagged' : (row.isPostInventory ? 'Posted' : 'Pending') }}
+              </span>
+            </td>
 
-          <td>{{ row.qualityCheck }}</td>
-          <td>{{ row.storageType }}</td>
-          <td>{{ row.surfaceTemp }}</td>
-          <td>{{ row.expiry }}</td>
-          <td>{{ row.pestSign }}</td>
-          <td>{{ row.drySpillage }}</td>
-          <td>{{ row.odor }}</td>
-          <td>{{ row.plateNumber }}</td>
-          <td>{{ row.defectLabels }}</td>
-          <td>{{ row.damagedPackage }}</td>
-          <td>{{ row.time }}</td>
-
-          <td>
-            <span class="text-xs font-semibold text-gray-800">
-              {{ row.initial || currentUsername }}
-            </span>
-          </td>
-
-          <td>{{ row.remarks }}</td>
-
-          <td>
-            <span class="pill"
-                  [ngClass]="{
-                    'bg-red-100 text-red-800': row.isFlagIssue,
-                    'bg-green-100 text-green-800': !row.isFlagIssue && row.isPostInventory
-                  }">
-              {{ row.isFlagIssue ? 'Flagged' : (row.isPostInventory ? 'Posted' : '') }}
-            </span>
-          </td>
-
-          <td>
-            <div class="row-actions flex items-center justify-end">
-              <button type="button"
-                      class="btn-compact inline-flex items-center gap-2 text-white"
-                      style="background:#d97706"
-                      (click)="onFlagIssuesRow(row, i)">
-                <i class="fa fa-flag text-[11px] opacity-90"></i> Flag Issues
+            <td class="td-actions">
+              <button type="button" class="grn-btn grn-btn-warn" (click)="onFlagIssuesRow(row, i)">
+                <i class="fa fa-flag"></i><span>Flag</span>
               </button>
 
               <button type="button"
-                      class="btn-compact inline-flex items-center gap-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                      style="background:#2E5F73"
+                      class="grn-btn grn-btn-primary"
                       (click)="onPostInventoryRow(row, i)"
                       [disabled]="isPostInventoryDisabled || row.isPostInventory">
-                <i class="fa fa-box text-[11px] opacity-90"></i> Post Inventory
+                <i class="fa fa-box"></i><span>Post</span>
               </button>
-            </div>
-          </td>
+            </td>
 
-        </tr>
-      </tbody>
+          </tr>
+        </tbody>
 
-    </table>
+      </table>
+    </div>
   </div>
 </div>
 
 
 <!-- =================== EDIT MODE SUMMARY (EDIT GRN) =================== -->
-<div *ngIf="isEditMode && generatedGRN"
-     class="ui-compact-slim bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+<div *ngIf="isEditMode && generatedGRN" class="grn-ui grn-summary-ui">
 
-  <!-- Header -->
-  <div class="mb-3">
-    <div class="flex items-center justify-between">
-      <h3 class="text-[18px] font-semibold" style="color:#2E5F73">Edit GRN</h3>
-    </div>
+  <div class="grn-topbar grn-topbar-3col">
 
-    <div class="mt-1 flex flex-wrap gap-2">
-      <span class="pill bg-gray-100 text-gray-700">GRN: {{ generatedGRN.grnNo }}</span>
-      <span class="pill bg-gray-100 text-gray-700">PO: {{ generatedGRN.poNo || generatedGRN.poid }}</span>
-
-      <span *ngIf="hiddenPostedCount > 0" class="pill bg-yellow-100 text-yellow-800">
-        Posted hidden: {{ hiddenPostedCount }}
-      </span>
-    </div>
-  </div>
-
-  <div class="overflow-x-auto rounded-lg border border-gray-300">
-    <table class="table-compact w-full min-w-[1900px] text-sm">
-
-      <thead class="text-white" style="background-color:#2E5F73">
-        <tr>
-          <th class="text-left">Item Code</th>
-          <th class="text-left">Supplier</th>
-
-          <th class="text-left">Warehouse</th>
-          <th class="text-left">Bin</th>
-          <th class="text-left">Frequency</th>
-
-          <th class="text-left">Batch / Serial</th>
-          <th class="text-left">Qty Rcvd</th>
-
-          <th class="text-left">Quality</th>
-          <th class="text-left">Storage Type</th>
-          <th class="text-left">Surface Temp</th>
-          <th class="text-left">Expiry</th>
-          <th class="text-left">Pest Sign</th>
-          <th class="text-left">Dry / Spillage</th>
-          <th class="text-left">Odor</th>
-          <th class="text-left">Vehicle #</th>
-          <th class="text-left">Defect Labels</th>
-          <th class="text-left">Damaged Pkg</th>
-          <th class="text-left">Time</th>
-          <th class="text-left">Initial</th>
-          <th class="text-left">Remarks</th>
-          <th class="text-left">Status</th>
-          <th class="text-left">Actions</th>
-        </tr>
-      </thead>
-
-      <!-- ✅ IMPORTANT: use editRowsWithIndex so indexes match original JSON -->
-      <tbody class="bg-white">
-        <tr *ngFor="let x of editRowsWithIndex; trackBy: trackByIndex"
-            class="hover:bg-gray-50"
-            [class.opacity-70]="x.row.isPostInventory">
-
-          <td>{{ x.row.itemCode || x.row.item }}</td>
-
-          <td>
-            <input [(ngModel)]="x.row.supplierName"
-                   class="ctl w-48 border border-gray-300 bg-white" />
-          </td>
-
-          <!-- Warehouse (disabled) -->
-          <td class="min-w-[16rem]">
-            <ng-select
-              [items]="warehouses"
-              bindLabel="name"
-              bindValue="id"
-              [(ngModel)]="x.row.warehouseId"
-              [disabled]="true"
-              [clearable]="false"
-              [searchable]="false"
-              class="w-56 ctl wh-select">
-            </ng-select>
-          </td>
-
-          <!-- Bin (disabled) -->
-          <td class="min-w-[16rem]">
-            <ng-select
-              [items]="getBins(x.row.warehouseId)"
-              bindLabel="binName"
-              bindValue="id"
-              [(ngModel)]="x.row.binId"
-              [disabled]="true"
-              [clearable]="false"
-              [searchable]="false"
-              class="w-56 ctl wh-select">
-            </ng-select>
-          </td>
-
-          <!-- Strategy (disabled) -->
-          <td class="min-w-[16rem]">
-            <ng-select
-              [items]="strategies"
-              bindLabel="name"
-              bindValue="id"
-              [(ngModel)]="x.row.strategyId"
-              [disabled]="true"
-              [clearable]="false"
-              [searchable]="false"
-              class="w-56 ctl">
-            </ng-select>
-          </td>
-
-          <td>
-            <input [(ngModel)]="x.row.batchSerial" class="ctl w-36 border border-gray-300 bg-white" />
-          </td>
-
-          <td>
-            <input type="number" min="0"
-                   [(ngModel)]="x.row.qtyReceived"
-                   (keypress)="allowOnlyNumbers($event)"
-                   class="ctl w-24 border border-gray-300 bg-white" />
-          </td>
-
-          <td>
-            <select [(ngModel)]="x.row.qualityCheck" class="ctl w-28 border border-gray-300 bg-white">
-              <option value="">Select</option>
-              <option value="pass">Pass</option>
-              <option value="fail">Fail</option>
-              <option value="notverify">Not Verify</option>
-            </select>
-          </td>
-
-          <td>
-            <select [(ngModel)]="x.row.storageType" class="ctl w-36 border border-gray-300 bg-white">
-              <option value="">Select</option>
-              <option>Frozen</option>
-              <option>Chilled</option>
-              <option>Dry</option>
-            </select>
-          </td>
-
-          <td>
-            <input [(ngModel)]="x.row.surfaceTemp" class="ctl w-24 border border-gray-300 bg-white" />
-          </td>
-
-          <td>
-            <input type="date" [(ngModel)]="x.row.expiry" [min]="minDate"
-                   class="ctl w-40 border border-gray-300 bg-white" />
-          </td>
-
-          <td>
-            <select [(ngModel)]="x.row.pestSign" class="ctl w-28 border border-gray-300 bg-white">
-              <option value="">Select</option>
-              <option>Yes</option>
-              <option>No</option>
-            </select>
-          </td>
-
-          <td>
-            <select [(ngModel)]="x.row.drySpillage" class="ctl w-28 border border-gray-300 bg-white">
-              <option value="">Select</option>
-              <option>Yes</option>
-              <option>No</option>
-            </select>
-          </td>
-
-          <td>
-            <select [(ngModel)]="x.row.odor" class="ctl w-28 border border-gray-300 bg-white">
-              <option value="">Select</option>
-              <option>Yes</option>
-              <option>No</option>
-            </select>
-          </td>
-
-          <td>
-            <input [(ngModel)]="x.row.plateNumber" class="ctl w-28 border border-gray-300 bg-white" />
-          </td>
-
-          <td>
-            <select [(ngModel)]="x.row.defectLabels" class="ctl w-28 border border-gray-300 bg-white">
-              <option value="">Select</option>
-              <option>Yes</option>
-              <option>No</option>
-            </select>
-          </td>
-
-          <td>
-            <select [(ngModel)]="x.row.damagedPackage" class="ctl w-28 border border-gray-300 bg-white">
-              <option value="">Select</option>
-              <option>Yes</option>
-              <option>No</option>
-            </select>
-          </td>
-
-          <td>
-            <input type="time" [(ngModel)]="x.row.time" class="ctl w-28 border border-gray-300 bg-white" />
-          </td>
-
-          <td>
-            <input [value]="x.row.initial || currentUsername" readonly
-                   class="ctl w-28 border border-gray-300 bg-gray-50 text-gray-800 text-xs font-semibold text-center" />
-          </td>
-
-          <td>
-            <input [(ngModel)]="x.row.remarks" class="ctl w-56 border border-gray-300 bg-white" />
-          </td>
-
-          <td>
-            <span class="pill"
-                  [ngClass]="{
-                    'bg-red-100 text-red-800': x.row.isFlagIssue,
-                    'bg-green-100 text-green-800': !x.row.isFlagIssue && x.row.isPostInventory
-                  }">
-              {{ x.row.isFlagIssue ? 'Flagged' : (x.row.isPostInventory ? 'Posted' : '—') }}
-            </span>
-          </td>
-
-          <td>
-            <div class="row-actions flex items-center justify-end gap-2">
-              <button type="button"
-                      class="btn-compact inline-flex items-center gap-2 text-white"
-                      style="background:#d97706"
-                      (click)="onFlagIssuesRow(x.row, x.idx)">
-                <i class="fa fa-flag text-[11px] opacity-90"></i> Flag Issues
-              </button>
-
-              <button type="button"
-                      class="btn-compact inline-flex items-center gap-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                      style="background:#2E5F73"
-                      (click)="onPostInventoryRow(x.row, x.idx)"
-                      [disabled]="isPostInventoryDisabled || x.row.isPostInventory">
-                <i class="fa fa-box text-[11px] opacity-90"></i> Post Inventory
-              </button>
-            </div>
-          </td>
-
-        </tr>
-      </tbody>
-
-    </table>
-  </div>
-</div>
-
-
-<!-- =================== FLAG ISSUES MODAL =================== -->
-<div *ngIf="flagModal.open"
-     class="ui-compact-slim fixed inset-0 z-[1000] flex items-center justify-center px-3 md:px-0"
-     (keydown.escape)="closeFlagIssuesModal()">
-
-  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
-       (click)="closeFlagIssuesModal()"></div>
-
-  <div class="modal-box relative bg-white shadow-2xl p-4">
-    <div class="flex items-center justify-between mb-2">
-      <h3 class="text-[18px] font-semibold text-gray-800">🚩 Flag an Issue</h3>
-      <button type="button"
-              class="h-8 w-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100"
-              (click)="closeFlagIssuesModal()"
-              aria-label="Close">
-        <span class="text-lg">×</span>
+    <div class="tb-left">
+      <button class="grn-btn grn-btn-ghost" type="button" (click)="goToDebitNoteList()">
+        <i class="fa fa-arrow-left"></i>
+        <span>Back</span>
       </button>
     </div>
 
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Select an Issue</label>
+    <div class="tb-center">
+      <div class="grn-title-wrap">
+        <div class="grn-title">Edit GRN</div>
+      </div>
+    </div>
 
-      <div class="relative">
-        <select [(ngModel)]="selectedFlagIssueId"
-                class="ctl appearance-none w-full border border-gray-300 bg-white pr-9 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]/30 focus:border-[#0e3a4c]">
+    <div class="tb-right grn-topbar-right">
+      <span class="grn-badge grn-badge-muted">GRN: {{ generatedGRN.grnNo }}</span>
+      <span class="grn-badge grn-badge-muted">PO: {{ generatedGRN.poNo || generatedGRN.poid }}</span>
+      <span *ngIf="hiddenPostedCount > 0" class="grn-badge grn-badge-warn">
+        Posted hidden: {{ hiddenPostedCount }}
+      </span>
+      <span class="grn-badge grn-badge-info">Lines: {{ editRowsWithIndex?.length || 0 }}</span>
+    </div>
+  </div>
+
+  <div class="grn-card">
+    <div class="grn-card-hdr">
+      <div class="grn-card-title">Editable Lines</div>
+      <div class="grn-actions">
+        <span class="grn-chip grn-chip-info">Only non-posted lines are editable</span>
+      </div>
+    </div>
+
+    <div class="grn-table-wrap">
+      <table class="grn-table grn-table-summary">
+        <thead>
+          <tr>
+            <th class="sticky-col th-item">Item</th>
+            <th class="th-supplier">Supplier</th>
+            <th>Warehouse</th>
+            <th>Bin</th>
+            <th>Frequency</th>
+            <th>Batch / Serial</th>
+            <th class="th-num">Qty</th>
+            <th>Status</th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let x of editRowsWithIndex; trackBy: trackByIndex"
+              [class.row-posted]="x.row.isPostInventory">
+
+            <td class="sticky-col td-item">
+              <div class="grn-itemcell">
+                <div class="code">{{ x.row.itemCode || '' }}</div>
+                <div class="name">{{ x.row.itemName || x.row.itemText || '' }}</div>
+              </div>
+            </td>
+
+            <!-- Supplier editable -->
+            <td class="td-supplier w-260">
+              <input [(ngModel)]="x.row.supplierName" class="grn-ctl grn-ctl-wide-supplier" />
+            </td>
+
+            <!-- Warehouse disabled -->
+            <td class="w-240">
+              <ng-select
+                [items]="warehouses"
+                bindLabel="name"
+                bindValue="id"
+                [(ngModel)]="x.row.warehouseId"
+                [disabled]="true"
+                [clearable]="false"
+                [searchable]="false"
+                class="grn-ng grn-ng-disabled">
+              </ng-select>
+            </td>
+
+            <!-- Bin disabled -->
+            <td class="w-240">
+              <ng-select
+                [items]="getBins(x.row.warehouseId)"
+                bindLabel="binName"
+                bindValue="id"
+                [(ngModel)]="x.row.binId"
+                [disabled]="true"
+                [clearable]="false"
+                [searchable]="false"
+                class="grn-ng grn-ng-disabled">
+              </ng-select>
+            </td>
+
+            <!-- Frequency disabled -->
+            <td class="w-240">
+              <ng-select
+                [items]="strategies"
+                bindLabel="name"
+                bindValue="id"
+                [(ngModel)]="x.row.strategyId"
+                [disabled]="true"
+                [clearable]="false"
+                [searchable]="false"
+                class="grn-ng grn-ng-disabled">
+              </ng-select>
+            </td>
+
+            <td class="w-200">
+              <input [(ngModel)]="x.row.batchSerial" class="grn-ctl" />
+            </td>
+
+            <td class="w-150">
+              <input type="number" min="0"
+                     [(ngModel)]="x.row.qtyReceived"
+                     (keypress)="allowOnlyNumbers($event)"
+                     class="grn-ctl grn-ctl-num" />
+            </td>
+
+            <td>
+              <span class="grn-pill"
+                    [ngClass]="{
+                      'pill-red': x.row.isFlagIssue,
+                      'pill-green': !x.row.isFlagIssue && x.row.isPostInventory,
+                      'pill-gray': !x.row.isFlagIssue && !x.row.isPostInventory
+                    }">
+                {{ x.row.isFlagIssue ? 'Flagged' : (x.row.isPostInventory ? 'Posted' : 'Pending') }}
+              </span>
+            </td>
+
+            <td class="td-actions">
+              <button type="button" class="grn-btn grn-btn-warn" (click)="onFlagIssuesRow(x.row, x.idx)">
+                <i class="fa fa-flag"></i><span>Flag</span>
+              </button>
+
+              <button type="button"
+                      class="grn-btn grn-btn-primary"
+                      (click)="onPostInventoryRow(x.row, x.idx)"
+                      [disabled]="isPostInventoryDisabled || x.row.isPostInventory">
+                <i class="fa fa-box"></i><span>Post</span>
+              </button>
+            </td>
+
+          </tr>
+        </tbody>
+
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- =================== FLAG ISSUES MODAL (✅ INCLUDED) =================== -->
+<div *ngIf="flagModal.open"
+     class="grn-modal"
+     (keydown.escape)="closeFlagIssuesModal()">
+
+  <div class="grn-modal-backdrop" (click)="closeFlagIssuesModal()"></div>
+
+  <div class="grn-modal-card" role="dialog" aria-modal="true">
+    <div class="grn-modal-hdr">
+      <div class="grn-modal-title">
+        <span class="icon">🚩</span>
+        <span>Flag an Issue</span>
+      </div>
+
+      <button type="button" class="grn-icon-btn" (click)="closeFlagIssuesModal()" aria-label="Close">
+        <span>×</span>
+      </button>
+    </div>
+
+    <div class="grn-modal-body">
+      <label class="grn-modal-label">Select an Issue</label>
+
+      <div class="grn-select-wrap">
+        <select [(ngModel)]="selectedFlagIssueId" class="grn-ctl grn-ctl-select">
           <option [ngValue]="null" disabled>Select an issue</option>
           <option *ngFor="let fi of flagIssuesList" [ngValue]="fi.id">
             {{ fi.flagIssuesNames || fi.name || fi.flagIssueName || fi.FlagIssueName }}
           </option>
         </select>
-
-        <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 24 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
+        <i class="fa fa-chevron-down grn-select-icon"></i>
       </div>
     </div>
 
-    <div class="modal-actions mt-4 flex justify-center">
-      <button type="button"
-              class="btn-compact text-white"
-              style="background:#e74c3c"
-              (click)="closeFlagIssuesModal()">
-        <i class="fa fa-times-circle text-[12px]"></i><span class="ml-1">Cancel</span>
+    <div class="grn-modal-actions">
+      <button type="button" class="grn-btn grn-btn-ghost" (click)="closeFlagIssuesModal()">
+        <i class="fa fa-times-circle"></i><span>Cancel</span>
       </button>
 
-      <button type="button"
-              class="btn-compact text-white"
-              style="background:#2E5F73"
-              (click)="submitFlagIssue()">
-        <i class="fa fa-check-circle text-[12px]"></i><span class="ml-1">Submit</span>
+      <button type="button" class="grn-btn grn-btn-danger" (click)="submitFlagIssue()">
+        <i class="fa fa-check-circle"></i><span>Submit</span>
       </button>
     </div>
   </div>
@@ -724,9 +641,9 @@
 
 <!-- =================== IMAGE VIEWER (LIGHTBOX) =================== -->
 <div *ngIf="imageViewer.open"
-     class="fixed inset-0 z-[1100] flex items-center justify-center bg-black/70"
+     class="grn-lightbox"
      (click)="closeImage()">
   <img *ngIf="imageViewer.src"
        [src]="imageViewer.src"
-       class="max-h-[88vh] max-w-[88vw] object-contain" />
+       class="grn-lightbox-img" />
 </div>

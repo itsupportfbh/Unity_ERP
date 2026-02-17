@@ -77,6 +77,10 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
   // lines modal
   showLinesModal = false;
   modalLines: any[] = [];
+
+  // ✅ NEW: modal search
+  modalSearch = '';
+
   modalHeader: {
     grnNo?: string;
     pono?: string;
@@ -197,9 +201,7 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
     const map = new Map<string, { base: GrnRow; items: Set<string> }>();
 
     for (const r of rows) {
-      const key = `${r.grnNo}__${this.truthy(r.isFlagIssue)}__${this.truthy(
-        r.isPostInventory
-      )}`;
+      const key = `${r.grnNo}__${this.truthy(r.isFlagIssue)}__${this.truthy(r.isPostInventory)}`;
       if (!map.has(key)) {
         map.set(key, {
           base: { ...r },
@@ -218,19 +220,14 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
       const summary = list.join(', ');
       return {
         ...base,
-        itemName:
-          list.length > 1
-            ? `${summary} (${list.length})`
-            : (summary || base.itemName)
+        itemName: list.length > 1 ? `${summary} (${list.length})` : (summary || base.itemName)
       };
     });
   }
 
   // ---------- search ----------
   filterUpdate(event: Event): void {
-    const val = (event.target as HTMLInputElement).value
-      ?.toLowerCase()
-      .trim() ?? '';
+    const val = (event.target as HTMLInputElement).value?.toLowerCase().trim() ?? '';
     this.searchValue = val;
 
     if (!val) {
@@ -265,15 +262,13 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
     };
 
     this.modalLines = [];
+    this.modalSearch = ''; // ✅ reset search
     this.showLinesModal = true;
 
-    const sameGrnRows = this.allRows.filter(
-      r => (r.grnNo || '') === (row.grnNo || '')
-    );
-    const sameStatusRows = sameGrnRows.filter(
-      r =>
-        this.truthy(r.isPostInventory) === this.truthy(row.isPostInventory) &&
-        this.truthy(r.isFlagIssue) === this.truthy(row.isFlagIssue)
+    const sameGrnRows = this.allRows.filter(r => (r.grnNo || '') === (row.grnNo || ''));
+    const sameStatusRows = sameGrnRows.filter(r =>
+      this.truthy(r.isPostInventory) === this.truthy(row.isPostInventory) &&
+      this.truthy(r.isFlagIssue) === this.truthy(row.isFlagIssue)
     );
 
     if (sameStatusRows.length) {
@@ -297,9 +292,7 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
         const picked = this.pickOneLine(lines, row);
         if (!picked.supplierName) picked.supplierName = row.name ?? '';
 
-        this.modalLines = (lines.length ? lines : [picked]).map(l =>
-          this.toModalLine(l, row.name)
-        );
+        this.modalLines = (lines.length ? lines : [picked]).map(l => this.toModalLine(l, row.name));
         this.fillMissingNamesForModalLines();
       },
       error: () => {
@@ -312,6 +305,31 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
   closeLinesModal(): void {
     this.showLinesModal = false;
     this.modalLines = [];
+    this.modalSearch = '';
+  }
+
+  // ✅ used by template
+  filteredModalLines(): any[] {
+    const q = (this.modalSearch || '').toLowerCase().trim();
+    if (!q) return this.modalLines || [];
+
+    return (this.modalLines || []).filter(l => {
+      const status = l.isFlagIssue ? 'flagged' : (l.isPostInventory ? 'posted' : 'pending');
+      return (
+        String(l.itemName ?? '').toLowerCase().includes(q) ||
+        String(l.itemCode ?? '').toLowerCase().includes(q) ||
+        String(l.warehouseName ?? '').toLowerCase().includes(q) ||
+        String(l.binName ?? '').toLowerCase().includes(q) ||
+        String(l.strategyName ?? '').toLowerCase().includes(q) ||
+        String(l.qualityCheck ?? '').toLowerCase().includes(q) ||
+        String(l.storageType ?? '').toLowerCase().includes(q) ||
+        String(status).toLowerCase().includes(q)
+      );
+    });
+  }
+
+  trackByIdx(index: number): number {
+    return index;
   }
 
   private toModalLine(src: any, fallbackName?: string) {
@@ -376,12 +394,7 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
         const map = this.binsByWarehouse.get(whId);
         if (!map) return;
         for (const l of this.modalLines) {
-          if (
-            l.warehouseId === whId &&
-            l.binId &&
-            !l.binName &&
-            map.has(l.binId)
-          ) {
+          if (l.warehouseId === whId && l.binId && !l.binName && map.has(l.binId)) {
             l.binName = map.get(l.binId)!;
           }
         }
@@ -391,11 +404,7 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
 
   private applyWarehouseNames(): void {
     for (const l of this.modalLines) {
-      if (
-        !l.warehouseName &&
-        l.warehouseId &&
-        this.warehouseNameMap.has(l.warehouseId)
-      ) {
+      if (!l.warehouseName && l.warehouseId && this.warehouseNameMap.has(l.warehouseId)) {
         l.warehouseName = this.warehouseNameMap.get(l.warehouseId)!;
       }
     }
@@ -403,11 +412,7 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
 
   private applyStrategyNames(): void {
     for (const l of this.modalLines) {
-      if (
-        !l.strategyName &&
-        l.strategyId &&
-        this.strategyNameMap.has(l.strategyId)
-      ) {
+      if (!l.strategyName && l.strategyId && this.strategyNameMap.has(l.strategyId)) {
         l.strategyName = this.strategyNameMap.get(l.strategyId)!;
       }
     }
@@ -415,19 +420,14 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
 
   // ---------- preload maps ----------
   private loadWarehouses(after?: () => void) {
-    if (this.warehousesLoaded && after) {
-      after();
-      return;
-    }
+    if (this.warehousesLoaded && after) { after(); return; }
 
     this.warehouseService.getWarehouse().subscribe({
       next: (res: any) => {
         const arr = res?.data ?? res ?? [];
         for (const w of arr) {
           const id = Number(w.id ?? w.Id);
-          const name = String(
-            w.name ?? w.warehouseName ?? w.WarehouseName ?? ''
-          );
+          const name = String(w.name ?? w.warehouseName ?? w.WarehouseName ?? '');
           if (id && name) this.warehouseNameMap.set(id, name);
         }
         this.warehousesLoaded = true;
@@ -441,19 +441,14 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
   }
 
   private loadStrategies(after?: () => void) {
-    if (this.strategiesLoaded && after) {
-      after();
-      return;
-    }
+    if (this.strategiesLoaded && after) { after(); return; }
 
     this.strategyService.getStrategy().subscribe({
       next: (res: any) => {
         const arr = res?.data ?? res ?? [];
         for (const s of arr) {
           const id = Number(s.id ?? s.Id);
-          const name = String(
-            s.strategyName ?? s.name ?? s.StrategyName ?? ''
-          );
+          const name = String(s.strategyName ?? s.name ?? s.StrategyName ?? '');
           if (id && name) this.strategyNameMap.set(id, name);
         }
         this.strategiesLoaded = true;
@@ -467,14 +462,8 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
   }
 
   private ensureBinsLoaded(warehouseId: number, after?: () => void) {
-    if (!warehouseId) {
-      if (after) after();
-      return;
-    }
-    if (this.binsByWarehouse.has(warehouseId)) {
-      if (after) after();
-      return;
-    }
+    if (!warehouseId) { if (after) after(); return; }
+    if (this.binsByWarehouse.has(warehouseId)) { if (after) after(); return; }
 
     this.stockService.GetBinDetailsbywarehouseID(warehouseId).subscribe({
       next: (res: any) => {
@@ -488,9 +477,7 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
         this.binsByWarehouse.set(warehouseId, map);
         if (after) after();
       },
-      error: () => {
-        if (after) after();
-      }
+      error: () => { if (after) after(); }
     });
   }
 
@@ -521,14 +508,11 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
 
   private pickOneLine(lines: any[], row: GrnRow) {
     return (
-      lines.find(
-        l => (l.itemCode ?? l.item ?? '') === (row.itemCode ?? '')
-      ) ||
-      lines.find(
-        l =>
-          (l.itemCode ?? l.item ?? '') === (row.itemCode ?? '') &&
-          (String(l.storageType ?? '') === String(row.storageType ?? '') ||
-           String(l.surfaceTemp ?? '') === String(row.surfaceTemp ?? ''))
+      lines.find(l => (l.itemCode ?? l.item ?? '') === (row.itemCode ?? '')) ||
+      lines.find(l =>
+        (l.itemCode ?? l.item ?? '') === (row.itemCode ?? '') &&
+        (String(l.storageType ?? '') === String(row.storageType ?? '') ||
+         String(l.surfaceTemp ?? '') === String(row.surfaceTemp ?? ''))
       ) ||
       lines[0] ||
       {}
@@ -573,11 +557,7 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
 
   onEdit(row: GrnRow): void {
     if (row.isPostInventory) {
-      Swal.fire(
-        'Not Allowed',
-        'This GRN is already posted to inventory.',
-        'info'
-      );
+      Swal.fire('Not Allowed', 'This GRN is already posted to inventory.', 'info');
       return;
     }
 

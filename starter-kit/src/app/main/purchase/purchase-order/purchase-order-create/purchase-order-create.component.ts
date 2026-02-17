@@ -635,37 +635,36 @@ private applySupplierPricesToAllLines() {
   }
 
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: Event) {
-    const target = event.target as HTMLElement;
+ @HostListener('document:click', ['$event'])
+onDocumentClick(event: MouseEvent) {
+  const target = event.target as HTMLElement;
 
-    // Check if click is outside any dropdown
-    this.poLines.forEach(line => {
-      if (!target.closest('.dropdown-cell')) {
-        line.dropdownOpen = '';
-      }
-    });
-    if (!target.closest('.relative')) {
-      for (let key in this.dropdownOpen) {
-        this.dropdownOpen[key] = false;
-      }
+  // ✅ If click happens inside any dropdown area, DON'T close
+  if (target.closest('.dropdown-scope')) return;
+
+  // ✅ close header dropdowns
+  Object.keys(this.dropdownOpen).forEach(k => (this.dropdownOpen[k] = false));
+
+  // ✅ close table row dropdowns
+  (this.poLines || []).forEach(line => (line.dropdownOpen = ''));
+}
+
+ toggleDropdown(field: string, open?: boolean, ev?: Event) {
+  ev?.stopPropagation();
+
+  this.dropdownOpen[field] = open !== undefined ? open : !this.dropdownOpen[field];
+
+  if (this.dropdownOpen[field]) {
+    switch (field) {
+      case 'approval': this.filteredLists[field] = [...this.approvalLevel]; break;
+      case 'supplier': this.filteredLists[field] = [...this.suppliers]; break;
+      case 'paymentTerms': this.filteredLists[field] = [...this.paymentTerms]; break;
+      case 'currency': this.filteredLists[field] = [...this.currencies]; break;
+      case 'incoterms': this.filteredLists[field] = [...this.incoterms]; break;
+      case 'deliveryLoc': this.filteredLists[field] = [...(this.deliveries || [])]; break;
     }
   }
-
-  toggleDropdown(field: string, open?: boolean) {
-    debugger
-    this.dropdownOpen[field] = open !== undefined ? open : !this.dropdownOpen[field];
-    if (this.dropdownOpen[field]) {
-      switch (field) {
-        case 'approval': this.filteredLists[field] = [...this.approvalLevel]; break;
-        case 'supplier': this.filteredLists[field] = [...this.suppliers]; break;
-        case 'paymentTerms': this.filteredLists[field] = [...this.paymentTerms]; break;
-        case 'currency': this.filteredLists[field] = [...this.currencies]; break;
-        case 'incoterms': this.filteredLists[field] = [...this.incoterms]; break;
-        case 'deliveryLoc': this.filteredLists[field] = [...(this.deliveries || [])]; break;
-      }
-    }
-  }
+}
 
   // Filter function
   filter(field: string) {
@@ -767,29 +766,18 @@ private applySupplierPricesToAllLines() {
 
   //--------------- table ----------//
 
-  openDropdown(index: number, field: string) {
-    debugger
-    this.poLines[index].dropdownOpen = field;
-    // show all initially
-    if (field === 'prNo') {
-      this.poLines[index].filteredOptions = [...(this.allPrNos || [])];
-    }
-    if (field === 'item') {
-      this.poLines[index].filteredOptions = [...(this.allItems || [])];
-    }
-    if (field === 'budget') {
-      this.poLines[index].filteredOptions = [...(this.allBudgets || [])];
-    }
-    if (field === 'recurring') {
-      this.poLines[index].filteredOptions = [...(this.allRecurring || [])];
-    }
-    if (field === 'taxCode') {
-      this.poLines[index].filteredOptions = [...(this.allTaxCodes || [])];
-    }
-    if (field === 'location') {
-      this.poLines[index].filteredOptions = [...(this.deliveries || [])];
-    }
-  }
+openDropdown(index: number, field: string, ev?: Event) {
+  ev?.stopPropagation();
+
+  this.poLines[index].dropdownOpen = field;
+
+  if (field === 'prNo') this.poLines[index].filteredOptions = [...(this.allPrNos || [])];
+  if (field === 'item') this.poLines[index].filteredOptions = [...(this.allItems || [])];
+  if (field === 'budget') this.poLines[index].filteredOptions = [...(this.allBudgets || [])];
+  if (field === 'recurring') this.poLines[index].filteredOptions = [...(this.allRecurring || [])];
+  if (field === 'taxCode') this.poLines[index].filteredOptions = [...(this.allTaxCodes || [])];
+  if (field === 'location') this.poLines[index].filteredOptions = [...(this.deliveries || [])];
+}
 
   filterOptions(index: number, field: string) {
     debugger

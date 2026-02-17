@@ -81,37 +81,35 @@
             [draggable]="false"
             [canAutoResize]="false">
             <ng-template ngx-datatable-cell-template let-row="row">
-              <span
-                (click)="openLinesModal(row)"
-                title="View Lines"
-                style="cursor:pointer; font-size:18px; color:#2E5F73;">
+              <button class="eye-btn"
+                      type="button"
+                      (click)="openLinesModal(row)"
+                      title="View Lines">
                 <i class="fas fa-eye"></i>
-              </span>
+              </button>
             </ng-template>
           </ngx-datatable-column>
 
           <ngx-datatable-column name="GRN No" prop="grnNo" [width]="140"></ngx-datatable-column>
           <ngx-datatable-column name="PO No"  prop="pono"  [width]="160"></ngx-datatable-column>
-         
 
- <ngx-datatable-column name="Items" prop="itemName" [width]="200">
-  <ng-template ngx-datatable-cell-template let-row="row">
-    <span class="truncate-20"
-          [title]="row.itemName">
-      {{ row.itemName?.slice(0, 20) }}{{ row.itemName?.length > 20 ? '...' : '' }}
-    </span>
-  </ng-template>
-</ngx-datatable-column>
+          <ngx-datatable-column name="Items" prop="itemName" [width]="200">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span class="truncate-20"
+                    [title]="row.itemName">
+                {{ row.itemName?.slice(0, 20) }}{{ row.itemName?.length > 20 ? '...' : '' }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
 
-            <ngx-datatable-column name="Supplier Name" prop="name" [width]="200">
-  <ng-template ngx-datatable-cell-template let-row="row">
-    <span class="truncate-20"
-          [title]="row.name">
-      {{ row.name?.slice(0, 20) }}{{ row.name?.length > 20 ? '...' : '' }}
-    </span>
-  </ng-template>
-</ngx-datatable-column>
-
+          <ngx-datatable-column name="Supplier Name" prop="name" [width]="200">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span class="truncate-20"
+                    [title]="row.name">
+                {{ row.name?.slice(0, 20) }}{{ row.name?.length > 20 ? '...' : '' }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
 
           <!-- Status -->
           <ngx-datatable-column name="Status" [width]="140" [sortable]="false">
@@ -148,135 +146,106 @@
   </div>
 </div>
 
-<!-- LINES MODAL (Eye click) -->
-<div *ngIf="showLinesModal"
-     (click)="closeLinesModal()"
-     style="position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1050;
-            display:flex; align-items:center; justify-content:center;">
-  <div (click)="$event.stopPropagation()"
-       style="width:1000px; max-width:95vw; background:#fff; border-radius:14px;
-              overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.25);">
+<!-- ✅ MEDIUM GRN LINES MODAL (NO SEARCH BAR) -->
+<div *ngIf="showLinesModal" class="grnM" (click)="closeLinesModal()">
+  <div class="grnM__dialog" (click)="$event.stopPropagation()">
 
     <!-- Header -->
-    <div style="display:flex; align-items:center; justify-content:space-between;
-                padding:16px 20px; border-bottom:1px solid #eef2f7;">
-      <h3 style="margin:0; font-size:20px; font-weight:700; color:#374151;">
-        GRN Lines – {{ modalHeader.grnNo }}
-      </h3>
-      <button (click)="closeLinesModal()" aria-label="Close"
-              style="border:0; background:transparent; font-size:22px; line-height:1;
-                     cursor:pointer; color:#6b7280;">×</button>
+    <div class="grnM__header">
+      <div class="grnM__title">
+        <div class="ttl">GRN Lines</div>
+        <div class="sub">
+          <span class="dot"></span>
+          <span>{{ modalHeader.grnNo || '-' }}</span>
+        </div>
+      </div>
+
+      <button type="button" class="grnM__x" aria-label="Close" (click)="closeLinesModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Compact meta -->
+    <div class="grnM__meta">
+      <div class="chip">
+        <i class="fas fa-receipt"></i>
+        <span class="v">{{ modalHeader.pono || '-' }}</span>
+      </div>
+
+      <div class="chip chip--wide" [title]="modalHeader.name || ''">
+        <i class="fas fa-truck-loading"></i>
+        <span class="v">{{ modalHeader.name || '-' }}</span>
+      </div>
+
+      <div class="chip">
+        <i class="far fa-calendar-alt"></i>
+        <span class="v">{{ modalHeader.receptionDate | date:'yyyy-MM-dd' }}</span>
+      </div>
     </div>
 
     <!-- Body -->
-    <div style="padding:16px 20px;">
-      <div style="max-height:65vh; overflow:auto; border:1px solid #d1d5db;
-                  border-radius:10px;">
-        <table style="width:100%; border-collapse:separate; border-spacing:0;
-                      font-size:14px; color:#111827;">
+    <div class="grnM__body">
+      <div class="tbl">
+        <table class="tbl__t">
           <thead>
-            <tr style="background:#0e3a4c; color:#fff;">
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;
-                         border-top-left-radius:12px;">Item Code / Name</th>
-
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Warehouse</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Bin</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Strategy</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Qty Received</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">QC Result</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Batch / Serial No.</th>
-
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Supplier</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Storage</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Surface Temp</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Expiry</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Pest</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Dry/Spill</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Odor</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Vehicle</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Defect</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Damaged</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">Time</th>
-              <th style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;
-                         border-top-right-radius:12px;">Status</th>
+            <tr>
+              <th class="c-item">Item</th>
+              <th class="c-wh">Warehouse</th>
+              <th class="c-bin">Bin</th>
+              <th class="c-stg">Strategy</th>
+              <th class="c-qty">Qty</th>
+              <th class="c-qc">QC</th>
+              <th class="c-batch">Batch/Serial</th>
+              <th class="c-sup">Supplier</th>
+              <th class="c-sto">Storage</th>
+              <th class="c-sur">Surface</th>
+              <th class="c-exp">Expiry</th>
+              <th class="c-pest">Pest</th>
+              <th class="c-dry">Dry/Spill</th>
+              <th class="c-odor">Odor</th>
+              <th class="c-veh">Vehicle</th>
+              <th class="c-def">Defect</th>
+              <th class="c-dmg">Damaged</th>
+              <th class="c-time">Time</th>
+              <th class="c-status">Status</th>
             </tr>
           </thead>
+
           <tbody>
-            <tr *ngFor="let l of modalLines; let i = index"
-                [style.background]="i % 2 === 0 ? '#ffffff' : '#f9fafb'">
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;
-                         border-bottom-left-radius:12px;">
-                {{ l.itemName || l.itemCode || '—' }}
+            <tr *ngFor="let l of modalLines; let i=index; trackBy: trackByIdx">
+              <td class="cell-item">
+                <div class="item-main">{{ l.itemName || l.itemCode || '—' }}</div>
+                <div class="item-sub" *ngIf="l.itemCode && l.itemName">{{ l.itemCode }}</div>
               </td>
 
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.warehouseName || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.binName || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.strategyName || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.qtyReceived ?? 0 }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.qualityCheck || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.batchSerial || '—' }}
-              </td>
+              <td>{{ l.warehouseName || '—' }}</td>
+              <td>{{ l.binName || '—' }}</td>
+              <td>{{ l.strategyName || '—' }}</td>
+              <td class="num">{{ l.qtyReceived ?? 0 }}</td>
+              <td>{{ l.qualityCheck || '—' }}</td>
+              <td>{{ l.batchSerial || '—' }}</td>
+              <td>{{ l.supplierName || '—' }}</td>
+              <td>{{ l.storageType || '—' }}</td>
+              <td>{{ l.surfaceTemp || '—' }}</td>
+              <td>{{ l.expiry | date:'yyyy-MM-dd' }}</td>
+              <td>{{ l.pestSign || '—' }}</td>
+              <td>{{ l.drySpillage || '—' }}</td>
+              <td>{{ l.odor || '—' }}</td>
+              <td>{{ l.plateNumber || '—' }}</td>
+              <td>{{ l.defectLabels || '—' }}</td>
+              <td>{{ l.damagedPackage || '—' }}</td>
+              <td>{{ l.timeText || (l.time | date:'HH:mm') }}</td>
 
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.supplierName || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.storageType || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.surfaceTemp || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.expiry | date:'yyyy-MM-dd' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.pestSign || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.drySpillage || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.odor || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.plateNumber || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.defectLabels || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.damagedPackage || '—' }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;">
-                {{ l.timeText || (l.time | date:'HH:mm') }}
-              </td>
-              <td style="padding:10px 8px; border:1px solid #e5e7eb; text-align:center;
-                         border-bottom-right-radius:12px;">
-                <span class="badge"
-                      [ngClass]="l.isFlagIssue
-                        ? 'badge-warning'
-                        : (l.isPostInventory ? 'badge-success' : 'badge-secondary')">
+              <td>
+                <span class="pill"
+                      [ngClass]="l.isFlagIssue ? 'pill--flag' : (l.isPostInventory ? 'pill--post' : 'pill--pend')">
                   {{ l.isFlagIssue ? 'Flagged' : (l.isPostInventory ? 'Posted' : 'Pending') }}
                 </span>
               </td>
             </tr>
 
             <tr *ngIf="!modalLines?.length">
-              <td colspan="19"
-                  style="padding:14px 12px; text-align:center; color:#6b7280;">
-                No lines
-              </td>
+              <td colspan="19" class="empty">No lines</td>
             </tr>
           </tbody>
         </table>
@@ -284,17 +253,15 @@
     </div>
 
     <!-- Footer -->
-    <div style="display:flex; justify-content:flex-end; gap:8px;
-                padding:12px 20px; border-top:1px solid #eef2f7;">
-      <button
-        (click)="closeLinesModal()"
-        style="background:#2E5F73; color:#fff; border:0; border-radius:12px;
-               padding:10px 18px; font-weight:700; cursor:pointer;
-               display:flex; align-items:center; gap:8px;">
+    <div class="grnM__footer">
+      <div class="count">{{ modalLines?.length || 0 }} line(s)</div>
+
+      <button type="button" class="btnClose" (click)="closeLinesModal()">
         <i class="fas fa-times-circle"></i>
-        <span>Close</span>
+        Close
       </button>
     </div>
+
   </div>
 </div>
 
@@ -308,14 +275,10 @@
               (click)="closeImage()" aria-label="Close">✕</button>
     </div>
     <div class="img-modal__body">
-      <img [src]="imageViewer.src"
-           alt="Preview"
-           class="img-fluid" />
+      <img [src]="imageViewer.src" alt="Preview" class="img-fluid" />
     </div>
     <div class="img-modal__footer">
-      <button type="button"
-              class="btn btn-primary btn-sm"
-              (click)="closeImage()">Close</button>
+      <button type="button" class="btn btn-primary btn-sm" (click)="closeImage()">Close</button>
     </div>
   </div>
 </div>

@@ -147,6 +147,11 @@ type Snap = SnapEmpty | SnapArray | SnapObject;
 })
 export class CreateItemMasterComponent implements OnInit {
   /* Steps */
+  costingName = '';
+  taxName = '';
+
+  itemStocksArr: any[] = [];
+  pricesArr: any[] = [];
   private readonly stepsCreate = ['Summary'] as const;
   private readonly stepsEdit = ['Summary', 'Warehouses', 'Suppliers', 'BOM', 'Audit', 'Review'] as const;
   itemsetList: any;
@@ -154,29 +159,29 @@ export class CreateItemMasterComponent implements OnInit {
   get stepsView() { return this.isEdit ? this.stepsEdit : this.stepsCreate; }
   get lastStepIndex() { return this.stepsView.length - 1; }
   step = 0;
-expandedAudit: Record<number, boolean> = {};
-busy: Record<number, boolean> = {};
-copied: Record<number, boolean> = {};
-userOverrodeFulfillment = false;
-drawer: {
-  open: boolean;
-  auditId: number;
-  title: string;
-  tab: 'before' | 'after';
-  mode: 'snapshot' | 'field';
-  field: string;
-  audit: any;
-  data: Snap;
-} = {
-  open: false,
-  auditId: 0,
-  title: '',
-  tab: 'before',
-  mode: 'snapshot',
-  field: '',
-  audit: null,
-  data: { kind: 'empty' }
-};
+  expandedAudit: Record<number, boolean> = {};
+  busy: Record<number, boolean> = {};
+  copied: Record<number, boolean> = {};
+  userOverrodeFulfillment = false;
+  drawer: {
+    open: boolean;
+    auditId: number;
+    title: string;
+    tab: 'before' | 'after';
+    mode: 'snapshot' | 'field';
+    field: string;
+    audit: any;
+    data: Snap;
+  } = {
+      open: false,
+      auditId: 0,
+      title: '',
+      tab: 'before',
+      mode: 'snapshot',
+      field: '',
+      audit: null,
+      data: { kind: 'empty' }
+    };
 
   next() {
     if (this.step === 0) {
@@ -209,6 +214,9 @@ drawer: {
 
     if (this.step < this.stepsView.length - 1) {
       this.step++;
+      if (this.isEdit && this.step === this.lastStepIndex) {
+        this.buildReviewView();
+      }
       if (this.isEdit && this.step === 3) this.loadBomSnapshotOrFallback(); // BOM
       if (this.isEdit && this.step === 4) this.loadAudits(); // Audit
       this.maybeScrollToReviewBottom();
@@ -281,8 +289,8 @@ drawer: {
     private router: Router,
     private route: ActivatedRoute,
     private StockissueService: StockIssueService,
-     private CategoryService: CatagoryService,
-     private recurringService: RecurringService
+    private CategoryService: CatagoryService,
+    private recurringService: RecurringService
   ) {
     this.userId = localStorage.getItem('id');
   }
@@ -301,7 +309,7 @@ drawer: {
     this.getAllRecurrring();
     this.getAllSupplier();
     this.getAllStrategy();
-this.getItemType();
+    this.getItemType();
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       this.isEdit = true;
@@ -326,11 +334,11 @@ this.getItemType();
     }
     return t;
   }
-getItemType(){
-   this.itemsSvc.getAllItemType().subscribe((res: any) => {
+  getItemType() {
+    this.itemsSvc.getAllItemType().subscribe((res: any) => {
       this.ItemTypeList = res?.data ?? [];
     });
-}
+  }
   /* -------------------- Edit loader -------------------- */
   private loadForEdit(id: number): void {
     forkJoin({
@@ -350,11 +358,11 @@ getItemType(){
 
             itemCode: h.itemCode ?? h.sku ?? '',
             itemName: h.itemName ?? h.name ?? '',
-             itemType: h.itemTypeId != null ? Number(h.itemTypeId) : null,
+            itemType: h.itemTypeId != null ? Number(h.itemTypeId) : null,
             categoryId: h.categoryId ?? h.categoryID ?? null,
             uomId: h.uomId ?? h.uomID ?? null,
             budgetLineId: h.budgetLineId ?? h.budgetLineID ?? null,
-            fulfillmentMode:h.fulfillmentMode,
+            fulfillmentMode: h.fulfillmentMode,
             // keep old fields too (if your backend expects)
             sku: h.sku ?? h.itemCode ?? '',
             name: h.name ?? h.itemName ?? '',
@@ -413,7 +421,7 @@ getItemType(){
             badCountedQty: p.badCountedQty,
             reasonId: p.reasonId ? p.reasonId : '-',
           }));
-
+          this.buildReviewView();
           this.loadBomSnapshotOrFallback();
         },
         error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not load item for editing.' })
@@ -719,18 +727,18 @@ getItemType(){
 
   // ✅ IMPORTANT: Replace this with your Category API call/service
   private loadCategories(): void {
-     this.CategoryService.getAllCatagory().subscribe((res: any) => {
-        // Filter only active ones
-        this.CategoryList = res.data.filter((item: any) => item.isActive === true);
-       
-      });
+    this.CategoryService.getAllCatagory().subscribe((res: any) => {
+      // Filter only active ones
+      this.CategoryList = res.data.filter((item: any) => item.isActive === true);
+
+    });
   }
 
   private buildFullHeadPath(item: any, all: any[]): string {
     let path = item.headName ?? '';
     let current = all.find((x: any) => x.headCode === item.parentHead);
     while (current) {
-      path = `${current.headName} >> ${path}`;
+      path = `${path}`;
       current = all.find((x: any) => x.headCode === current.parentHead);
     }
     return path;
@@ -759,12 +767,12 @@ getItemType(){
     });
   }
 
- // getAllTaxCode() {
-   // this.taxCodeService.getTaxCode().subscribe((response: any) => {
-   //   const data = response?.data ?? [];
-    //  this.taxCodeList = data.map((t: any) => ({ id: t.id, name: t.name }));
- //   });
- // }
+  // getAllTaxCode() {
+  // this.taxCodeService.getTaxCode().subscribe((response: any) => {
+  //   const data = response?.data ?? [];
+  //  this.taxCodeList = data.map((t: any) => ({ id: t.id, name: t.name }));
+  //   });
+  // }
   getAllRecurrring() {
     this.recurringService.getRecurring().subscribe((response: any) => {
       const data = response?.data ?? [];
@@ -852,30 +860,30 @@ getItemType(){
   }
 
   loadAudits(): void {
-  const id = Number(this.item?.id || 0);
-  if (!id) { this.audits = []; return; }
+    const id = Number(this.item?.id || 0);
+    if (!id) { this.audits = []; return; }
 
-  this.itemsSvc.getItemAudit(id).subscribe({
-    next: (r: any) => {
-      const arr = r?.data ?? r ?? [];
-      this.audits = (Array.isArray(arr) ? arr : []).map((a: any) => ({
-        auditId: a.auditId ?? a.AuditId ?? a.id ?? a.Id ?? 0,
-        itemId:  a.itemId  ?? a.ItemId  ?? id,
-        action:  (a.action ?? a.Action ?? '').toString(),
-        occurredAtUtc: a.occurredAtUtc ?? a.OccurredAtUtc ?? a.occurredAt ?? a.OccurredAt ?? a.createdDate ?? a.CreatedDate ?? '',
-        userId:   a.userId ?? a.UserId ?? null,
-        userName: a.userName ?? a.UserName ?? null,
+    this.itemsSvc.getItemAudit(id).subscribe({
+      next: (r: any) => {
+        const arr = r?.data ?? r ?? [];
+        this.audits = (Array.isArray(arr) ? arr : []).map((a: any) => ({
+          auditId: a.auditId ?? a.AuditId ?? a.id ?? a.Id ?? 0,
+          itemId: a.itemId ?? a.ItemId ?? id,
+          action: (a.action ?? a.Action ?? '').toString(),
+          occurredAtUtc: a.occurredAtUtc ?? a.OccurredAtUtc ?? a.occurredAt ?? a.OccurredAt ?? a.createdDate ?? a.CreatedDate ?? '',
+          userId: a.userId ?? a.UserId ?? null,
+          userName: a.userName ?? a.UserName ?? null,
 
-        // ✅ THIS is why your drawer is empty (case mismatch)
-        oldValuesJson: a.oldValuesJson ?? a.OldValuesJson ?? a.oldValues ?? a.OldValues ?? a.beforeJson ?? a.BeforeJson ?? null,
-        newValuesJson: a.newValuesJson ?? a.NewValuesJson ?? a.newValues ?? a.NewValues ?? a.afterJson  ?? a.AfterJson  ?? null,
+          // ✅ THIS is why your drawer is empty (case mismatch)
+          oldValuesJson: a.oldValuesJson ?? a.OldValuesJson ?? a.oldValues ?? a.OldValues ?? a.beforeJson ?? a.BeforeJson ?? null,
+          newValuesJson: a.newValuesJson ?? a.NewValuesJson ?? a.newValues ?? a.NewValues ?? a.afterJson ?? a.AfterJson ?? null,
 
-        remarks: a.remarks ?? a.Remarks ?? null
-      }));
-    },
-    error: _ => this.audits = []
-  });
-}
+          remarks: a.remarks ?? a.Remarks ?? null
+        }));
+      },
+      error: _ => this.audits = []
+    });
+  }
 
 
   /* ----------------- BOM logic ----------------- */
@@ -1059,7 +1067,7 @@ getItemType(){
       categoryId: null as number | null,
       uomId: null as number | null,
       budgetLineId: null as number | null,
-fulfillmentMode:null,
+      fulfillmentMode: null,
       // keep old fields too (for existing API)
       sku: '',
       name: '',
@@ -1100,30 +1108,30 @@ fulfillmentMode:null,
       approvedBy: 0
     };
   }
-   loadCatagory() {
-      this.CategoryService.getAllCatagory().subscribe((res: any) => {
-        // Filter only active ones
-        this.CategoryList = res.data.filter((item: any) => item.isActive === true);
-       
-      });
-    }
-     chipStyle(action: string) {
+  loadCatagory() {
+    this.CategoryService.getAllCatagory().subscribe((res: any) => {
+      // Filter only active ones
+      this.CategoryList = res.data.filter((item: any) => item.isActive === true);
+
+    });
+  }
+  chipStyle(action: string) {
     const a = (action || '').toUpperCase();
     const map: any = {
       CREATE: { bg: '#DCFCE7', color: '#166534', border: '#BBF7D0' },
       UPDATE: { bg: '#E0F2FE', color: '#075985', border: '#BAE6FD' },
       DELETE: { bg: '#FEE2E2', color: '#991B1B', border: '#FECACA' }
     };
-    const s = map[a] || { bg:'#F1F5F9', color:'#334155', border:'#E2E8F0' };
+    const s = map[a] || { bg: '#F1F5F9', color: '#334155', border: '#E2E8F0' };
     return {
-      display:'inline-block',
-      padding:'2px 8px',
-      borderRadius:'9999px',
-      background:s.bg,
-      border:`1px solid ${s.border}`,
-      color:s.color,
-      fontSize:'11px',
-      fontWeight:600
+      display: 'inline-block',
+      padding: '2px 8px',
+      borderRadius: '9999px',
+      background: s.bg,
+      border: `1px solid ${s.border}`,
+      color: s.color,
+      fontSize: '11px',
+      fontWeight: 600
     };
   }
   avatarStyle(_name?: string) {
@@ -1157,10 +1165,10 @@ fulfillmentMode:null,
     if (!full) return '?';
     const parts = full.trim().split(/\s+/);
     const first = parts[0]?.[0] || '';
-    const last  = parts[1]?.[0] || '';
+    const last = parts[1]?.[0] || '';
     return (first + last).toUpperCase();
   }
- 
+
   prettyJson(payload: any): string {
     if (!payload) return '—';
     try {
@@ -1202,7 +1210,7 @@ fulfillmentMode:null,
         document.body.removeChild(ta);
       }
       this.copied[k] = true;
-      setTimeout(()=> this.copied[k] = false, 1500);
+      setTimeout(() => this.copied[k] = false, 1500);
     } catch {
       Swal.fire({ toast: true, position: 'top', icon: 'error', title: 'Copy failed', showConfirmButton: false, timer: 1500 });
     } finally { this.busy[k] = false; }
@@ -1227,7 +1235,7 @@ fulfillmentMode:null,
       .map(k => ({
         field: k,
         before: this.valueToText((oldObj as any)[k]),
-        after:  this.valueToText((newObj as any)[k]),
+        after: this.valueToText((newObj as any)[k]),
       }));
   }
   applyBomToPrices(): void {
@@ -1267,7 +1275,7 @@ fulfillmentMode:null,
     const hist = this.bomHistoryBySupplier.get(sid) ?? [];
     if (!hist.length) return [];
     const sorted = [...hist].sort(
-      (a,b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+      (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
     );
     const seen = new Set<string>();
     const out: Array<{ value: number; when: Date }> = [];
@@ -1292,267 +1300,294 @@ fulfillmentMode:null,
     const arr = this.getLast3CostsForSupplier(supplierId) || [];
     const prev = arr.length > 1 ? Number(arr[1].value ?? 0) : Number(arr[0]?.value ?? 0);
     const curr = Number(current ?? 0);
-    const abs  = curr - prev;
-    const pct  = prev !== 0 ? (abs / prev) * 100 : 0;
-    const dir  = abs > 0 ? 'up' : abs < 0 ? 'down' : 'flat';
+    const abs = curr - prev;
+    const pct = prev !== 0 ? (abs / prev) * 100 : 0;
+    const dir = abs > 0 ? 'up' : abs < 0 ? 'down' : 'flat';
     return {
       abs: Math.abs(abs),
       pct: Math.abs(pct),
       dir,
       tooltip: dir === 'flat' ? 'No change vs previous' :
-               dir === 'up'   ? 'Increased vs previous' :
-                                'Decreased vs previous'
+        dir === 'up' ? 'Increased vs previous' :
+          'Decreased vs previous'
     };
   }
 
-  deltaColorStyle(delta: {dir:'up'|'down'|'flat'}): any {
-    if (delta.dir === 'up')   return {'border-color':'#fecaca','background':'#fff1f2','color':'#991b1b'};
-    if (delta.dir === 'down') return {'border-color':'#bbf7d0','background':'#f0fdf4','color':'#166534'};
-    return {'border-color':'#e5e7eb','background':'#f8fafc','color':'#64748b'};
+  deltaColorStyle(delta: { dir: 'up' | 'down' | 'flat' }): any {
+    if (delta.dir === 'up') return { 'border-color': '#fecaca', 'background': '#fff1f2', 'color': '#991b1b' };
+    if (delta.dir === 'down') return { 'border-color': '#bbf7d0', 'background': '#f0fdf4', 'color': '#166534' };
+    return { 'border-color': '#e5e7eb', 'background': '#f8fafc', 'color': '#64748b' };
   }
   toggleDetails(id: number) {
-  this.expandedAudit[id] = !this.expandedAudit[id];
-}
-
-/** SUMMARY for changed fields row */
-fieldSummary(v: any): string {
-  const obj = this.tryParseJson(v);
-  if (Array.isArray(obj)) return `${obj.length} row${obj.length === 1 ? '' : 's'}`;
-  if (obj && typeof obj === 'object') return 'Object';
-  const s = (v ?? '').toString().trim();
-  if (!s) return '-';
-  return s.length > 28 ? s.slice(0, 28) + '…' : s;
-}
-
-/** hint like +1 row */
-fieldDeltaHint(before: any, after: any): string {
-  const b = this.tryParseJson(before);
-  const n = this.tryParseJson(after);
-  if (Array.isArray(b) || Array.isArray(n)) {
-    const bl = Array.isArray(b) ? b.length : 0;
-    const nl = Array.isArray(n) ? n.length : 0;
-    if (bl === nl) return 'updated';
-    const d = nl - bl;
-    return d > 0 ? `+${d} row${d === 1 ? '' : 's'}` : `${d} row${d === -1 ? '' : 's'}`;
-  }
-  return '';
-}
-
-isComplex(v: any) {
-  const s = (v ?? '').toString().trim();
-  return s.startsWith('{') || s.startsWith('[');
-}
-private auditRaw(a: any, tab: 'before'|'after') {
-  if (!a) return null;
-
-  if (tab === 'before') {
-    return a.oldValuesJson ?? a.OldValuesJson ?? a.oldValues ?? a.OldValues ?? a.beforeJson ?? a.BeforeJson ?? null;
-  } else {
-    return a.newValuesJson ?? a.NewValuesJson ?? a.newValues ?? a.NewValues ?? a.afterJson ?? a.AfterJson ?? null;
-  }
-}
-
-/** open full snapshots */
-openSnapshot(a: any) {
-  this.drawer.open = true;
-  this.drawer.auditId = a.auditId;
-  this.drawer.audit = a;
-  this.drawer.mode = 'snapshot';
-  this.drawer.field = '';
-  this.drawer.title = 'Full snapshots';
-  this.drawer.tab = 'before';
-  this.drawer.data = this.getSnapFromAudit(a, 'before');
-}
-
-openField(a: any, field: string) {
-  this.drawer.open = true;
-  this.drawer.auditId = a.auditId;
-  this.drawer.audit = a;
-  this.drawer.mode = 'field';
-  this.drawer.field = field;
-  this.drawer.title = field;
-
-  this.setDrawerTab('before'); // ✅ loads drawer.data using strict+loose logic
-}
-
-
-private getFieldSnapLoose(a: any, tab: 'before'|'after', field: string): Snap {
-  const raw = tab === 'after' ? a.newValuesJson : a.oldValuesJson;
-  const obj = this.tryParseJson(raw);
-  if (!obj || typeof obj !== 'object') return { kind: 'empty' };
-
-  const keys = Object.keys(obj);
-  const target = field?.toLowerCase()?.trim();
-
-  // try exact
-  let key = keys.find(k => k === field);
-
-  // try case-insensitive
-  if (!key) key = keys.find(k => k.toLowerCase().trim() === target);
-
-  // try remove spaces/underscores
-  if (!key) {
-    const norm = (s: string) => s.toLowerCase().replace(/[\s_]/g, '');
-    key = keys.find(k => norm(k) === norm(field));
+    this.expandedAudit[id] = !this.expandedAudit[id];
   }
 
-  if (!key) return { kind: 'empty' };
+  /** SUMMARY for changed fields row */
+  fieldSummary(v: any): string {
+    const obj = this.tryParseJson(v);
+    if (Array.isArray(obj)) return `${obj.length} row${obj.length === 1 ? '' : 's'}`;
+    if (obj && typeof obj === 'object') return 'Object';
+    const s = (v ?? '').toString().trim();
+    if (!s) return '-';
+    return s.length > 28 ? s.slice(0, 28) + '…' : s;
+  }
 
-  const v = (obj as any)[key];
-  if (v == null) return { kind: 'empty' };
+  /** hint like +1 row */
+  fieldDeltaHint(before: any, after: any): string {
+    const b = this.tryParseJson(before);
+    const n = this.tryParseJson(after);
+    if (Array.isArray(b) || Array.isArray(n)) {
+      const bl = Array.isArray(b) ? b.length : 0;
+      const nl = Array.isArray(n) ? n.length : 0;
+      if (bl === nl) return 'updated';
+      const d = nl - bl;
+      return d > 0 ? `+${d} row${d === 1 ? '' : 's'}` : `${d} row${d === -1 ? '' : 's'}`;
+    }
+    return '';
+  }
 
-  if (Array.isArray(v)) return this.toArraySnap(v);
-  if (typeof v === 'object') return this.toObjectSnap(v);
-  return this.toObjectSnap({ [key]: v });
-}
-setDrawerTab(tab: 'before'|'after') {
-  this.drawer.tab = tab;
-  if (!this.drawer.audit) return;
+  isComplex(v: any) {
+    const s = (v ?? '').toString().trim();
+    return s.startsWith('{') || s.startsWith('[');
+  }
+  private auditRaw(a: any, tab: 'before' | 'after') {
+    if (!a) return null;
 
-  this.drawer.data = this.drawer.mode === 'snapshot'
-    ? this.getSnapFromAudit(this.drawer.audit, tab)
-    : (this.getFieldSnap(this.drawer.audit, tab, this.drawer.field).kind !== 'empty'
+    if (tab === 'before') {
+      return a.oldValuesJson ?? a.OldValuesJson ?? a.oldValues ?? a.OldValues ?? a.beforeJson ?? a.BeforeJson ?? null;
+    } else {
+      return a.newValuesJson ?? a.NewValuesJson ?? a.newValues ?? a.NewValues ?? a.afterJson ?? a.AfterJson ?? null;
+    }
+  }
+
+  /** open full snapshots */
+  openSnapshot(a: any) {
+    this.drawer.open = true;
+    this.drawer.auditId = a.auditId;
+    this.drawer.audit = a;
+    this.drawer.mode = 'snapshot';
+    this.drawer.field = '';
+    this.drawer.title = 'Full snapshots';
+    this.drawer.tab = 'before';
+    this.drawer.data = this.getSnapFromAudit(a, 'before');
+  }
+
+  openField(a: any, field: string) {
+    this.drawer.open = true;
+    this.drawer.auditId = a.auditId;
+    this.drawer.audit = a;
+    this.drawer.mode = 'field';
+    this.drawer.field = field;
+    this.drawer.title = field;
+
+    this.setDrawerTab('before'); // ✅ loads drawer.data using strict+loose logic
+  }
+
+
+  private getFieldSnapLoose(a: any, tab: 'before' | 'after', field: string): Snap {
+    const raw = tab === 'after' ? a.newValuesJson : a.oldValuesJson;
+    const obj = this.tryParseJson(raw);
+    if (!obj || typeof obj !== 'object') return { kind: 'empty' };
+
+    const keys = Object.keys(obj);
+    const target = field?.toLowerCase()?.trim();
+
+    // try exact
+    let key = keys.find(k => k === field);
+
+    // try case-insensitive
+    if (!key) key = keys.find(k => k.toLowerCase().trim() === target);
+
+    // try remove spaces/underscores
+    if (!key) {
+      const norm = (s: string) => s.toLowerCase().replace(/[\s_]/g, '');
+      key = keys.find(k => norm(k) === norm(field));
+    }
+
+    if (!key) return { kind: 'empty' };
+
+    const v = (obj as any)[key];
+    if (v == null) return { kind: 'empty' };
+
+    if (Array.isArray(v)) return this.toArraySnap(v);
+    if (typeof v === 'object') return this.toObjectSnap(v);
+    return this.toObjectSnap({ [key]: v });
+  }
+  setDrawerTab(tab: 'before' | 'after') {
+    this.drawer.tab = tab;
+    if (!this.drawer.audit) return;
+
+    this.drawer.data = this.drawer.mode === 'snapshot'
+      ? this.getSnapFromAudit(this.drawer.audit, tab)
+      : (this.getFieldSnap(this.drawer.audit, tab, this.drawer.field).kind !== 'empty'
         ? this.getFieldSnap(this.drawer.audit, tab, this.drawer.field)
         : this.getFieldSnapLoose(this.drawer.audit, tab, this.drawer.field));
-}
-
-
-
-closeDrawer() {
-  this.drawer.open = false;
-}
-
-
-
-private getSnapFromAudit(a: any, tab: 'before'|'after'): Snap {
-  const raw = tab === 'after' ? a.newValuesJson : a.oldValuesJson;
-  const obj = this.tryParseJson(raw);
-  if (obj == null) return { kind: 'empty' };
-  if (Array.isArray(obj)) return this.toArraySnap(obj);
-  if (typeof obj === 'object') return this.toObjectSnap(obj);
-  return { kind: 'empty' };
-}
-
-private getFieldSnap(a: any, tab: 'before'|'after', field: string): Snap {
-  const raw = tab === 'after' ? a.newValuesJson : a.oldValuesJson;
-  const obj = this.tryParseJson(raw);
-  if (!obj || typeof obj !== 'object') return { kind: 'empty' };
-
-  const v = (obj as any)[field];
-  if (v == null) return { kind: 'empty' };
-
-  if (Array.isArray(v)) return this.toArraySnap(v);
-  if (typeof v === 'object') return this.toObjectSnap(v);
-  return this.toObjectSnap({ [field]: v });
-}
-
-private tryParseJson(raw: any) {
-  if (!raw) return null;
-  if (typeof raw === 'object') return raw;
-  try { return JSON.parse(raw); } catch { return null; }
-}
-
-private toObjectSnap(obj: any): Snap {
-  const rows: { key: string; value: any }[] = [];
-  const arrays: { key: string; columns: string[]; items: any[] }[] = [];
-
-  Object.keys(obj).forEach(k => {
-    const v = obj[k];
-    if (Array.isArray(v)) {
-      arrays.push(this.buildArrayBlock(k, v));
-      rows.push({ key: k, value: `${v.length} row${v.length === 1 ? '' : 's'}` });
-      return;
-    }
-    if (v && typeof v === 'object') {
-      rows.push({ key: k, value: 'Object' });
-      return;
-    }
-    rows.push({ key: k, value: v ?? '-' });
-  });
-
-  return { kind: 'object', rows, arrays };
-}
-
-private toArraySnap(arr: any[]): Snap {
-  const block = this.buildArrayBlock('Rows', arr);
-  return { kind: 'array', columns: block.columns, items: block.items };
-}
-
-private buildArrayBlock(key: string, arr: any[]) {
-  const items = (arr || []).slice(0, 80).map(x => (x && typeof x === 'object') ? x : ({ Value: x }));
-  const colSet = new Set<string>();
-  items.slice(0, 10).forEach(r => Object.keys(r || {}).forEach(c => colSet.add(c)));
-  const columns = Array.from(colSet);
-  if (columns.length === 0) columns.push('Value');
-  return { key, columns, items };
-}
-onFulfillmentUserOverride() {
-  this.userOverrodeFulfillment = true;
-}
-
-onItemTypeChange() {
-  if (this.userOverrodeFulfillment) return;
-
-  const t = this.ItemTypeList.find((x: any) => Number(x.id) === Number(this.item.itemType));
-  const name = (t?.itemTypeName || '').toLowerCase();
-
-  // default
-  this.item.fulfillmentMode = 1; // AUTO
-
-  if (name === 'finished good' || name === 'semi finished') {
-    this.item.fulfillmentMode = 2; // PP
-  } else if (
-    name === 'trading item' ||
-    name === 'beverage / drink' ||
-    name === 'service'
-  ) {
-    this.item.fulfillmentMode = 3; // Direct DO
   }
-  // Raw Material / Consumable => AUTO (0)
-}
-// -------- COPY/DOWNLOAD (DATA) --------
 
-copyAuditData(a: any) {
-  const before = this.getSnapFromAudit(a, 'before');
-  const after = this.getSnapFromAudit(a, 'after');
-  const text = `--- BEFORE ---\n${this.exportSnap(before)}\n\n--- AFTER ---\n${this.exportSnap(after)}`;
-  this.copyText(text, a.auditId);
-}
 
-downloadAuditData(a: any) {
-  const before = this.getSnapFromAudit(a, 'before');
-  const after = this.getSnapFromAudit(a, 'after');
-  const text = `--- BEFORE ---\n${this.exportSnap(before)}\n\n--- AFTER ---\n${this.exportSnap(after)}`;
-  this.downloadText(text, `audit-${a.auditId}-data.txt`);
-}
 
-private exportSnap(s: any): string {
-  if (!s || s.kind === 'empty') return 'No data';
-  if (s.kind === 'array') return `Rows(${s.items.length})`;
-  // object
-  return (s.rows || []).map((r: any) => `${r.key}: ${r.value}`).join('\n');
-}
+  closeDrawer() {
+    this.drawer.open = false;
+  }
 
-private copyText(text: string, auditId: number) {
-  this.busy[auditId] = true;
-  navigator.clipboard.writeText(text).then(() => {
-    this.copied[auditId] = true;
-    setTimeout(() => (this.copied[auditId] = false), 1000);
-  }).finally(() => (this.busy[auditId] = false));
-}
 
-private downloadText(text: string, fileName: string) {
-  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-compareById = (a: any, b: any) => {
-  if (a == null || b == null) return a === b;
-  return Number(a) === Number(b);
-};
 
+  private getSnapFromAudit(a: any, tab: 'before' | 'after'): Snap {
+    const raw = tab === 'after' ? a.newValuesJson : a.oldValuesJson;
+    const obj = this.tryParseJson(raw);
+    if (obj == null) return { kind: 'empty' };
+    if (Array.isArray(obj)) return this.toArraySnap(obj);
+    if (typeof obj === 'object') return this.toObjectSnap(obj);
+    return { kind: 'empty' };
+  }
+
+  private getFieldSnap(a: any, tab: 'before' | 'after', field: string): Snap {
+    const raw = tab === 'after' ? a.newValuesJson : a.oldValuesJson;
+    const obj = this.tryParseJson(raw);
+    if (!obj || typeof obj !== 'object') return { kind: 'empty' };
+
+    const v = (obj as any)[field];
+    if (v == null) return { kind: 'empty' };
+
+    if (Array.isArray(v)) return this.toArraySnap(v);
+    if (typeof v === 'object') return this.toObjectSnap(v);
+    return this.toObjectSnap({ [field]: v });
+  }
+
+  private tryParseJson(raw: any) {
+    if (!raw) return null;
+    if (typeof raw === 'object') return raw;
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
+  private toObjectSnap(obj: any): Snap {
+    const rows: { key: string; value: any }[] = [];
+    const arrays: { key: string; columns: string[]; items: any[] }[] = [];
+
+    Object.keys(obj).forEach(k => {
+      const v = obj[k];
+      if (Array.isArray(v)) {
+        arrays.push(this.buildArrayBlock(k, v));
+        rows.push({ key: k, value: `${v.length} row${v.length === 1 ? '' : 's'}` });
+        return;
+      }
+      if (v && typeof v === 'object') {
+        rows.push({ key: k, value: 'Object' });
+        return;
+      }
+      rows.push({ key: k, value: v ?? '-' });
+    });
+
+    return { kind: 'object', rows, arrays };
+  }
+
+  private toArraySnap(arr: any[]): Snap {
+    const block = this.buildArrayBlock('Rows', arr);
+    return { kind: 'array', columns: block.columns, items: block.items };
+  }
+
+  private buildArrayBlock(key: string, arr: any[]) {
+    const items = (arr || []).slice(0, 80).map(x => (x && typeof x === 'object') ? x : ({ Value: x }));
+    const colSet = new Set<string>();
+    items.slice(0, 10).forEach(r => Object.keys(r || {}).forEach(c => colSet.add(c)));
+    const columns = Array.from(colSet);
+    if (columns.length === 0) columns.push('Value');
+    return { key, columns, items };
+  }
+  onFulfillmentUserOverride() {
+    this.userOverrodeFulfillment = true;
+  }
+
+  onItemTypeChange() {
+    if (this.userOverrodeFulfillment) return;
+
+    const t = this.ItemTypeList.find((x: any) => Number(x.id) === Number(this.item.itemType));
+    const name = (t?.itemTypeName || '').toLowerCase();
+
+    // default
+    this.item.fulfillmentMode = 1; // AUTO
+
+    if (name === 'finished good' || name === 'semi finished') {
+      this.item.fulfillmentMode = 2; // PP
+    } else if (
+      name === 'trading item' ||
+      name === 'beverage / drink' ||
+      name === 'service'
+    ) {
+      this.item.fulfillmentMode = 3; // Direct DO
+    }
+    // Raw Material / Consumable => AUTO (0)
+  }
+  // -------- COPY/DOWNLOAD (DATA) --------
+
+  copyAuditData(a: any) {
+    const before = this.getSnapFromAudit(a, 'before');
+    const after = this.getSnapFromAudit(a, 'after');
+    const text = `--- BEFORE ---\n${this.exportSnap(before)}\n\n--- AFTER ---\n${this.exportSnap(after)}`;
+    this.copyText(text, a.auditId);
+  }
+
+  downloadAuditData(a: any) {
+    const before = this.getSnapFromAudit(a, 'before');
+    const after = this.getSnapFromAudit(a, 'after');
+    const text = `--- BEFORE ---\n${this.exportSnap(before)}\n\n--- AFTER ---\n${this.exportSnap(after)}`;
+    this.downloadText(text, `audit-${a.auditId}-data.txt`);
+  }
+
+  private exportSnap(s: any): string {
+    if (!s || s.kind === 'empty') return 'No data';
+    if (s.kind === 'array') return `Rows(${s.items.length})`;
+    // object
+    return (s.rows || []).map((r: any) => `${r.key}: ${r.value}`).join('\n');
+  }
+
+  private copyText(text: string, auditId: number) {
+    this.busy[auditId] = true;
+    navigator.clipboard.writeText(text).then(() => {
+      this.copied[auditId] = true;
+      setTimeout(() => (this.copied[auditId] = false), 1000);
+    }).finally(() => (this.busy[auditId] = false));
+  }
+
+  private downloadText(text: string, fileName: string) {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  compareById = (a: any, b: any) => {
+    if (a == null || b == null) return a === b;
+    return Number(a) === Number(b);
+  };
+
+  getById(list: any[], id: any) {
+    if (!Array.isArray(list) || id === null || id === undefined) return null;
+    return list.find(x => (x?.id ?? x?.value) == id) ?? null;
+  }
+
+  private findNameById(list: any[], id: any): string {
+    const row = this.getById(list, id);
+    return row?.name ?? row?.label ?? '';
+  }
+
+  // Call this whenever step goes to Review OR after data load
+  buildReviewView() {
+    this.itemStocksArr = Array.isArray(this.itemStocks) ? this.itemStocks : [];
+    this.pricesArr = Array.isArray(this.prices) ? this.prices : [];
+
+    this.costingName = this.findNameById(this.costingMethodList, this.item?.costingMethodId);
+    this.taxName = this.findNameById(this.taxCodeList, this.item?.taxCodeId);
+  }
+  // Safe fallbacks (if your getWarehouseName/getBinName missing)
+  getWarehouseNameSafe(id: any): string {
+    try { return this.getWarehouseName?.(id) || '-'; } catch { return '-'; }
+  }
+  getBinNameSafe(id: any): string {
+    try { return this.getBinName?.(id) || '-'; } catch { return '-'; }
+  }
+
+  trackByIdx = (i: number) => i;
 }

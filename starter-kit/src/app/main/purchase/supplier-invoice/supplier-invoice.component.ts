@@ -47,7 +47,7 @@ type PinLine = {
   encapsulation: ViewEncapsulation.None
 })
 export class SupplierInvoiceComponent implements OnInit, OnDestroy {
-
+grnDisplayText = '';
   form: FormGroup;
 
   grnOpen = false;
@@ -174,6 +174,7 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
   onGrnFocus(): void {
     this.grnFiltered = [...this.grnList];
     this.grnOpen = true;
+    
   }
 
   onGrnSearch(e: any): void {

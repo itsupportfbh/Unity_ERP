@@ -1,253 +1,293 @@
-<button (click)="goToSupplierInvoice()"
-  class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
-  style="background-color:#2E5F73; color:white; padding-left:2.25rem;">
-  <i class="fas fa-arrow-left position-absolute"
-     style="left:0.75rem; top:50%; transform:translateY(-50%);"
-     aria-hidden="true"></i>
-  <span>Go to Supplier Invoice list</span>
-</button>
+<div class="pinX">
+  <!-- Top bar -->
+  <div class="pinX__topbar">
+    <button type="button" class="pinX__back" (click)="goToSupplierInvoice()">
+      <i class="fas fa-arrow-left"></i>
+      <span>Supplier Invoice List</span>
+    </button>
 
-<form class="ui-compact" [formGroup]="form">
-  <div class="max-w-[1120px] mx-auto">
-    <div class="bg-white rounded-2xl shadow p-2 border border-gray-100">
+    <div class="pinX__topRight">
+      <span class="pinX__pill">
+        <i class="fas fa-link"></i>
+        3-way match: PO · GRN · PIN
+      </span>
 
-      <!-- Title + 3-way match pill + OCR -->
-      <div class="flex items-center justify-between">
-        <h4 class="card-text pin-title">Supplier Invoice (PIN)</h4>
-
-        <div class="flex items-center gap-2">
-          <span class="px-2 py-0.5 text-[11px] rounded-full bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap">
-            3-way match: PO · GRN · PIN
-          </span>
-
-          <button type="button"
-                  class="btn mb-2"
-                  style="background:#2E5F73;color:#fff;"
-                  (click)="openOcr()">
-            OCR Upload
-          </button>
-        </div>
-      </div>
-
-      <!-- Header fields -->
-      <div class="grid grid-cols-1 md:grid-cols-5 gap-2 mt-2">
-
-        <!-- GRN combobox -->
-        <div class="relative grn-combobox">
-          <label class="text-[11px] font-medium text-gray-600 block">GRN #</label>
-          <div class="relative">
-            <input type="text"
-                   [value]="grnSearch"
-                   (input)="onGrnSearch($event)"
-                   (focus)="onGrnFocus()"
-                   placeholder="Search GRN…"
-                   class="w-full rounded-lg border px-2.5 h-8 text-[13px] pr-7"
-                   [attr.aria-expanded]="grnOpen" />
-            <button type="button"
-                    class="absolute right-1 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"
-                    (click)="grnOpen = !grnOpen"
-                    aria-label="Toggle GRN list">▼</button>
-          </div>
-
-          <input type="hidden" formControlName="grnId" />
-          <input type="hidden" formControlName="grnNo" />
-
-          <ul *ngIf="grnOpen"
-              class="absolute left-0 right-0 mt-1 max-h-48 overflow-auto bg-white border rounded-md shadow z-20">
-            <li *ngFor="let g of grnFiltered; trackBy: trackByLine"
-                (click)="selectGrn(g)"
-                class="px-3 py-2 cursor-pointer hover:bg-blue-50 text-[13px]">
-              <span class="font-medium">{{ g.grnNo }}</span>
-              <small class="text-gray-500 ml-1" *ngIf="g.poNo">· PO: {{ g.poNo }}</small>
-              <small class="text-gray-400 ml-1" *ngIf="g.supplierName">· {{ g.supplierName }}</small>
-            </li>
-            <li *ngIf="!grnFiltered?.length" class="px-3 py-2 text-gray-400 text-[13px]">No results</li>
-          </ul>
-        </div>
-
-        <!-- Supplier -->
-        <div>
-          <label class="text-[11px] font-medium text-gray-600 block">Supplier</label>
-          <input type="text"
-                 class="w-full rounded-lg border px-2.5 h-8 text-[13px] bg-gray-50"
-                 formControlName="supplierName"
-                 readonly />
-        </div>
-
-        <!-- Invoice Date -->
-        <div>
-          <label class="text-[11px] font-medium text-gray-600 block">Invoice Date</label>
-          <input type="date"
-                 class="w-full rounded-lg border px-2.5 h-8 text-[13px]"
-                 [min]="minDate"
-                 formControlName="invoiceDate" />
-        </div>
-
-        <!-- Amount -->
-        <div>
-          <label class="text-[11px] font-medium text-gray-600 block">Amount</label>
-          <input type="number"
-                 class="w-full rounded-lg border px-2.5 h-8 text-[13px]"
-                 formControlName="amount"
-                 [readonly]="true" />
-        </div>
-
-        <!-- Tax -->
-        <div>
-          <label class="text-[11px] font-medium text-gray-600 block">Tax</label>
-          <div class="flex gap-1">
-            <select class="rounded-lg border px-2.5 h-8 text-[13px] w-[55%]"
-                    formControlName="taxMode"
-                    (change)="onTaxModeChange()">
-              <option value="EXCLUSIVE">Exclusive</option>
-              <option value="INCLUSIVE">Inclusive</option>
-              <option value="ZERO">0% (No tax)</option>
-            </select>
-
-            <input type="number"
-                   class="w-full rounded-lg border px-2.5 h-8 text-[13px]"
-                   formControlName="tax"
-                   [readonly]="taxMode === 'ZERO'"
-                   (input)="onTaxChange()" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Lines table -->
-      <div class="rounded-xl border border-gray-200 mt-2">
-
-        <div class="grid grid-cols-[1.4fr_2.4fr_1fr_0.7fr_0.9fr_0.9fr_1fr]
-                    text-[12px] font-medium bg-[#0e3a4c] text-white whitespace-nowrap rounded-t-xl">
-          <div class="px-2.5 py-2">Item</div>
-          <div class="px-2.5 py-2">Ledger Name</div>
-          <div class="px-2.5 py-2">Location</div>
-          <div class="px-2.5 py-2">Qty</div>
-          <div class="px-2.5 py-2">Unit Price</div>
-          <div class="px-2.5 py-2">Discount %</div>
-          <div class="px-2.5 py-2 text-right">Total</div>
-        </div>
-
-        <div formArrayName="lines">
-
-          <div *ngIf="lines.length === 0" class="text-center text-[12.5px] text-gray-400 py-3">
-            No lines yet.
-          </div>
-
-          <div *ngFor="let row of lines.controls; let i = index; trackBy: trackByLine"
-               [formGroupName]="i"
-               class="grid grid-cols-[1.4fr_2.4fr_1fr_0.7fr_0.9fr_0.9fr_1fr] items-center border-t">
-
-            <div class="px-2.5 py-1.5">
-              <input class="w-full rounded-lg border px-2.5 h-8 text-[13px]" formControlName="item" />
-            </div>
-
-            <div class="px-2.5 py-1.5">
-              <ng-select class="pin-budget-select w-full"
-                         [items]="parentHeadList"
-                         bindLabel="label"
-                         bindValue="value"
-                         [searchable]="true"
-                         [clearable]="false"
-                         placeholder="Search / choose Ledger Name..."
-                         formControlName="budgetLineId"
-                         appendTo="body"
-                         dropdownPosition="bottom">
-                <ng-template ng-option-tmp let-item="item">
-                  <div class="pin-budget-option" [title]="item.label">{{ item.label }}</div>
-                </ng-template>
-              </ng-select>
-            </div>
-
-            <div class="px-2.5 py-1.5">
-              <input class="w-full rounded-lg border px-2.5 h-8 text-[13px]" formControlName="location" />
-            </div>
-
-            <div class="px-2.5 py-1.5">
-              <input type="number"
-                     class="w-full rounded-lg border px-2.5 h-8 text-[13px]"
-                     formControlName="qty"
-                     (input)="onCellChange(i)" />
-            </div>
-
-            <div class="px-2.5 py-1.5">
-              <input type="number"
-                     class="w-full rounded-lg border px-2.5 h-8 text-[13px]"
-                     formControlName="unitPrice"
-                     (input)="onCellChange(i)" />
-            </div>
-
-            <div class="px-2.5 py-1.5">
-              <input type="number"
-                     class="w-full rounded-lg border px-2.5 h-8 text-[13px]"
-                     formControlName="discountPct"
-                     (input)="onCellChange(i)" />
-            </div>
-
-            <div class="px-2.5 py-1.5 text-right text-[13px]">
-              {{ (row.get('lineTotal')?.value || 0) | number:'1.2-2' }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer totals -->
-        <div class="border-t px-3 py-3 bg-slate-50 text-[13px]">
-          <div class="flex justify-end">
-            <div class="w-72 space-y-2">
-
-              <div class="grid grid-cols-2 items-center gap-2">
-                <div class="text-right text-gray-600">Sub-total</div>
-                <input class="w-full rounded-lg border px-2.5 h-8 text-[13px] text-right bg-white"
-                       [value]="subTotal | number:'1.2-2'" readonly />
-              </div>
-
-              <div class="grid grid-cols-2 items-center gap-2">
-                <div class="text-right text-gray-600">Discount</div>
-                <input class="w-full rounded-lg border px-2.5 h-8 text-[13px] text-right bg-white"
-                       [value]="discountTotal | number:'1.2-2'" readonly />
-              </div>
-
-              <div class="grid grid-cols-2 items-center gap-2">
-                <div class="text-right text-gray-600">
-                  Tax
-                  <span class="text-gray-400">
-                    ({{ form.get('tax')?.value || 0 }}% - {{ taxMode }})
-                  </span>
-                </div>
-                <input class="w-full rounded-lg border px-2.5 h-8 text-[13px] text-right bg-white"
-                       [value]="taxAmount | number:'1.2-2'" readonly />
-              </div>
-
-              <div class="grid grid-cols-2 items-center gap-2 pt-2 border-t">
-                <div class="text-right font-semibold">Grand total</div>
-                <input class="w-full rounded-lg border px-2.5 h-9 text-[13px] text-right bg-white font-semibold"
-                       [value]="grandTotal | number:'1.2-2'" readonly />
-              </div>
-
-              <div class="grid grid-cols-2 items-center gap-2 pt-2 border-t">
-                <div class="text-right font-semibold text-[#0e3a4c]">Net Payable</div>
-                <input class="w-full rounded-lg border px-2.5 h-9 text-[13px] text-right bg-white font-semibold text-[#0e3a4c]"
-                       [value]="netPayable | number:'1.2-2'" readonly />
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="flex justify-end gap-2 mt-2">
-        <button class="px-3 h-8 rounded-lg text-[13px] font-medium text-white disabled:opacity-60"
-                type="button"
-                [style.backgroundColor]="'#0e3a4c'"
-                [disabled]="form.invalid"
-                (click)="save('HOLD')">
-          Save
-        </button>
-      </div>
-
+      <button type="button" class="pinX__btn pinX__btn--brand" (click)="openOcr()">
+        <i class="fas fa-file-upload"></i>
+        <span>OCR Upload</span>
+      </button>
     </div>
   </div>
-</form>
+
+  <form class="ui-compact" [formGroup]="form">
+    <div class="pinX__wrap">
+      <div class="pinX__card">
+
+        <!-- Header -->
+        <div class="pinX__head">
+          <div>
+            <h2 class="pinX__title">Supplier Invoice (PIN)</h2>
+            <div class="pinX__sub">
+              Select GRN → auto-fill Supplier / Tax / Lines → verify totals → Save
+            </div>
+          </div>
+
+          <div class="pinX__summary">
+            <div class="pinX__sumItem">
+              <div class="k">Sub-total</div>
+              <div class="v">{{ subTotal | number:'1.2-2' }}</div>
+            </div>
+            <div class="pinX__sumItem">
+              <div class="k">Tax</div>
+              <div class="v">{{ taxAmount | number:'1.2-2' }}</div>
+            </div>
+            <div class="pinX__sumItem pinX__sumItem--strong">
+              <div class="k">Net Payable</div>
+              <div class="v">{{ netPayable | number:'1.2-2' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Header fields -->
+        <div class="pinX__section">
+          <div class="pinX__grid">
+            <!-- GRN combobox -->
+            <div class="pinX__field pinX__field--grn grn-combobox">
+              <label class="pinX__label">GRN #</label>
+
+              <div class="pinX__combo">
+                <input
+                  type="text"
+                  class="pinX__input pinX__input--withCaret"
+                  [value]="grnSearch"
+                  (input)="onGrnSearch($event)"
+                  (focus)="onGrnFocus()"
+                  placeholder="Search GRN…"
+                  [attr.aria-expanded]="grnOpen"
+                />
+
+                <button
+                  type="button"
+                  class="pinX__caretBtn"
+                  (click)="grnOpen = !grnOpen"
+                  aria-label="Toggle GRN list"
+                >
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+              </div>
+
+              <input type="hidden" formControlName="grnId" />
+              <input type="hidden" formControlName="grnNo" />
+
+              <div *ngIf="grnOpen" class="pinX__dropdown">
+                <div class="pinX__dropHead">Choose GRN</div>
+
+                <button
+                  type="button"
+                  class="pinX__dropItemOneLine"
+                  *ngFor="let g of grnFiltered; trackBy: trackByLine"
+                  (click)="selectGrn(g)"
+                >
+                  <span class="xNo">{{ g.grnNo }}</span>
+                  <span class="xSep">•</span>
+                  <span class="xSup">{{ g.supplierName || '-' }}</span>
+                  <span class="xSep" *ngIf="g.poNo">•</span>
+                  <span class="xPo" *ngIf="g.poNo">PO: {{ g.poNo }}</span>
+                </button>
+
+                <div *ngIf="!grnFiltered?.length" class="pinX__dropEmpty">No results</div>
+              </div>
+            </div>
+
+            <!-- Supplier -->
+            <div class="pinX__field">
+              <label class="pinX__label">Supplier</label>
+              <input type="text" class="pinX__input pinX__input--readonly" formControlName="supplierName" readonly />
+            </div>
+
+            <!-- Invoice Date -->
+            <div class="pinX__field">
+              <label class="pinX__label">Invoice Date</label>
+              <input type="date" class="pinX__input" [min]="minDate" formControlName="invoiceDate" />
+            </div>
+
+            <!-- Amount -->
+            <div class="pinX__field">
+              <label class="pinX__label">Amount</label>
+              <input type="number" class="pinX__input pinX__input--readonly" formControlName="amount" [readonly]="true" />
+            </div>
+
+            <!-- Tax -->
+            <div class="pinX__field">
+              <label class="pinX__label">Tax</label>
+
+              <div class="pinX__taxRow">
+                <select class="pinX__input pinX__select" formControlName="taxMode" (change)="onTaxModeChange()">
+                  <option value="EXCLUSIVE">Exclusive</option>
+                  <option value="INCLUSIVE">Inclusive</option>
+                  <option value="ZERO">0% (No tax)</option>
+                </select>
+
+                <div class="pinX__taxPct">
+                  <input type="number"
+                         class="pinX__input"
+                         formControlName="tax"
+                         [readonly]="taxMode === 'ZERO'"
+                         (input)="onTaxChange()"
+                         placeholder="%" />
+                  <span class="pinX__suffix">%</span>
+                </div>
+              </div>
+
+              <div class="pinX__hint">
+                Mode: <b>{{ taxMode }}</b>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lines -->
+        <div class="pinX__section">
+          <div class="pinX__sectionHead">
+            <div class="pinX__sectionTitle">
+              <i class="fas fa-list"></i> Lines
+            </div>
+
+            <!-- <div class="pinX__scrollHint">
+              <i class="fas fa-arrows-left-right"></i> Scroll →
+            </div> -->
+          </div>
+
+          <!-- ✅ scroll container (NO overlay inside) -->
+          <div class="pinX__tableScroll">
+            <div class="pinX__tableShell">
+
+              <div class="pinX__tableWrap pinX__tableFixed">
+                <!-- Header -->
+                <div class="pinX__tableHead pinX__rowFixed">
+                  <div class="c1">Item</div>
+                  <div class="c2">Ledger Name</div>
+                  <div class="c3">Location</div>
+                  <div class="c4">Qty</div>
+                  <div class="c5">Unit Price</div>
+                  <div class="c6">Discount %</div>
+                  <div class="c7 tR">Total</div>
+                </div>
+
+                <div formArrayName="lines">
+                  <div *ngIf="lines.length === 0" class="pinX__empty">No lines yet.</div>
+
+                  <div *ngFor="let row of lines.controls; let i = index; trackBy: trackByLine"
+                       [formGroupName]="i"
+                       class="pinX__tr pinX__rowFixed">
+
+                    <div class="c1">
+                      <input class="pinX__input pinX__cellInput" formControlName="item" />
+                    </div>
+
+                    <div class="c2">
+                      <ng-select
+                        class="pin-budget-select pinX__ngSelect pinX__ngSelect--fixed"
+                        [items]="parentHeadList"
+                        bindLabel="label"
+                        bindValue="value"
+                        [searchable]="true"
+                        [clearable]="false"
+                        placeholder="Search / choose Ledger Name..."
+                        formControlName="budgetLineId"
+                        appendTo="body"
+                        dropdownPosition="bottom"
+                      >
+                        <ng-template ng-label-tmp let-item="item">
+                          <span class="pinX__ngLabel" [title]="item?.label">{{ item?.label }}</span>
+                        </ng-template>
+                        <ng-template ng-option-tmp let-item="item">
+                          <div class="pinX__ngOption" [title]="item.label">{{ item.label }}</div>
+                        </ng-template>
+                      </ng-select>
+                    </div>
+
+                    <div class="c3">
+                      <input class="pinX__input pinX__cellInput" formControlName="location" />
+                    </div>
+
+                    <div class="c4">
+                      <input type="number" class="pinX__input pinX__cellInput" formControlName="qty" (input)="onCellChange(i)" />
+                    </div>
+
+                    <div class="c5">
+                      <input type="number" class="pinX__input pinX__cellInput" formControlName="unitPrice" (input)="onCellChange(i)" />
+                    </div>
+
+                    <div class="c6">
+                      <input type="number" class="pinX__input pinX__cellInput" formControlName="discountPct" (input)="onCellChange(i)" />
+                    </div>
+
+                    <div class="c7 tR pinX__lineTotal">
+                      {{ (row.get('lineTotal')?.value || 0) | number:'1.2-2' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ✅ fade only OUTSIDE the table area -->
+              <!-- <div class="pinX__scrollFadeRight" aria-hidden="true"></div> -->
+            </div>
+          </div>
+
+          <!-- Totals below -->
+          <div class="pinX__totalsBelow">
+            <div class="pinX__totalsCard">
+              <div class="pinX__totalsTitle">
+                <i class="fas fa-calculator"></i> Totals
+              </div>
+
+              <div class="pinX__totalsRows">
+                <div class="r">
+                  <div class="k">Sub-total</div>
+                  <div class="v">{{ subTotal | number:'1.2-2' }}</div>
+                </div>
+
+                <div class="r">
+                  <div class="k">Discount</div>
+                  <div class="v">{{ discountTotal | number:'1.2-2' }}</div>
+                </div>
+
+                <div class="r">
+                  <div class="k">
+                    Tax <span class="muted">({{ form.get('tax')?.value || 0 }}% - {{ taxMode }})</span>
+                  </div>
+                  <div class="v">{{ taxAmount | number:'1.2-2' }}</div>
+                </div>
+
+                <div class="r sep"></div>
+
+                <div class="r strong">
+                  <div class="k">Grand total</div>
+                  <div class="v">{{ grandTotal | number:'1.2-2' }}</div>
+                </div>
+
+                <div class="r strong brand">
+                  <div class="k">Net Payable</div>
+                  <div class="v">{{ netPayable | number:'1.2-2' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="pinX__actions">
+          <button class="pinX__btn pinX__btn--primary" type="button" [disabled]="form.invalid" (click)="save('HOLD')">
+            <i class="fas fa-save"></i>
+            <span>Save</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </form>
+</div>
 
 <app-ocr-upload-modal
   [open]="ocrOpen"

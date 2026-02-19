@@ -1,9 +1,7 @@
-<button (click)="onGoToItemList()"
-        class="btn position-relative d-flex align-items-center justify-content-center"
-        style="background-color:#2E5F73; color:white; padding-left:2.25rem;">
-  <i class="fas fa-arrow-left position-absolute"
-     style="left:0.75rem; top:50%; transform:translateY(-50%);"
-     aria-hidden="true"></i>
+<button (click)="onGoToItemList()" class="btn position-relative d-flex align-items-center justify-content-center"
+  style="background-color:#2E5F73; color:white; padding-left:2.25rem;">
+  <i class="fas fa-arrow-left position-absolute" style="left:0.75rem; top:50%; transform:translateY(-50%);"
+    aria-hidden="true"></i>
   <span>Go to ItemMaster list</span>
 </button>
 
@@ -30,223 +28,188 @@
       <div class="flex items-center gap-3">
         <ng-container *ngFor="let s of stepsView; let i = index">
           <div class="flex items-center gap-2">
-            <div
-              class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
+            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
               [ngClass]="i <= step ? 'text-white' : 'text-gray-600 bg-gray-200'"
               [ngStyle]="{ 'background-color': i <= step ? '#0e3a4c' : '' }">
               {{ i + 1 }}
             </div>
-            <span class="text-sm" [ngClass]="i === step ? 'font-semibold text-[#0e3a4c]' : 'text-gray-500'">{{ s }}</span>
+            <span class="text-sm" [ngClass]="i === step ? 'font-semibold text-[#0e3a4c]' : 'text-gray-500'">{{ s
+              }}</span>
           </div>
           <div *ngIf="i < stepsView.length - 1" class="w-10 h-px bg-gray-300"></div>
         </ng-container>
       </div>
 
       <!-- STEP 0: SUMMARY -->
-<div *ngIf="step === 0" class="imN">
+      <div *ngIf="step === 0" class="imN">
 
-  <div class="imN__card">
+        <div class="imN__card">
 
-    <!-- Header -->
-    <div class="imN__head">
-      <div class="imN__headLeft">
-        <div class="imN__titleRow">
-          <h3 class="imN__title">Item Master</h3>
-          <!-- <span class="imN__stepPill">Step 1 / 3</span>
+          <!-- Header -->
+          <div class="imN__head">
+            <div class="imN__headLeft">
+              <div class="imN__titleRow">
+                <h3 class="imN__title">Item Master</h3>
+                <!-- <span class="imN__stepPill">Step 1 / 3</span>
           <span class="imN__reqPill">Required *</span> -->
-        </div>
-        <!-- <p class="imN__sub">Fill item basic details, accounting and settings</p> -->
-      </div>
-    </div>
+              </div>
+              <!-- <p class="imN__sub">Fill item basic details, accounting and settings</p> -->
+            </div>
+          </div>
 
-    <!-- BASIC -->
-    <div class="imN__section">
-      <div class="imN__sectionTop">
-        <div class="imN__sectionBadge">
-          <i class="fas fa-box"></i>
-        </div>
-        <div>
-          <div class="imN__sectionTitle">Basic</div>
-          <div class="imN__sectionHint">Code, name, type and fulfillment</div>
-        </div>
-      </div>
+          <!-- BASIC -->
+          <div class="imN__section">
+            <div class="imN__sectionTop">
+              <div class="imN__sectionBadge">
+                <i class="fas fa-box"></i>
+              </div>
+              <div>
+                <div class="imN__sectionTitle">Basic</div>
+                <div class="imN__sectionHint">Code, name, type and fulfillment</div>
+              </div>
+            </div>
 
-      <div class="imN__grid">
+            <div class="imN__grid">
 
-        <!-- Item Code -->
-        <div class="imN__field">
-          <label class="imN__label">Item Code <span class="imN__req">*</span></label>
-          <input class="imN__control"
-                 type="text"
-                 [(ngModel)]="item.itemCode"
-                 name="itemCode"
-                 placeholder="Enter Item Code"
-                 required />
-        </div>
+              <!-- Item Code -->
+              <div class="imN__field">
+                <label class="imN__label">Item Code <span class="imN__req">*</span></label>
+                <input class="imN__control" type="text" [(ngModel)]="item.itemCode" name="itemCode"
+                  placeholder="Enter Item Code" required />
+              </div>
 
-        <!-- Item Name -->
-        <div class="imN__field">
-          <label class="imN__label">Item Name <span class="imN__req">*</span></label>
-          <input class="imN__control"
-                 type="text"
-                 [(ngModel)]="item.itemName"
-                 name="itemName"
-                 placeholder="Enter Item Name"
-                 required />
-        </div>
+              <!-- Item Name -->
+              <div class="imN__field">
+                <label class="imN__label">Item Name <span class="imN__req">*</span></label>
+                <input class="imN__control" type="text" [(ngModel)]="item.itemName" name="itemName"
+                  placeholder="Enter Item Name" required />
+              </div>
 
-        <!-- Item Type -->
-        <div class="imN__field">
-          <label class="imN__label">Item Type <span class="imN__req">*</span></label>
-          <select class="imN__control imN__select"
-                  [(ngModel)]="item.itemType"
-                  name="itemType"
-                  [compareWith]="compareById"
-                  (change)="onItemTypeChange()"
-                  required>
-            <option [ngValue]="null" disabled>Select Item Type</option>
-            <option *ngFor="let i of ItemTypeList" [ngValue]="i.id">
-              {{ i.itemTypeName }}
-            </option>
-          </select>
-        </div>
+              <!-- Item Type -->
+              <div class="imN__field">
+                <label class="imN__label">Item Type <span class="imN__req">*</span></label>
+                <select class="imN__control imN__select" [(ngModel)]="item.itemType" name="itemType"
+                  [compareWith]="compareById" (change)="onItemTypeChange()" required>
+                  <option [ngValue]="null" disabled>Select Item Type</option>
+                  <option *ngFor="let i of ItemTypeList" [ngValue]="i.id">
+                    {{ i.itemTypeName }}
+                  </option>
+                </select>
+              </div>
 
-        <!-- Fulfillment Mode -->
-        <div class="imN__field">
-          <label class="imN__label">Fulfillment Mode <span class="imN__req">*</span></label>
-          <select class="imN__control imN__select"
-                  [(ngModel)]="item.fulfillmentMode"
-                  name="fulfillmentMode"
-                  (change)="onFulfillmentUserOverride()"
-                  required>
-            <option [ngValue]="null" disabled>Select</option>
-            <option [ngValue]="1">Sellable</option>
-            <option [ngValue]="2">Consumable</option>
-            <option [ngValue]="3">Both</option>
-          </select>
+              <!-- Fulfillment Mode -->
+              <div class="imN__field">
+                <label class="imN__label">Fulfillment Mode <span class="imN__req">*</span></label>
+                <select class="imN__control imN__select" [(ngModel)]="item.fulfillmentMode" name="fulfillmentMode"
+                  (change)="onFulfillmentUserOverride()" required>
+                  <option [ngValue]="null" disabled>Select</option>
+                  <option [ngValue]="1">Sellable</option>
+                  <option [ngValue]="2">Consumable</option>
+                  <option [ngValue]="3">Both</option>
+                </select>
 
-          <!-- <div class="imN__miniHint">
+                <!-- <div class="imN__miniHint">
             <i class="fas fa-info-circle"></i>
             Used for SO / PP / Direct DO behaviour
           </div> -->
-        </div>
+              </div>
 
-        <!-- Category -->
-        <div class="imN__field">
-          <label class="imN__label">Category <span class="imN__req">*</span></label>
-          <select class="imN__control imN__select"
-                  [(ngModel)]="item.categoryId"
-                  name="categoryId"
-                  required>
-            <option [ngValue]="null" disabled>Select Category</option>
-            <option *ngFor="let c of CategoryList" [ngValue]="c.id">
-              {{ c.catagoryName }}
-            </option>
-          </select>
-        </div>
+              <!-- Category -->
+              <div class="imN__field">
+                <label class="imN__label">Category <span class="imN__req">*</span></label>
+                <select class="imN__control imN__select" [(ngModel)]="item.categoryId" name="categoryId" required>
+                  <option [ngValue]="null" disabled>Select Category</option>
+                  <option *ngFor="let c of CategoryList" [ngValue]="c.id">
+                    {{ c.catagoryName }}
+                  </option>
+                </select>
+              </div>
 
-        <!-- UOM -->
-        <div class="imN__field">
-          <label class="imN__label">UOM <span class="imN__req">*</span></label>
-          <select class="imN__control imN__select"
-                  [(ngModel)]="item.uomId"
-                  name="uomId"
-                  required>
-            <option [ngValue]="null" disabled>Select UOM</option>
-            <option *ngFor="let u of uomList" [ngValue]="u.id">
-              {{ u.name }}
-            </option>
-          </select>
-        </div>
+              <!-- UOM -->
+              <div class="imN__field">
+                <label class="imN__label">UOM <span class="imN__req">*</span></label>
+                <select class="imN__control imN__select" [(ngModel)]="item.uomId" name="uomId" required>
+                  <option [ngValue]="null" disabled>Select UOM</option>
+                  <option *ngFor="let u of uomList" [ngValue]="u.id">
+                    {{ u.name }}
+                  </option>
+                </select>
+              </div>
 
-        <!-- Expiry -->
-<!-- Expiry -->
-<div class="imN__field">
-  <label class="imN__label">Expiry Date</label>
-  <div class="imN__dateWrap">
-    <input class="imN__control imN__date"
-           type="date"
-           [(ngModel)]="item.expiryDate"
-           name="expiryDate"
-           [min]="minDate"
-           (change)="onExpiryChange($event)" />
-    <i class="fas fa-calendar-alt imN__dateIcon"></i>
-  </div>
-</div>
+              <!-- Expiry -->
+              <!-- Expiry -->
+              <div class="imN__field">
+                <label class="imN__label">Expiry Date</label>
+                <div class="imN__dateWrap">
+                  <input class="imN__control imN__date" type="date" [(ngModel)]="item.expiryDate" name="expiryDate"
+                    [min]="minDate" (change)="onExpiryChange($event)" />
+                  <i class="fas fa-calendar-alt imN__dateIcon"></i>
+                </div>
+              </div>
 
-<!-- Specs (same row as Expiry) -->
-<div class="imN__field">
-  <label class="imN__label">Specifications</label>
-  <input class="imN__control"
-         type="text"
-         [(ngModel)]="item.specs"
-         name="specs"
-         placeholder="Add specs or notes..." />
-</div>
+              <!-- Specs (same row as Expiry) -->
+              <div class="imN__field">
+                <label class="imN__label">Specifications</label>
+                <input class="imN__control" type="text" [(ngModel)]="item.specs" name="specs"
+                  placeholder="Add specs or notes..." />
+              </div>
 
-      </div>
-    </div>
+            </div>
+          </div>
 
-    <!-- ACCOUNTING -->
-    <div class="imN__section imN__section--borderTop">
-      <div class="imN__sectionTop">
-        <div class="imN__sectionBadge">
-          <i class="fas fa-file-invoice-dollar"></i>
-        </div>
-        <div>
-          <div class="imN__sectionTitle">Accounting</div>
-          <div class="imN__sectionHint">Ledger, costing and recurring tax</div>
-        </div>
-      </div>
+          <!-- ACCOUNTING -->
+          <div class="imN__section imN__section--borderTop">
+            <div class="imN__sectionTop">
+              <div class="imN__sectionBadge">
+                <i class="fas fa-file-invoice-dollar"></i>
+              </div>
+              <div>
+                <div class="imN__sectionTitle">Accounting</div>
+                <div class="imN__sectionHint">Ledger, costing and recurring tax</div>
+              </div>
+            </div>
 
-      <div class="imN__grid">
+            <div class="imN__grid">
 
-        <!-- Ledger Name -->
-       <!-- Ledger Name -->
-<div class="imN__field imN__span2">
-  <label class="imN__label">Ledger Name <span class="imN__req">*</span></label>
+              <!-- Ledger Name -->
+              <!-- Ledger Name -->
+              <div class="imN__field imN__span2">
+                <label class="imN__label">Ledger Name <span class="imN__req">*</span></label>
 
-  <select class="imN__control imN__select"
-          [(ngModel)]="item.budgetLineId"
-          name="budgetLineId"
-          required>
-    <option [ngValue]="null" disabled>Select Ledger Name</option>
+                <select class="imN__control imN__select" [(ngModel)]="item.budgetLineId" name="budgetLineId" required>
+                  <option [ngValue]="null" disabled>Select Ledger Name</option>
 
-    <option *ngFor="let l of parentHeadList" [ngValue]="l.value">
-      {{ l.label }}
-    </option>
-  </select>
-</div>
+                  <option *ngFor="let l of parentHeadList" [ngValue]="l.value">
+                    {{ l.label }}
+                  </option>
+                </select>
+              </div>
 
-        <!-- Costing -->
-        <div class="imN__field">
-          <label class="imN__label">Costing Method</label>
-          <select class="imN__control imN__select"
-                  [(ngModel)]="item.costingMethodId"
-                  name="costingMethodId"
+              <!-- Costing -->
+              <div class="imN__field">
+                <label class="imN__label">Costing Method</label>
+                <select class="imN__control imN__select" [(ngModel)]="item.costingMethodId" name="costingMethodId"
                   (change)="onCostingSelectedId(item.costingMethodId)">
-            <option [ngValue]="null" disabled>Select costing</option>
-            <option *ngFor="let c of costingMethodList" [ngValue]="c.id">{{ c.name }}</option>
-          </select>
-        </div>
+                  <option [ngValue]="null" disabled>Select costing</option>
+                  <option *ngFor="let c of costingMethodList" [ngValue]="c.id">{{ c.name }}</option>
+                </select>
+              </div>
 
-        <!-- Recurring -->
-        <div class="imN__field">
-          <label class="imN__label">Recurring</label>
-          <select class="imN__control imN__select"
-                  [(ngModel)]="item.taxCodeId"
-                  name="taxCodeId"
+              <!-- Recurring -->
+              <div class="imN__field">
+                <label class="imN__label">Recurring</label>
+                <select class="imN__control imN__select" [(ngModel)]="item.taxCodeId" name="taxCodeId"
                   (change)="onTaxSelectedId(item.taxCodeId)">
-            <option [ngValue]="null" disabled>Select Recurring</option>
-            <option *ngFor="let t of taxCodeList" [ngValue]="t.id">{{ t.recurringName }}</option>
-          </select>
+                  <option [ngValue]="null" disabled>Select Recurring</option>
+                  <option *ngFor="let t of taxCodeList" [ngValue]="t.id">{{ t.recurringName }}</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
+
         </div>
-
       </div>
-    </div>
-
-  </div>
-</div>
 
 
       <!-- STEP 1: WAREHOUSES -->
@@ -289,10 +252,12 @@
                   <span *ngIf="!r.batchFlag && !r.serialFlag" class="text-gray-400">—</span>
                 </td>
                 <td class="px-3 py-2 text-center">
-                  <button type="button" (click)="editLine(i)" class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 mr-1" title="Edit">
+                  <button type="button" (click)="editLine(i)"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100 mr-1" title="Edit">
                     <i class="fas fa-pen text-blue-600"></i>
                   </button>
-                  <button type="button" (click)="removeWarehouseRow(i)" class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100" title="Remove">
+                  <button type="button" (click)="removeWarehouseRow(i)"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100" title="Remove">
                     <i class="fas fa-trash text-red-500"></i>
                   </button>
                 </td>
@@ -318,8 +283,7 @@
         </div>
 
         <button class="px-3 py-2 mt-1 rounded-xl bg-[#0e3a4c] text-white text-sm font-medium hover:bg-[#0b2e3d]"
-                (click)="openWhModal()"
-                *ngIf="!isEdit">+ Add Line</button>
+          (click)="openWhModal()" *ngIf="!isEdit">+ Add Line</button>
       </div>
 
       <!-- STEP 2: SUPPLIERS -->
@@ -400,53 +364,52 @@
               </tr>
             </tbody> -->
             <tbody>
-  <tr *ngFor="let p of prices; let i = index; trackBy: trackByIdx" class="border-b">
-    <!-- Supplier -->
-    <td class="px-3 py-2">
-      <span class="text-gray-800">{{ p.supplierName || p.supplierSearch || '-' }}</span>
-    </td>
+              <tr *ngFor="let p of prices; let i = index; trackBy: trackByIdx" class="border-b">
+                <!-- Supplier -->
+                <td class="px-3 py-2">
+                  <span class="text-gray-800">{{ p.supplierName || p.supplierSearch || '-' }}</span>
+                </td>
 
-    <!-- Price -->
-    <td class="px-3 py-2">
-      <span class="text-gray-800">{{ p.price != null ? (p.price | number:'1.2-2') : '-' }}</span>
-    </td>
+                <!-- Price -->
+                <td class="px-3 py-2">
+                  <span class="text-gray-800">{{ p.price != null ? (p.price | number:'1.2-2') : '-' }}</span>
+                </td>
 
-    <!-- Qty -->
-    <td class="px-3 py-2">
-      <span class="text-gray-800">{{ p.qty || '-' }}</span>
-    </td>
+                <!-- Qty -->
+                <td class="px-3 py-2">
+                  <span class="text-gray-800">{{ p.qty || '-' }}</span>
+                </td>
 
-    <!-- Barcode -->
-    <td class="px-3 py-2">
-      <span class="text-gray-800">{{ p.barcode || '-' }}</span>
-    </td>
+                <!-- Barcode -->
+                <td class="px-3 py-2">
+                  <span class="text-gray-800">{{ p.barcode || '-' }}</span>
+                </td>
 
-    <!-- Extra columns (empty or future data placeholders) -->
-    <!-- <td><span class="text-gray-800">{{ p.countedQty || '-' }}</span></td> -->
-    <td><span class="text-gray-800">{{ (p.badCountedQty ?? 0) }}</span></td>
-    <td><span class="text-gray-800">{{ getReason(p.reasonId)  || '-' }}</span></td>
+                <!-- Extra columns (empty or future data placeholders) -->
+                <!-- <td><span class="text-gray-800">{{ p.countedQty || '-' }}</span></td> -->
+                <td><span class="text-gray-800">{{ (p.badCountedQty ?? 0) }}</span></td>
+                <td><span class="text-gray-800">{{ getReason(p.reasonId) || '-' }}</span></td>
 
-    <!-- Delete button -->
-    <td class="px-3 py-2 text-right">
-      <button class="px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50" (click)="removePriceLine(i)">
-        <i class="fa fa-trash mr-1"></i>
-      </button>
-    </td>
-  </tr>
+                <!-- Delete button -->
+                <td class="px-3 py-2 text-right">
+                  <button class="px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50" (click)="removePriceLine(i)">
+                    <i class="fa fa-trash mr-1"></i>
+                  </button>
+                </td>
+              </tr>
 
-  <tr *ngIf="!prices?.length">
-    <td colspan="8" class="px-3 py-6 text-center text-gray-400">
-      No price lines. Add one above.
-    </td>
-  </tr>
-</tbody>
+              <tr *ngIf="!prices?.length">
+                <td colspan="8" class="px-3 py-6 text-center text-gray-400">
+                  No price lines. Add one above.
+                </td>
+              </tr>
+            </tbody>
 
           </table>
         </div>
 
         <button class="px-3 py-2 mt-1 rounded-xl bg-[#0e3a4c] text-white text-sm font-medium hover:bg-[#0b2e3d]"
-                (click)="addPriceLine()"
-                *ngIf="!isEdit">+ Add Line</button>
+          (click)="addPriceLine()" *ngIf="!isEdit">+ Add Line</button>
       </div>
 
       <!-- STEP 3: BOM (EDIT) -->
@@ -479,63 +442,58 @@
                 <td class="px-3 py-2">
                   <div class="text-sm">{{ r.supplierName || '—' }}</div>
                 </td>
-<td class="px-3 py-2">
-  <!-- get the ARRAY; don't take .length here -->
-  <ng-container *ngIf="(getLast3CostsForSupplier(r.supplierId) || []) as last3">
-    <div class="flex flex-wrap gap-1 items-center" *ngIf="last3.length; else noHist">
-      <!-- Chips -->
-      <ng-container *ngFor="let h of last3; let idx = index">
-        <span
-          class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap"
-          [ngClass]="isCurrentCost(r.unitCost, h.value) ? 'text-white' : 'text-slate-900'"
-          [ngStyle]="isCurrentCost(r.unitCost, h.value)
+                <td class="px-3 py-2">
+                  <!-- get the ARRAY; don't take .length here -->
+                  <ng-container *ngIf="(getLast3CostsForSupplier(r.supplierId) || []) as last3">
+                    <div class="flex flex-wrap gap-1 items-center" *ngIf="last3.length; else noHist">
+                      <!-- Chips -->
+                      <ng-container *ngFor="let h of last3; let idx = index">
+                        <span
+                          class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap"
+                          [ngClass]="isCurrentCost(r.unitCost, h.value) ? 'text-white' : 'text-slate-900'" [ngStyle]="isCurrentCost(r.unitCost, h.value)
                       ? {'background':'#2E5F73','border-color':'#2E5F73'}
                       : {'background':'#f8fafc','border-color':'#cbd5e1'}"
-          [title]="isCurrentCost(r.unitCost, h.value) ? 'Current price' : 'Previous price'">
+                          [title]="isCurrentCost(r.unitCost, h.value) ? 'Current price' : 'Previous price'">
 
-          <i *ngIf="isCurrentCost(r.unitCost, h.value)"
-             class="fas fa-star text-[10px] mr-1" aria-hidden="true"></i>
+                          <i *ngIf="isCurrentCost(r.unitCost, h.value)" class="fas fa-star text-[10px] mr-1"
+                            aria-hidden="true"></i>
 
-          {{ h.value | number:'1.2-4' }}
-          <small class="ml-1 text-[10px]"
-                 [ngStyle]="{'color': isCurrentCost(r.unitCost, h.value) ? 'rgba(255,255,255,.9)' : '#64748b'}">
-            {{ h.when | date:'yy-MM-dd' }}
-          </small>
-        </span>
+                          {{ h.value | number:'1.2-4' }}
+                          <small class="ml-1 text-[10px]"
+                            [ngStyle]="{'color': isCurrentCost(r.unitCost, h.value) ? 'rgba(255,255,255,.9)' : '#64748b'}">
+                            {{ h.when | date:'yy-MM-dd' }}
+                          </small>
+                        </span>
 
-        <!-- Delta badge only next to current (vs previous) -->
-        <ng-container *ngIf="isCurrentCost(r.unitCost, h.value) && last3.length > 1">
-          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ml-1"
-                [ngStyle]="deltaColorStyle(deltaVsPrev(r.supplierId, r.unitCost))"
-                [title]="deltaVsPrev(r.supplierId, r.unitCost).tooltip">
-            <i class="fas mr-1 text-[10px]"
-               [class.fa-arrow-up]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'up'"
-               [class.fa-arrow-down]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'down'"
-               [class.fa-minus]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'flat'"></i>
-            {{ deltaVsPrev(r.supplierId, r.unitCost).abs | number:'1.2-4' }}
-            <small class="ml-1 text-[10px]">
-              ({{ deltaVsPrev(r.supplierId, r.unitCost).pct | number:'1.0-2' }}%)
-            </small>
-          </span>
-        </ng-container>
-      </ng-container>
-    </div>
-  </ng-container>
+                        <!-- Delta badge only next to current (vs previous) -->
+                        <ng-container *ngIf="isCurrentCost(r.unitCost, h.value) && last3.length > 1">
+                          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ml-1"
+                            [ngStyle]="deltaColorStyle(deltaVsPrev(r.supplierId, r.unitCost))"
+                            [title]="deltaVsPrev(r.supplierId, r.unitCost).tooltip">
+                            <i class="fas mr-1 text-[10px]"
+                              [class.fa-arrow-up]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'up'"
+                              [class.fa-arrow-down]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'down'"
+                              [class.fa-minus]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'flat'"></i>
+                            {{ deltaVsPrev(r.supplierId, r.unitCost).abs | number:'1.2-4' }}
+                            <small class="ml-1 text-[10px]">
+                              ({{ deltaVsPrev(r.supplierId, r.unitCost).pct | number:'1.0-2' }}%)
+                            </small>
+                          </span>
+                        </ng-container>
+                      </ng-container>
+                    </div>
+                  </ng-container>
 
-  <ng-template #noHist>
-    <span class="text-gray-400 text-xs">No history</span>
-  </ng-template>
-</td>
+                  <ng-template #noHist>
+                    <span class="text-gray-400 text-xs">No history</span>
+                  </ng-template>
+                </td>
 
 
 
                 <td class="px-3 py-2">
-                  <input type="number"
-                         class="w-full rounded-xl border px-3 py-2 text-sm"
-                         [(ngModel)]="r.unitCost"
-                         name="bom-unit-{{i}}"
-                         min="0" step="0.0001"
-                         (input)="recomputeBomTotalsInline()" />
+                  <input type="number" class="w-full rounded-xl border px-3 py-2 text-sm" [(ngModel)]="r.unitCost"
+                    name="bom-unit-{{i}}" min="0" step="0.0001" (input)="recomputeBomTotalsInline()" />
                 </td>
                 <td class="px-3 py-2">
                   <button class="px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50" (click)="removeBomRow(i)">
@@ -559,116 +517,115 @@
       </div>
 
       <!-- STEP 4: AUDIT (EDIT) -->
-   
 
-  <!-- Header -->
-  
 
-  <ng-container *ngIf="item?.id">
+      <!-- Header -->
 
-  <div *ngIf="isEdit && step === 4" class="aud2">
 
-  <!-- header -->
-  <div class="aud2-head">
-    <div>
-      <div class="aud2-title">Audit trail</div>
-      <div class="aud2-sub" *ngIf="item?.id">Item #{{ item.id }}</div>
-    </div>
-    <button class="aud2-btn" (click)="loadAudits()">
-      <i class="fas fa-rotate-right"></i>
-      Refresh
-    </button>
-  </div>
+      <ng-container *ngIf="item?.id">
 
-  <div *ngIf="!item?.id" class="aud2-empty">
-    Save the item first to see its audit history.
-  </div>
+        <div *ngIf="isEdit && step === 4" class="aud2">
 
-  <ng-container *ngIf="item?.id">
-
-    <div *ngIf="!audits?.length" class="aud2-empty">No audit entries yet.</div>
-
-    <!-- audit cards -->
-    <div class="aud2-list" *ngIf="audits?.length">
-
-      <div class="aud2-card" *ngFor="let a of audits; trackBy: trackByIdx">
-
-        <!-- card top row -->
-        <div class="aud2-cardtop">
-          <div class="aud2-left">
-            <span class="aud2-chip" [ngStyle]="chipStyle(a.action)">{{ a.action }}</span>
-
-            <span class="aud2-dot"></span>
-
-            <span class="aud2-time">
-              {{ a.occurredAtUtc | date:'yyyy-MM-dd HH:mm:ss' }} UTC
-            </span>
-
-            <span class="aud2-dot light"></span>
-
-            <ng-container *ngIf="a.userId || a.userName">
-              <span class="aud2-avatar" [ngStyle]="avatarStyle(a.userName)">
-                {{ initials(a.userName || ('User ' + a.userId)) }}
-              </span>
-              <span class="aud2-user">{{ a.userName || ('User #' + a.userId) }}</span>
-            </ng-container>
-
-            <ng-container *ngIf="a.remarks">
-              <span class="aud2-dot light"></span>
-              <span class="aud2-remarks">{{ a.remarks }}</span>
-            </ng-container>
+          <!-- header -->
+          <div class="aud2-head">
+            <div>
+              <div class="aud2-title">Audit trail</div>
+              <div class="aud2-sub" *ngIf="item?.id">Item #{{ item.id }}</div>
+            </div>
+            <button class="aud2-btn" (click)="loadAudits()">
+              <i class="fas fa-rotate-right"></i>
+              Refresh
+            </button>
           </div>
 
-          <button class="aud2-link" (click)="toggleDetails(a.auditId)">
-            {{ expandedAudit[a.auditId] ? 'Hide' : 'View' }}
-            <i class="fas"
-              [class.fa-chevron-up]="expandedAudit[a.auditId]"
-              [class.fa-chevron-down]="!expandedAudit[a.auditId]"></i>
-          </button>
-        </div>
+          <div *ngIf="!item?.id" class="aud2-empty">
+            Save the item first to see its audit history.
+          </div>
 
-        <!-- body -->
-        <div *ngIf="expandedAudit[a.auditId]" class="aud2-body">
+          <ng-container *ngIf="item?.id">
 
-          <!-- UPDATE -->
-          <ng-container *ngIf="isUpdate(a); else aud2SnapshotOnly">
+            <div *ngIf="!audits?.length" class="aud2-empty">No audit entries yet.</div>
 
-            <div class="aud2-sectiontitle">Changed fields</div>
+            <!-- audit cards -->
+            <div class="aud2-list" *ngIf="audits?.length">
 
-            <!-- changed fields list -->
-            <div class="aud2-changes">
-              <div class="aud2-change" *ngFor="let d of diffs(a)">
+              <div class="aud2-card" *ngFor="let a of audits; trackBy: trackByIdx">
 
-                <div class="aud2-field">{{ d.field }}</div>
+                <!-- card top row -->
+                <div class="aud2-cardtop">
+                  <div class="aud2-left">
+                    <span class="aud2-chip" [ngStyle]="chipStyle(a.action)">{{ a.action }}</span>
 
-                <div class="aud2-values">
-                  <div class="aud2-col">
-                    <div class="aud2-label">Before</div>
-                    <div class="aud2-pillbox">
-                      <span class="aud2-pill muted">
-                        {{ fieldSummary(d.before) }}
+                    <span class="aud2-dot"></span>
+
+                    <span class="aud2-time">
+                      {{ a.occurredAtUtc | date:'yyyy-MM-dd HH:mm:ss' }} UTC
+                    </span>
+
+                    <span class="aud2-dot light"></span>
+
+                    <ng-container *ngIf="a.userId || a.userName">
+                      <span class="aud2-avatar" [ngStyle]="avatarStyle(a.userName)">
+                        {{ initials(a.userName || ('User ' + a.userId)) }}
                       </span>
-                    </div>
+                      <span class="aud2-user">{{ a.userName || ('User #' + a.userId) }}</span>
+                    </ng-container>
+
+                    <ng-container *ngIf="a.remarks">
+                      <span class="aud2-dot light"></span>
+                      <span class="aud2-remarks">{{ a.remarks }}</span>
+                    </ng-container>
                   </div>
 
-                  <div class="aud2-arrow">
-                    <i class="fas fa-arrow-right"></i>
-                  </div>
-
-                  <div class="aud2-col">
-                    <div class="aud2-label">After</div>
-                    <div class="aud2-pillbox">
-                      <span class="aud2-pill warn">
-                        {{ fieldSummary(d.after) }}
-                      </span>
-                      <span *ngIf="fieldDeltaHint(d.before, d.after)" class="aud2-hint">
-                        {{ fieldDeltaHint(d.before, d.after) }}
-                      </span>
-                    </div>
-                  </div>
+                  <button class="aud2-link" (click)="toggleDetails(a.auditId)">
+                    {{ expandedAudit[a.auditId] ? 'Hide' : 'View' }}
+                    <i class="fas" [class.fa-chevron-up]="expandedAudit[a.auditId]"
+                      [class.fa-chevron-down]="!expandedAudit[a.auditId]"></i>
+                  </button>
                 </div>
 
-                <!-- <div class="aud2-actions">
+                <!-- body -->
+                <div *ngIf="expandedAudit[a.auditId]" class="aud2-body">
+
+                  <!-- UPDATE -->
+                  <ng-container *ngIf="isUpdate(a); else aud2SnapshotOnly">
+
+                    <div class="aud2-sectiontitle">Changed fields</div>
+
+                    <!-- changed fields list -->
+                    <div class="aud2-changes">
+                      <div class="aud2-change" *ngFor="let d of diffs(a)">
+
+                        <div class="aud2-field">{{ d.field }}</div>
+
+                        <div class="aud2-values">
+                          <div class="aud2-col">
+                            <div class="aud2-label">Before</div>
+                            <div class="aud2-pillbox">
+                              <span class="aud2-pill muted">
+                                {{ fieldSummary(d.before) }}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div class="aud2-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                          </div>
+
+                          <div class="aud2-col">
+                            <div class="aud2-label">After</div>
+                            <div class="aud2-pillbox">
+                              <span class="aud2-pill warn">
+                                {{ fieldSummary(d.after) }}
+                              </span>
+                              <span *ngIf="fieldDeltaHint(d.before, d.after)" class="aud2-hint">
+                                {{ fieldDeltaHint(d.before, d.after) }}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- <div class="aud2-actions">
                   <button class="aud2-mini"
                           
                           (click)="openField(a, d.field)">
@@ -676,177 +633,364 @@
                   </button>
                 </div> -->
 
+                      </div>
+                    </div>
+
+                    <div class="aud2-footer">
+                      <button class="aud2-mini" (click)="openSnapshot(a)">
+                        View full snapshots
+                      </button>
+
+                      <div class="aud2-rightbtns">
+                        <button class="aud2-mini" [disabled]="busy[a.auditId]" (click)="copyAuditData(a)">
+                          {{ busy[a.auditId] ? 'Copying…' : 'Copy data' }}
+                        </button>
+                        <button class="aud2-mini" (click)="downloadAuditData(a)">Download</button>
+                        <span *ngIf="copied[a.auditId]" class="aud2-copied">Copied!</span>
+                      </div>
+                    </div>
+
+                  </ng-container>
+
+                  <!-- CREATE/DELETE -->
+                  <ng-template #aud2SnapshotOnly>
+                    <div class="aud2-sectiontitle">Snapshot</div>
+
+                    <div class="aud2-footer">
+                      <button class="aud2-mini" (click)="openSnapshot(a)">
+                        View snapshot
+                      </button>
+
+                      <div class="aud2-rightbtns">
+                        <button class="aud2-mini" [disabled]="busy[a.auditId]" (click)="copyAuditData(a)">
+                          {{ busy[a.auditId] ? 'Copying…' : 'Copy data' }}
+                        </button>
+                        <button class="aud2-mini" (click)="downloadAuditData(a)">Download</button>
+                        <span *ngIf="copied[a.auditId]" class="aud2-copied">Copied!</span>
+                      </div>
+                    </div>
+                  </ng-template>
+
+                </div>
               </div>
             </div>
-
-            <div class="aud2-footer">
-              <button class="aud2-mini" (click)="openSnapshot(a)">
-                View full snapshots
-              </button>
-
-              <div class="aud2-rightbtns">
-                <button class="aud2-mini" [disabled]="busy[a.auditId]" (click)="copyAuditData(a)">
-                  {{ busy[a.auditId] ? 'Copying…' : 'Copy data' }}
-                </button>
-                <button class="aud2-mini" (click)="downloadAuditData(a)">Download</button>
-                <span *ngIf="copied[a.auditId]" class="aud2-copied">Copied!</span>
-              </div>
-            </div>
-
           </ng-container>
 
-          <!-- CREATE/DELETE -->
-          <ng-template #aud2SnapshotOnly>
-            <div class="aud2-sectiontitle">Snapshot</div>
+          <!-- Drawer / Modal -->
+          <div class="aud2-drawer-backdrop" *ngIf="drawer.open" (click)="closeDrawer()"></div>
 
-            <div class="aud2-footer">
-              <button class="aud2-mini" (click)="openSnapshot(a)">
-                View snapshot
-              </button>
-
-              <div class="aud2-rightbtns">
-                <button class="aud2-mini" [disabled]="busy[a.auditId]" (click)="copyAuditData(a)">
-                  {{ busy[a.auditId] ? 'Copying…' : 'Copy data' }}
-                </button>
-                <button class="aud2-mini" (click)="downloadAuditData(a)">Download</button>
-                <span *ngIf="copied[a.auditId]" class="aud2-copied">Copied!</span>
+          <div class="aud2-drawer" *ngIf="drawer.open">
+            <div class="aud2-drawer-head">
+              <div>
+                <div class="aud2-drawer-title">{{ drawer.title }}</div>
+                <div class="aud2-drawer-sub">Audit #{{ drawer.auditId }}</div>
               </div>
+              <button class="aud2-close" (click)="closeDrawer()"><i class="fas fa-xmark"></i></button>
             </div>
-          </ng-template>
 
-        </div>
-      </div>
-    </div>
-  </ng-container>
+            <div class="aud2-drawer-tabs">
+              <button class="aud2-tab" [class.active]="drawer.tab==='before'"
+                (click)="setDrawerTab('before')">Before</button>
+              <button class="aud2-tab" [class.active]="drawer.tab==='after'"
+                (click)="setDrawerTab('after')">After</button>
 
-  <!-- Drawer / Modal -->
-  <div class="aud2-drawer-backdrop" *ngIf="drawer.open" (click)="closeDrawer()"></div>
+            </div>
 
-  <div class="aud2-drawer" *ngIf="drawer.open">
-    <div class="aud2-drawer-head">
-      <div>
-        <div class="aud2-drawer-title">{{ drawer.title }}</div>
-        <div class="aud2-drawer-sub">Audit #{{ drawer.auditId }}</div>
-      </div>
-      <button class="aud2-close" (click)="closeDrawer()"><i class="fas fa-xmark"></i></button>
-    </div>
+            <div class="aud2-drawer-body">
 
-    <div class="aud2-drawer-tabs">
-     <button class="aud2-tab" [class.active]="drawer.tab==='before'" (click)="setDrawerTab('before')">Before</button>
-<button class="aud2-tab" [class.active]="drawer.tab==='after'" (click)="setDrawerTab('after')">After</button>
-
-    </div>
-
-    <div class="aud2-drawer-body">
-
-      <ng-container *ngIf="drawer.data as snap">
-        <!-- object -->
-        <ng-container *ngIf="snap.kind === 'object'">
-          <!-- <div class="aud2-kv">
+              <ng-container *ngIf="drawer.data as snap">
+                <!-- object -->
+                <ng-container *ngIf="snap.kind === 'object'">
+                  <!-- <div class="aud2-kv">
             <div class="aud2-kvrow" *ngFor="let r of snap.rows">
               <div class="aud2-k">{{ r.key }}</div>
               <div class="aud2-v">{{ r.value }}</div>
             </div>
           </div> -->
 
-          <div class="aud2-arr" *ngFor="let arr of snap.arrays">
-            <div class="aud2-arrhead">{{ arr.key }} ({{ arr.items.length }})</div>
-            <div class="aud2-tablewrap">
-              <table class="aud2-table">
-                <thead>
-                  <tr><th *ngFor="let c of arr.columns">{{ c }}</th></tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let row of arr.items">
-                    <td *ngFor="let c of arr.columns">{{ row[c] }}</td>
-                  </tr>
-                </tbody>
-              </table>
+                  <div class="aud2-arr" *ngFor="let arr of snap.arrays">
+                    <div class="aud2-arrhead">{{ arr.key }} ({{ arr.items.length }})</div>
+                    <div class="aud2-tablewrap">
+                      <table class="aud2-table">
+                        <thead>
+                          <tr>
+                            <th *ngFor="let c of arr.columns">{{ c }}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let row of arr.items">
+                            <td *ngFor="let c of arr.columns">{{ row[c] }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- array root -->
+                <ng-container *ngIf="snap.kind === 'array'">
+                  <div class="aud2-tablewrap">
+                    <table class="aud2-table">
+                      <thead>
+                        <tr>
+                          <th *ngFor="let c of snap.columns">{{ c }}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let row of snap.items">
+                          <td *ngFor="let c of snap.columns">{{ row[c] }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </ng-container>
+
+                <div *ngIf="snap.kind==='empty'" class="aud2-empty">No data</div>
+              </ng-container>
+
             </div>
           </div>
-        </ng-container>
+        </div>
 
-        <!-- array root -->
-        <ng-container *ngIf="snap.kind === 'array'">
-          <div class="aud2-tablewrap">
-            <table class="aud2-table">
-              <thead><tr><th *ngFor="let c of snap.columns">{{ c }}</th></tr></thead>
-              <tbody>
-                <tr *ngFor="let row of snap.items">
-                  <td *ngFor="let c of snap.columns">{{ row[c] }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </ng-container>
-
-        <div *ngIf="snap.kind==='empty'" class="aud2-empty">No data</div>
       </ng-container>
-
-    </div>
-  </div>
-</div>
-
-  </ng-container>
 
 
 
       <!-- STEP 5: REVIEW -->
-      <div *ngIf="isEdit && step === lastStepIndex" class="rounded-xl border p-2 space-y-3">
+      <!-- =========================
+     STEP 6: REVIEW (WORKING)
+========================== -->
+      <div *ngIf="isEdit && step === lastStepIndex" class="imRev">
 
-        <!-- Item summary -->
-        <div class="rounded-md border overflow-hidden mb-2">
-          <div class="px-3 py-1 bg-[#0e3a4c] text-white text-[11px] font-semibold rounded-t-md">Summary</div>
-          <div class="p-2 text-sm grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div><b>Item:</b> {{ item.name || '-' }}</div>
-            <div><b>SKU:</b> {{ item.sku || '-' }}</div>
-            <div><b>Category:</b> {{ item.category || '-' }}</div>
-            <div><b>UOM:</b> {{ item.uom || '-' }}</div>
-            <div><b>Costing:</b> {{ getById(costingMethodList,item.costingMethodId)?.name || '-' }}</div>
-            <div><b>Tax:</b> {{ getById(taxCodeList,item.taxCodeId)?.name || '-' }}</div>
-            <div class="md:col-span-2"><b>Specs:</b> {{ item.specs || '-' }}</div>
+        <!-- Header -->
+        <div class="imRev__head">
+          <div class="imRev__title">
+            <div class="imRev__badge">
+              <i class="fas fa-clipboard-check"></i>
+            </div>
+
+            <div class="imRev__titleText">
+              <div class="imRev__h1">Review & Confirm</div>
+              <div class="imRev__h2">Final check before saving this Item</div>
+            </div>
+          </div>
+
+          <div class="imRev__pill">
+            <i class="fas fa-circle-info"></i>
+            Verify Item / Warehouses / Suppliers
           </div>
         </div>
 
-        <!-- Warehouses review -->
-        <div class="rounded-md bg-white border border-gray-200 shadow-sm mb-2">
-          <div class="px-3 py-1 bg-[#0e3a4c] text-white text-[11px] font-semibold rounded-t-md">
-            Warehouses
+        <!-- Summary cards -->
+        <div class="imRev__sumGrid">
+
+          <!-- Item Details -->
+          <div class="imRev__card">
+            <div class="imRev__cardTop">
+              <div class="imRev__cardIcon"><i class="fas fa-box"></i></div>
+              <div class="imRev__cardTitle">Item Details</div>
+            </div>
+
+            <div class="imRev__kv">
+              <div class="imRev__k">Item</div>
+              <div class="imRev__v" [title]="item?.name || ''">{{ item?.name || '-' }}</div>
+
+              <div class="imRev__k">SKU</div>
+              <div class="imRev__v" [title]="item?.sku || ''">{{ item?.sku || '-' }}</div>
+
+              <div class="imRev__k">Category</div>
+              <div class="imRev__v" [title]="item?.category || ''">{{ item?.category || '-' }}</div>
+
+              <div class="imRev__k">UOM</div>
+              <div class="imRev__v" [title]="item?.uom || ''">{{ item?.uom || '-' }}</div>
+            </div>
           </div>
-          <div class="p-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-[12px]">
-              <div *ngFor="let r of itemStocks; trackBy: trackByIdx" class="border border-gray-100 rounded-md p-2.5 bg-gray-50 hover:shadow-sm transition">
-                <div class="font-medium text-gray-800">{{ getWarehouseName(r.warehouseId) }}</div>
-                <div class="text-[10px] text-gray-500 mb-1">{{ getBinName(r.binId) }}</div>
-                <div class="grid grid-cols-3 gap-x-2 text-[12px] mb-1">
-                  <div><span class="text-gray-500 block text-[10px]">On Hand</span><div class="font-semibold text-blue-600">{{ r.onHand }}</div></div>
-                  <div><span class="text-gray-500 block text-[10px]">Reserved</span><div class="font-semibold text-amber-600">{{ r.reserved }}</div></div>
-                  <div><span class="text-gray-500 block text-[10px]">Available</span><div class="font-semibold text-green-600">{{ r.available }}</div></div>
-                </div>
-                <div class="grid grid-cols-3 gap-x-2 text-[12px] mb-1">
-                  <div><span class="text-gray-500 block text-[10px]">Min</span><div>{{ r.min ?? 0 }}</div></div>
-                  <div><span class="text-gray-500 block text-[10px]">Max</span><div>{{ r.max ?? 0 }}</div></div>
-                  <div><span class="text-gray-500 block text-[10px]">Reorder/Lead</span><div>{{ r.reorderQty ?? 0 }} / {{ r.leadTimeDays ?? 0 }}</div></div>
+
+          <!-- Costing & Tax -->
+          <div class="imRev__card">
+            <div class="imRev__cardTop">
+              <div class="imRev__cardIcon"><i class="fas fa-calculator"></i></div>
+              <div class="imRev__cardTitle">Costing & Tax</div>
+            </div>
+
+            <div class="imRev__kv">
+              <div class="imRev__k">Costing</div>
+              <div class="imRev__v" [title]="costingName">{{ costingName || '-' }}</div>
+
+              <!-- <div class="imRev__k">Tax</div>
+        <div class="imRev__v" [title]="taxName">{{ taxName || '-' }}</div> -->
+
+              <div class="imRev__k">Specs</div>
+              <div class="imRev__v imRev__vWrap" [title]="item?.specs || ''">
+                {{ item?.specs || '-' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="imRev__card imRev__card--stats">
+            <div class="imRev__cardTop">
+              <div class="imRev__cardIcon"><i class="fas fa-chart-simple"></i></div>
+              <div class="imRev__cardTitle">Quick Stats</div>
+            </div>
+
+            <div class="imRev__stats">
+              <div class="imRev__stat">
+                <div class="imRev__statK">Warehouses</div>
+                <div class="imRev__statV">{{ itemStocksArr.length }}</div>
+              </div>
+
+              <div class="imRev__stat">
+                <div class="imRev__statK">Suppliers</div>
+                <div class="imRev__statV">{{ pricesArr.length }}</div>
+              </div>
+
+              <div class="imRev__stat">
+                <div class="imRev__statK">Status</div>
+                <div class="imRev__statV imRev__ok">
+                  <i class="fas fa-circle-check"></i> Ready
                 </div>
               </div>
             </div>
-            <div *ngIf="!itemStocks?.length" class="text-center text-gray-400 py-2 text-xs">No warehouse data.</div>
           </div>
+
         </div>
 
-        <!-- Pricing review -->
-        <div class="rounded-md bg-white border border-gray-200 shadow-sm">
-          <div class="px-3 py-1 bg-[#0e3a4c] text-white text-[11px] font-semibold rounded-t-md">Suppliers</div>
-          <div class="p-2">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              <div *ngFor="let p of prices; let i = index; trackBy: trackByIdx"
-                   class="border border-gray-200 bg-gray-50 rounded-md px-2 py-1.5 flex justify-between items-center text-[11px] hover:shadow-sm transition">
-                <div class="font-semibold text-gray-800 truncate">{{ p.supplierName || '-' }}</div>
-                <div class="text-gray-700 font-medium">₹{{ p.price || '0.00' }}</div>
-              </div>
+        <!-- Warehouses -->
+        <!-- Warehouses (NEW STYLE) -->
+        <div class="imRev__section imRev__section--tiles">
+          <div class="imRev__secHead">
+            <div class="imRev__secTitle">
+              <i class="fas fa-warehouse"></i> Warehouses
             </div>
-            <div *ngIf="!prices?.length" class="text-center text-gray-400 py-2 text-xs">No price lines available.</div>
+            <div class="imRev__secHint">Stock & reorder snapshot</div>
           </div>
+
+          <div class="imRev__body" *ngIf="itemStocksArr?.length; else noWh">
+            <div class="whTiles">
+
+              <div class="whTile" *ngFor="let r of itemStocksArr; trackBy: trackByIdx">
+                <div class="whTile__top">
+                  <div class="whTile__name" [title]="getWarehouseNameSafe(r?.warehouseId)">
+                    {{ getWarehouseNameSafe(r?.warehouseId) }}
+                  </div>
+                  <div class="whTile__bin" [title]="getBinNameSafe(r?.binId)">
+                    <i class="fas fa-location-dot"></i>
+                    {{ getBinNameSafe(r?.binId) }}
+                  </div>
+                </div>
+
+                <!-- KPI pills -->
+                <div class="whTile__kpis">
+                  <div class="kpi kpi--on">
+                    <div class="kpi__k">On Hand</div>
+                    <div class="kpi__v">{{ r?.onHand ?? 0 }}</div>
+                  </div>
+                  <div class="kpi kpi--res">
+                    <div class="kpi__k">Reserved</div>
+                    <div class="kpi__v">{{ r?.reserved ?? 0 }}</div>
+                  </div>
+                  <div class="kpi kpi--avl">
+                    <div class="kpi__k">Available</div>
+                    <div class="kpi__v">{{ r?.available ?? 0 }}</div>
+                  </div>
+                </div>
+
+                <!-- Meta row -->
+                <div class="whTile__meta">
+                  <div class="meta">
+                    <span class="meta__k">Min</span>
+                    <span class="meta__v">{{ r?.min ?? 0 }}</span>
+                  </div>
+                  <div class="meta">
+                    <span class="meta__k">Max</span>
+                    <span class="meta__v">{{ r?.max ?? 0 }}</span>
+                  </div>
+                  <div class="meta">
+                    <span class="meta__k">Reorder</span>
+                    <span class="meta__v">{{ r?.reorderQty ?? 0 }}</span>
+                  </div>
+                  <div class="meta">
+                    <span class="meta__k">Lead</span>
+                    <span class="meta__v">{{ r?.leadTimeDays ?? 0 }}</span>
+                  </div>
+                </div>
+
+                <!-- Tracking chips -->
+                <div class="whTile__chips">
+                  <span class="chip chip--ok" *ngIf="r?.batchFlag">
+                    <i class="fas fa-boxes-stacked"></i> Batch
+                  </span>
+                  <span class="chip chip--ok" *ngIf="r?.serialFlag">
+                    <i class="fas fa-barcode"></i> Serial
+                  </span>
+                  <span class="chip chip--muted" *ngIf="!r?.batchFlag && !r?.serialFlag">
+                    <i class="fas fa-minus"></i> No tracking
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <ng-template #noWh>
+            <div class="imRev__empty">
+              <i class="fas fa-circle-minus"></i> No warehouse data.
+            </div>
+          </ng-template>
+        </div>
+
+        <!-- Suppliers -->
+        <!-- Suppliers (4 cards per row) -->
+        <div class="imRev__section imRev__section--gridSup">
+          <div class="imRev__secHead">
+            <div class="imRev__secTitle">
+              <i class="fas fa-truck"></i> Suppliers
+            </div>
+            <div class="imRev__secHint">Price list summary</div>
+          </div>
+
+          <div class="imRev__body" *ngIf="pricesArr?.length; else noSup">
+            <div class="supGrid4">
+
+              <div class="supCard4" *ngFor="let p of pricesArr; trackBy: trackByIdx">
+                <div class="supCard4__top">
+                  <div class="supCard4__avatar">
+                    {{ (p?.supplierName || 'S').trim().charAt(0) | uppercase }}
+                  </div>
+
+                  <div class="supCard4__price">
+                    ₹{{ (p?.price ?? 0) | number:'1.2-2' }}
+                  </div>
+                </div>
+
+                <div class="supCard4__name" [title]="p?.supplierName || ''">
+                  {{ p?.supplierName || '-' }}
+                </div>
+
+                <div class="supCard4__chips">
+                  <span class="pill2" *ngIf="p?.qty != null">
+                    <i class="fas fa-hashtag"></i> Qty: {{ p?.qty }}
+                  </span>
+
+                  <!-- <span class="pill2" *ngIf="p?.barcode">
+            <i class="fas fa-barcode"></i> {{ p?.barcode }}
+          </span> -->
+
+                  <span class="pill2 pill2--muted" *ngIf="p?.warehouseId">
+                    <i class="fas fa-warehouse"></i> {{ getWarehouseNameSafe(p?.warehouseId) }}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <ng-template #noSup>
+            <div class="imRev__empty">
+              <i class="fas fa-circle-minus"></i> No price lines available.
+            </div>
+          </ng-template>
         </div>
       </div>
 
@@ -854,11 +998,12 @@
 
     <!-- Footer -->
     <div class="border-t px-1 py-1 flex justify-between bg-white">
-      <button class="px-1 py-1 rounded-xl border text-gray-700 hover:bg-gray-50" (click)="prev()" [disabled]="step===0 || stepsView.length===1">← Back</button>
-      <button class="px-1 py-1 rounded-xl bg-[#0e3a4c] text-white font-medium hover:bg-[#0b2e3d]"
-              (click)="next()" *ngIf="step<stepsView.length-1">Next →</button>
+      <button class="px-1 py-1 rounded-xl border text-gray-700 hover:bg-gray-50" (click)="prev()"
+        [disabled]="step===0 || stepsView.length===1">← Back</button>
+      <button class="px-1 py-1 rounded-xl bg-[#0e3a4c] text-white font-medium hover:bg-[#0b2e3d]" (click)="next()"
+        *ngIf="step<stepsView.length-1">Next →</button>
       <button (click)="onSave()" class="px-1 py-1 rounded-lg bg-[#2E5F73] text-white font-medium hover:opacity-90"
-              *ngIf="step===stepsView.length-1">
+        *ngIf="step===stepsView.length-1">
         <i class="fa fa-save"></i> Save
       </button>
     </div>
@@ -877,7 +1022,8 @@
         <div class="prl-grid">
           <div class="prl-col-12 prl-md-6">
             <label class="prl-label">Warehouse</label>
-            <select class="prl-input" [(ngModel)]="whDraft.warehouseId" name="warehouseId" (change)="getBinsForWarehouse(whDraft.warehouseId)" required>
+            <select class="prl-input" [(ngModel)]="whDraft.warehouseId" name="warehouseId"
+              (change)="getBinsForWarehouse(whDraft.warehouseId)" required>
               <option [ngValue]="null" disabled>Select warehouse</option>
               <option *ngFor="let w of warehouseList" [ngValue]="w.id">{{ w.name }}</option>
             </select>
@@ -885,7 +1031,8 @@
 
           <div class="prl-col-12 prl-md-6">
             <label class="prl-label">Bin / Location</label>
-            <select class="prl-input" [(ngModel)]="whDraft.binId" name="binId" [disabled]="!whDraft.warehouseId" required>
+            <select class="prl-input" [(ngModel)]="whDraft.binId" name="binId" [disabled]="!whDraft.warehouseId"
+              required>
               <option [ngValue]="null" disabled>Select bin</option>
               <option *ngFor="let b of binList" [ngValue]="b.binID">{{ b.binName }}</option>
             </select>
@@ -901,15 +1048,18 @@
 
           <div class="prl-col-12 prl-md-3">
             <label class="prl-label">On Hand</label>
-            <input type="number" class="prl-input" [(ngModel)]="whDraft.onHand" name="onHand" min="0" (input)="recalcDraft()">
+            <input type="number" class="prl-input" [(ngModel)]="whDraft.onHand" name="onHand" min="0"
+              (input)="recalcDraft()">
           </div>
           <div class="prl-col-12 prl-md-3">
             <label class="prl-label">Reserved</label>
-            <input type="number" class="prl-input" [(ngModel)]="whDraft.reserved" name="reserved" min="0" (input)="recalcDraft()">
+            <input type="number" class="prl-input" [(ngModel)]="whDraft.reserved" name="reserved" min="0"
+              (input)="recalcDraft()">
           </div>
           <div class="prl-col-12 prl-md-3">
             <label class="prl-label">Available</label>
-            <input type="number" class="prl-input prl-input-disabled" [(ngModel)]="whDraft.available" name="available" disabled readonly>
+            <input type="number" class="prl-input prl-input-disabled" [(ngModel)]="whDraft.available" name="available"
+              disabled readonly>
           </div>
 
           <div class="prl-col-12 prl-md-3">
@@ -933,11 +1083,13 @@
             <label class="prl-label">Tracking</label>
             <div class="flex items-center gap-6 mt-1">
               <label class="inline-flex items-center gap-2">
-                <input type="checkbox" [(ngModel)]="whDraft.batchFlag" name="batchFlag" (change)="whDraft.batchFlag && (whDraft.serialFlag = false)">
+                <input type="checkbox" [(ngModel)]="whDraft.batchFlag" name="batchFlag"
+                  (change)="whDraft.batchFlag && (whDraft.serialFlag = false)">
                 <span>Batch</span>
               </label>
               <label class="inline-flex items-center gap-2">
-                <input type="checkbox" [(ngModel)]="whDraft.serialFlag" name="serialFlag" (change)="whDraft.serialFlag && (whDraft.batchFlag = false)">
+                <input type="checkbox" [(ngModel)]="whDraft.serialFlag" name="serialFlag"
+                  (change)="whDraft.serialFlag && (whDraft.batchFlag = false)">
                 <span>Serial</span>
               </label>
             </div>
@@ -945,7 +1097,8 @@
         </div>
 
         <div class="prl-foot">
-          <button type="button" class="prl-btn prl-btn-outline-brand" (click)="submitWarehouse(false)">Add Another</button>
+          <button type="button" class="prl-btn prl-btn-outline-brand" (click)="submitWarehouse(false)">Add
+            Another</button>
           <button type="submit" class="prl-btn prl-btn-primary" [disabled]="whForm.invalid">Add &amp; Close</button>
           <button type="button" class="prl-btn" (click)="closeWhModal()">Close</button>
         </div>

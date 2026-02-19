@@ -1,23 +1,26 @@
 <div class="poX">
 
-  <!-- Top Nav -->
-  <div class="poX__top">
-    <button class="poX__back" type="button" (click)="goToPurchaseorder()">
+  <!-- HEADER BAR -->
+  <div class="poHdrX">
+    <!-- Left -->
+    <button class="poHdrX__back" type="button" (click)="goToPurchaseorder()">
       <i class="fas fa-arrow-left"></i>
-      <span>Back to PO list</span>
+      <span>Go to PO list</span>
     </button>
 
-    <div class="poX__head">
-      <div class="poX__headLeft">
-        <h1>Purchase Order</h1>
-      </div>
+    <!-- Center -->
+    <div class="poHdrX__center">
+      <div class="poHdrX__title">Purchase Order</div>
+    </div>
 
-      <div class="poX__headRight">
-        <div class="chip">
+    <!-- Right -->
+    <div class="poHdrX__right">
+      <div class="poHdrX__badges">
+        <div class="pillBadge">
           <span class="k">Currency</span>
           <span class="v">{{ poHdr.currencyName || '-' }}</span>
         </div>
-        <div class="chip">
+        <div class="pillBadge">
           <span class="k">GST %</span>
           <span class="v">{{ poHdr.tax || 0 }}</span>
         </div>
@@ -25,10 +28,10 @@
     </div>
   </div>
 
-  <!-- Main Card -->
+  <!-- MAIN CARD -->
   <div class="poX__card">
 
-    <!-- Section: Header -->
+    <!-- SECTION: HEADER -->
     <div class="sec">
 
       <!-- ROW 1 -->
@@ -116,8 +119,6 @@
               />
             </div>
           </div>
-
-          <!-- <div class="hint" *ngIf="isSGDCurrency()">FX is disabled for SGD</div> -->
         </div>
 
       </div>
@@ -261,7 +262,7 @@
 
     </div>
 
-    <!-- Section: Lines -->
+    <!-- SECTION: LINES -->
     <div class="sec">
       <div class="sec__title sec__title--row">
         <div><h2>Line Items</h2></div>
@@ -271,158 +272,162 @@
         </button>
       </div>
 
+      <!-- ✅ IMPORTANT: dropdown clipping fix: tblWrap no scroll, tblScroll has scroll -->
       <div class="tblWrap">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>PR Number</th>
-              <th>Item</th>
-              <th>Description</th>
-              <th>Tax Code</th>
-              <th class="num">Qty</th>
-              <th class="num">Unit Price</th>
-              <th class="num">Disc %</th>
-              <th class="num">Tax Amt</th>
-              <th class="num">Total</th>
-              <th class="act">Action</th>
-            </tr>
-          </thead>
+        <div class="tblScroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>PR Number</th>
+                <th>Item</th>
+                <th>Description</th>
+                <th>Tax Code</th>
+                <th class="num">Qty</th>
+                <th class="num">Unit Price</th>
+                <th class="num">Disc %</th>
+                <th class="num">Tax Amt</th>
+                <th class="num">Total</th>
+                <th class="act">Action</th>
+              </tr>
+            </thead>
 
-          <tbody>
-            <tr *ngIf="poLines.length === 0">
-              <td colspan="10" class="empty">No lines yet. Click <b>Add line</b>.</td>
-            </tr>
+            <tbody>
+              <tr *ngIf="poLines.length === 0">
+                <td colspan="10" class="empty">No lines yet. Click <b>Add line</b>.</td>
+              </tr>
 
-            <tr *ngFor="let r of poLines; let i = index; trackBy: trackByIndex">
+              <tr *ngFor="let r of poLines; let i = index; trackBy: trackByIndex">
 
-              <!-- PR -->
-              <td class="cell ddcell dropdown-scope" (click)="$event.stopPropagation()">
-                <div class="ig ig--cell">
-                  <input
-                    type="text"
-                    [(ngModel)]="poLines[i].prNo"
-                    (focus)="openDropdown(i, 'prNo', $event)"
-                    (click)="openDropdown(i, 'prNo', $event)"
-                    (input)="filterOptions(i, 'prNo')"
-                    placeholder="Search PR..."
-                    [disabled]="!mastersLoaded || allPrNos.length === 0"
-                  />
-                  <button type="button" class="ig__btn ig__btn--caret"
-                    (click)="openDropdown(i, 'prNo', $event)">▼</button>
-                </div>
-
-                <div *ngIf="poLines[i].dropdownOpen === 'prNo'" class="menu menu--cell"
-                     (click)="$event.stopPropagation()">
-                  <div class="mi" *ngFor="let option of poLines[i].filteredOptions"
-                       (click)="selectOption(i, 'prNo', option); $event.stopPropagation()">
-                    {{ option.purchaseRequestNo }}
+                <!-- PR -->
+                <td class="cell ddcell dropdown-scope" (click)="$event.stopPropagation()">
+                  <div class="ig ig--cell">
+                    <input
+                      type="text"
+                      [(ngModel)]="poLines[i].prNo"
+                      (focus)="openDropdown(i, 'prNo', $event)"
+                      (click)="openDropdown(i, 'prNo', $event)"
+                      (input)="filterOptions(i, 'prNo')"
+                      placeholder="Search PR..."
+                      [disabled]="!mastersLoaded || allPrNos.length === 0"
+                    />
+                    <button type="button" class="ig__btn ig__btn--caret"
+                      (click)="openDropdown(i, 'prNo', $event)">▼</button>
                   </div>
-                </div>
-              </td>
 
-              <!-- Item -->
-              <td class="cell ddcell dropdown-scope" (click)="$event.stopPropagation()">
-                <div class="ig ig--cell" [ngClass]="poLines[i].__fromPR ? 'ig--disabled' : ''">
-                  <input
-                    type="text"
-                    [(ngModel)]="poLines[i].item"
-                    (focus)="!poLines[i].__fromPR && openDropdown(i, 'item', $event)"
-                    (click)="!poLines[i].__fromPR && openDropdown(i, 'item', $event)"
-                    (input)="!poLines[i].__fromPR && filterOptions(i, 'item')"
-                    placeholder="Search item..."
-                    [disabled]="poLines[i].__fromPR === true"
-                  />
-                  <button *ngIf="!poLines[i].__fromPR" type="button" class="ig__btn ig__btn--caret"
-                    (click)="openDropdown(i, 'item', $event)">▼</button>
-                  <button *ngIf="poLines[i].__fromPR" type="button" class="ig__btn" disabled title="Locked">🔒</button>
-                </div>
-
-                <div *ngIf="poLines[i].dropdownOpen === 'item' && !poLines[i].__fromPR" class="menu menu--cell"
-                     (click)="$event.stopPropagation()">
-                  <div class="mi mi--split" *ngFor="let option of poLines[i].filteredOptions"
-                       (click)="selectOption(i, 'item', option); $event.stopPropagation()">
-                    <span class="c">{{ option.itemCode }}</span>
-                    <span class="n">{{ option.itemName }}</span>
+                  <div *ngIf="poLines[i].dropdownOpen === 'prNo'" class="menu menu--cell"
+                      (click)="$event.stopPropagation()">
+                    <div class="mi" *ngFor="let option of poLines[i].filteredOptions"
+                        (click)="selectOption(i, 'prNo', option); $event.stopPropagation()">
+                      {{ option.purchaseRequestNo }}
+                    </div>
                   </div>
-                </div>
-              </td>
+                </td>
 
-              <!-- Desc -->
-              <td class="cell">
-                <div class="ig ig--cell">
-                  <input class="numL" [(ngModel)]="poLines[i]['description']" placeholder="Item description" />
-                </div>
-              </td>
-
-              <!-- Tax -->
-              <td class="cell ddcell dropdown-scope" (click)="$event.stopPropagation()">
-                <div class="ig ig--cell">
-                  <input
-                    type="text"
-                    [(ngModel)]="poLines[i].taxCode"
-                    (focus)="openDropdown(i, 'taxCode', $event)"
-                    (click)="openDropdown(i, 'taxCode', $event)"
-                    (input)="filterOptions(i, 'taxCode')"
-                    (ngModelChange)="onTaxCodeChange(i)"
-                    placeholder="Search tax..."
-                  />
-                  <button type="button" class="ig__btn ig__btn--caret"
-                    (click)="openDropdown(i, 'taxCode', $event)">▼</button>
-                </div>
-
-                <div *ngIf="poLines[i].dropdownOpen === 'taxCode'" class="menu menu--cell"
-                     (click)="$event.stopPropagation()">
-                  <div class="mi" *ngFor="let option of poLines[i].filteredOptions"
-                       (click)="selectOption(i, 'taxCode', option); $event.stopPropagation()">
-                    {{ option.name }}
+                <!-- Item -->
+                <td class="cell ddcell dropdown-scope" (click)="$event.stopPropagation()">
+                  <div class="ig ig--cell" [ngClass]="poLines[i].__fromPR ? 'ig--disabled' : ''">
+                    <input
+                      type="text"
+                      [(ngModel)]="poLines[i].item"
+                      (focus)="!poLines[i].__fromPR && openDropdown(i, 'item', $event)"
+                      (click)="!poLines[i].__fromPR && openDropdown(i, 'item', $event)"
+                      (input)="!poLines[i].__fromPR && filterOptions(i, 'item')"
+                      placeholder="Search item..."
+                      [disabled]="poLines[i].__fromPR === true"
+                    />
+                    <button *ngIf="!poLines[i].__fromPR" type="button" class="ig__btn ig__btn--caret"
+                      (click)="openDropdown(i, 'item', $event)">▼</button>
+                    <button *ngIf="poLines[i].__fromPR" type="button" class="ig__btn" disabled title="Locked">🔒</button>
                   </div>
-                </div>
-              </td>
 
-              <td class="cell num">
-                <div class="ig ig--cell">
-                  <input type="number" class="r" [(ngModel)]="poLines[i]['qty']"
-                         placeholder="0" (input)="calculateLineTotal(poLines[i])" />
-                </div>
-              </td>
+                  <div *ngIf="poLines[i].dropdownOpen === 'item' && !poLines[i].__fromPR" class="menu menu--cell"
+                      (click)="$event.stopPropagation()">
+                    <div class="mi mi--split" *ngFor="let option of poLines[i].filteredOptions"
+                        (click)="selectOption(i, 'item', option); $event.stopPropagation()">
+                      <span class="c">{{ option.itemCode }}</span>
+                      <span class="n">{{ option.itemName }}</span>
+                    </div>
+                  </div>
+                </td>
 
-              <td class="cell num">
-                <div class="ig ig--cell">
-                  <input type="number" class="r" [(ngModel)]="poLines[i]['price']"
-                         placeholder="0.00" (input)="sanitizeNumberInput('price', i); calculateLineTotal(poLines[i])" />
-                </div>
-              </td>
+                <!-- Desc -->
+                <td class="cell">
+                  <div class="ig ig--cell">
+                    <input class="numL" [(ngModel)]="poLines[i]['description']" placeholder="Item description" />
+                  </div>
+                </td>
 
-              <td class="cell num">
-                <div class="ig ig--cell">
-                  <input type="number" class="r" [(ngModel)]="poLines[i]['discount']"
-                         placeholder="0" (input)="sanitizeNumberInput('discount', i); calculateLineTotal(poLines[i])" />
-                </div>
-              </td>
+                <!-- Tax -->
+                <td class="cell ddcell dropdown-scope" (click)="$event.stopPropagation()">
+                  <div class="ig ig--cell">
+                    <input
+                      type="text"
+                      [(ngModel)]="poLines[i].taxCode"
+                      (focus)="openDropdown(i, 'taxCode', $event)"
+                      (click)="openDropdown(i, 'taxCode', $event)"
+                      (input)="filterOptions(i, 'taxCode')"
+                      (ngModelChange)="onTaxCodeChange(i)"
+                      placeholder="Search tax..."
+                    />
+                    <button type="button" class="ig__btn ig__btn--caret"
+                      (click)="openDropdown(i, 'taxCode', $event)">▼</button>
+                  </div>
 
-              <td class="cell num">
-                <div class="ig ig--cell ig--disabled">
-                  <input type="number" class="r" [(ngModel)]="poLines[i]['taxAmount']" placeholder="0.00" disabled />
-                </div>
-              </td>
+                  <div *ngIf="poLines[i].dropdownOpen === 'taxCode'" class="menu menu--cell"
+                      (click)="$event.stopPropagation()">
+                    <div class="mi" *ngFor="let option of poLines[i].filteredOptions"
+                        (click)="selectOption(i, 'taxCode', option); $event.stopPropagation()">
+                      {{ option.name }}
+                    </div>
+                  </div>
+                </td>
 
-              <td class="cell num">
-                <div class="ig ig--cell ig--disabled">
-                  <input type="number" class="r" [(ngModel)]="poLines[i]['total']" placeholder="0.00" disabled />
-                </div>
-              </td>
+                <td class="cell num">
+                  <div class="ig ig--cell">
+                    <input type="number" class="r" [(ngModel)]="poLines[i]['qty']"
+                          placeholder="0" (input)="calculateLineTotal(poLines[i])" />
+                  </div>
+                </td>
 
-              <td class="cell act">
-                <button class="btnDanger" type="button" (click)="poRemoveLine(i)">Remove</button>
-              </td>
+                <td class="cell num">
+                  <div class="ig ig--cell">
+                    <input type="number" class="r" [(ngModel)]="poLines[i]['price']"
+                          placeholder="0.00" (input)="sanitizeNumberInput('price', i); calculateLineTotal(poLines[i])" />
+                  </div>
+                </td>
 
-            </tr>
-          </tbody>
-        </table>
+                <td class="cell num">
+                  <div class="ig ig--cell">
+                    <input type="number" class="r" [(ngModel)]="poLines[i]['discount']"
+                          placeholder="0" (input)="sanitizeNumberInput('discount', i); calculateLineTotal(poLines[i])" />
+                  </div>
+                </td>
+
+                <td class="cell num">
+                  <div class="ig ig--cell ig--disabled">
+                    <input type="number" class="r" [(ngModel)]="poLines[i]['taxAmount']" placeholder="0.00" disabled />
+                  </div>
+                </td>
+
+                <td class="cell num">
+                  <div class="ig ig--cell ig--disabled">
+                    <input type="number" class="r" [(ngModel)]="poLines[i]['total']" placeholder="0.00" disabled />
+                  </div>
+                </td>
+
+                <td class="cell act">
+                  <button class="btnDanger" type="button" (click)="poRemoveLine(i)">Remove</button>
+                </td>
+
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
+
     </div>
 
-    <!-- Bottom Totals + Approval (your existing UI stays same) -->
+    <!-- BOTTOM: TOTALS + APPROVAL -->
     <div class="bottom bottom--new">
 
       <!-- Totals -->
@@ -432,7 +437,6 @@
             <div class="box__t1">Totals</div>
             <div class="box__t2">Summary of amounts</div>
           </div>
-
           <div class="pill pill--brand">
             {{ poHdr.currencyName || 'SGD' }}
           </div>
@@ -453,7 +457,7 @@
             <span class="k">Discount (absolute)</span>
             <div class="ig ig--mini">
               <input type="number" [(ngModel)]="poHdr.discount" placeholder="0"
-                     (keydown)="allowOnlyNumbers($event)" (input)="recalculateTotals()" />
+                    (keydown)="allowOnlyNumbers($event)" (input)="recalculateTotals()" />
             </div>
           </div>
 
@@ -466,7 +470,7 @@
             <span class="k">Shipping Cost</span>
             <div class="ig ig--mini">
               <input type="number" [(ngModel)]="poHdr.shipping" placeholder="0"
-                     (keydown)="allowOnlyNumbers($event)" (input)="recalculateTotals()" />
+                    (keydown)="allowOnlyNumbers($event)" (input)="recalculateTotals()" />
             </div>
           </div>
 
@@ -496,7 +500,6 @@
             <div class="box__t1">Approval</div>
             <div class="box__t2">Select level & take action</div>
           </div>
-
           <div class="pill pill--soft">Pending</div>
         </div>
 

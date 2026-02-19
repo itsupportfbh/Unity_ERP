@@ -276,38 +276,39 @@
       </div>
     </div>
 
-    <!-- LINES TABLE -->
-    <div class="mt-2 border rounded-2xl bg-white">
+  <div class="mt-2 border rounded-2xl bg-white">
       <div class="qt-table-wrap">
         <table class="table m-0 align-middle qt-table">
           <thead>
             <tr>
-              <th class="qt-col-item" style="background:#2E5F73;color:#fff;">Item / Set</th>
-              <th class="qt-col-desc" style="background:#2E5F73;color:#fff;">Description</th>
-              <th class="qt-col-uom"  style="background:#2E5F73;color:#fff;">UOM</th>
-              <th class="qt-col-qty text-center" style="background:#2E5F73;color:#fff;">Qty</th>
-              <th class="qt-col-price text-center" style="background:#2E5F73;color:#fff;">Unit Price</th>
-              <th class="qt-col-disc text-center" style="background:#2E5F73;color:#fff;">Discount %</th>
-              <th class="qt-col-taxmode" style="background:#2E5F73;color:#fff;">Tax Mode</th>
-              <th class="qt-col-total text-center" style="background:#2E5F73;color:#fff;">Line Total</th>
-              <th class="qt-col-action text-center" style="background:#2E5F73;color:#fff;">Action</th>
+              <th style="background:#2E5F73;color:#fff;">Item / Set</th>
+              <th style="background:#2E5F73;color:#fff;">Item Master Flags (Read-only)</th>
+              <th style="background:#2E5F73;color:#fff;">Description</th>
+              <th style="background:#2E5F73;color:#fff;">UOM</th>
+              <th class="text-center" style="background:#2E5F73;color:#fff;">Qty</th>
+              <th class="text-center" style="background:#2E5F73;color:#fff;">Unit Price</th>
+              <th class="text-center" style="background:#2E5F73;color:#fff;">Discount %</th>
+              <th style="background:#2E5F73;color:#fff;">Tax Mode</th>
+              <th style="background:#2E5F73;color:#fff;">Fulfillment (SO)</th>
+              <th class="text-center" style="background:#2E5F73;color:#fff;">Line Total</th>
+              <th class="text-center" style="background:#2E5F73;color:#fff;">Action</th>
             </tr>
           </thead>
 
           <tbody>
             <tr *ngIf="lines.length === 0">
-              <td class="text-center text-muted py-4" [attr.colspan]="9">No lines yet.</td>
+              <td class="text-center text-muted py-4" [attr.colspan]="11">No lines yet.</td>
             </tr>
 
             <ng-container *ngFor="let l of lines; let i = index">
-              <!-- Set header row -->
+
+              <!-- ✅ Set Header Row -->
               <tr *ngIf="l.isSetHeader" class="qt-set-row">
-                <td [attr.colspan]="9" class="px-3 py-2">
+                <td [attr.colspan]="11" class="px-3 py-2">
                   <div class="d-flex align-items-center justify-content-between">
                     <div class="fw-semibold qt-set-title">
                       <i class="fas fa-layer-group me-2"></i>{{ l.setName }}
                     </div>
-
                     <button class="btn btn-sm btn-link text-danger" (click)="removeItemSet(l.itemSetId!)">
                       <i class="fas fa-trash"></i> Remove Set
                     </button>
@@ -315,76 +316,95 @@
                 </td>
               </tr>
 
-              <!-- item row -->
+              <!-- ✅ Item Row (ONLY ONE ROW) -->
               <tr *ngIf="!l.isSetHeader">
-                <td class="qt-col-item">
-                  <div class="fw-semibold">
-                    {{ l.itemName || getItemName(l.itemId) || '-' }}
+
+                <!-- Item -->
+                <td>
+                  <div class="fw-semibold">{{ l.itemName || getItemName(l.itemId) || '-' }}</div>
+                </td>
+
+                <!-- Flags -->
+                <td class="qt-col-itemFlags">
+                  <div class="qt-flags">
+                    <span class="qt-chip qt-chip--yes" *ngIf="l.isSellable === true">Sellable: Yes</span>
+                    <span class="qt-chip qt-chip--no"  *ngIf="l.isSellable === false">Sellable: No</span>
+
+                    <span class="qt-chip qt-chip--yes2" *ngIf="l.isConsumable === true">Consumable: Yes</span>
+                    <span class="qt-chip qt-chip--no2"  *ngIf="l.isConsumable === false">Consumable: No</span>
+
+                    <span class="qt-badge qt-badge--dark" *ngIf="l.allowManualFulfillment">Manual Fulfillment</span>
                   </div>
+
+                  <small class="text-muted d-block mt-1" *ngIf="l.fulfillmentText">
+                    Auto: {{ l.fulfillmentText }}
+                  </small>
                 </td>
 
-                <td class="qt-col-desc">
-                  <input
-                    class="form-control prl-input"
-                    [(ngModel)]="l.description"
-                    (ngModelChange)="onLineChanged(i)"
-                    placeholder="-"
-                  />
+                <!-- Desc -->
+                <td>
+                  <input class="form-control prl-input"
+                         [(ngModel)]="l.description"
+                         (ngModelChange)="onLineChanged(i)"
+                         placeholder="-"/>
                 </td>
 
-                <td class="qt-col-uom">
-                  {{ getUomName(l.uomId) }}
+                <!-- UOM -->
+                <td>{{ getUomName(l.uomId) }}</td>
+
+                <!-- Qty -->
+                <td class="text-center">
+                  <input type="number" class="form-control prl-input text-center"
+                         [(ngModel)]="l.qty" (ngModelChange)="onLineChanged(i)"
+                         min="0" step="0.0001"/>
                 </td>
 
-                <td class="qt-col-qty text-center">
-                  <input
-                    type="number"
-                    class="form-control prl-input text-center"
-                    [(ngModel)]="l.qty"
-                    (ngModelChange)="onLineChanged(i)"
-                    min="0"
-                    step="0.0001"
-                  />
+                <!-- Unit Price -->
+                <td class="text-center">
+                  <input type="number" class="form-control prl-input text-center"
+                         [(ngModel)]="l.unitPrice" (ngModelChange)="onLineChanged(i)"
+                         min="0" step="0.0001"/>
                 </td>
 
-                <td class="qt-col-price text-center">
-                  <input
-                    type="number"
-                    class="form-control prl-input text-center"
-                    [(ngModel)]="l.unitPrice"
-                    (ngModelChange)="onLineChanged(i)"
-                    min="0"
-                    step="0.0001"
-                  />
+                <!-- Discount -->
+                <td class="text-center">
+                  <input type="number" class="form-control prl-input text-center"
+                         [(ngModel)]="l.discountPct" (ngModelChange)="onLineChanged(i)"
+                         min="0" max="100" step="0.01"/>
                 </td>
 
-                <td class="qt-col-disc text-center">
-                  <input
-                    type="number"
-                    class="form-control prl-input text-center"
-                    [(ngModel)]="l.discountPct"
-                    (ngModelChange)="onLineChanged(i)"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                  />
-                </td>
-
-                <td class="qt-col-taxmode">
-                  <select class="form-control prl-input" [(ngModel)]="l.taxMode" (ngModelChange)="onLineChanged(i)">
+                <!-- Tax Mode -->
+                <td>
+                  <select class="form-control prl-input"
+                          [(ngModel)]="l.taxMode"
+                          (ngModelChange)="onLineChanged(i)">
                     <option *ngFor="let m of taxModesForCurrentGst" [ngValue]="m">{{ m }}</option>
                   </select>
                 </td>
 
-                <td class="qt-col-total text-center">
+                <!-- ✅ Fulfillment Dropdown -->
+                <td>
+               <select class="form-control prl-input"
+        [(ngModel)]="l.supplyMethod"
+        (change)="onSupplyMethodChanged(l, i)">
+  <option [ngValue]="0">Direct DO</option>
+  <option [ngValue]="1">PP</option>
+</select>
+
+<small class="text-muted d-block mt-1">{{ l.supplyMethodText || 'SELECT' }}</small>
+                </td>
+
+                <!-- Total -->
+                <td class="text-center">
                   {{ (l.lineTotal || 0) | number:'1.2-2' }}
                 </td>
 
-                <td class="qt-col-action text-center">
+                <!-- Action -->
+                <td class="text-center">
                   <button class="btn btn-sm btn-link"
                           (click)="openEdit(i)"
                           title="Edit"
-                          *ngIf="header.lineSource==='ITEM' && !l.isFromSet">
+                          *ngIf="(header.lineSourceId === 1 || header.lineSourceId === 3) && !l.isFromSet">
                     <i class="fas fa-pen text-primary"></i>
                   </button>
 
@@ -392,29 +412,28 @@
                     <i class="fas fa-trash text-danger"></i>
                   </button>
                 </td>
+
               </tr>
+
             </ng-container>
           </tbody>
         </table>
       </div>
 
-      <!-- Add Line button -->
+      <!-- Add Line -->
       <div class="p-2">
-        <button
-          class="btn btn-sm text-white"
-          type="button"
-          (mouseenter)="hoverAdd=true"
-          (mouseleave)="hoverAdd=false"
-          [style.background-color]="hoverAdd ? '#0b2e3d' : '#2E5F73'"
-          (click)="openAdd()"
-         [disabled]="!(header.lineSourceId === 1 || header.lineSourceId === 3)"
-[class.opacity-50]="!(header.lineSourceId === 1 || header.lineSourceId === 3)"
-        >
+        <button class="btn btn-sm text-white"
+                type="button"
+                (mouseenter)="hoverAdd=true"
+                (mouseleave)="hoverAdd=false"
+                [style.background-color]="hoverAdd ? '#0b2e3d' : '#2E5F73'"
+                (click)="openAdd()"
+                [disabled]="!(header.lineSourceId === 1 || header.lineSourceId === 3)"
+                [class.opacity-50]="!(header.lineSourceId === 1 || header.lineSourceId === 3)">
           + Add line
         </button>
       </div>
     </div>
-
     <!-- Totals -->
     <div class="row mt-2">
       <div class="col-md-8"></div>

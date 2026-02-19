@@ -5,4 +5,5 @@ export class QuotationAPIUrls {
   public static readonly GetQuotationById      = "/Quotation/GetById/";       // + {id}
   public static readonly UpdateQuotationById   = "/Quotation/Update/";        // + {id}
   public static readonly DeleteQuotationById   = "/Quotation/Delete/";        // + {id}
+  public static readonly GetItemtypeByItemId      = "/Quotation/items/";  
 }

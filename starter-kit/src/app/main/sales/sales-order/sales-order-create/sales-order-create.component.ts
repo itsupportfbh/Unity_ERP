@@ -163,9 +163,13 @@ export class SalesOrderCreateComponent implements OnInit {
     return Number(this.soHdr.lineSourceId || 1) === 2;
   }
 
-  get sourceLineText(): string {
-    return Number(this.soHdr.lineSourceId || 1) === 1 ? 'Individual Item' : 'Item Set';
-  }
+get sourceLineText(): string {
+  const v = Number(this.soHdr?.lineSourceId ?? 1);
+  if (v === 1) return 'Individual Item';
+  if (v === 2) return 'Item Set';
+  if (v === 3) return 'Mixed (Item + Set)';
+  return 'Individual Item';
+}
 
   get itemSetNamesText(): string {
     const arr = (this.soHdr.itemSets ?? []) as ItemSetRef[];
@@ -941,6 +945,9 @@ export class SalesOrderCreateComponent implements OnInit {
     }
   }
 
+  goToList() {
+    this.router.navigate(['/Sales/Sales-Order-list']);
+  }
   /* ===== old removeLine still available (if you use old table) ===== */
   removeLine(i: number) {
     this.soLines.splice(i, 1);

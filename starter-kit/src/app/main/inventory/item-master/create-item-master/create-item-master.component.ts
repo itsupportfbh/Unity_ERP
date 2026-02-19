@@ -157,7 +157,7 @@ export class CreateItemMasterComponent implements OnInit {
 expandedAudit: Record<number, boolean> = {};
 busy: Record<number, boolean> = {};
 copied: Record<number, boolean> = {};
-
+userOverrodeFulfillment = false;
 drawer: {
   open: boolean;
   auditId: number;
@@ -354,7 +354,7 @@ getItemType(){
             categoryId: h.categoryId ?? h.categoryID ?? null,
             uomId: h.uomId ?? h.uomID ?? null,
             budgetLineId: h.budgetLineId ?? h.budgetLineID ?? null,
-
+            fulfillmentMode:h.fulfillmentMode,
             // keep old fields too (if your backend expects)
             sku: h.sku ?? h.itemCode ?? '',
             name: h.name ?? h.itemName ?? '',
@@ -1059,7 +1059,7 @@ getItemType(){
       categoryId: null as number | null,
       uomId: null as number | null,
       budgetLineId: null as number | null,
-
+fulfillmentMode:null,
       // keep old fields too (for existing API)
       sku: '',
       name: '',
@@ -1486,7 +1486,30 @@ private buildArrayBlock(key: string, arr: any[]) {
   if (columns.length === 0) columns.push('Value');
   return { key, columns, items };
 }
+onFulfillmentUserOverride() {
+  this.userOverrodeFulfillment = true;
+}
 
+onItemTypeChange() {
+  if (this.userOverrodeFulfillment) return;
+
+  const t = this.ItemTypeList.find((x: any) => Number(x.id) === Number(this.item.itemType));
+  const name = (t?.itemTypeName || '').toLowerCase();
+
+  // default
+  this.item.fulfillmentMode = 1; // AUTO
+
+  if (name === 'finished good' || name === 'semi finished') {
+    this.item.fulfillmentMode = 2; // PP
+  } else if (
+    name === 'trading item' ||
+    name === 'beverage / drink' ||
+    name === 'service'
+  ) {
+    this.item.fulfillmentMode = 3; // Direct DO
+  }
+  // Raw Material / Consumable => AUTO (0)
+}
 // -------- COPY/DOWNLOAD (DATA) --------
 
 copyAuditData(a: any) {

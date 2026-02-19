@@ -43,172 +43,206 @@
       </div>
 
       <!-- STEP 0: SUMMARY -->
-     <div *ngIf="step === 0" class="rounded-xl border p-1 space-y-4">
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div *ngIf="step === 0" class="imN">
 
-    <!-- Item Code -->
-    <div class="md:col-span-1">
-      <label class="text-xs font-semibold text-gray-600 block">Item Code <span class="text-red-500">*</span></label>
-      <input
-        type="text"
-        class="w-full rounded-xl border px-3 py-2 text-sm"
-        [(ngModel)]="item.itemCode"
-        name="itemCode"
-        placeholder="Enter Item Code"
-        required />
+  <div class="imN__card">
+
+    <!-- Header -->
+    <div class="imN__head">
+      <div class="imN__headLeft">
+        <div class="imN__titleRow">
+          <h3 class="imN__title">Item Master</h3>
+          <!-- <span class="imN__stepPill">Step 1 / 3</span>
+          <span class="imN__reqPill">Required *</span> -->
+        </div>
+        <!-- <p class="imN__sub">Fill item basic details, accounting and settings</p> -->
+      </div>
     </div>
 
-    <!-- Item Name -->
-    <div class="md:col-span-1">
-      <label class="text-xs font-semibold text-gray-600 block">Item Name <span class="text-red-500">*</span></label>
-      <input
-        type="text"
-        class="w-full rounded-xl border px-3 py-2 text-sm"
-        [(ngModel)]="item.itemName"
-        name="itemName"
-        placeholder="Enter Item Name"
-        required />
-    </div>
+    <!-- BASIC -->
+    <div class="imN__section">
+      <div class="imN__sectionTop">
+        <div class="imN__sectionBadge">
+          <i class="fas fa-box"></i>
+        </div>
+        <div>
+          <div class="imN__sectionTitle">Basic</div>
+          <div class="imN__sectionHint">Code, name, type and fulfillment</div>
+        </div>
+      </div>
 
-    <!-- Item Type -->
-    <div class="md:col-span-1">
-      <label class="text-xs font-semibold text-gray-600 block">Item Type <span class="text-red-500">*</span></label>
-      <select
-  class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
-  [(ngModel)]="item.itemType"
-  name="itemType"
-  [compareWith]="compareById"
-  (change)="onItemTypeChange()"
-  required>
+      <div class="imN__grid">
 
-  <option [ngValue]="null" disabled>Select Item Type</option>
+        <!-- Item Code -->
+        <div class="imN__field">
+          <label class="imN__label">Item Code <span class="imN__req">*</span></label>
+          <input class="imN__control"
+                 type="text"
+                 [(ngModel)]="item.itemCode"
+                 name="itemCode"
+                 placeholder="Enter Item Code"
+                 required />
+        </div>
 
-  <option *ngFor="let i of ItemTypeList" [ngValue]="i.id">
-    {{ i.itemTypeName }}
-  </option>
-</select>
+        <!-- Item Name -->
+        <div class="imN__field">
+          <label class="imN__label">Item Name <span class="imN__req">*</span></label>
+          <input class="imN__control"
+                 type="text"
+                 [(ngModel)]="item.itemName"
+                 name="itemName"
+                 placeholder="Enter Item Name"
+                 required />
+        </div>
 
-    </div>
-<div>
-  <label class="text-xs font-semibold text-gray-600">
-    Fulfillment Mode <span class="text-red-500">*</span>
-  </label>
+        <!-- Item Type -->
+        <div class="imN__field">
+          <label class="imN__label">Item Type <span class="imN__req">*</span></label>
+          <select class="imN__control imN__select"
+                  [(ngModel)]="item.itemType"
+                  name="itemType"
+                  [compareWith]="compareById"
+                  (change)="onItemTypeChange()"
+                  required>
+            <option [ngValue]="null" disabled>Select Item Type</option>
+            <option *ngFor="let i of ItemTypeList" [ngValue]="i.id">
+              {{ i.itemTypeName }}
+            </option>
+          </select>
+        </div>
 
-<select
-  class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
-  [(ngModel)]="item.fulfillmentMode"
-  name="fulfillmentMode"
-  (change)="onFulfillmentUserOverride()"
-  required>
+        <!-- Fulfillment Mode -->
+        <div class="imN__field">
+          <label class="imN__label">Fulfillment Mode <span class="imN__req">*</span></label>
+          <select class="imN__control imN__select"
+                  [(ngModel)]="item.fulfillmentMode"
+                  name="fulfillmentMode"
+                  (change)="onFulfillmentUserOverride()"
+                  required>
+            <option [ngValue]="null" disabled>Select</option>
+            <option [ngValue]="1">Sellable</option>
+            <option [ngValue]="2">Consumable</option>
+            <option [ngValue]="3">Both</option>
+          </select>
 
-  <option [ngValue]="null" disabled>Select</option>
-  <option [ngValue]="1">Sellable</option>
-  <option [ngValue]="2">Consumable</option>
-  <option [ngValue]="3">Both</option>
-</select>
+          <!-- <div class="imN__miniHint">
+            <i class="fas fa-info-circle"></i>
+            Used for SO / PP / Direct DO behaviour
+          </div> -->
+        </div>
 
+        <!-- Category -->
+        <div class="imN__field">
+          <label class="imN__label">Category <span class="imN__req">*</span></label>
+          <select class="imN__control imN__select"
+                  [(ngModel)]="item.categoryId"
+                  name="categoryId"
+                  required>
+            <option [ngValue]="null" disabled>Select Category</option>
+            <option *ngFor="let c of CategoryList" [ngValue]="c.id">
+              {{ c.catagoryName }}
+            </option>
+          </select>
+        </div>
+
+        <!-- UOM -->
+        <div class="imN__field">
+          <label class="imN__label">UOM <span class="imN__req">*</span></label>
+          <select class="imN__control imN__select"
+                  [(ngModel)]="item.uomId"
+                  name="uomId"
+                  required>
+            <option [ngValue]="null" disabled>Select UOM</option>
+            <option *ngFor="let u of uomList" [ngValue]="u.id">
+              {{ u.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Expiry -->
+<!-- Expiry -->
+<div class="imN__field">
+  <label class="imN__label">Expiry Date</label>
+  <div class="imN__dateWrap">
+    <input class="imN__control imN__date"
+           type="date"
+           [(ngModel)]="item.expiryDate"
+           name="expiryDate"
+           [min]="minDate"
+           (change)="onExpiryChange($event)" />
+    <i class="fas fa-calendar-alt imN__dateIcon"></i>
+  </div>
 </div>
-    <!-- Category -->
-    <div class="md:col-span-1">
-      <label class="text-xs font-semibold text-gray-600 block">Category <span class="text-red-500">*</span></label>
-      <select
-        class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
-        [(ngModel)]="item.categoryId"
-        name="categoryId"
-        required>
-        <option [ngValue]="null" disabled>Select Category</option>
-        <option *ngFor="let c of CategoryList" [ngValue]="c.id">
-          {{ c.catagoryName }}
-        </option>
-      </select>
+
+<!-- Specs (same row as Expiry) -->
+<div class="imN__field">
+  <label class="imN__label">Specifications</label>
+  <input class="imN__control"
+         type="text"
+         [(ngModel)]="item.specs"
+         name="specs"
+         placeholder="Add specs or notes..." />
+</div>
+
+      </div>
     </div>
 
-    <!-- UOM -->
-    <div class="md:col-span-1">
-      <label class="text-xs font-semibold text-gray-600 block">UOM <span class="text-red-500">*</span></label>
-      <select
-        class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
-        [(ngModel)]="item.uomId"
-        name="uomId"
-        required>
-        <option [ngValue]="null" disabled>Select UOM</option>
-        <option *ngFor="let u of uomList" [ngValue]="u.id">
-          {{ u.name }}
-        </option>
-      </select>
-    </div>
+    <!-- ACCOUNTING -->
+    <div class="imN__section imN__section--borderTop">
+      <div class="imN__sectionTop">
+        <div class="imN__sectionBadge">
+          <i class="fas fa-file-invoice-dollar"></i>
+        </div>
+        <div>
+          <div class="imN__sectionTitle">Accounting</div>
+          <div class="imN__sectionHint">Ledger, costing and recurring tax</div>
+        </div>
+      </div>
 
-    <!-- Budget Line -->
-    <div class="md:col-span-2">
-      <label class="text-xs font-semibold text-gray-600 block">Ledger Name<span class="text-red-500">*</span></label>
+      <div class="imN__grid">
 
-      <ng-select
-        class="w-full"
-        [items]="parentHeadList"
-        bindLabel="label"
-        bindValue="value"
-        [(ngModel)]="item.budgetLineId"
-        name="budgetLineId"
-        [searchable]="true"
-        [clearable]="false"
-        placeholder="Search / choose Ledger Name..."
-        required>
+        <!-- Ledger Name -->
+       <!-- Ledger Name -->
+<div class="imN__field imN__span2">
+  <label class="imN__label">Ledger Name <span class="imN__req">*</span></label>
 
-        <ng-template ng-option-tmp let-it="item">
-          <span [title]="it.label">{{ it.label }}</span>
-        </ng-template>
+  <select class="imN__control imN__select"
+          [(ngModel)]="item.budgetLineId"
+          name="budgetLineId"
+          required>
+    <option [ngValue]="null" disabled>Select Ledger Name</option>
 
-        <ng-template ng-label-tmp let-it="item">
-          <span [title]="it.label">{{ it.label }}</span>
-        </ng-template>
-      </ng-select>
-    </div>
+    <option *ngFor="let l of parentHeadList" [ngValue]="l.value">
+      {{ l.label }}
+    </option>
+  </select>
+</div>
 
-    <!-- Costing -->
-    <div>
-      <label class="text-xs font-semibold text-gray-600">Costing Method</label>
-      <select class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
-              [(ngModel)]="item.costingMethodId"
-              name="costingMethodId"
-              (change)="onCostingSelectedId(item.costingMethodId)">
-        <option [ngValue]="null" disabled>Select costing</option>
-        <option *ngFor="let c of costingMethodList" [ngValue]="c.id">{{ c.name }}</option>
-      </select>
-    </div>
+        <!-- Costing -->
+        <div class="imN__field">
+          <label class="imN__label">Costing Method</label>
+          <select class="imN__control imN__select"
+                  [(ngModel)]="item.costingMethodId"
+                  name="costingMethodId"
+                  (change)="onCostingSelectedId(item.costingMethodId)">
+            <option [ngValue]="null" disabled>Select costing</option>
+            <option *ngFor="let c of costingMethodList" [ngValue]="c.id">{{ c.name }}</option>
+          </select>
+        </div>
 
-    <!-- Tax -->
-    <div>
-      <label class="text-xs font-semibold text-gray-600">Recurring</label>
-      <select class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
-              [(ngModel)]="item.taxCodeId"
-              name="taxCodeId"
-              (change)="onTaxSelectedId(item.taxCodeId)">
-        <option [ngValue]="null" disabled>Select Recurring</option>
-        <option *ngFor="let t of taxCodeList" [ngValue]="t.id">{{ t.recurringName }}</option>
-      </select>
-    </div>
+        <!-- Recurring -->
+        <div class="imN__field">
+          <label class="imN__label">Recurring</label>
+          <select class="imN__control imN__select"
+                  [(ngModel)]="item.taxCodeId"
+                  name="taxCodeId"
+                  (change)="onTaxSelectedId(item.taxCodeId)">
+            <option [ngValue]="null" disabled>Select Recurring</option>
+            <option *ngFor="let t of taxCodeList" [ngValue]="t.id">{{ t.recurringName }}</option>
+          </select>
+        </div>
 
-    <!-- Expiry -->
-    <div>
-      <label class="text-xs font-semibold text-gray-600">Expiry Date</label>
-      <input
-        type="date"
-        class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
-        [(ngModel)]="item.expiryDate"
-        name="expiryDate"
-        [min]="minDate"
-        (change)="onExpiryChange($event)" />
-    </div>
-
-    <!-- Specs -->
-    <div class="md:col-span-2">
-      <label class="text-xs font-semibold text-gray-600">Specifications</label>
-      <textarea
-        class="w-full rounded-xl border px-3 py-2 text-sm"
-        rows="2"
-        [(ngModel)]="item.specs"
-        name="specs"
-        placeholder="Add specs or notes..."></textarea>
+      </div>
     </div>
 
   </div>

@@ -730,7 +730,7 @@ getItemType(){
     let path = item.headName ?? '';
     let current = all.find((x: any) => x.headCode === item.parentHead);
     while (current) {
-      path = `${current.headName} >> ${path}`;
+      path = `${path}`;
       current = all.find((x: any) => x.headCode === current.parentHead);
     }
     return path;

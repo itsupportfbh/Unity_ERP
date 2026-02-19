@@ -838,8 +838,252 @@ table td:nth-child(3) {
 .aud2-table td{ padding:10px 12px; border-top:1px solid #eef2f7; white-space:nowrap; }
 
 
+.imN{
+  padding: 10px;
+  --brand: #2E5F73;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e5e7eb;
+  --soft: #f8fafc;
+  --ring: rgba(46,95,115,.18);
+  --shadow: 0 10px 30px rgba(15,23,42,.08);
+}
 
+/* Card */
+.imN__card{
+  background:#fff;
+  border:1px solid rgba(15,23,42,.08);
+  border-radius:16px;
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
 
+/* Header */
+.imN__head{
+  padding:16px 18px 12px;
+  border-bottom:1px solid rgba(15,23,42,.06);
+  background: linear-gradient(180deg, rgba(46,95,115,.05), transparent);
+}
+.imN__titleRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.imN__title{
+  margin:0;
+  font-size:18px;
+  font-weight:800;
+  color: var(--ink);
+}
+.imN__sub{
+  margin:6px 0 0;
+  font-size:12px;
+  color: var(--muted);
+  font-weight:600;
+}
+
+/* Pills */
+.imN__stepPill,
+.imN__reqPill{
+  font-size:11px;
+  font-weight:800;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(15,23,42,.10);
+  background:#fff;
+  color:#334155;
+}
+.imN__reqPill{
+  border-color: rgba(46,95,115,.25);
+  background: rgba(46,95,115,.06);
+  color: var(--brand);
+}
+
+/* Sections */
+.imN__section{
+  padding:16px 18px 18px;
+}
+.imN__section--borderTop{
+  border-top:1px solid rgba(15,23,42,.06);
+}
+.imN__sectionTop{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:14px;
+}
+.imN__sectionBadge{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  background: rgba(46,95,115,.10);
+  border:1px solid rgba(46,95,115,.18);
+  color: var(--brand);
+}
+.imN__sectionTitle{
+  font-size:13px;
+  font-weight:900;
+  color: var(--ink);
+}
+.imN__sectionHint{
+  font-size:11px;
+  color: var(--muted);
+  font-weight:700;
+  margin-top:2px;
+}
+
+/* Grid */
+.imN__grid{
+  display:grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap:14px 16px;
+}
+.imN__field{ grid-column: span 12; min-width:0; }
+.imN__span2{ grid-column: span 12; }
+
+@media (min-width: 768px){
+  .imN__field{ grid-column: span 3; }
+  .imN__span2{ grid-column: span 6; }
+}
+
+/* Labels */
+.imN__label{
+  display:block;
+  margin:0 0 7px;
+  font-size:12px;
+  font-weight:800;
+  color:#334155;
+}
+.imN__req{ color:#ef4444; }
+
+/* Controls (INPUT + SELECT + TEXTAREA same look) */
+.imN__control{
+  width:100%;
+  height:44px;
+  border:1px solid var(--line);
+  background: var(--soft);
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:13px;
+  font-weight:600;
+  color:#111827;
+  outline:none;
+  transition: border-color .12s ease, box-shadow .12s ease, background-color .12s ease;
+}
+
+.imN__control::placeholder{
+  color:#94a3b8;
+  font-weight:600;
+}
+
+.imN__control:focus{
+  border-color: rgba(46,95,115,.55);
+  background:#fff;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+/* Select arrow like screenshot */
+.imN__select{
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  padding-right:42px;
+  cursor:pointer;
+
+  background-image:
+    linear-gradient(45deg, transparent 50%, #0f172a 50%),
+    linear-gradient(135deg, #0f172a 50%, transparent 50%),
+    linear-gradient(to right, transparent, transparent);
+  background-position:
+    calc(100% - 18px) 18px,
+    calc(100% - 12px) 18px,
+    0 0;
+  background-size:6px 6px, 6px 6px, 100% 100%;
+  background-repeat:no-repeat;
+}
+
+/* Textarea */
+.imN__textarea{
+  height:auto;
+  min-height:88px;
+  resize: vertical;
+  padding-top:10px;
+}
+
+/* Mini hint */
+.imN__miniHint{
+  margin-top:7px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:11px;
+  color: var(--muted);
+  font-weight:700;
+}
+
+/* Date with icon */
+.imN__dateWrap{ position:relative; }
+.imN__date{ padding-right:44px; }
+.imN__dateIcon{
+  position:absolute;
+  right:14px;
+  top:50%;
+  transform: translateY(-50%);
+  color:#64748b;
+  pointer-events:none;
+  font-size:14px;
+}
+
+/* ng-select -> same as input */
+::ng-deep .imN__ng .ng-select-container{
+  height:44px !important;
+  min-height:44px !important;
+  border-radius:12px !important;
+  border:1px solid var(--line) !important;
+  background: var(--soft) !important;
+  box-shadow:none !important;
+  padding: 0 6px !important;
+}
+::ng-deep .imN__ng.ng-select-focused .ng-select-container{
+  border-color: rgba(46,95,115,.55) !important;
+  background:#fff !important;
+  box-shadow: 0 0 0 4px var(--ring) !important;
+}
+::ng-deep .imN__ng .ng-value-container{
+  padding-left:6px !important;
+}
+::ng-deep .imN__ng .ng-placeholder{
+  color:#94a3b8 !important;
+  font-weight:600 !important;
+}
+::ng-deep .imN__ng .ng-arrow-wrapper{
+  padding-right:8px !important;
+}
+::ng-deep .imN__ng .ng-dropdown-panel{
+  border:1px solid var(--line) !important;
+  border-radius:12px !important;
+  box-shadow: 0 18px 34px rgba(15,23,42,.12) !important;
+  overflow:hidden;
+}
+::ng-deep .imN__ng .ng-option{
+  padding:10px 12px !important;
+  font-weight:700 !important;
+}
+::ng-deep .imN__ng .ng-option:hover{
+  background:#f1f5f9 !important;
+}
+
+::ng-deep .imN__ng .ng-select-container {
+  background: #f8fafc !important;      /* same light grey */
+  border: 1px solid #e5e7eb !important; /* same border */
+  border-radius: 12px !important;
+  min-height: 44px !important;
+  height: 44px !important;
+  box-shadow: none !important;
+}
 
 
 

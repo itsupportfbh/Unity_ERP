@@ -70,4 +70,7 @@ private base = environment.apiUrl;
     return this.http.delete<any>(this.base + QuotationAPIUrls.DeleteQuotationById + id)
       
   }
+getItemFlagsBulk(itemIds: number[]) {
+  return this.http.post<any>(`${this.base}/Quotation/item-flags/bulk`, { itemIds });
+}
 }

@@ -29,6 +29,17 @@ type DiscountType = 'VALUE' | 'PERCENT';
 type LineSourceId = 1 | 2 | 3; // 3 = Mixed
 type ItemSetHeaderRow = { id: number; setName: string; description?: string };
 
+/** ✅ flags from backend bulk API */
+type ItemFlagsDto = {
+  itemId: number;
+  isSellable: boolean;
+  isConsumable: boolean;
+  allowManualFulfillment: boolean;
+  fulfillmentMode?: number | null;    // optional (if your backend sends)
+  fulfillmentText?: string;           // optional
+};
+
+/** ✅ Quotation UI line */
 type UiLine = Omit<QuotationLine, 'uom' | 'uomId'> & {
   uomId: number | null;
   description?: string;
@@ -45,9 +56,19 @@ type UiLine = Omit<QuotationLine, 'uom' | 'uomId'> & {
   isFromSet?: boolean;
 
   itemName?: string;
-
-  // ✅ extra helper to backfill if needed
   uomName?: string | null;
+
+  // flags (read-only)
+  isSellable?: boolean;
+  isConsumable?: boolean;
+  allowManualFulfillment?: boolean;
+
+  // ✅ PP / Direct DO selection (this is what you save)
+  // 0 = Direct DO, 1 = Production Planning
+  supplyMethod: number | null;
+
+  // UI helper label
+  supplyMethodText?: string;
 };
 
 type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
@@ -68,7 +89,6 @@ type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
   lineSourceId: LineSourceId;
 };
 
-
 @Component({
   selector: 'app-quotationscreate',
   templateUrl: './quotationscreate.component.html',
@@ -76,6 +96,7 @@ type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
   encapsulation: ViewEncapsulation.None
 })
 export class QuotationscreateComponent implements OnInit {
+
   // dropdown containers (page)
   @ViewChild('customerBox') customerBox!: ElementRef<HTMLElement>;
   @ViewChild('currencyBox') currencyBox!: ElementRef<HTMLElement>;
@@ -142,8 +163,7 @@ export class QuotationscreateComponent implements OnInit {
   itemsList: SimpleItem[] = [];
   uomList: Array<{ id: number; name: string }> = [];
 
-
-  // ✅ uomName -> uomId map
+  private loadedItemSetIds = new Set<number>();
   private uomNameToId = new Map<string, number>();
 
   // grid lines
@@ -205,7 +225,7 @@ export class QuotationscreateComponent implements OnInit {
   ) {}
 
   // =========================
-  // ✅ UOM Helpers
+  // Helpers
   // =========================
   private normalizeUomName(v: any): string {
     return String(v ?? '').trim().toLowerCase();
@@ -225,19 +245,16 @@ export class QuotationscreateComponent implements OnInit {
   }
 
   private resolveUomIdFromItemSetRow(row: any, itemId: number): number | null {
-    // 1) if API gives uomId
     const rawUomId = row?.uomId ?? row?.UomId;
     if (rawUomId !== null && rawUomId !== undefined && rawUomId !== '') {
       const n = Number(rawUomId);
       if (!Number.isNaN(n) && n > 0) return n;
     }
 
-    // 2) if API gives uomName (your case)
     const uomName = row?.uomName ?? row?.UomName;
     const key = this.normalizeUomName(uomName);
     if (key && this.uomNameToId.has(key)) return this.uomNameToId.get(key)!;
 
-    // 3) fallback from item master
     return this.getUomIdFromItemMaster(itemId);
   }
 
@@ -260,9 +277,6 @@ export class QuotationscreateComponent implements OnInit {
     if (changed) this.computeTotals();
   }
 
-  // =========================
-  // TaxMode → TaxCodeId mapping
-  // =========================
   private taxModeToTaxCodeId(mode?: LineTaxMode): number {
     switch (mode) {
       case 'Standard-Rated': return 1;
@@ -276,179 +290,6 @@ export class QuotationscreateComponent implements OnInit {
     const gst = +this.header.taxPct || 0;
     if (gst === 9) return ['Standard-Rated', 'Zero-Rated', 'Exempt'];
     return ['Zero-Rated'];
-  }
-
-ngOnInit(): void {
-  this.setMinDate();
-  this.loadLookups();
-
-  const idStr = this.route.snapshot.paramMap.get('id');
-  this.editId = idStr ? +idStr : null;
-
-  if (this.editId && this.editId > 0) {
-    this.loadForEdit(this.editId);
-  }
-}
-private loadForEdit(id: number) {
-  debugger
-  this.qt.getById(id).subscribe({
-    next: (res: any) => {
-      const dto = res?.data ?? res ?? null;
-      if (!dto) return;
-
-      // ✅ IMPORTANT: set header id (this is why edit not working)
-      this.header = {
-        ...this.header,
-        id: Number(dto.id ?? dto.Id ?? id),
-
-        status: Number(dto.status ?? dto.Status ?? 0),
-        customerId: Number(dto.customerId ?? dto.CustomerId ?? null),
-        currencyId: Number(dto.currencyId ?? dto.CurrencyId ?? 0),
-        fxRate: Number(dto.fxRate ?? dto.FxRate ?? 1),
-        paymentTermsId: Number(dto.paymentTermsId ?? dto.PaymentTermsId ?? 0),
-        deliveryDate: this.toDateInputValue(dto.deliveryDate ?? dto.DeliveryDate),
-
-
-        remarks: String(dto.remarks ?? dto.Remarks ?? ''),
-        deliveryTo: String(dto.deliveryTo ?? dto.DeliveryTo ?? ''),
-
-        rounding: Number(dto.rounding ?? dto.Rounding ?? 0),
-
-        // totals will recompute
-        subtotal: 0,
-        taxAmount: 0,
-        grandTotal: 0,
-        needsHodApproval: !!(dto.needsHodApproval ?? dto.NeedsHodApproval ?? false),
-
-        // keep your defaults
-        discountType: (dto.discountType ?? this.header.discountType) as any,
-        discountInput: Number(dto.discountInput ?? this.header.discountInput ?? 0),
-        discountManual: true, // edit mode = keep manual
-        lineSourceId: (Number(dto.lineSourceId ?? dto.LineSource ?? 1) as any)
-      };
-
-      // ✅ backfill dropdown text (optional)
-      const custName = dto.customerName ?? dto.CustomerName;
-      if (custName) this.customerSearch = String(custName);
-
-      const curName = dto.currencyName ?? dto.CurrencyName;
-      if (curName) { this.currencySearch = String(curName); this.header.currency = String(curName); }
-
-      const payName = dto.paymentTermsName ?? dto.PaymentTermsName;
-      if (payName) { this.paymentTermsSearch = String(payName); this.header.paymentTerms = String(payName); }
-
-      // ✅ set taxPct from country if available
-      const gst = Number(dto.taxPct ?? dto.GstPct ?? dto.gstPct ?? 0);
-      if (!Number.isNaN(gst)) this.header.taxPct = gst;
-
-      // ✅ load itemsets (if api returns ids)
-      const itemSetIds: number[] =
-        (dto.itemSetIds ?? dto.ItemSetIds ?? dto.itemSetIdsCsv ?? '')
-          ? String(dto.itemSetIds ?? dto.ItemSetIds ?? dto.itemSetIdsCsv)
-              .split(',')
-              .map((x: string) => +x)
-              .filter((x: number) => x > 0)
-          : (Array.isArray(dto.itemSetIds) ? dto.itemSetIds : []);
-
-      // reset lines
-      this.lines = [];
-
-      // ✅ if LineSource = ItemSet (2), load itemsets + append headers/items
-      if (this.header.lineSourceId === 2 && itemSetIds.length) {
-        this.selectedItemSets = itemSetIds
-          .map(id2 => this.itemSets.find(s => s.id === id2))
-          .filter(Boolean) as any;
-
-        // append sets
-        for (const sid of itemSetIds) {
-          const setName = this.itemSets.find(s => s.id === sid)?.setName ?? `Set ${sid}`;
-          this.loadItemSetItemsAndAppend(sid, setName);
-        }
-      }
-
-      // ✅ load normal lines from dto
-      const apiLines = dto.lines ?? dto.Lines ?? [];
-      for (const l of apiLines) {
-        const itemId = Number(l.itemId ?? l.ItemId ?? 0);
-        if (!itemId) continue;
-
-        const taxMode = (l.taxMode ?? l.TaxMode ?? 'Zero-Rated') as LineTaxMode;
-
-        const ui: UiLine = {
-          itemId,
-          itemName: String(l.itemName ?? l.ItemName ?? this.getItemName(itemId) ?? ''),
-          uomId: (l.uomId ?? l.UomId) != null ? Number(l.uomId ?? l.UomId) : null,
-          qty: Number(l.qty ?? l.Qty ?? 0),
-          unitPrice: Number(l.unitPrice ?? l.UnitPrice ?? 0),
-          discountPct: Number(l.discountPct ?? l.DiscountPct ?? 0),
-          description: String(l.description ?? l.Description ?? ''),
-          taxMode,
-          taxCodeId: Number(l.taxCodeId ?? l.TaxCodeId ?? this.taxModeToTaxCodeId(taxMode)),
-          isFromSet: !!(l.isFromSet ?? l.IsFromSet ?? false),
-          itemSetId: (l.itemSetId ?? l.ItemSetId) != null ? Number(l.itemSetId ?? l.ItemSetId) : null,
-          setName: String(l.setName ?? l.SetName ?? ''),
-          isSetHeader: false
-        };
-
-        this.computeLine(ui);
-        this.lines.push(ui);
-      }
-
-      // ✅ uom backfill + totals
-      this.backfillMissingUoms();
-      this.computeTotals();
-    },
-    error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Unable to load quotation for edit' })
-  });
-}
-
-private toDateInputValue(v: any): string | null {
-  if (!v) return null;
-
-  // already yyyy-mm-dd
-  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
-
-  // "2026-01-30T00:00:00" -> "2026-01-30"
-  if (typeof v === 'string' && v.includes('T')) return v.split('T')[0];
-
-  const d = new Date(v);
-  if (isNaN(d.getTime())) return null;
-
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-  // close dropdowns when clicking outside
-  @HostListener('document:click', ['$event'])
-  onDocClick(ev: MouseEvent) {
-    const t = ev.target as Node;
-
-    if (this.customerDdOpen && this.customerBox && !this.customerBox.nativeElement.contains(t)) this.customerDdOpen = false;
-    if (this.currencyDdOpen && this.currencyBox && !this.currencyBox.nativeElement.contains(t)) this.currencyDdOpen = false;
-    if (this.paymentTermsDdOpen && this.paymentBox && !this.paymentBox.nativeElement.contains(t)) this.paymentTermsDdOpen = false;
-    if (this.itemSetDdOpen && this.itemSetBox && !this.itemSetBox.nativeElement.contains(t)) this.itemSetDdOpen = false;
-
-    // modal dropdown close (outside item box)
-    if (this.showModal && this.modal.dropdownOpen && this.modalItemBox && !this.modalItemBox.nativeElement.contains(t)) {
-      this.modal.dropdownOpen = false;
-    }
-  }
-
-  @HostListener('document:keydown.escape')
-  onEsc() {
-    this.customerDdOpen = this.currencyDdOpen = this.paymentTermsDdOpen = false;
-    this.itemSetDdOpen = false;
-    if (this.showModal) this.closeModal();
-  }
-
-  setMinDate() {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    this.minDate = `${yyyy}-${mm}-${dd}`;
   }
 
   round2(n: number) {
@@ -465,47 +306,131 @@ private toDateInputValue(v: any): string | null {
 
   getUomName = (id?: number | null) => this.uomList.find(u => u.id === id)?.name ?? '';
 
-  // switch source
-onLineSourceChange() {
-  if (this.showModal) this.closeModal();
-
-  // 1 = Item only -> remove set lines
-  if (this.header.lineSourceId === 1) {
-    this.selectedItemSets = [];
-    this.pendingItemSet = null;
-    this.itemSetSearch = '';
-    this.lines = this.lines.filter(l => !l.isFromSet && !l.isSetHeader);
+  supplyMethodLabel(v: number | null | undefined) {
+    return v === 0 ? 'DIRECT DO' : v === 1 ? 'PP' : 'SELECT';
   }
 
-  // 2 = Set only -> remove individual lines
-  if (this.header.lineSourceId === 2) {
-    this.lines = this.lines.filter(l => l.isFromSet || l.isSetHeader);
+  // =========================
+  // ✅ Apply auto supply method
+  // =========================
+  private applyAutoSupplyMethodIfEmpty(l: UiLine) {
+    if (l.isSetHeader) return;
+    if (l.supplyMethod !== null && l.supplyMethod !== undefined) {
+      l.supplyMethodText = this.supplyMethodLabel(l.supplyMethod);
+      return;
+    }
+
+    // rule:
+    // sellable -> direct do
+    // only consumable -> PP
+    // both -> default PP
+    if (l.isSellable && !l.isConsumable) l.supplyMethod = 0;
+    else if (l.isConsumable && !l.isSellable) l.supplyMethod = 1;
+    else if (l.isSellable && l.isConsumable) l.supplyMethod = 1;
+    else l.supplyMethod = null;
+
+    l.supplyMethodText = this.supplyMethodLabel(l.supplyMethod);
   }
 
-  // 3 = Mixed -> keep everything (no filtering)
-  this.computeTotals();
-}
-
-
-  onLineChanged(i: number) {
-    const l = this.lines[i];
-    if (!l || l.isSetHeader) return;
-
-    const qty = l.qty === null || l.qty === undefined ? 0 : +l.qty;
-    const price = l.unitPrice === null || l.unitPrice === undefined ? 0 : +l.unitPrice;
-
-    l.qty = qty < 0 ? 0 : qty;
-    l.unitPrice = price < 0 ? 0 : price;
-
-    const disc = +l.discountPct || 0;
-    l.discountPct = Math.min(100, Math.max(0, disc));
-
-    l.taxCodeId = this.taxModeToTaxCodeId(l.taxMode);
-    this.computeLine(l);
-    this.computeTotals();
+  onSupplyMethodChanged(l: UiLine, i: number) {
+    l.supplyMethodText = this.supplyMethodLabel(l.supplyMethod);
+    this.onLineChanged(i);
   }
 
-  // Load lookups
+  // =========================
+  // ✅ Bulk flags
+  // =========================
+  private loadFlagsForLines(lines: UiLine[]) {
+    const ids = Array.from(new Set(
+      (lines || []).filter(x => !x.isSetHeader && (x.itemId || 0) > 0).map(x => Number(x.itemId))
+    ));
+    if (!ids.length) return;
+
+    this.qt.getItemFlagsBulk(ids).subscribe({
+      next: (res: any) => {
+        const arr: ItemFlagsDto[] = (res?.data ?? res ?? []) as any;
+        const map = new Map<number, ItemFlagsDto>();
+        for (const f of arr) map.set(Number(f.itemId), f);
+
+        for (const l of lines) {
+          if (l.isSetHeader) continue;
+          const f = map.get(Number(l.itemId));
+          if (!f) continue;
+
+          l.isSellable = !!f.isSellable;
+          l.isConsumable = !!f.isConsumable;
+          l.allowManualFulfillment = !!f.allowManualFulfillment;
+
+          // ✅ auto assign ONLY if empty
+          this.applyAutoSupplyMethodIfEmpty(l);
+        }
+      }
+    });
+  }
+
+  // =========================
+  // Init
+  // =========================
+  ngOnInit(): void {
+    this.setMinDate();
+    this.loadLookups();
+
+    const idStr = this.route.snapshot.paramMap.get('id');
+    this.editId = idStr ? +idStr : null;
+
+    if (this.editId && this.editId > 0) {
+      this.loadForEdit(this.editId);
+    }
+  }
+
+  setMinDate() {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    this.minDate = `${yyyy}-${mm}-${dd}`;
+  }
+
+  private toDateInputValue(v: any): string | null {
+    if (!v) return null;
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    if (typeof v === 'string' && v.includes('T')) return v.split('T')[0];
+
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return null;
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // =========================
+  // Close dropdowns when click outside
+  // =========================
+  @HostListener('document:click', ['$event'])
+  onDocClick(ev: MouseEvent) {
+    const t = ev.target as Node;
+
+    if (this.customerDdOpen && this.customerBox && !this.customerBox.nativeElement.contains(t)) this.customerDdOpen = false;
+    if (this.currencyDdOpen && this.currencyBox && !this.currencyBox.nativeElement.contains(t)) this.currencyDdOpen = false;
+    if (this.paymentTermsDdOpen && this.paymentBox && !this.paymentBox.nativeElement.contains(t)) this.paymentTermsDdOpen = false;
+    if (this.itemSetDdOpen && this.itemSetBox && !this.itemSetBox.nativeElement.contains(t)) this.itemSetDdOpen = false;
+
+    if (this.showModal && this.modal.dropdownOpen && this.modalItemBox && !this.modalItemBox.nativeElement.contains(t)) {
+      this.modal.dropdownOpen = false;
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEsc() {
+    this.customerDdOpen = this.currencyDdOpen = this.paymentTermsDdOpen = false;
+    this.itemSetDdOpen = false;
+    if (this.showModal) this.closeModal();
+  }
+
+  // =========================
+  // Lookups
+  // =========================
   loadLookups() {
     this.chartOfAccountService.getAllChartOfAccount().subscribe(() => {
       this.itemsService.getAllItem().subscribe((ires: any) => {
@@ -517,11 +442,6 @@ onLineSourceChange() {
           uomId: Number(item.uomId ?? item.UomId ?? item.uomid ?? 0),
           catagoryName: item.catagoryName
         })) as SimpleItem[];
-
-        // if modal open and dropdown open -> refresh list
-        if (this.showModal && this.modal.dropdownOpen) {
-          this.filterModalItemsOnly();
-        }
       });
     });
 
@@ -531,10 +451,7 @@ onLineSourceChange() {
         name: String(u.name ?? u.Name ?? '').trim()
       }));
 
-      // ✅ build uomName->uomId map
       this.rebuildUomMap();
-
-      // ✅ if itemset lines already added before uomlist comes
       this.backfillMissingUoms();
     });
 
@@ -581,7 +498,142 @@ onLineSourceChange() {
     });
   }
 
-  // Customer
+  // =========================
+  // Edit Load
+  // =========================
+  private loadForEdit(id: number) {
+    this.qt.getById(id).subscribe({
+      next: (res: any) => {
+        const dto = res?.data ?? res ?? null;
+        if (!dto) return;
+
+        this.header = {
+          ...this.header,
+          id: Number(dto.id ?? dto.Id ?? id),
+          status: Number(dto.status ?? dto.Status ?? 0),
+          customerId: Number(dto.customerId ?? dto.CustomerId ?? null),
+          currencyId: Number(dto.currencyId ?? dto.CurrencyId ?? 0),
+          fxRate: Number(dto.fxRate ?? dto.FxRate ?? 1),
+          paymentTermsId: Number(dto.paymentTermsId ?? dto.PaymentTermsId ?? 0),
+          deliveryDate: this.toDateInputValue(dto.deliveryDate ?? dto.DeliveryDate),
+          remarks: String(dto.remarks ?? dto.Remarks ?? ''),
+          deliveryTo: String(dto.deliveryTo ?? dto.DeliveryTo ?? ''),
+          rounding: Number(dto.rounding ?? dto.Rounding ?? 0),
+          subtotal: 0,
+          taxAmount: 0,
+          grandTotal: 0,
+          needsHodApproval: !!(dto.needsHodApproval ?? dto.NeedsHodApproval ?? false),
+          discountType: (dto.discountType ?? this.header.discountType) as any,
+          discountInput: Number(dto.discountInput ?? this.header.discountInput ?? 0),
+          discountManual: true,
+          lineSourceId: (Number(dto.lineSourceId ?? dto.LineSource ?? 1) as any)
+        };
+
+        const custName = dto.customerName ?? dto.CustomerName;
+        if (custName) this.customerSearch = String(custName);
+
+        const curName = dto.currencyName ?? dto.CurrencyName;
+        if (curName) { this.currencySearch = String(curName); this.header.currency = String(curName); }
+
+        const payName = dto.paymentTermsName ?? dto.PaymentTermsName;
+        if (payName) { this.paymentTermsSearch = String(payName); this.header.paymentTerms = String(payName); }
+
+        const gst = Number(dto.taxPct ?? dto.GstPct ?? dto.gstPct ?? 0);
+        if (!Number.isNaN(gst)) this.header.taxPct = gst;
+
+        this.lines = [];
+
+        const apiLines = dto.lines ?? dto.Lines ?? [];
+        for (const l of apiLines) {
+          const itemId = Number(l.itemId ?? l.ItemId ?? 0);
+          if (!itemId) continue;
+
+          const taxMode = (l.taxMode ?? l.TaxMode ?? 'Zero-Rated') as LineTaxMode;
+
+          const ui: UiLine = {
+            itemId,
+            itemName: String(l.itemName ?? l.ItemName ?? this.getItemName(itemId) ?? ''),
+            uomId: (l.uomId ?? l.UomId) != null ? Number(l.uomId ?? l.UomId) : null,
+            qty: Number(l.qty ?? l.Qty ?? 0),
+            unitPrice: Number(l.unitPrice ?? l.UnitPrice ?? 0),
+            discountPct: Number(l.discountPct ?? l.DiscountPct ?? 0),
+            description: String(l.description ?? l.Description ?? ''),
+            taxMode,
+            taxCodeId: Number(l.taxCodeId ?? l.TaxCodeId ?? this.taxModeToTaxCodeId(taxMode)),
+            isFromSet: !!(l.isFromSet ?? l.IsFromSet ?? false),
+            itemSetId: (l.itemSetId ?? l.ItemSetId) != null ? Number(l.itemSetId ?? l.ItemSetId) : null,
+            setName: String(l.setName ?? l.SetName ?? ''),
+            isSetHeader: false,
+
+            // ✅ IMPORTANT
+            supplyMethod: (l.supplyMethod ?? l.SupplyMethod) != null ? Number(l.supplyMethod ?? l.SupplyMethod) : null,
+            supplyMethodText: this.supplyMethodLabel((l.supplyMethod ?? l.SupplyMethod) != null ? Number(l.supplyMethod ?? l.SupplyMethod) : null),
+
+            // defaults for flags
+            isSellable: false,
+            isConsumable: false,
+            allowManualFulfillment: false
+          };
+
+          this.computeLine(ui);
+          this.lines.push(ui);
+        }
+
+        this.backfillMissingUoms();
+        this.computeTotals();
+
+        // ✅ bulk flags will auto fill supplyMethod only if null
+        this.loadFlagsForLines(this.lines);
+      },
+      error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Unable to load quotation for edit' })
+    });
+  }
+
+  // =========================
+  // Line source change
+  // =========================
+  onLineSourceChange() {
+    if (this.showModal) this.closeModal();
+
+    if (this.header.lineSourceId === 1) {
+      this.selectedItemSets = [];
+      this.pendingItemSet = null;
+      this.itemSetSearch = '';
+      this.lines = this.lines.filter(l => !l.isFromSet && !l.isSetHeader);
+      this.loadedItemSetIds.clear();
+    }
+
+    if (this.header.lineSourceId === 2) {
+      this.lines = this.lines.filter(l => l.isFromSet || l.isSetHeader);
+    }
+
+    this.computeTotals();
+  }
+
+  // =========================
+  // Line changed
+  // =========================
+  onLineChanged(i: number) {
+    const l = this.lines[i];
+    if (!l || l.isSetHeader) return;
+
+    const qty = l.qty === null || l.qty === undefined ? 0 : +l.qty;
+    const price = l.unitPrice === null || l.unitPrice === undefined ? 0 : +l.unitPrice;
+
+    l.qty = qty < 0 ? 0 : qty;
+    l.unitPrice = price < 0 ? 0 : price;
+
+    const disc = +l.discountPct || 0;
+    l.discountPct = Math.min(100, Math.max(0, disc));
+
+    l.taxCodeId = this.taxModeToTaxCodeId(l.taxMode);
+    this.computeLine(l);
+    this.computeTotals();
+  }
+
+  // =========================
+  // Customer/Currency/Payment dropdowns
+  // =========================
   openCustomerDropdown() {
     this.customerDdOpen = true;
     this.filteredCustomers = (this.customers || []).slice(0, 50);
@@ -631,7 +683,6 @@ onLineSourceChange() {
     this.computeTotals();
   }
 
-  // Currency
   openCurrencyDropdown() {
     this.currencyDdOpen = true;
     this.filteredCurrencies = this.currenciesSrv.slice();
@@ -639,9 +690,7 @@ onLineSourceChange() {
 
   filterCurrencies() {
     const q = (this.currencySearch || '').trim().toUpperCase();
-    this.filteredCurrencies = !q
-      ? this.currenciesSrv.slice()
-      : this.currenciesSrv.filter(c => c.name.toUpperCase().includes(q));
+    this.filteredCurrencies = !q ? this.currenciesSrv.slice() : this.currenciesSrv.filter(c => c.name.toUpperCase().includes(q));
     this.currencyDdOpen = true;
   }
 
@@ -653,7 +702,6 @@ onLineSourceChange() {
     this.computeTotals();
   }
 
-  // Payment terms
   openPaymentTermsDropdown() {
     this.paymentTermsDdOpen = true;
     this.filteredPaymentTerms = this.paymentTermsSrv.slice();
@@ -661,9 +709,7 @@ onLineSourceChange() {
 
   filterPaymentTerms() {
     const q = (this.paymentTermsSearch || '').trim().toLowerCase();
-    this.filteredPaymentTerms = !q
-      ? this.paymentTermsSrv.slice()
-      : this.paymentTermsSrv.filter(p => p.name.toLowerCase().includes(q));
+    this.filteredPaymentTerms = !q ? this.paymentTermsSrv.slice() : this.paymentTermsSrv.filter(p => p.name.toLowerCase().includes(q));
     this.paymentTermsDdOpen = true;
   }
 
@@ -674,7 +720,9 @@ onLineSourceChange() {
     this.header.paymentTerms = p.name;
   }
 
+  // =========================
   // ItemSet Multi-select
+  // =========================
   trackByItemSetId = (_: number, s: ItemSetHeaderRow) => s.id;
 
   toggleItemSetDropdown() {
@@ -721,68 +769,91 @@ onLineSourceChange() {
   removeItemSet(setId: number) {
     this.selectedItemSets = this.selectedItemSets.filter(s => s.id !== setId);
     this.lines = this.lines.filter(l => l.itemSetId !== setId);
+    this.loadedItemSetIds.delete(setId);
     this.computeTotals();
   }
 
   private loadItemSetItemsAndAppend(itemSetId: number, setName: string) {
-    this.itemSetService.getByIdItemSet(itemSetId).subscribe((res: any) => {
-      const dto = res?.data ?? res ?? null;
-      if (!dto) return;
+    if (this.loadedItemSetIds.has(itemSetId)) return;
+    this.loadedItemSetIds.add(itemSetId);
 
-      const items: any[] = dto.items ?? dto.itemSetItems ?? dto.lines ?? [];
+    this.itemSetService.getByIdItemSet(itemSetId).subscribe({
+      next: (res: any) => {
+        const dto = res?.data ?? null;
+        const rows: any[] = dto?.items ?? dto?.itemSetItems ?? dto?.lines ?? [];
+        if (!rows.length) return;
 
-      // set header row
-      this.lines.push({
-        itemId: 0,
-        uomId: null,
-        qty: 0,
-        unitPrice: 0,
-        discountPct: 0,
-        taxMode: 'Zero-Rated',
-        isSetHeader: true,
-        isFromSet: true,
-        itemSetId,
-        setName,
-        description: ''
-      } as UiLine);
+        // remove existing for this set (safety)
+        this.lines = this.lines.filter(x => x.itemSetId !== itemSetId);
 
-      const defaultTax: LineTaxMode = (+this.header.taxPct || 0) === 9 ? 'Standard-Rated' : 'Zero-Rated';
-
-      for (const it of items) {
-        const itemId = Number(it.itemId ?? it.ItemId ?? it.id ?? it.ItemMasterId ?? 0);
-        if (!itemId) continue;
-
-        // ✅ IMPORTANT FIX: resolve uomId from uomName/uomId/itemmaster
-        const uomId = this.resolveUomIdFromItemSetRow(it, itemId);
-
-        const line: UiLine = {
-          itemId,
-          itemName: String(it.itemName ?? it.ItemName ?? this.getItemName(itemId) ?? ''),
-          uomId,
-          qty: null as any,
-          unitPrice: null as any,
+        // header row
+        this.lines.push({
+          itemId: 0,
+          uomId: null,
+          qty: 0,
+          unitPrice: 0,
           discountPct: 0,
-          description: String(it.description ?? it.Description ?? ''),
-          taxMode: defaultTax,
-          taxCodeId: this.taxModeToTaxCodeId(defaultTax),
+          taxMode: 'Zero-Rated',
+          isSetHeader: true,
           isFromSet: true,
           itemSetId,
-          setName,
-          isSetHeader: false,
+          setName: dto?.setName ?? setName,
+          description: '',
+          supplyMethod: null,
+          supplyMethodText: 'SELECT'
+        } as any);
 
-          // keep uomName for backfill if needed
-          uomName: it.uomName ?? it.UomName ?? null
-        };
+        const defaultTax: LineTaxMode =
+          (+this.header.taxPct || 0) === 9 ? 'Standard-Rated' : 'Zero-Rated';
 
-        this.computeLine(line);
-        this.lines.push(line);
-      }
+        for (const it of rows) {
+          const itemId = Number(it.itemId ?? it.ItemId ?? it.id ?? 0);
+          if (!itemId) continue;
 
-      this.computeTotals();
+          const uomId = this.resolveUomIdFromItemSetRow(it, itemId);
+
+          const line: UiLine = {
+            itemId,
+            itemName: String(it.itemName ?? it.ItemName ?? this.getItemName(itemId) ?? ''),
+            uomId,
+            qty: null as any,
+            unitPrice: null as any,
+            discountPct: 0,
+            description: String(it.description ?? it.Description ?? ''),
+            taxMode: defaultTax,
+            taxCodeId: this.taxModeToTaxCodeId(defaultTax),
+            isFromSet: true,
+            itemSetId,
+            setName: dto?.setName ?? setName,
+            isSetHeader: false,
+            uomName: it.uomName ?? it.UomName ?? null,
+
+            // ✅ if API sends supplyMethod use it, else null (bulk flags will auto fill)
+            supplyMethod: (it.supplyMethod ?? it.SupplyMethod) != null ? Number(it.supplyMethod ?? it.SupplyMethod) : null,
+            supplyMethodText: this.supplyMethodLabel((it.supplyMethod ?? it.SupplyMethod) != null ? Number(it.supplyMethod ?? it.SupplyMethod) : null),
+
+            // flag defaults
+            isSellable: false,
+            isConsumable: false,
+            allowManualFulfillment: false
+          };
+
+          this.computeLine(line);
+          this.lines.push(line);
+        }
+
+        this.computeTotals();
+
+        // ✅ apply flags + auto fill supplyMethod if empty
+        this.loadFlagsForLines(this.lines.filter(x => !x.isSetHeader));
+      },
+      error: () => this.loadedItemSetIds.delete(itemSetId)
     });
   }
 
-  // Discount
+  // =========================
+  // Discount + Totals
+  // =========================
   onDiscountChange() {
     this.header.discountManual = true;
     this.computeTotals();
@@ -806,7 +877,6 @@ onLineSourceChange() {
     this.computeTotals();
   }
 
-  // Line calculation
   private computeLine(l: UiLine): { base: number; discount: number } {
     if (l.isSetHeader) {
       l.lineNet = l.lineTax = l.lineTotal = 0;
@@ -874,28 +944,30 @@ onLineSourceChange() {
     this.header.needsHodApproval = hod;
   }
 
- private validateBeforeSave(): boolean {
-  for (const l of this.lines) {
-    if (l.isSetHeader) continue;
+  private validateBeforeSave(): boolean {
+    for (const l of this.lines) {
+      if (l.isSetHeader) continue;
 
-    const q = l.qty == null ? 0 : +l.qty;
-    const p = l.unitPrice == null ? 0 : +l.unitPrice;
+      const q = l.qty == null ? 0 : +l.qty;
+      const p = l.unitPrice == null ? 0 : +l.unitPrice;
 
-    if (q <= 0 || p <= 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Enter Qty & Unit Price',
-        text: `Please enter Qty & Unit Price for item: ${l.itemName || this.getItemName(l.itemId)}`,
-        confirmButtonColor: '#2E5F73'
-      });
-      return false;
+      if (q <= 0 || p <= 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Enter Qty & Unit Price',
+          text: `Please enter Qty & Unit Price for item: ${l.itemName || this.getItemName(l.itemId)}`,
+          confirmButtonColor: '#2E5F73'
+        });
+        return false;
+      }
     }
+    return true;
   }
-  return true;
-}
 
+  // =========================
+  // Save
+  // =========================
   save() {
-    debugger
     if (!this.validateBeforeSave()) return;
 
     const dto: any = {
@@ -905,54 +977,60 @@ onLineSourceChange() {
       deliveryDate: this.header.deliveryDate,
       validityDate: this.header.deliveryDate,
       lineSourceId: this.header.lineSourceId,
- itemSetIds: (this.selectedItemSets || []).map(x => x.id),
+      itemSetIds: (this.selectedItemSets || []).map(x => x.id),
       lines: this.lines
         .filter(l => !l.isSetHeader)
         .map(l => ({
           ...l,
-          description: (l.description || '').trim(),
+          itemId: l.itemId,
           uomId: l.uomId ?? null,
           qty: +l.qty || 0,
           unitPrice: +l.unitPrice || 0,
           discountPct: +l.discountPct || 0,
           taxMode: l.taxMode || 'Zero-Rated',
           taxCodeId: l.taxCodeId ?? this.taxModeToTaxCodeId(l.taxMode),
+          description: (l.description || '').trim(),
           itemSetId: l.itemSetId ?? null,
           setName: l.setName ?? null,
-          isFromSet: !!l.isFromSet
+          isFromSet: !!l.isFromSet,
+
+          // ✅ SAVE THIS
+          supplyMethod: l.supplyMethod ?? 0
         }))
     };
 
     if (!dto.number || !dto.number.trim?.()) {
       dto.number = `QT-${new Date().toISOString().replace(/\D/g, '').slice(0, 14)}`;
     }
-const id = Number(this.header?.id ?? this.editId ?? 0);
-  if (id > 0) {
-  this.qt.update(id, { ...dto, id }).subscribe({
-    next: () => {
-      Swal.fire({ icon: 'success', title: 'Updated', text: 'Quotation Updated Successfully', confirmButtonColor: '#2E5F73' })
-        .then(() => this.router.navigate(['/Sales/Quotation-list']));
-    },
-    error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Update failed', confirmButtonColor: '#d33' })
-  });
-} else {
-  this.qt.create(dto).subscribe({
-    next: () => {
-      Swal.fire({ icon: 'success', title: 'Saved', text: 'Quotation Created Successfully', confirmButtonColor: '#2E5F73' })
-        .then(() => this.router.navigate(['/Sales/Quotation-list']));
-    },
-    error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Create failed', confirmButtonColor: '#d33' })
-  });
-}
+
+    const id = Number(this.header?.id ?? this.editId ?? 0);
+
+    if (id > 0) {
+      this.qt.update(id, { ...dto, id }).subscribe({
+        next: () => {
+          Swal.fire({ icon: 'success', title: 'Updated', text: 'Quotation Updated Successfully', confirmButtonColor: '#2E5F73' })
+            .then(() => this.router.navigate(['/Sales/Quotation-list']));
+        },
+        error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Update failed', confirmButtonColor: '#d33' })
+      });
+    } else {
+      this.qt.create(dto).subscribe({
+        next: () => {
+          Swal.fire({ icon: 'success', title: 'Saved', text: 'Quotation Created Successfully', confirmButtonColor: '#2E5F73' })
+            .then(() => this.router.navigate(['/Sales/Quotation-list']));
+        },
+        error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Create failed', confirmButtonColor: '#d33' })
+      });
+    }
   }
 
   goToList() {
     this.router.navigate(['/Sales/Quotation-list']);
   }
 
-  // =========================================================
-  // ✅ MODAL (CLICK ONLY DROPDOWN)
-  // =========================================================
+  // =========================
+  // Modal
+  // =========================
   trackByItemId = (_: number, it: SimpleItem) => it.id;
 
   openAdd() {
@@ -982,37 +1060,6 @@ const id = Number(this.header?.id ?? this.editId ?? 0);
     }, 0);
   }
 
-  openEdit(i: number) {
-    if (!(this.header.lineSourceId === 1 || this.header.lineSourceId === 3)) return;
-
-    const l = this.lines[i];
-    if (!l || l.isSetHeader || l.isFromSet) return;
-
-    this.editingIndex = i;
-
-    this.modal = {
-      itemId: l.itemId || null,
-      itemSearch: l.itemName || this.getItemName(l.itemId) || '',
-      qty: (l.qty as any) ?? null,
-      uomId: l.uomId ?? null,
-      unitPrice: (l.unitPrice as any) ?? null,
-      discountPct: (l.discountPct as any) ?? 0,
-      taxMode: (l.taxMode as LineTaxMode) || 'Zero-Rated',
-      description: l.description ?? '',
-      dropdownOpen: false,
-      filteredItems: []
-    };
-
-    this.showModal = true;
-    document.body.classList.add('prl-modal-open');
-
-    this.previewLineTotals();
-
-    setTimeout(() => {
-      try { this.itemSearchInput?.nativeElement?.focus(); } catch {}
-    }, 0);
-  }
-
   closeModal() {
     this.showModal = false;
     this.modal.dropdownOpen = false;
@@ -1024,7 +1071,6 @@ const id = Number(this.header?.id ?? this.editId ?? 0);
     ev.stopPropagation();
   }
 
-  // ✅ CLICK ONLY toggle
   toggleModalItemDropdown() {
     this.modal.dropdownOpen = !this.modal.dropdownOpen;
     if (this.modal.dropdownOpen) {
@@ -1035,13 +1081,11 @@ const id = Number(this.header?.id ?? this.editId ?? 0);
     }
   }
 
-  // ✅ typing should filter ONLY IF dropdown already open
   onModalItemInput() {
     if (!this.modal.dropdownOpen) return;
     this.filterModalItemsOnly();
   }
 
-  // ✅ filter only (do NOT force open)
   private filterModalItemsOnly() {
     const q = (this.modal.itemSearch || '').trim().toLowerCase();
 
@@ -1058,7 +1102,7 @@ const id = Number(this.header?.id ?? this.editId ?? 0);
   selectModalItem(row: SimpleItem) {
     this.modal.itemId = row.id;
     this.modal.itemSearch = row.itemName;
-    this.modal.uomId = row.uomId ?? null; // ✅ item master uomId bind
+    this.modal.uomId = row.uomId ?? null;
     this.modal.dropdownOpen = false;
     this.previewLineTotals();
   }
@@ -1102,7 +1146,16 @@ const id = Number(this.header?.id ?? this.editId ?? 0);
       isFromSet: false,
       isSetHeader: false,
       itemSetId: null,
-      setName: ''
+      setName: '',
+
+      // ✅ MUST HAVE
+      supplyMethod: null,
+      supplyMethodText: 'SELECT',
+
+      // flags defaults
+      isSellable: false,
+      isConsumable: false,
+      allowManualFulfillment: false
     };
 
     this.computeLine(payload);
@@ -1111,6 +1164,10 @@ const id = Number(this.header?.id ?? this.editId ?? 0);
     else this.lines[this.editingIndex] = { ...this.lines[this.editingIndex], ...payload };
 
     this.computeTotals();
+
+    // ✅ load flags for this item and auto assign supplyMethod
+    this.loadFlagsForLines([payload]);
+
     this.closeModal();
   }
 

@@ -78,6 +78,7 @@
   [(ngModel)]="item.itemType"
   name="itemType"
   [compareWith]="compareById"
+  (change)="onItemTypeChange()"
   required>
 
   <option [ngValue]="null" disabled>Select Item Type</option>
@@ -88,7 +89,25 @@
 </select>
 
     </div>
+<div>
+  <label class="text-xs font-semibold text-gray-600">
+    Fulfillment Mode <span class="text-red-500">*</span>
+  </label>
 
+<select
+  class="w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e3a4c]"
+  [(ngModel)]="item.fulfillmentMode"
+  name="fulfillmentMode"
+  (change)="onFulfillmentUserOverride()"
+  required>
+
+  <option [ngValue]="null" disabled>Select</option>
+  <option [ngValue]="1">Sellable</option>
+  <option [ngValue]="2">Consumable</option>
+  <option [ngValue]="3">Both</option>
+</select>
+
+</div>
     <!-- Category -->
     <div class="md:col-span-1">
       <label class="text-xs font-semibold text-gray-600 block">Category <span class="text-red-500">*</span></label>
@@ -120,7 +139,7 @@
     </div>
 
     <!-- Budget Line -->
-    <div class="md:col-span-3">
+    <div class="md:col-span-2">
       <label class="text-xs font-semibold text-gray-600 block">Ledger Name<span class="text-red-500">*</span></label>
 
       <ng-select

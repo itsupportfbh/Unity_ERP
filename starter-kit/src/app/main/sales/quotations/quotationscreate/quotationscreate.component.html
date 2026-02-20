@@ -1,3 +1,5 @@
+<!-- quotationscreate.component.html -->
+
 <!-- Back button (SMALL) -->
 <button (click)="goToList()" class="qtBackBtnSm" type="button">
   <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -173,7 +175,6 @@
             readonly />
         </div>
 
-        <!-- Spacer -->
         <div class="qtField"></div>
       </div>
 
@@ -301,12 +302,9 @@
             <th style="min-width:240px;">Item Master Flags</th>
             <th style="min-width:240px;">Description</th>
             <th style="width:90px;">UOM</th>
-
-            <!-- wider numeric cols -->
             <th class="text-center" style="width:130px;">Qty</th>
             <th class="text-center" style="width:150px;">Unit Price</th>
             <th class="text-center" style="width:140px;">Discount %</th>
-
             <th style="width:160px;">Tax Mode</th>
             <th style="width:170px;">Fulfillment (SO)</th>
             <th class="text-center" style="width:160px;">Line Total</th>
@@ -327,13 +325,13 @@
 
           <ng-container *ngFor="let l of lines; let i = index">
 
-            <!-- Set Header Row -->
+            <!-- ✅ Set Header Row (3rd image style) -->
             <tr *ngIf="l.isSetHeader" class="qtSetRow">
               <td [attr.colspan]="11">
                 <div class="qtSetBar">
                   <div class="qtSetName">
                     <i class="fas fa-layer-group"></i>
-                    <span>{{ l.setName }}</span>
+                    <span class="qtSetMain">{{ l.setName }}</span>
                     <span class="qtSetTag">SET</span>
                   </div>
 
@@ -352,9 +350,16 @@
               <td>
                 <div class="qtItemCell">
                   <div class="n">{{ l.itemName || getItemName(l.itemId) || '-' }}</div>
+
+                  <!-- ✅ setName show inside line (like 3rd image) -->
+                  <!-- <div class="set" *ngIf="l.isFromSet && (l.setName || l.itemSetId)">
+                    <i class="fas fa-layer-group"></i>
+                    <span class="t">{{ l.setName || ('Set #' + l.itemSetId) }}</span>
+                  </div>
+
                   <div class="s" *ngIf="l.isFromSet">
                     <i class="fas fa-link"></i> From Item Set
-                  </div>
+                  </div> -->
                 </div>
               </td>
 
@@ -370,9 +375,9 @@
                   <span class="qtTag qtTag--dark" *ngIf="l.allowManualFulfillment">Manual Fulfillment</span>
                 </div>
 
-                <div class="qtMuted small mt-1" *ngIf="l.fulfillmentText">
+                <!-- <div class="qtMuted small mt-1" *ngIf="l.fulfillmentText">
                   Auto: {{ l.fulfillmentText }}
-                </div>
+                </div> -->
               </td>
 
               <!-- Desc -->
@@ -417,6 +422,10 @@
                         (ngModelChange)="onLineChanged(i)">
                   <option *ngFor="let m of taxModesForCurrentGst" [ngValue]="m">{{ m }}</option>
                 </select>
+
+                <!-- <div class="qtTaxHint" *ngIf="l.taxCodeId">
+                  Code: {{ l.taxCodeId }}
+                </div> -->
               </td>
 
               <!-- Fulfillment -->
@@ -424,11 +433,10 @@
                 <select class="form-control qtInput qtInput--sm"
                         [(ngModel)]="l.supplyMethod"
                         (change)="onSupplyMethodChanged(l, i)">
+                  <option [ngValue]="null">Select</option>
                   <option [ngValue]="0">Direct DO</option>
                   <option [ngValue]="1">PP</option>
                 </select>
-
-                <!-- <div class="qtMuted small mt-1">{{ l.supplyMethodText || 'SELECT' }}</div> -->
               </td>
 
               <!-- Total -->
@@ -439,13 +447,6 @@
               <!-- Action -->
               <td class="text-center">
                 <div class="qtActions">
-                  <button class="qtIconBtn" type="button"
-                          (click)="openEdit(i)"
-                          title="Edit"
-                          *ngIf="(header.lineSourceId === 1 || header.lineSourceId === 3) && !l.isFromSet">
-                    <i class="fas fa-pen"></i>
-                  </button>
-
                   <button class="qtIconBtn qtIconBtn--danger" type="button"
                           (click)="remove(i)"
                           title="Remove">
@@ -467,6 +468,17 @@
     <div class="qtTotals__spacer"></div>
 
     <div class="qtTotals__card">
+      <div class="qtTotalsHead">
+        <div class="t">
+          <span class="ic"><i class="fas fa-receipt"></i></span>
+          <span>Summary</span>
+        </div>
+        <span class="qtCurrencyPill">
+          <span class="k">Currency</span>
+          <span class="v">{{ header.currency || '-' }}</span>
+        </span>
+      </div>
+
       <div class="qtSumRow">
         <span>Subtotal</span>
         <strong>{{ header.subtotal | currency:header.currency }}</strong>
@@ -502,7 +514,10 @@
       <div class="qtDivider"></div>
 
       <div class="qtGrand">
-        <span class="k">Grand Total</span>
+        <div class="lhs">
+          <span class="k">Grand Total</span>
+          <small class="h">Subtotal - Discount + Tax</small>
+        </div>
         <h3 class="v">{{ header.grandTotal | currency:header.currency }}</h3>
       </div>
     </div>
@@ -510,7 +525,7 @@
 
 </div>
 
-<!-- ✅ Separate Bottom Save Bar -->
+<!-- ✅ Bottom Save Bar (sidebar-safe) -->
 <div class="qtBottomBar">
   <div class="qtBottomBar__inner">
     <div class="qtBottomBar__left">
@@ -523,15 +538,12 @@
     <div class="qtBottomBar__right">
       <button class="qtBtn qtBtn--brand qtBtn--bottomSave" type="button" (click)="save()">
         <i class="fas fa-floppy-disk"></i>
-        <span>Save</span>
+        <span>Save Quotation</span>
       </button>
     </div>
   </div>
 </div>
 
-<!-- =======================================================
-✅ MODAL (Your existing modal - keep same)
-======================================================= -->
 <!-- =======================================================
 ✅ MODAL (FULL)
 ======================================================= -->

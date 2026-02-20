@@ -233,6 +233,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
 
       if (!r.warehouseId) errors.push(`${rowNo}) ${itemLabel}: Please select warehouse`);
       if (!r.binId) errors.push(`${rowNo}) ${itemLabel}: Please select bin`);
+       if (!r.strategyId) errors.push(`${rowNo}) ${itemLabel}: Please select Frequency`);
 
       const qty = Number(r.qtyReceived);
       if (!r.qtyReceived && r.qtyReceived !== 0) errors.push(`${rowNo}) ${itemLabel}: Please enter received qty`);

@@ -163,7 +163,31 @@ export class ProductionPlanningComponent implements OnInit {
         this.ingredients = res?.ingredients || [];
         this.recomputeShortage();
         this.isLoading = false;
+  const missing = res?.missingFinishedItems || [];
 
+   if (missing.length > 0) {
+    // (optional) remove duplicates by itemId
+    const uniq = Array.from(new Map(missing.map((x: any) => [x.finishedItemId, x])).values());
+
+    const listHtml = uniq
+      .map((x: any) => `• ${x.finishedItemName} (Qty: ${this.fmt(x.plannedQty)})`)
+      .join('<br/>');
+
+    Swal.fire({
+      icon: 'warning',
+      title: 'RecipeHeader missing',
+      html:
+        `<div style="text-align:left;">
+           <b>Please create RecipeHeader for below Finished Items (SupplyMethod = PP):</b><br/><br/>
+           ${listHtml}
+         </div>
+         <br/>
+         <small>After creating RecipeHeader, refresh this page to load Plan.</small>`,
+      confirmButtonText: 'OK'
+    });
+
+    return; // ✅ IMPORTANT: stop here
+  }
         if (!this.planRows.length) {
           Swal.fire('No Recipe', 'No recipe found for SO items.', 'warning');
         }

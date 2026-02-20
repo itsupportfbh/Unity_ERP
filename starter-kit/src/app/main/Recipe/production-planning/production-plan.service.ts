@@ -48,6 +48,7 @@ export interface ProductionPlanListRow {
   lines?: ProductionPlanLineDto[];
 }
 export interface ProductionPlanResponseDto {
+  missingFinishedItems: any[];
   productionPlanId?: number;
   planRows: PlanRowDto[];
   ingredients: IngredientRowDto[];

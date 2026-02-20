@@ -19,8 +19,22 @@ type WarehouseInfo = {
 
 type WarehouseMaster = { id: number; warehouseName: string };
 
-// tax mode
 type LineTaxMode = 'Standard-Rated' | 'Zero-Rated' | 'Exempt';
+
+/**
+ * fulfillmentMode:
+ *  1 = Sellable
+ *  2 = Consumable
+ *  3 = Both
+ *  null = Select
+ *
+ * supplyMethod:
+ *  0 = Direct DO
+ *  1 = PP
+ *  null = Select
+ */
+type FulfillmentMode = 1 | 2 | 3 | null;
+type SupplyMethod = 0 | 1 | null;
 
 type SoLine = {
   __id?: number;
@@ -28,36 +42,30 @@ type SoLine = {
   item?: string;
   itemId?: number;
   uom?: string;
-
   description?: string;
 
-  quantity?: number | string;
+  // ✅ MATCH HTML
+  qty?: number | string;
   unitPrice?: number | string;
-
-  discount?: number | string;
-  discountType?: 'PCT' | 'VAL';
-
-  tax?: LineTaxMode;
+  discountPct?: number | string;
+  taxMode?: LineTaxMode;
 
   lineGross?: number;
   lineNet?: number;
   lineTax?: number;
-  total?: number;
+  lineTotal?: number;
   lineDiscount?: number;
 
-  __origQty?: number;
-  __origGross?: number;
-  __origNet?: number;
-  __origTax?: number;
-  __origTotal?: number;
-  __origDiscount?: number;
-
   warehouses?: WarehouseInfo[];
-  dropdownOpen?: '' | 'item' | 'tax';
-  filteredOptions?: any[];
 
-  // ✅ optional (if backend later gives)
-  itemSetId?: number;
+  // ✅ read-only flags
+  isSellable?: boolean;
+  isConsumable?: boolean;
+
+  // ✅ SO decisions
+  fulfillmentMode?: FulfillmentMode; // 1/2/3/null
+  supplyMethod?: SupplyMethod;       // 0/1/null
+  __supplyLocked?: boolean;
 };
 
 type ItemSetRef = { id: number; name: string };
@@ -74,7 +82,6 @@ type SetGroup = {
   styleUrls: ['./sales-order-create.component.scss']
 })
 export class SalesOrderCreateComponent implements OnInit {
-
   editMode = false;
   private routeId: number | null = null;
 
@@ -86,14 +93,11 @@ export class SalesOrderCreateComponent implements OnInit {
     customerId: 0,
     requestedDate: '',
     deliveryDate: '',
-
-    // ✅ NEW
     deliveryTo: '',
     remarks: '',
 
-    // ✅ Header extra
-    lineSourceId: 1,                // 1 = Individual Item, 2 = ItemSet
-    itemSets: [] as ItemSetRef[],   // ✅ normalized list (mapping table)
+    lineSourceId: 1,
+    itemSets: [] as ItemSetRef[],
 
     shipping: 0,
     discount: 0,
@@ -107,22 +111,15 @@ export class SalesOrderCreateComponent implements OnInit {
 
   customers: any[] = [];
   quotationList: any[] = [];
-  items: any[] = [];
-  taxCodes: any[] = [];
 
   warehousesMaster: WarehouseMaster[] = [];
   selectedWarehouseId: number | null = null;
   selectedWarehouseName = '';
 
-  // ✅ Flat lines (for saving)
   soLines: SoLine[] = [];
-
-  // ✅ Grouped view for 2nd image table
   setGroups: SetGroup[] = [];
 
   submitted = false;
-
-  discountDisplayMode: 'PCT' | 'VAL' = 'PCT';
 
   searchTexts: { [k: string]: string } = {
     quotationNo: '',
@@ -163,24 +160,40 @@ export class SalesOrderCreateComponent implements OnInit {
     return Number(this.soHdr.lineSourceId || 1) === 2;
   }
 
-get sourceLineText(): string {
-  const v = Number(this.soHdr?.lineSourceId ?? 1);
-  if (v === 1) return 'Individual Item';
-  if (v === 2) return 'Item Set';
-  if (v === 3) return 'Mixed (Item + Set)';
-  return 'Individual Item';
-}
+  get sourceLineText(): string {
+    const v = Number(this.soHdr?.lineSourceId ?? 1);
+    if (v === 1) return 'Individual Item';
+    if (v === 2) return 'Item Set';
+    if (v === 3) return 'Mixed (Item + Set)';
+    return 'Individual Item';
+  }
 
   get itemSetNamesText(): string {
     const arr = (this.soHdr.itemSets ?? []) as ItemSetRef[];
     return arr.length ? arr.map(x => x.name).join(', ') : '';
   }
 
-  get itemSetIdsText(): string {
-    const arr = (this.soHdr.itemSets ?? []) as ItemSetRef[];
-    return arr.length ? arr.map(x => x.id).join(', ') : '';
+  /* ================= LABELS ================= */
+  getFulfillmentLabel(v: FulfillmentMode | undefined): string {
+    if (v === 1) return 'Sellable';
+    if (v === 2) return 'Consumable';
+    if (v === 3) return 'Both';
+    return 'Select';
   }
 
+  getSupplyLabel(v: SupplyMethod | undefined): string {
+    if (v === 0) return 'Direct DO';
+    if (v === 1) return 'PP';
+    return 'Select';
+  }
+
+  get taxModesForCurrentGst(): LineTaxMode[] {
+    const gst = Number(this.soHdr.gstPct || 0);
+    if (gst !== 9) return ['Zero-Rated', 'Exempt'];
+    return ['Standard-Rated', 'Zero-Rated', 'Exempt'];
+  }
+
+  /* ================= INIT ================= */
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     this.editMode = !!idParam;
@@ -190,20 +203,18 @@ get sourceLineText(): string {
       this.soHdr.requestedDate = this.toInputDate(new Date());
     }
 
-    // countries (GST)
     this.countriesSvc.getCountry().subscribe((res: any) => {
       this.countries = (res?.data ?? []).map((c: any) => ({
         id: Number(c.id ?? c.Id),
         countryName: String(c.countryName ?? c.CountryName ?? '').trim(),
-        gstPercentage: Number(c.gstPercentage ?? c.GSTPercentage ?? 0),
+        gstPercentage: Number(c.gstPercentage ?? c.GSTPercentage ?? 0)
       }));
     });
 
-    // quotations + customers + existing SO
     forkJoin({
       quotations: this.quotationSvc.getAll(),
       customers: this.customerSvc.GetAllCustomerDetails(),
-      salesOrders: this.salesOrderService.getSO(),
+      salesOrders: this.salesOrderService.getSO()
     }).subscribe((res: any) => {
       const allQuotations = res.quotations?.data ?? [];
       const allCustomers = res.customers?.data ?? [];
@@ -218,6 +229,7 @@ get sourceLineText(): string {
       );
 
       this.customers = allCustomers;
+
       this.filteredLists.quotationNo = [...this.quotationList];
       this.filteredLists.customer = [...this.customers];
       this.filteredLists.warehouse = [...this.warehousesMaster];
@@ -228,16 +240,14 @@ get sourceLineText(): string {
     });
   }
 
-  /* ======== helpers for amounts ======== */
+  /* ======== math helpers ======== */
   private round2 = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
 
   private canonicalTaxMode(rawMode: any, gstPct: number): LineTaxMode {
     const s = (rawMode ?? '').toString().toUpperCase().trim();
-
     if (s === 'STANDARD-RATED' || s === 'STANDARD_RATED' || s === 'EXCLUSIVE') return 'Standard-Rated';
     if (s === 'ZERO-RATED' || s === 'ZERO_RATED' || s === 'INCLUSIVE') return 'Zero-Rated';
     if (s === 'EXEMPT' || s === 'NO GST' || s === 'NO_GST') return 'Exempt';
-
     return gstPct === 9 ? 'Standard-Rated' : 'Zero-Rated';
   }
 
@@ -247,12 +257,11 @@ get sourceLineText(): string {
     discountPct: number,
     taxMode: string | null | undefined,
     gstPct: number
-  ): { gross: number; net: number; tax: number; total: number; discountAmt: number } {
-
+  ) {
     const sub = qty * unitPrice;
     const discPct = discountPct || 0;
 
-    let discountAmt = sub * discPct / 100;
+    let discountAmt = (sub * discPct) / 100;
     if (discountAmt < 0) discountAmt = 0;
     if (discountAmt > sub) discountAmt = sub;
 
@@ -262,16 +271,13 @@ get sourceLineText(): string {
     const mode = this.canonicalTaxMode(taxMode, gstPct);
     const rate = (mode === 'Standard-Rated' ? gstPct : 0) / 100;
 
-    let net = afterDisc, tax = 0, tot = afterDisc;
+    let net = afterDisc;
+    let tax = 0;
+    let tot = afterDisc;
 
     if (mode === 'Standard-Rated' && rate > 0) {
-      net = afterDisc;
       tax = net * rate;
       tot = net + tax;
-    } else {
-      net = afterDisc;
-      tax = 0;
-      tot = afterDisc;
     }
 
     return {
@@ -279,23 +285,73 @@ get sourceLineText(): string {
       net: this.round2(net),
       tax: this.round2(tax),
       total: this.round2(tot),
-      discountAmt: this.round2(discountAmt)
+      discountAmt: this.round2(discountAmt),
+      mode
     };
   }
 
-  private enforceTaxModesByGst() {
-    const gst = Number(this.soHdr.gstPct || 0);
-    if (gst !== 9) {
-      this.soLines.forEach(l => { l.tax = 'Zero-Rated'; });
+  /* ================= fulfillmentMode -> flags ================= */
+  private applyFlagsFromFulfillmentMode(ln: SoLine) {
+    const fmRaw: any = (ln.fulfillmentMode as any);
+    const fm = (fmRaw === null || fmRaw === undefined || fmRaw === '') ? null : Number(fmRaw);
+
+    ln.fulfillmentMode = (fm === 1 || fm === 2 || fm === 3) ? (fm as any) : null;
+
+    ln.isSellable = (ln.fulfillmentMode === 1 || ln.fulfillmentMode === 3);
+    ln.isConsumable = (ln.fulfillmentMode === 2 || ln.fulfillmentMode === 3);
+  }
+
+  /* ================= fulfillmentMode -> supplyMethod =================
+     1 Sellable   => 0 Direct DO (locked)
+     2 Consumable => 1 PP       (locked)
+     3 Both       => user choose
+  */
+  private applySupplyFromFulfillment(ln: SoLine) {
+    const f = ln.fulfillmentMode ?? null;
+
+    if (f === 1) {
+      ln.supplyMethod = 0;
+      ln.__supplyLocked = true;
+    } else if (f === 2) {
+      ln.supplyMethod = 1;
+      ln.__supplyLocked = true;
+    } else if (f === 3) {
+      if (ln.supplyMethod !== 0 && ln.supplyMethod !== 1) ln.supplyMethod = null;
+      ln.__supplyLocked = false;
+    } else {
+      ln.supplyMethod = null;
+      ln.__supplyLocked = false;
     }
   }
 
-  /* ================= NEW: lineSourceId + ItemSets (mapping-table style) ================= */
+  /* ✅ compute totals for ONE line */
+  private computeLine(ln: SoLine) {
+    const gst = Number(this.soHdr.gstPct || 0);
+    const qty = Number(ln.qty) || 0;
+    const price = Number(ln.unitPrice) || 0;
+    const disc = Number(ln.discountPct) || 0;
+
+    const amt = this.calcAmounts(qty, price, disc, ln.taxMode, gst);
+
+    ln.taxMode = amt.mode;
+    ln.lineGross = amt.gross;
+    ln.lineNet = amt.net;
+    ln.lineTax = amt.tax;
+    ln.lineTotal = amt.total;
+    ln.lineDiscount = amt.discountAmt;
+  }
+
+  computeTotals() {
+    (this.soLines || []).forEach(ln => this.computeLine(ln));
+    this.recalcTotals();
+  }
+
+  /* ================= lineSourceId + ItemSets ================= */
   private setHeaderLineSourceAndItemSets(head: any) {
     let srcId = Number(head?.lineSourceId ?? head?.LineSourceId ?? 0);
 
     const itemSetCount = Number(head?.itemSetCount ?? head?.ItemSetCount ?? 0);
-    const itemSetIdsStr = String(head?.itemSetIds ?? head?.ItemSetIds ?? '').trim(); // "2" or "2,3"
+    const itemSetIdsStr = String(head?.itemSetIds ?? head?.ItemSetIds ?? '').trim();
     const itemSetsJsonTxt = String(head?.itemSetsJson ?? head?.ItemSetsJson ?? '').trim();
 
     const hasCsv = itemSetIdsStr !== '' && itemSetIdsStr !== '0' && itemSetIdsStr.toLowerCase() !== 'null';
@@ -305,20 +361,25 @@ get sourceLineText(): string {
     if (!isFinite(srcId) || srcId <= 0) srcId = hasItemSet ? 2 : 1;
     this.soHdr.lineSourceId = srcId;
 
-    // collect itemSets: {id,name} (unique by ItemSetId)
     const map = new Map<number, string>();
 
-    // JSON rows
     if (hasJson) {
       const rows = safeJsonParse<any[]>(itemSetsJsonTxt, []);
       rows.forEach(r => {
-        const id = Number(r?.ItemSetId ?? r?.itemSetId ?? r?.ItemSetID ?? 0);
+        const id = Number(r?.ItemSetId ?? r?.itemSetId ?? 0);
         const nm = String(r?.ItemSetName ?? r?.itemSetName ?? '').trim();
         if (id > 0) map.set(id, nm || `ItemSet ${id}`);
       });
     }
 
-    // array rows
+    if (hasCsv) {
+      itemSetIdsStr
+        .split(',')
+        .map(s => Number(s.trim()))
+        .filter(n => n > 0)
+        .forEach(id => { if (!map.has(id)) map.set(id, `ItemSet ${id}`); });
+    }
+
     const arr = head?.itemSets ?? head?.ItemSets;
     if (Array.isArray(arr)) {
       arr.forEach((x: any) => {
@@ -328,51 +389,26 @@ get sourceLineText(): string {
       });
     }
 
-    // csv ids only
-    if (hasCsv) {
-      itemSetIdsStr.split(',')
-        .map(s => Number(s.trim()))
-        .filter(n => n > 0)
-        .forEach(id => { if (!map.has(id)) map.set(id, `ItemSet ${id}`); });
-    }
-
     this.soHdr.itemSets = Array.from(map.entries()).map(([id, name]) => ({ id, name }));
 
-    // Individual item => clear
     if (Number(this.soHdr.lineSourceId || 1) === 1) {
       this.soHdr.itemSets = [];
     }
   }
 
-  /* ================= GROUPING: build setGroups for 2nd image ================= */
+  /* ================= GROUPING ================= */
   private buildSetGroups() {
     const sets = (this.soHdr.itemSets || []) as ItemSetRef[];
     const lines = (this.soLines || []) as SoLine[];
 
-    // No sets => one group
     if (!sets.length) {
-      this.setGroups = lines.length
-        ? [{ itemSetId: 0, name: 'Items', lines: [...lines] }]
-        : [];
+      this.setGroups = lines.length ? [{ itemSetId: 0, name: 'Items', lines: [...lines] }] : [];
       return;
     }
 
-    // prepare map
     const map = new Map<number, SetGroup>();
     sets.forEach(s => map.set(s.id, { itemSetId: s.id, name: s.name, lines: [] }));
 
-    // If backend sends itemSetId inside line => perfect group
-    const hasLineSet = lines.some(l => Number((l as any).itemSetId || 0) > 0);
-    if (hasLineSet) {
-      lines.forEach(l => {
-        const sid = Number((l as any).itemSetId || 0);
-        if (sid > 0 && map.has(sid)) map.get(sid)!.lines.push(l);
-      });
-      this.setGroups = Array.from(map.values()).filter(g => g.lines.length);
-      return;
-    }
-
-    // Fallback grouping: round-robin assign by order
     const setIds = sets.map(s => s.id);
     lines.forEach((l, idx) => {
       const sid = setIds[idx % setIds.length];
@@ -395,70 +431,66 @@ get sourceLineText(): string {
         this.searchTexts['customer'] = head.customerName || '';
 
         this.soHdr.requestedDate = this.toInputDate(head.requestedDate);
-        this.soHdr.deliveryDate  = this.toInputDate(head.deliveryDate);
+        this.soHdr.deliveryDate = this.toInputDate(head.deliveryDate);
 
         this.soHdr.deliveryTo = head.deliveryTo ?? head.DeliveryTo ?? '';
-        this.soHdr.remarks    = head.remarks    ?? head.Remarks    ?? '';
+        this.soHdr.remarks = head.remarks ?? head.Remarks ?? '';
 
-        // ✅ mapping load
         this.setHeaderLineSourceAndItemSets(head);
 
         this.soHdr.shipping = Number(head.shipping ?? 0);
-        this.soHdr.discount = Number(head.discount ?? 0);
-        this.soHdr.gstPct   = Number(head.gstPct ?? 0);
-        this.soHdr.taxAmount = Number(head.taxAmount ?? head.TaxAmount ?? 0);
-        this.soHdr.subTotal  = Number(head.subtotal ?? head.Subtotal ?? 0);
-        this.soHdr.grandTotal = Number(head.grandTotal ?? head.GrandTotal ?? 0);
-
-        this.soHdr.status   = head.status ?? 1;
-        this.soHdr.statusText = this.mapStatusText(this.soHdr.status);
+        this.soHdr.gstPct = Number(head.gstPct ?? 0);
 
         const gst = Number(this.soHdr.gstPct || 0);
         const lines = (head.lineItems ?? head.lines ?? []) as any[];
 
         this.soLines = lines.map((l: any) => {
-          const qty   = Number(l.quantity ?? l.qty ?? 0);
+          const qty = Number(l.qty ?? l.quantity ?? 0);
           const price = Number(l.unitPrice ?? 0);
-          const mode  = this.canonicalTaxMode(l.tax ?? l.taxMode, gst);
+          const discPct = Number(l.discountPct ?? l.discount ?? 0);
+          const mode = this.canonicalTaxMode(l.taxMode ?? l.tax, gst);
 
-          const discPct = Number(l.discount ?? l.discountPct ?? 0);
-          const amt = this.calcAmounts(qty, price, discPct, mode, gst);
+          // 🔥 IMPORTANT: API fulfillmentMode = 1/2/3
+          const rawFulfill = (l.fulfillmentMode ?? l.FulfillmentMode);
+          const fulfillmentMode: FulfillmentMode =
+            (rawFulfill === null || rawFulfill === undefined || rawFulfill === '') ? null : (Number(rawFulfill) as any);
 
-          return {
+          // supplyMethod key sometimes supplymethod
+          const rawSupply = (l.supplyMethod ?? l.SupplyMethod ?? l.supplymethod ?? l.supplyMethodId);
+          const supplyMethod: SupplyMethod =
+            (rawSupply === null || rawSupply === undefined || rawSupply === '') ? null : (Number(rawSupply) as any);
+
+          const ln: SoLine = {
             __id: Number(l.id || l.Id || 0) || undefined,
             item: l.itemName || l.item || '',
             itemId: Number(l.itemId ?? 0) || undefined,
-            uom: l.uom || l.uomName || '',
-            description: l.description ?? l.Description ?? '',
-            quantity: qty,
-            unitPrice: price,
-            discount: discPct,
-            discountType: 'PCT',
-            tax: mode,
-            lineGross: amt.gross,
-            lineNet:   amt.net,
-            lineTax:   amt.tax,
-            total:     amt.total,
-            lineDiscount: amt.discountAmt,
-            __origQty: qty,
-            __origGross: amt.gross,
-            __origNet:   amt.net,
-            __origTax:   amt.tax,
-            __origTotal: amt.total,
-            __origDiscount: amt.discountAmt,
-            warehouses: [],
-            dropdownOpen: '',
-            filteredOptions: [],
+            uom: l.uomName ?? l.uom ?? '',
+            description: (l.description ?? l.Description ?? '').toString(),
 
-            // ✅ if backend sends later
-            itemSetId: Number(l.itemSetId ?? 0) || undefined
-          } as SoLine;
+            qty,
+            unitPrice: price,
+            discountPct: discPct,
+            taxMode: mode,
+
+            fulfillmentMode,
+            supplyMethod:l.supplyMethodId,
+
+            warehouses: []
+          };
+
+          // ✅ derive flags from fulfillmentMode (so UI yes/no shows)
+          this.applyFlagsFromFulfillmentMode(ln);
+
+          // ✅ auto supply rules + lock
+          this.applySupplyFromFulfillment(ln);
+
+          // ✅ totals
+          this.computeLine(ln);
+
+          return ln;
         });
 
-        this.enforceTaxModesByGst();
-        this.recalcTotals();
-
-        // ✅ build grouped view
+        this.computeTotals();
         this.buildSetGroups();
       },
       error: (err) => {
@@ -468,45 +500,7 @@ get sourceLineText(): string {
     });
   }
 
-  private mapStatusText(v: any): string {
-    const n = Number(v);
-    return n === 0 ? 'Draft' : n === 1 ? 'Pending' : n === 2 ? 'Approved' : n === 3 ? 'Rejected' : 'Unknown';
-  }
-
-  private toInputDate(d: any): string {
-    if (!d) return '';
-    const dt = new Date(d);
-    if (isNaN(dt.getTime())) return '';
-    const yyyy = dt.getFullYear();
-    const mm = String(dt.getMonth() + 1).padStart(2, '0');
-    const dd = String(dt.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  }
-
-  isEmpty(v: any): boolean {
-    return (v ?? '').toString().trim() === '';
-  }
-
-  toggleDropdown(field: 'quotationNo' | 'customer' | 'warehouse', open?: boolean) {
-    this.dropdownOpen[field] = open !== undefined ? open : !this.dropdownOpen[field];
-    if (field === 'quotationNo') this.filteredLists[field] = [...this.quotationList];
-    if (field === 'customer') this.filteredLists[field] = [...this.customers];
-    if (field === 'warehouse') this.filteredLists[field] = [...this.warehousesMaster];
-  }
-
-  filter(field: 'quotationNo' | 'customer' | 'warehouse') {
-    const q = (this.searchTexts[field] || '').toLowerCase();
-    if (field === 'quotationNo') {
-      this.filteredLists[field] = this.quotationList.filter(x => (x.number || '').toLowerCase().includes(q));
-    } else if (field === 'customer') {
-      this.filteredLists[field] = this.customers.filter(x => (x.customerName || '').toLowerCase().includes(q));
-    } else {
-      this.filteredLists[field] = this.warehousesMaster.filter(x =>
-        (x.warehouseName || '').toLowerCase().includes(q) || String(x.id).includes(q));
-    }
-  }
-
-  /* ============ Header select ============ */
+  /* ============ Header select (Quotation) ============ */
   select(field: 'quotationNo' | 'customer', item: any) {
     if (this.editMode) return;
 
@@ -525,62 +519,54 @@ get sourceLineText(): string {
         const lines = (head?.lines ?? []) as any[];
 
         this.soHdr.deliveryDate = this.toInputDate(head?.deliveryDate ?? head?.DeliveryDate);
-        this.soHdr.deliveryTo = (head?.deliveryTo ?? head?.DeliveryTo ?? this.soHdr.deliveryTo ?? '');
-        this.soHdr.remarks    = (head?.remarks ?? head?.Remarks ?? this.soHdr.remarks ?? '');
+        this.soHdr.deliveryTo = (head?.deliveryTo ?? head?.DeliveryTo ?? '');
+        this.soHdr.remarks = (head?.remarks ?? head?.Remarks ?? '');
 
-        // ✅ mapping
         this.setHeaderLineSourceAndItemSets(head);
 
         this.soHdr.gstPct = Number(head?.gstPct ?? head?.gst ?? 0);
         const gst = Number(this.soHdr.gstPct || 0);
 
-        this.soLines = lines.map(l => {
-          const wh: WarehouseInfo[] = Array.isArray(l.warehouses)
-            ? l.warehouses
-            : (l.warehousesJson ? safeJsonParse<WarehouseInfo[]>(l.warehousesJson, []) : []);
+        this.soLines = lines.map((l: any) => {
+          const qty = Number(l.qty ?? l.quantity ?? 0);
+          const price = Number(l.unitPrice ?? 0);
+          const discPct = Number(l.discountPct ?? l.discount ?? 0);
+          const mode = this.canonicalTaxMode(l.taxMode ?? l.tax, gst);
 
-          const qty      = Number(l.qty ?? l.quantity ?? 0);
-          const price    = Number(l.unitPrice ?? 0);
-          const discPct  = Number(l.discountPct ?? l.discount ?? 0);
-          const mode     = this.canonicalTaxMode(l.taxMode ?? l.tax, gst);
+          const rawFulfill = (l.fulfillmentMode ?? l.FulfillmentMode);
+          const fulfillmentMode: FulfillmentMode =
+            (rawFulfill === null || rawFulfill === undefined || rawFulfill === '') ? null : (Number(rawFulfill) as any);
 
-          const amt = this.calcAmounts(qty, price, discPct, mode, gst);
+          const rawSupply = (l.supplyMethod ?? l.SupplyMethod ?? l.supplymethod ?? l.supplyMethodId);
+          const supplyMethod: SupplyMethod =
+            (rawSupply === null || rawSupply === undefined || rawSupply === '') ? null : (Number(rawSupply) as any);
 
-          return {
+          const ln: SoLine = {
             __id: undefined,
-            item: l.itemName,
-            itemId: l.itemId,
-            uom: l.uomName ?? '',
+            item: l.itemName || l.item || '',
+            itemId: Number(l.itemId ?? 0) || undefined,
+            uom: l.uomName ?? l.uom ?? '',
             description: (l.description ?? l.Description ?? '').toString(),
-            quantity: qty,
-            unitPrice: price,
-            discount: discPct,
-            discountType: 'PCT',
-            tax: mode,
-            lineGross: amt.gross,
-            lineNet:   amt.net,
-            lineTax:   amt.tax,
-            total:     amt.total,
-            lineDiscount: amt.discountAmt,
-            __origQty: qty,
-            __origGross: amt.gross,
-            __origNet:   amt.net,
-            __origTax:   amt.tax,
-            __origTotal: amt.total,
-            __origDiscount: amt.discountAmt,
-            warehouses: wh,
-            dropdownOpen: '',
-            filteredOptions: [],
 
-            // ✅ if backend sends later
-            itemSetId: Number(l.itemSetId ?? 0) || undefined
-          } as SoLine;
+            qty,
+            unitPrice: price,
+            discountPct: discPct,
+            taxMode: mode,
+
+            fulfillmentMode,
+            supplyMethod,
+
+            warehouses: Array.isArray(l.warehouses) ? l.warehouses : []
+          };
+
+          this.applyFlagsFromFulfillmentMode(ln);
+          this.applySupplyFromFulfillment(ln);
+          this.computeLine(ln);
+
+          return ln;
         });
 
-        this.enforceTaxModesByGst();
-        this.recalcTotals();
-
-        // ✅ build grouped view
+        this.computeTotals();
         this.buildSetGroups();
       });
 
@@ -596,18 +582,38 @@ get sourceLineText(): string {
     }
   }
 
+  toggleDropdown(field: 'quotationNo' | 'customer' | 'warehouse', open?: boolean) {
+    this.dropdownOpen[field] = open !== undefined ? open : !this.dropdownOpen[field];
+    if (field === 'quotationNo') this.filteredLists[field] = [...this.quotationList];
+    if (field === 'customer') this.filteredLists[field] = [...this.customers];
+    if (field === 'warehouse') this.filteredLists[field] = [...this.warehousesMaster];
+  }
+
+  filter(field: 'quotationNo' | 'customer' | 'warehouse') {
+    const q = (this.searchTexts[field] || '').toLowerCase();
+    if (field === 'quotationNo') {
+      this.filteredLists[field] = this.quotationList.filter(x => (x.number || '').toLowerCase().includes(q));
+    } else if (field === 'customer') {
+      this.filteredLists[field] = this.customers.filter(x => (x.customerName || '').toLowerCase().includes(q));
+    } else {
+      this.filteredLists[field] = this.warehousesMaster.filter(x =>
+        (x.warehouseName || '').toLowerCase().includes(q) || String(x.id).includes(q)
+      );
+    }
+  }
+
   onClearSearch(field: 'quotationNo' | 'customer') {
     if (this.editMode) return;
+
     this.searchTexts[field] = '';
     this.dropdownOpen[field] = false;
+
     if (field === 'quotationNo') this.soHdr.quotationNo = 0;
     if (field === 'customer') this.soHdr.customerId = 0;
 
-    // reset extra header
     this.soHdr.lineSourceId = 1;
     this.soHdr.itemSets = [];
 
-    // reset lines & groups
     this.soLines = [];
     this.setGroups = [];
     this.recalcTotals();
@@ -620,120 +626,24 @@ get sourceLineText(): string {
     if (!el.closest('.so-header-dd')) {
       Object.keys(this.dropdownOpen).forEach(k => (this.dropdownOpen[k] = false));
     }
-    this.soLines.forEach(l => {
-      if (!el.closest('.so-line-dd')) l.dropdownOpen = '';
-    });
   }
 
-  /* ============ Item/tax dropdowns (still available if you use old line input style) ============ */
-  openDropdown(i: number, field: 'item' | 'tax') {
-    this.soLines[i].dropdownOpen = field;
-    this.soLines[i].filteredOptions = field === 'item' ? [...this.items] : [...this.taxCodes];
-  }
-
-  filterOptions(i: number, field: 'item' | 'tax') {
-    const q = ((this.soLines[i] as any)[field] || '').toString().toLowerCase();
-    if (field === 'item') {
-      this.soLines[i].filteredOptions = this.items.filter(x =>
-        (x.itemCode || '').toLowerCase().includes(q) ||
-        (x.itemName || '').toLowerCase().includes(q));
-    } else {
-      this.soLines[i].filteredOptions = this.taxCodes.filter(x =>
-        (x.name || '').toLowerCase().includes(q) ||
-        (x.code || '').toLowerCase().includes(q));
-    }
-  }
-
-  selectOption(i: number, field: 'item' | 'tax', opt: any) {
-    if (field === 'item') {
-      if (this.editMode && this.soLines[i].__id) {
-        this.soLines[i].dropdownOpen = '';
-        this.soLines[i].filteredOptions = [];
-        return;
-      }
-      this.soLines[i].item = `${opt.itemCode} - ${opt.itemName}`;
-      this.soLines[i].itemId = opt.id;
-      this.soLines[i].uom = opt.defaultUom || this.soLines[i].uom || '';
-      if (!this.soLines[i].unitPrice) this.soLines[i].unitPrice = Number(opt.price || 0);
-      if (!this.soLines[i].description && opt.description) {
-        this.soLines[i].description = String(opt.description);
-      }
-    } else {
-      this.soLines[i].tax = this.canonicalTaxMode(opt.code, Number(this.soHdr.gstPct || 0));
-    }
-    this.soLines[i].dropdownOpen = '';
-    this.soLines[i].filteredOptions = [];
-    this.computeLineFromObj(this.soLines[i]);
-  }
-
-  /* ================= NEW: ByRef handlers for grouped table ================= */
-  onQtyChangeByRef(ln: SoLine) { this.computeLineFromObj(ln); }
-  onUnitPriceChangeByRef(ln: SoLine) { this.computeLineFromObj(ln); }
-  onDiscountChangeByRef(ln: SoLine) { this.computeLineFromObj(ln); }
-  onTaxChangeByRef(ln: SoLine) { this.computeLineFromObj(ln); }
-
-  /* ============ Qty & Discount & UnitPrice change (old) ============ */
-  onQtyChange(i: number) {
-    const L = this.soLines[i];
-    const qtyNow = Number(L.quantity) || 0;
-
-    if (typeof L.__origQty === 'number' && qtyNow === L.__origQty) {
-      L.lineGross    = L.__origGross ?? L.lineGross;
-      L.lineNet      = L.__origNet   ?? L.lineNet;
-      L.lineTax      = L.__origTax   ?? L.lineTax;
-      L.total        = L.__origTotal ?? L.total;
-      L.lineDiscount = L.__origDiscount ?? L.lineDiscount;
-      this.recalcTotals();
-      return;
-    }
-
-    this.computeLineFromQty(i);
-  }
-
-  onDiscountChange(i: number) { this.computeLineFromQty(i); }
-
-  onUnitPriceChange(i: number) {
-    const L = this.soLines[i];
-    const p = Number(L.unitPrice);
-    if (!isFinite(p) || p < 0) L.unitPrice = 0;
-    this.computeLineFromQty(i);
-  }
-
-  private computeLineFromQty(i: number) {
-    const L = this.soLines[i];
-    this.computeLineFromObj(L);
-  }
-
-  // ✅ core compute using object reference (works for grouped table also)
-  private computeLineFromObj(L: SoLine) {
-    const qty      = Number(L.quantity) || 0;
-    const price    = Number(L.unitPrice) || 0;
-    const discPct  = Number(L.discount) || 0;
-    const gst      = Number(this.soHdr.gstPct || 0);
-    const mode     = this.canonicalTaxMode(L.tax, gst);
-
-    const amt = this.calcAmounts(qty, price, discPct, mode, gst);
-
-    L.tax          = mode;
-    L.lineGross    = amt.gross;
-    L.lineNet      = amt.net;
-    L.lineTax      = amt.tax;
-    L.total        = amt.total;
-    L.lineDiscount = amt.discountAmt;
-
-    this.recalcTotals();
+  /* ================= UI EVENTS ================= */
+  onSupplyMethodChangedByRef(ln: SoLine) {
+    const v: any = ln.supplyMethod;
+    ln.supplyMethod = (v === null || v === undefined || v === '') ? null : (Number(v) as any);
   }
 
   /* ============ Totals ============ */
   get totals() {
-    const net       = this.soLines.reduce((s, x) => s + (x.lineNet      || 0), 0);
-    const tax       = this.soLines.reduce((s, x) => s + (x.lineTax      || 0), 0);
+    const net = this.soLines.reduce((s, x) => s + (x.lineNet || 0), 0);
+    const tax = this.soLines.reduce((s, x) => s + (x.lineTax || 0), 0);
     const discLines = this.soLines.reduce((s, x) => s + (x.lineDiscount || 0), 0);
-    const shipping  = Number(this.soHdr.shipping || 0);
+    const shipping = Number(this.soHdr.shipping || 0);
 
-    const subTotal     = this.round2(net + shipping);
-    const gstAmount    = this.round2(tax);
-    const grandTotal   = this.round2(subTotal + gstAmount);
+    const subTotal = this.round2(net + shipping);
+    const gstAmount = this.round2(tax);
+    const grandTotal = this.round2(subTotal + gstAmount);
 
     return {
       subTotal,
@@ -742,11 +652,6 @@ get sourceLineText(): string {
       netTotal: grandTotal,
       grandTotal
     };
-  }
-
-  get discountPctSummary(): number {
-    const line = this.soLines.find(l => Number(l.discount || 0) > 0);
-    return line ? Number(line.discount) || 0 : 0;
   }
 
   recalcTotals() {
@@ -760,28 +665,19 @@ get sourceLineText(): string {
     };
   }
 
-  /* ================= NEW: Group actions ================= */
+  /* ================= Group actions ================= */
   removeSet(g: SetGroup) {
-    // remove those lines from flat array
     const toRemove = new Set(g.lines);
     this.soLines = this.soLines.filter(l => !toRemove.has(l));
-
-    // remove group
     this.setGroups = this.setGroups.filter(x => x !== g);
-
-    this.recalcTotals();
+    this.computeTotals();
   }
 
   removeLineFromSet(g: SetGroup, ln: SoLine) {
     g.lines = (g.lines || []).filter(x => x !== ln);
     this.soLines = (this.soLines || []).filter(x => x !== ln);
-
-    // if group empty -> remove set
-    if (!g.lines.length) {
-      this.setGroups = this.setGroups.filter(x => x !== g);
-    }
-
-    this.recalcTotals();
+    if (!g.lines.length) this.setGroups = this.setGroups.filter(x => x !== g);
+    this.computeTotals();
   }
 
   addLine() {
@@ -794,35 +690,37 @@ get sourceLineText(): string {
       itemId: undefined,
       uom: '',
       description: '',
-      quantity: 0,
+      qty: 0,
       unitPrice: 0,
-      discount: 0,
-      discountType: 'PCT',
-      tax: mode,
+      discountPct: 0,
+      taxMode: mode,
+
+      fulfillmentMode: null,
+      supplyMethod: null,
+      __supplyLocked: false,
+
+      isSellable: false,
+      isConsumable: false,
+
       lineGross: 0,
       lineNet: 0,
       lineTax: 0,
-      total: 0,
+      lineTotal: 0,
       lineDiscount: 0,
-      warehouses: [],
-      dropdownOpen: '',
-      filteredOptions: []
+      warehouses: []
     };
 
-    // flat
     this.soLines.push(newLine);
 
-    // grouped (put in first group if exists)
     if (!this.setGroups.length) {
       this.setGroups = [{ itemSetId: 0, name: 'Items', lines: [newLine] }];
     } else {
       this.setGroups[0].lines.push(newLine);
     }
 
-    this.recalcTotals();
+    this.computeTotals();
   }
 
-  /* ============ Save ============ */
   private validateSO(): boolean {
     const missing = this.requiredKeys.filter(k => this.isEmpty(this.searchTexts[k]));
     if (missing.length) {
@@ -842,11 +740,26 @@ get sourceLineText(): string {
       return false;
     }
 
-    const bad = this.soLines.find(l => !l.itemId || !(Number(l.quantity) >= 0));
-    if (bad) {
+    const badItem = this.soLines.find(l => !l.itemId || !(Number(l.qty) >= 0));
+    if (badItem) {
       Swal.fire({ icon: 'warning', title: 'Required', text: 'Each line needs Item and a valid Qty.' });
       return false;
     }
+
+    // ✅ fulfillmentMode must be 1/2/3 (derived from readonly flags usually)
+    const badFulfill = this.soLines.find(l => l.fulfillmentMode !== 1 && l.fulfillmentMode !== 2 && l.fulfillmentMode !== 3);
+    if (badFulfill) {
+      Swal.fire({ icon: 'warning', title: 'Required', text: 'Fulfillment (Sellable/Consumable/Both) is missing for some lines.' });
+      return false;
+    }
+
+    // ✅ supplyMethod required always; for Both user must choose (0/1)
+    const badSupply = this.soLines.find(l => l.supplyMethod !== 0 && l.supplyMethod !== 1);
+    if (badSupply) {
+      Swal.fire({ icon: 'warning', title: 'Required', text: 'Please select Supply Method (Direct DO / PP) for all lines.' });
+      return false;
+    }
+
     return true;
   }
 
@@ -863,14 +776,10 @@ get sourceLineText(): string {
       deliveryTo: (this.soHdr.deliveryTo || '').toString(),
       remarks: (this.soHdr.remarks || '').toString(),
 
-      // ✅ header
       lineSourceId: Number(this.soHdr.lineSourceId || 1),
-
-      // ✅ mapping table save (set ids)
       itemSetIds: (this.soHdr.itemSets || []).map((x: any) => Number(x.id)).filter((n: number) => n > 0),
 
       shipping: Number(this.soHdr.shipping || 0),
-
       discount: t.discountLines,
       gstPct: Number(this.soHdr.gstPct || 0),
 
@@ -889,12 +798,19 @@ get sourceLineText(): string {
         itemName: (l.item || '').toString(),
         uom: l.uom || '',
         description: (l.description || '').toString(),
-        quantity: Number(l.quantity) || 0,
+
+        // backend expects quantity, discount, tax, total
+        quantity: Number(l.qty) || 0,
         unitPrice: Number(l.unitPrice) || 0,
-        discount: Number(l.discount) || 0,
-        tax: l.tax || null,
+        discount: Number(l.discountPct) || 0,
+        tax: l.taxMode || null,
         taxAmount: Number(l.lineTax || 0),
-        total: Number(l.total) || 0,
+        total: Number(l.lineTotal) || 0,
+
+        // ✅ your new fields
+        fulfillmentMode: l.fulfillmentMode ?? null, // 1/2/3
+        SupplyMethodId: l.supplyMethod ?? null,       // 0/1
+
         createdBy: this.userId,
         updatedBy: this.userId
       })),
@@ -948,16 +864,6 @@ get sourceLineText(): string {
   goToList() {
     this.router.navigate(['/Sales/Sales-Order-list']);
   }
-  /* ===== old removeLine still available (if you use old table) ===== */
-  removeLine(i: number) {
-    this.soLines.splice(i, 1);
-    this.recalcTotals();
-    this.buildSetGroups();
-  }
-
-  /* trackBy */
-  trackByIndex = (i: number) => i;
-  trackByLineId = (i: number, ln: SoLine) => ln.__id ?? ln.itemId ?? i;
 
   gridColsClass(cols: number) {
     return {
@@ -969,6 +875,22 @@ get sourceLineText(): string {
       'md:grid-cols-5': cols === 5,
       'md:grid-cols-6': cols === 6
     };
+  }
+
+  trackByLineId = (i: number, ln: SoLine) => ln.__id ?? ln.itemId ?? i;
+
+  private toInputDate(d: any): string {
+    if (!d) return '';
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return '';
+    const yyyy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  isEmpty(v: any): boolean {
+    return (v ?? '').toString().trim() === '';
   }
 
   cancel() {

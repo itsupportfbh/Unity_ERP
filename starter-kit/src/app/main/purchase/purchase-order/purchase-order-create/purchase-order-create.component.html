@@ -274,7 +274,7 @@
 
       <!-- ✅ IMPORTANT: dropdown clipping fix: tblWrap no scroll, tblScroll has scroll -->
       <div class="tblWrap">
-        <div class="tblScroll">
+        <div class="tblScroll" (scroll)="refreshOverlayPos()">
           <table class="tbl">
             <thead>
               <tr>
@@ -306,7 +306,7 @@
                       [(ngModel)]="poLines[i].prNo"
                       (focus)="openDropdown(i, 'prNo', $event)"
                       (click)="openDropdown(i, 'prNo', $event)"
-                      (input)="filterOptions(i, 'prNo')"
+                      (input)="filterOptions(i, 'prNo'); refreshOverlayPos()"
                       placeholder="Search PR..."
                       [disabled]="!mastersLoaded || allPrNos.length === 0"
                     />
@@ -314,13 +314,14 @@
                       (click)="openDropdown(i, 'prNo', $event)">▼</button>
                   </div>
 
-                  <div *ngIf="poLines[i].dropdownOpen === 'prNo'" class="menu menu--cell"
-                      (click)="$event.stopPropagation()">
-                    <div class="mi" *ngFor="let option of poLines[i].filteredOptions"
-                        (click)="selectOption(i, 'prNo', option); $event.stopPropagation()">
-                      {{ option.purchaseRequestNo }}
-                    </div>
+                 <div *ngIf="poLines[i].dropdownOpen === 'prNo' 
+                            && !(ddOL.open && ddOL.index===i && ddOL.field==='prNo')"
+                    (click)="$event.stopPropagation()">
+                  <div class="mi" *ngFor="let option of poLines[i].filteredOptions"
+                      (click)="selectOption(i, 'prNo', option); $event.stopPropagation()">
+                    {{ option.purchaseRequestNo }}
                   </div>
+                </div>
                 </td>
 
                 <!-- Item -->
@@ -331,7 +332,7 @@
                       [(ngModel)]="poLines[i].item"
                       (focus)="!poLines[i].__fromPR && openDropdown(i, 'item', $event)"
                       (click)="!poLines[i].__fromPR && openDropdown(i, 'item', $event)"
-                      (input)="!poLines[i].__fromPR && filterOptions(i, 'item')"
+                      (input)="!poLines[i].__fromPR && filterOptions(i, 'item'); refreshOverlayPos()"
                       placeholder="Search item..."
                       [disabled]="poLines[i].__fromPR === true"
                     />
@@ -340,14 +341,17 @@
                     <button *ngIf="poLines[i].__fromPR" type="button" class="ig__btn" disabled title="Locked">🔒</button>
                   </div>
 
-                  <div *ngIf="poLines[i].dropdownOpen === 'item' && !poLines[i].__fromPR" class="menu menu--cell"
-                      (click)="$event.stopPropagation()">
-                    <div class="mi mi--split" *ngFor="let option of poLines[i].filteredOptions"
-                        (click)="selectOption(i, 'item', option); $event.stopPropagation()">
-                      <span class="c">{{ option.itemCode }}</span>
-                      <span class="n">{{ option.itemName }}</span>
-                    </div>
+                 <div *ngIf="poLines[i].dropdownOpen === 'item' 
+                            && !poLines[i].__fromPR
+                            && !(ddOL.open && ddOL.index===i && ddOL.field==='item')"
+                    (click)="$event.stopPropagation()">
+
+                  <div class="mi mi--split" *ngFor="let option of poLines[i].filteredOptions"
+                      (click)="selectOption(i, 'item', option); $event.stopPropagation()">
+                    <span class="c">{{ option.itemCode }}</span>
+                    <span class="n">{{ option.itemName }}</span>
                   </div>
+                </div>
                 </td>
 
                 <!-- Desc -->
@@ -365,7 +369,7 @@
                       [(ngModel)]="poLines[i].taxCode"
                       (focus)="openDropdown(i, 'taxCode', $event)"
                       (click)="openDropdown(i, 'taxCode', $event)"
-                      (input)="filterOptions(i, 'taxCode')"
+                      (input)="filterOptions(i, 'taxCode'); refreshOverlayPos()"
                       (ngModelChange)="onTaxCodeChange(i)"
                       placeholder="Search tax..."
                     />
@@ -373,13 +377,14 @@
                       (click)="openDropdown(i, 'taxCode', $event)">▼</button>
                   </div>
 
-                  <div *ngIf="poLines[i].dropdownOpen === 'taxCode'" class="menu menu--cell"
-                      (click)="$event.stopPropagation()">
-                    <div class="mi" *ngFor="let option of poLines[i].filteredOptions"
-                        (click)="selectOption(i, 'taxCode', option); $event.stopPropagation()">
-                      {{ option.name }}
-                    </div>
+                  <div *ngIf="poLines[i].dropdownOpen === 'taxCode'
+                            && !(ddOL.open && ddOL.index===i && ddOL.field==='taxCode')"
+                    (click)="$event.stopPropagation()">
+                  <div class="mi" *ngFor="let option of poLines[i].filteredOptions"
+                      (click)="selectOption(i, 'taxCode', option); $event.stopPropagation()">
+                    {{ option.name }}
                   </div>
+                </div>
                 </td>
 
                 <td class="cell num">
@@ -422,6 +427,48 @@
               </tr>
             </tbody>
           </table>
+          <!-- ✅ TABLE OVERLAY DROPDOWN (outside grid) -->
+<div
+  *ngIf="ddOL.open"
+  class="ddOverlay"
+  [class.ddOverlay--up]="ddOL.openUp"
+  [ngStyle]="{
+    left: ddOL.left + 'px',
+    top: ddOL.top + 'px',
+    width: ddOL.width + 'px'
+  }"
+  (click)="$event.stopPropagation()"
+>
+  <!-- PR NO -->
+  <ng-container *ngIf="ddOL.field === 'prNo'">
+    <div class="mi"
+      *ngFor="let option of ddOL.options"
+      (click)="selectOption(ddOL.index, 'prNo', option); closeOverlay(); $event.stopPropagation()">
+      {{ option.purchaseRequestNo }}
+    </div>
+  </ng-container>
+
+  <!-- ITEM -->
+  <ng-container *ngIf="ddOL.field === 'item'">
+    <div class="mi mi--split"
+      *ngFor="let option of ddOL.options"
+      (click)="selectOption(ddOL.index, 'item', option); closeOverlay(); $event.stopPropagation()">
+      <span class="c">{{ option.itemCode }}</span>
+      <span class="n">{{ option.itemName }}</span>
+    </div>
+  </ng-container>
+
+  <!-- TAXCODE -->
+  <ng-container *ngIf="ddOL.field === 'taxCode'">
+    <div class="mi"
+      *ngFor="let option of ddOL.options"
+      (click)="selectOption(ddOL.index, 'taxCode', option); closeOverlay(); $event.stopPropagation()">
+      {{ option.name }}
+    </div>
+  </ng-container>
+
+  <div class="ddOverlay__empty" *ngIf="!ddOL.options?.length">No results</div>
+</div>
         </div>
       </div>
 

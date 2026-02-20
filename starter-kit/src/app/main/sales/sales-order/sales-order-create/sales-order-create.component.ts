@@ -34,7 +34,7 @@ type LineTaxMode = 'Standard-Rated' | 'Zero-Rated' | 'Exempt';
  *  null = Select
  */
 type FulfillmentMode = 1 | 2 | 3 | null;
-type SupplyMethod = 0 | 1 | null;
+type SupplyMethod = 1 | 2 | null;
 
 type SoLine = {
   __id?: number;
@@ -182,8 +182,9 @@ export class SalesOrderCreateComponent implements OnInit {
   }
 
   getSupplyLabel(v: SupplyMethod | undefined): string {
-    if (v === 0) return 'Direct DO';
+    
     if (v === 1) return 'PP';
+    if (v === 2) return 'Direct DO';
     return 'Select';
   }
 
@@ -306,23 +307,34 @@ export class SalesOrderCreateComponent implements OnInit {
      2 Consumable => 1 PP       (locked)
      3 Both       => user choose
   */
-  private applySupplyFromFulfillment(ln: SoLine) {
-    const f = ln.fulfillmentMode ?? null;
+private applySupplyFromFulfillment(ln: SoLine) {
+  const f = ln.fulfillmentMode ?? null;
 
-    if (f === 1) {
-      ln.supplyMethod = 0;
-      ln.__supplyLocked = true;
-    } else if (f === 2) {
-      ln.supplyMethod = 1;
-      ln.__supplyLocked = true;
-    } else if (f === 3) {
-      if (ln.supplyMethod !== 0 && ln.supplyMethod !== 1) ln.supplyMethod = null;
-      ln.__supplyLocked = false;
-    } else {
-      ln.supplyMethod = null;
-      ln.__supplyLocked = false;
-    }
+  // ✅ If supply already loaded (edit), don't override unless locked case
+  const hasSupply = (ln.supplyMethod === 1 || ln.supplyMethod === 2);
+
+  if (f === 1) {
+    ln.supplyMethod = 2;         // Direct DO
+    ln.__supplyLocked = true;
+    return;
   }
+
+  if (f === 2) {
+    ln.supplyMethod = 1;         // PP
+    ln.__supplyLocked = true;
+    return;
+  }
+
+  if (f === 3) {
+    ln.__supplyLocked = false;
+    if (!hasSupply) ln.supplyMethod = null; // only if empty
+    return;
+  }
+
+  // fulfillment missing => don't destroy loaded supply, just unlock
+  ln.__supplyLocked = false;
+  if (!hasSupply) ln.supplyMethod = null;
+}
 
   /* ✅ compute totals for ONE line */
   private computeLine(ln: SoLine) {
@@ -418,88 +430,101 @@ export class SalesOrderCreateComponent implements OnInit {
     this.setGroups = Array.from(map.values()).filter(g => g.lines.length);
   }
 
-  /* ============ Load SO (Edit) ============ */
-  private loadSOForEdit(id: number) {
-    this.salesOrderService.getSOById(id).subscribe({
-      next: (res) => {
-        const head = res?.data || {};
+private loadSOForEdit(id: number) {
+  this.salesOrderService.getSOById(id).subscribe({
+    next: (res) => {
+      const head = res?.data || {};
 
-        this.soHdr.id = head.id;
-        this.soHdr.quotationNo = head.quotationNo;
-        this.soHdr.customerId = head.customerId;
-        this.searchTexts['quotationNo'] = head.number || head.quotationNo?.toString() || '';
-        this.searchTexts['customer'] = head.customerName || '';
+      // ===== Header =====
+      this.soHdr.id = Number(head.id || 0);
+      this.soHdr.quotationNo = head.quotationNo ?? head.QuotationNo ?? null;
+      this.soHdr.customerId = head.customerId ?? head.CustomerId ?? null;
 
-        this.soHdr.requestedDate = this.toInputDate(head.requestedDate);
-        this.soHdr.deliveryDate = this.toInputDate(head.deliveryDate);
+      this.searchTexts['quotationNo'] = head.number || head.Number || head.quotationNo?.toString() || '';
+      this.searchTexts['customer'] = head.customerName || head.CustomerName || '';
 
-        this.soHdr.deliveryTo = head.deliveryTo ?? head.DeliveryTo ?? '';
-        this.soHdr.remarks = head.remarks ?? head.Remarks ?? '';
+      this.soHdr.requestedDate = this.toInputDate(head.requestedDate ?? head.RequestedDate);
+      this.soHdr.deliveryDate  = this.toInputDate(head.deliveryDate  ?? head.DeliveryDate);
 
-        this.setHeaderLineSourceAndItemSets(head);
+      this.soHdr.deliveryTo = String(head.deliveryTo ?? head.DeliveryTo ?? '');
+      this.soHdr.remarks    = String(head.remarks ?? head.Remarks ?? '');
 
-        this.soHdr.shipping = Number(head.shipping ?? 0);
-        this.soHdr.gstPct = Number(head.gstPct ?? 0);
+      this.setHeaderLineSourceAndItemSets(head);
 
-        const gst = Number(this.soHdr.gstPct || 0);
-        const lines = (head.lineItems ?? head.lines ?? []) as any[];
+      this.soHdr.shipping = Number(head.shipping ?? head.Shipping ?? 0);
+      this.soHdr.gstPct   = Number(head.gstPct ?? head.GstPct ?? 0);
 
-        this.soLines = lines.map((l: any) => {
-          const qty = Number(l.qty ?? l.quantity ?? 0);
-          const price = Number(l.unitPrice ?? 0);
-          const discPct = Number(l.discountPct ?? l.discount ?? 0);
-          const mode = this.canonicalTaxMode(l.taxMode ?? l.tax, gst);
+      const gst = Number(this.soHdr.gstPct || 0);
+      const apiLines = (head.lineItems ?? head.lines ?? head.LineItems ?? []) as any[];
 
-          // 🔥 IMPORTANT: API fulfillmentMode = 1/2/3
-          const rawFulfill = (l.fulfillmentMode ?? l.FulfillmentMode);
-          const fulfillmentMode: FulfillmentMode =
-            (rawFulfill === null || rawFulfill === undefined || rawFulfill === '') ? null : (Number(rawFulfill) as any);
+      const n = (v: any, def = 0) => {
+        const x = Number(v);
+        return isNaN(x) ? def : x;
+      };
+      const toStr = (v: any) => (v === null || v === undefined) ? '' : String(v);
 
-          // supplyMethod key sometimes supplymethod
-          const rawSupply = (l.supplyMethod ?? l.SupplyMethod ?? l.supplymethod ?? l.supplyMethodId);
-          const supplyMethod: SupplyMethod =
-            (rawSupply === null || rawSupply === undefined || rawSupply === '') ? null : (Number(rawSupply) as any);
+      this.soLines = apiLines.map((l: any) => {
+        const qty     = n(l.qty ?? l.quantity ?? l.Quantity, 0);
+        const price   = n(l.unitPrice ?? l.UnitPrice, 0);
+        const discPct = n(l.discountPct ?? l.discount ?? l.Discount, 0);
 
-          const ln: SoLine = {
-            __id: Number(l.id || l.Id || 0) || undefined,
-            item: l.itemName || l.item || '',
-            itemId: Number(l.itemId ?? 0) || undefined,
-            uom: l.uomName ?? l.uom ?? '',
-            description: (l.description ?? l.Description ?? '').toString(),
+        const taxMode = this.canonicalTaxMode(l.taxMode ?? l.tax ?? l.Tax, gst);
 
-            qty,
-            unitPrice: price,
-            discountPct: discPct,
-            taxMode: mode,
+        // ✅ FulfillmentMode from API (now backend returns it)
+        const rawFulfill = (l.fulfillmentMode ?? l.FulfillmentMode ?? l.FulfillmentModeId);
+        const fulfillmentMode: FulfillmentMode =
+          (rawFulfill === null || rawFulfill === undefined || rawFulfill === '')
+            ? null
+            : (n(rawFulfill) as any);
 
-            fulfillmentMode,
-            supplyMethod:l.supplyMethodId,
+        // ✅ SupplyMethodId from API
+        const rawSupply = (l.supplyMethod ?? l.SupplyMethod ?? l.supplyMethodId ?? l.SupplyMethodId);
+        let supplyMethod: SupplyMethod =
+          (rawSupply === null || rawSupply === undefined || rawSupply === '')
+            ? null
+            : (n(rawSupply) as any);
 
-            warehouses: []
-          };
+        // ✅ only allow 1/2/null
+        if (supplyMethod !== null && supplyMethod !== 1 && supplyMethod !== 2) supplyMethod = null;
 
-          // ✅ derive flags from fulfillmentMode (so UI yes/no shows)
-          this.applyFlagsFromFulfillmentMode(ln);
+        const ln: SoLine = {
+          __id: n(l.id ?? l.Id, 0) || undefined,
 
-          // ✅ auto supply rules + lock
-          this.applySupplyFromFulfillment(ln);
+          item: toStr(l.itemName ?? l.ItemName ?? l.item),
+          itemId: n(l.itemId ?? l.ItemId, 0) || undefined,
 
-          // ✅ totals
-          this.computeLine(ln);
+          uom: toStr(l.uom ?? l.Uom ?? l.uomName ?? l.UomName),
+          description: toStr(l.description ?? l.Description),
 
-          return ln;
-        });
+          qty,
+          unitPrice: price,
+          discountPct: discPct,
+          taxMode,
 
-        this.computeTotals();
-        this.buildSetGroups();
-      },
-      error: (err) => {
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load Sales Order.' });
-        console.error(err);
-      }
-    });
-  }
+          fulfillmentMode,
+          supplyMethod,
+          warehouses: []
+        };
 
+        // flags
+        this.applyFlagsFromFulfillmentMode(ln);
+
+        // ✅ auto supply only based on fulfillment, but safe for edit
+        this.applySupplyFromFulfillment(ln);
+
+        this.computeLine(ln);
+        return ln;
+      });
+
+      this.computeTotals();
+      this.buildSetGroups();
+    },
+    error: (err) => {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load Sales Order.' });
+      console.error(err);
+    }
+  });
+}
   /* ============ Header select (Quotation) ============ */
   select(field: 'quotationNo' | 'customer', item: any) {
     if (this.editMode) return;
@@ -629,10 +654,10 @@ export class SalesOrderCreateComponent implements OnInit {
   }
 
   /* ================= UI EVENTS ================= */
-  onSupplyMethodChangedByRef(ln: SoLine) {
-    const v: any = ln.supplyMethod;
-    ln.supplyMethod = (v === null || v === undefined || v === '') ? null : (Number(v) as any);
-  }
+onSupplyMethodChangedByRef(ln: SoLine) {
+  const v: any = ln.supplyMethod;
+  ln.supplyMethod = (v === null || v === undefined || v === '') ? null : (Number(v) as any);
+}
 
   /* ============ Totals ============ */
   get totals() {
@@ -754,7 +779,7 @@ export class SalesOrderCreateComponent implements OnInit {
     }
 
     // ✅ supplyMethod required always; for Both user must choose (0/1)
-    const badSupply = this.soLines.find(l => l.supplyMethod !== 0 && l.supplyMethod !== 1);
+    const badSupply = this.soLines.find(l => l.supplyMethod !== 2 && l.supplyMethod !== 1);
     if (badSupply) {
       Swal.fire({ icon: 'warning', title: 'Required', text: 'Please select Supply Method (Direct DO / PP) for all lines.' });
       return false;

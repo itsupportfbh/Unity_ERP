@@ -13,6 +13,9 @@
   --qt-input-border-2: #94a3b8;
   --qt-input-bg: #ffffff;
   --qt-input-ph: #6b7280;
+
+  /* ✅ sidebar safe offset */
+  --qt-sidebar-w: 260px; /* உங்கள் left menu width */
 }
 
 /* ===== Small Back Button ===== */
@@ -163,7 +166,7 @@
   color: #334155;
 }
 
-/* ===== Inputs (BRIGHTER) ===== */
+/* ===== Inputs ===== */
 .qtInput{
   width: 100%;
   border: 1px solid var(--qt-input-border);
@@ -177,9 +180,7 @@
 
   &::placeholder{ color: var(--qt-input-ph); font-weight: 700; }
 
-  &:hover{
-    border-color: var(--qt-input-border-2);
-  }
+  &:hover{ border-color: var(--qt-input-border-2); }
 
   &:focus{
     border-color: var(--qt-brand);
@@ -207,12 +208,10 @@
   font-size: 13px;
 }
 
-/* ✅ numeric inputs width for 5 digits */
-.qtNum{
-  min-width: 110px;
-}
+/* numeric */
+.qtNum{ min-width: 110px; }
 
-/* discount type drop width */
+/* discount type drop */
 .qtDiscType{
   width: 92px !important;
   min-width: 92px !important;
@@ -341,7 +340,7 @@
   & + .qtInfoLine{ margin-top: 8px; }
 }
 
-/* ===== Buttons (hover text NEVER disappear) ===== */
+/* ===== Buttons ===== */
 .qtBtn{
   border: 1px solid #e5e7eb;
   background: #fff;
@@ -358,9 +357,8 @@
 
   i, span { color: inherit !important; }
 
-  /* ✅ not pure white hover */
   &:hover{
-    background: #f1f5f9; /* instead of white */
+    background: #f1f5f9;
     transform: translateY(-1px);
   }
   &:active{ transform: translateY(0); }
@@ -373,7 +371,7 @@
   box-shadow: 0 12px 24px rgba(46,95,115,.22);
 
   &:hover{
-    background: linear-gradient(135deg, var(--qt-brand), #1b5b70) !important; /* keep same */
+    background: linear-gradient(135deg, var(--qt-brand), #1b5b70) !important;
     filter: brightness(.98);
     color: #fff !important;
   }
@@ -468,9 +466,9 @@
   .t2{ font-weight: 800; }
 }
 
-/* Set header row */
+/* ✅ Set header row (3rd image style) */
 .qtSetRow td{
-  padding: 10px 10px !important;
+  padding: 12px 12px !important;
   background: linear-gradient(90deg, rgba(46,95,115,.10), rgba(46,95,115,.04));
   border-bottom: 1px solid rgba(46,95,115,.12) !important;
 }
@@ -483,10 +481,11 @@
   color: #0f172a;
   i{ color: var(--qt-brand); }
 }
+.qtSetMain{ font-weight: 1000; }
 .qtSetTag{
   font-size: 11px;
   font-weight: 1000;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: rgba(46,95,115,.14);
   color: #0e3a4c;
@@ -494,11 +493,35 @@
 }
 
 /* Line row */
-.qtLineRow--fromSet td{ background: linear-gradient(180deg, rgba(2,132,199,.04), transparent 55%); }
+.qtLineRow--fromSet td{
+  background: linear-gradient(180deg, rgba(2,132,199,.04), transparent 55%);
+}
 .qtItemCell{
   .n{ font-weight: 1000; }
+
+  /* ✅ setName line */
+  .set{
+    margin-top: 6px;
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #0e3a4c;
+    i{ color: var(--qt-brand); }
+    .t{
+      background: rgba(46,95,115,.10);
+      border: 1px solid rgba(46,95,115,.18);
+      padding: 4px 10px;
+      border-radius: 999px;
+      display:inline-flex;
+      align-items:center;
+      line-height: 1;
+    }
+  }
+
   .s{
-    margin-top: 4px;
+    margin-top: 6px;
     font-size: 12px;
     color: #64748b;
     font-weight: 800;
@@ -525,6 +548,13 @@
 .qtUom{ font-weight: 900; color: #334155; }
 .qtTotal{ font-weight: 1000; }
 
+.qtTaxHint{
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #64748b;
+}
+
 /* Actions */
 .qtActions{ display:flex; gap: 8px; justify-content:center; }
 .qtIconBtn{
@@ -545,7 +575,7 @@
   &:hover{ background: rgba(239,68,68,.08); }
 }
 
-/* ===== Totals (Better UI) ===== */
+/* ===== Totals (better card) ===== */
 .qtTotals{
   display:grid;
   grid-template-columns: 1fr 420px;
@@ -563,6 +593,44 @@
   border-radius: 18px;
   box-shadow: 0 10px 26px rgba(15,23,42,.08);
   padding: 12px 14px;
+}
+
+.qtTotalsHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(15,23,42,.06);
+
+  .t{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    font-weight: 1000;
+    color: var(--qt-ink);
+  }
+  .ic{
+    width: 34px; height: 34px;
+    border-radius: 12px;
+    display:grid; place-items:center;
+    background: rgba(46,95,115,.10);
+    border: 1px solid rgba(46,95,115,.18);
+    color: var(--qt-brand);
+  }
+}
+
+.qtCurrencyPill{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(46,95,115,.20);
+  background: rgba(46,95,115,.06);
+  .k{ font-size: 11px; font-weight: 1000; color: #64748b; }
+  .v{ font-size: 12px; font-weight: 1000; color: #0f172a; }
 }
 
 .qtSumRow{
@@ -590,21 +658,34 @@
   justify-content:space-between;
   gap: 10px;
 
+  .lhs{
+    display:flex;
+    flex-direction:column;
+    gap: 3px;
+  }
   .k{ font-weight: 1000; color: #0f172a; }
+  .h{ margin:0; font-size: 11px; font-weight: 900; color:#64748b; }
+
   .v{ margin:0; font-weight: 1000; color: var(--qt-brand-700); }
 }
 
-/* ✅ Separate Bottom Save Bar */
+/* ✅ Bottom Save Bar (sidebar-safe + NOT blue panel) */
 .qtBottomBar{
   position: fixed;
-  left: 0;
+  left: var(--qt-sidebar-w);
   right: 0;
   bottom: 0;
   z-index: 1200;
-  background: rgba(246, 247, 251, 0.82);
+
+  background: rgba(246, 247, 251, 0.92);
   backdrop-filter: blur(10px) saturate(1.2);
   border-top: 1px solid rgba(15,23,42,.08);
   padding: 10px 14px;
+}
+
+/* if mobile / sidebar collapses */
+@media (max-width: 992px){
+  .qtBottomBar{ left: 0; }
 }
 
 .qtBottomBar__inner{
@@ -626,6 +707,8 @@
 }
 
 .qtBtn--bottomSave{
+  padding: 12px 16px;
+  border-radius: 16px;
   i, span { color: #fff !important; }
   &:hover{
     background: linear-gradient(135deg, var(--qt-brand), #1b5b70) !important;
@@ -633,37 +716,11 @@
   }
 }
 
-/* ===== Modal (keep your existing if already present) ===== */
+/* ===== Modal UI (keep) ===== */
 .qtOverlay{
   position: fixed;
   inset: 0;
-  z-index: 1050;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding: 20px;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(6px) saturate(1.12);
-}
-.qtModal{
-  width: min(740px, 100%);
-  background: #fff;
-  border-radius: 20px;
-  border: 1px solid rgba(15,23,42,.08);
-  box-shadow: 0 18px 60px rgba(15,23,42,.22), 0 2px 10px rgba(15,23,42,.08);
-  max-height: min(90vh, 100%);
-  overflow: auto;
-}
-
-
-/* =========================
-   MODAL UI (FIX FULL)
-========================= */
-
-.qtOverlay{
-  position: fixed;
-  inset: 0;
-  z-index: 2050; /* higher than others */
+  z-index: 2050;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -686,7 +743,6 @@
   flex-direction: column;
 }
 
-/* header */
 .qtModal__head{
   display:flex;
   align-items:flex-start;
@@ -729,13 +785,11 @@
   &:hover{ background: rgba(46,95,115,.08); }
 }
 
-/* body scroll inside */
 .qtModal__body{
   padding: 14px 16px 0;
   overflow: auto;
 }
 
-/* grid */
 .qtModalGrid{
   display:grid;
   grid-template-columns: repeat(12, 1fr);
@@ -744,8 +798,6 @@
 }
 
 .qtCol12{ grid-column: span 12; }
-
-/* ✅ Desktop columns */
 .qtMd6{ grid-column: span 12; }
 .qtMd3{ grid-column: span 12; }
 
@@ -754,13 +806,8 @@
   .qtMd3{ grid-column: span 3; }
 }
 
-/* ✅ Modal dropdown menu */
-.qtMenu--modal{
-  max-height: 260px;
-  overflow: auto;
-}
+.qtMenu--modal{ max-height: 260px; overflow: auto; }
 
-/* Preview box */
 .qtPreview{
   border: 1px solid rgba(15,23,42,.08);
   background: linear-gradient(180deg, #fff, #f8fafc);
@@ -782,7 +829,6 @@
   }
 }
 
-/* sticky footer */
 .qtModal__foot{
   position: sticky;
   bottom: 0;
@@ -795,7 +841,6 @@
   border-top: 1px solid rgba(15,23,42,.08);
 }
 
-/* save button in modal */
 .qtBtn--saveModal{
   min-width: 170px;
   padding: 12px 14px;
@@ -807,14 +852,11 @@
   }
 }
 
-/* ghost button */
 .qtBtn--ghost{
   background: #fff !important;
   border: 1px solid #e2e8f0 !important;
   color: #334155 !important;
   box-shadow: none !important;
 
-  &:hover{
-    background: #f1f5f9 !important;
-  }
+  &:hover{ background: #f1f5f9 !important; }
 }

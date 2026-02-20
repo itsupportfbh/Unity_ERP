@@ -1,3 +1,4 @@
+// quotationscreate.component.ts
 import {
   Component,
   ElementRef,
@@ -8,6 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import { forkJoin } from 'rxjs';
 
 import { ItemsService } from 'app/main/master/items/items.service';
 import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
@@ -26,20 +28,18 @@ type Customer = { id: number; name: string; countryId: number };
 type CurrencyRow = { id: number; name: string };
 type PaymentTermsRow = { id: number; name: string };
 type DiscountType = 'VALUE' | 'PERCENT';
-type LineSourceId = 1 | 2 | 3; // 3 = Mixed
+type LineSourceId = 1 | 2 | 3;
 type ItemSetHeaderRow = { id: number; setName: string; description?: string };
 
-/** ✅ flags from backend bulk API */
 type ItemFlagsDto = {
   itemId: number;
   isSellable: boolean;
   isConsumable: boolean;
   allowManualFulfillment: boolean;
-  fulfillmentMode?: number | null;    // optional (if your backend sends)
-  fulfillmentText?: string;           // optional
+  fulfillmentMode?: number | null;
+  fulfillmentText?: string;
 };
 
-/** ✅ Quotation UI line */
 type UiLine = Omit<QuotationLine, 'uom' | 'uomId'> & {
   uomId: number | null;
   description?: string;
@@ -58,16 +58,12 @@ type UiLine = Omit<QuotationLine, 'uom' | 'uomId'> & {
   itemName?: string;
   uomName?: string | null;
 
-  // flags (read-only)
   isSellable?: boolean;
   isConsumable?: boolean;
   allowManualFulfillment?: boolean;
+  fulfillmentText?: string;
 
-  // ✅ PP / Direct DO selection (this is what you save)
-  // 0 = Direct DO, 1 = Production Planning
   supplyMethod: number | null;
-
-  // UI helper label
   supplyMethodText?: string;
 };
 
@@ -97,13 +93,11 @@ type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
 })
 export class QuotationscreateComponent implements OnInit {
 
-  // dropdown containers (page)
   @ViewChild('customerBox') customerBox!: ElementRef<HTMLElement>;
   @ViewChild('currencyBox') currencyBox!: ElementRef<HTMLElement>;
   @ViewChild('paymentBox') paymentBox!: ElementRef<HTMLElement>;
   @ViewChild('itemSetBox') itemSetBox!: ElementRef<HTMLElement>;
 
-  // modal refs
   @ViewChild('modalItemBox') modalItemBox!: ElementRef<HTMLElement>;
   @ViewChild('itemSearchInput', { static: false }) itemSearchInput!: ElementRef<HTMLInputElement>;
 
@@ -141,7 +135,6 @@ export class QuotationscreateComponent implements OnInit {
 
   minDate = '';
 
-  // lookups
   customers: Customer[] = [];
   countries: Country[] = [];
   activeCustomerCountry: Country | null = null;
@@ -166,11 +159,9 @@ export class QuotationscreateComponent implements OnInit {
   private loadedItemSetIds = new Set<number>();
   private uomNameToId = new Map<string, number>();
 
-  // grid lines
+  // ✅ IMPORTANT: lines always contains BOTH header rows + item rows (like your HTML expects)
   lines: UiLine[] = [];
-  hoverAdd = false;
 
-  // itemset multi
   itemSets: ItemSetHeaderRow[] = [];
   itemSetSearch = '';
   itemSetDdOpen = false;
@@ -178,9 +169,11 @@ export class QuotationscreateComponent implements OnInit {
   selectedItemSets: ItemSetHeaderRow[] = [];
   pendingItemSet: ItemSetHeaderRow | null = null;
 
+  // ✅ Mapping for EDIT hydration: itemId -> {itemSetId, setName}
+  private itemIdToSet = new Map<number, { itemSetId: number; setName: string }>();
+
   private editId: number | null = null;
 
-  // modal state
   showModal = false;
   editingIndex: number | null = null;
 
@@ -277,7 +270,17 @@ export class QuotationscreateComponent implements OnInit {
     if (changed) this.computeTotals();
   }
 
-  private taxModeToTaxCodeId(mode?: LineTaxMode): number {
+  // ✅ mapping both ways
+  private taxCodeIdToTaxMode(id?: number | null): LineTaxMode {
+    switch (Number(id)) {
+      case 1: return 'Standard-Rated';
+      case 2: return 'Zero-Rated';
+      case 3: return 'Exempt';
+      default: return (+this.header.taxPct || 0) === 9 ? 'Standard-Rated' : 'Zero-Rated';
+    }
+  }
+
+  taxModeToTaxCodeId(mode?: LineTaxMode): number {
     switch (mode) {
       case 'Standard-Rated': return 1;
       case 'Zero-Rated': return 2;
@@ -320,10 +323,6 @@ export class QuotationscreateComponent implements OnInit {
       return;
     }
 
-    // rule:
-    // sellable -> direct do
-    // only consumable -> PP
-    // both -> default PP
     if (l.isSellable && !l.isConsumable) l.supplyMethod = 0;
     else if (l.isConsumable && !l.isSellable) l.supplyMethod = 1;
     else if (l.isSellable && l.isConsumable) l.supplyMethod = 1;
@@ -360,8 +359,8 @@ export class QuotationscreateComponent implements OnInit {
           l.isSellable = !!f.isSellable;
           l.isConsumable = !!f.isConsumable;
           l.allowManualFulfillment = !!f.allowManualFulfillment;
+          if ((f as any).fulfillmentText) l.fulfillmentText = (f as any).fulfillmentText;
 
-          // ✅ auto assign ONLY if empty
           this.applyAutoSupplyMethodIfEmpty(l);
         }
       }
@@ -450,7 +449,6 @@ export class QuotationscreateComponent implements OnInit {
         id: Number(u.id ?? u.Id),
         name: String(u.name ?? u.Name ?? '').trim()
       }));
-
       this.rebuildUomMap();
       this.backfillMissingUoms();
     });
@@ -498,8 +496,147 @@ export class QuotationscreateComponent implements OnInit {
     });
   }
 
+  // ===========================================================
+  // ✅ MAIN FIX: Edit load-க்கு set mapping build + headers rebuild
+  // ===========================================================
+  private hydrateSetInfoForEditThenRebuildRows(): void {
+    const sets = (this.selectedItemSets || [])
+      .map(s => ({ id: Number(s.id), setName: String(s.setName || '').trim() }))
+      .filter(s => s.id > 0);
+
+    // If no sets, just ensure totals
+    if (!sets.length) {
+      this.computeTotals();
+      this.loadFlagsForLines(this.lines.filter(x => !x.isSetHeader));
+      return;
+    }
+
+    // call all itemset details
+    const calls = sets.map(s => this.itemSetService.getByIdItemSet(s.id));
+
+    forkJoin(calls).subscribe({
+      next: (responses: any[]) => {
+        this.itemIdToSet.clear();
+
+        responses.forEach((res: any, idx: number) => {
+          const setId = sets[idx].id;
+          const setName = sets[idx].setName || String(res?.data?.setName || `Set #${setId}`);
+
+          const dto = res?.data ?? null;
+          // ✅ Your API key variations supported
+          const rows: any[] = dto?.items ?? dto?.itemSetItems ?? dto?.lines ?? dto?.data ?? [];
+          for (const r of rows) {
+            const itemId = Number(r.itemId ?? r.ItemId ?? 0);
+            if (!itemId) continue;
+            if (!this.itemIdToSet.has(itemId)) {
+              this.itemIdToSet.set(itemId, { itemSetId: setId, setName });
+            }
+          }
+        });
+
+        // attach mapping to ALL item rows
+        for (const l of this.lines) {
+          if (l.isSetHeader) continue;
+          const m = this.itemIdToSet.get(Number(l.itemId));
+          if (m) {
+            l.isFromSet = true;
+            l.itemSetId = m.itemSetId;
+            l.setName = m.setName;
+          }
+        }
+
+        // rebuild full lines array with proper set headers
+        this.rebuildLinesWithSetHeaders();
+
+        // now totals + flags
+        this.backfillMissingUoms();
+        this.computeTotals();
+        this.loadFlagsForLines(this.lines.filter(x => !x.isSetHeader));
+      },
+      error: () => {
+        // fallback: still compute
+        this.computeTotals();
+        this.loadFlagsForLines(this.lines.filter(x => !x.isSetHeader));
+      }
+    });
+  }
+
+  private rebuildLinesWithSetHeaders(): void {
+    // Separate item lines
+    const items = this.lines.filter(x => !x.isSetHeader);
+
+    // build new list
+    const rebuilt: UiLine[] = [];
+    const added = new Set<number>();
+
+    // keep order same as selectedItemSets (3rd image style)
+    const setOrder = (this.selectedItemSets || []).map(s => Number(s.id));
+
+    // 1) add sets in order
+    for (const sid of setOrder) {
+      const setName = this.selectedItemSets.find(x => x.id === sid)?.setName || `Set #${sid}`;
+      const group = items.filter(x => x.isFromSet && Number(x.itemSetId) === sid);
+      if (!group.length) continue;
+
+      // header row
+      rebuilt.push({
+        itemId: 0,
+        uomId: null,
+        qty: 0,
+        unitPrice: 0,
+        discountPct: 0,
+        taxMode: 'Zero-Rated',
+        isSetHeader: true,
+        isFromSet: true,
+        itemSetId: sid,
+        setName,
+        description: '',
+        supplyMethod: null,
+        supplyMethodText: 'SELECT'
+      } as any);
+
+      // item rows
+      for (const g of group) rebuilt.push(g);
+
+      added.add(sid);
+    }
+
+    // 2) add remaining non-set items
+    const nonSet = items.filter(x => !x.isFromSet || !x.itemSetId);
+    for (const l of nonSet) rebuilt.push(l);
+
+    // 3) if any set lines exist but not in selectedItemSets, still show
+    const extraSetIds = Array.from(new Set(items.filter(x => x.isFromSet && x.itemSetId).map(x => Number(x.itemSetId))));
+    for (const sid of extraSetIds) {
+      if (added.has(sid)) continue;
+      const setName = items.find(x => Number(x.itemSetId) === sid)?.setName || `Set #${sid}`;
+      const group = items.filter(x => x.isFromSet && Number(x.itemSetId) === sid);
+      if (!group.length) continue;
+
+      rebuilt.unshift({
+        itemId: 0,
+        uomId: null,
+        qty: 0,
+        unitPrice: 0,
+        discountPct: 0,
+        taxMode: 'Zero-Rated',
+        isSetHeader: true,
+        isFromSet: true,
+        itemSetId: sid,
+        setName,
+        description: '',
+        supplyMethod: null,
+        supplyMethodText: 'SELECT'
+      } as any);
+
+      for (const g of group) rebuilt.push(g);
+    }
+
+    this.lines = rebuilt;
+  }
+
   // =========================
-  // Edit Load
+  // ✅ Edit Load
   // =========================
   private loadForEdit(id: number) {
     this.qt.getById(id).subscribe({
@@ -526,7 +663,8 @@ export class QuotationscreateComponent implements OnInit {
           discountType: (dto.discountType ?? this.header.discountType) as any,
           discountInput: Number(dto.discountInput ?? this.header.discountInput ?? 0),
           discountManual: true,
-          lineSourceId: (Number(dto.lineSourceId ?? dto.LineSource ?? 1) as any)
+          lineSourceId: (Number(dto.lineSourceId ?? dto.LineSource ?? 1) as any),
+          taxPct: Number(dto.taxPct ?? dto.gstPct ?? dto.GstPct ?? 0) || 0
         };
 
         const custName = dto.customerName ?? dto.CustomerName;
@@ -538,17 +676,29 @@ export class QuotationscreateComponent implements OnInit {
         const payName = dto.paymentTermsName ?? dto.PaymentTermsName;
         if (payName) { this.paymentTermsSearch = String(payName); this.header.paymentTerms = String(payName); }
 
-        const gst = Number(dto.taxPct ?? dto.GstPct ?? dto.gstPct ?? 0);
-        if (!Number.isNaN(gst)) this.header.taxPct = gst;
+        // ✅ selected itemSets (setName is available here)
+        const apiItemSets = dto.itemSets ?? dto.ItemSets ?? [];
+        this.selectedItemSets = (apiItemSets || [])
+          .map((x: any) => ({
+            id: Number(x.itemSetId ?? x.ItemSetId ?? x.id ?? x.Id ?? 0),
+            setName: String(x.setName ?? x.SetName ?? '').trim()
+          }))
+          .filter((x: ItemSetHeaderRow) => x.id > 0);
 
-        this.lines = [];
+        this.loadedItemSetIds.clear();
+        this.selectedItemSets.forEach(s => this.loadedItemSetIds.add(s.id));
 
+        // ✅ Load lines as item rows ONLY first (NO header rows here)
         const apiLines = dto.lines ?? dto.Lines ?? [];
+        const rawLines: UiLine[] = [];
+
         for (const l of apiLines) {
           const itemId = Number(l.itemId ?? l.ItemId ?? 0);
           if (!itemId) continue;
 
-          const taxMode = (l.taxMode ?? l.TaxMode ?? 'Zero-Rated') as LineTaxMode;
+          const taxCodeId = Number(l.taxCodeId ?? l.TaxCodeId ?? null);
+          const taxModeRaw = (l.taxMode ?? l.TaxMode ?? null) as any;
+          const taxMode: LineTaxMode = (taxModeRaw ? taxModeRaw : this.taxCodeIdToTaxMode(taxCodeId)) as LineTaxMode;
 
           const ui: UiLine = {
             itemId,
@@ -559,31 +709,32 @@ export class QuotationscreateComponent implements OnInit {
             discountPct: Number(l.discountPct ?? l.DiscountPct ?? 0),
             description: String(l.description ?? l.Description ?? ''),
             taxMode,
-            taxCodeId: Number(l.taxCodeId ?? l.TaxCodeId ?? this.taxModeToTaxCodeId(taxMode)),
-            isFromSet: !!(l.isFromSet ?? l.IsFromSet ?? false),
-            itemSetId: (l.itemSetId ?? l.ItemSetId) != null ? Number(l.itemSetId ?? l.ItemSetId) : null,
-            setName: String(l.setName ?? l.SetName ?? ''),
+            taxCodeId: (!Number.isNaN(taxCodeId) && taxCodeId > 0) ? taxCodeId : this.taxModeToTaxCodeId(taxMode),
+
+            // IMPORTANT: API lines doesn't have set info -> hydrate later
+            isFromSet: false,
+            itemSetId: null,
+            setName: '',
+
             isSetHeader: false,
 
-            // ✅ IMPORTANT
             supplyMethod: (l.supplyMethod ?? l.SupplyMethod) != null ? Number(l.supplyMethod ?? l.SupplyMethod) : null,
             supplyMethodText: this.supplyMethodLabel((l.supplyMethod ?? l.SupplyMethod) != null ? Number(l.supplyMethod ?? l.SupplyMethod) : null),
 
-            // defaults for flags
             isSellable: false,
             isConsumable: false,
-            allowManualFulfillment: false
+            allowManualFulfillment: false,
+            fulfillmentText: l.fulfillmentText ?? l.FulfillmentText
           };
 
           this.computeLine(ui);
-          this.lines.push(ui);
+          rawLines.push(ui);
         }
 
-        this.backfillMissingUoms();
-        this.computeTotals();
+        this.lines = rawLines;
 
-        // ✅ bulk flags will auto fill supplyMethod only if null
-        this.loadFlagsForLines(this.lines);
+        // ✅ NOW: hydrate set info + rebuild set header rows (THIS FIXES YOUR ISSUE)
+        this.hydrateSetInfoForEditThenRebuildRows();
       },
       error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Unable to load quotation for edit' })
     });
@@ -626,7 +777,11 @@ export class QuotationscreateComponent implements OnInit {
     const disc = +l.discountPct || 0;
     l.discountPct = Math.min(100, Math.max(0, disc));
 
+    if (!l.taxMode && (l.taxCodeId != null)) {
+      l.taxMode = this.taxCodeIdToTaxMode(l.taxCodeId);
+    }
     l.taxCodeId = this.taxModeToTaxCodeId(l.taxMode);
+
     this.computeLine(l);
     this.computeTotals();
   }
@@ -783,10 +938,9 @@ export class QuotationscreateComponent implements OnInit {
         const rows: any[] = dto?.items ?? dto?.itemSetItems ?? dto?.lines ?? [];
         if (!rows.length) return;
 
-        // remove existing for this set (safety)
         this.lines = this.lines.filter(x => x.itemSetId !== itemSetId);
 
-        // header row
+        // header
         this.lines.push({
           itemId: 0,
           uomId: null,
@@ -828,11 +982,9 @@ export class QuotationscreateComponent implements OnInit {
             isSetHeader: false,
             uomName: it.uomName ?? it.UomName ?? null,
 
-            // ✅ if API sends supplyMethod use it, else null (bulk flags will auto fill)
             supplyMethod: (it.supplyMethod ?? it.SupplyMethod) != null ? Number(it.supplyMethod ?? it.SupplyMethod) : null,
             supplyMethodText: this.supplyMethodLabel((it.supplyMethod ?? it.SupplyMethod) != null ? Number(it.supplyMethod ?? it.SupplyMethod) : null),
 
-            // flag defaults
             isSellable: false,
             isConsumable: false,
             allowManualFulfillment: false
@@ -843,8 +995,6 @@ export class QuotationscreateComponent implements OnInit {
         }
 
         this.computeTotals();
-
-        // ✅ apply flags + auto fill supplyMethod if empty
         this.loadFlagsForLines(this.lines.filter(x => !x.isSetHeader));
       },
       error: () => this.loadedItemSetIds.delete(itemSetId)
@@ -883,9 +1033,13 @@ export class QuotationscreateComponent implements OnInit {
       return { base: 0, discount: 0 };
     }
 
+    if (!l.taxMode && l.taxCodeId != null) {
+      l.taxMode = this.taxCodeIdToTaxMode(l.taxCodeId);
+    }
+    l.taxCodeId = this.taxModeToTaxCodeId(l.taxMode);
+
     const qty = l.qty === null || l.qty === undefined ? 0 : +l.qty;
     const price = l.unitPrice === null || l.unitPrice === undefined ? 0 : +l.unitPrice;
-
     const discP = Math.min(Math.max(+l.discountPct || 0, 0), 100);
 
     const gross = qty * price;
@@ -980,23 +1134,26 @@ export class QuotationscreateComponent implements OnInit {
       itemSetIds: (this.selectedItemSets || []).map(x => x.id),
       lines: this.lines
         .filter(l => !l.isSetHeader)
-        .map(l => ({
-          ...l,
-          itemId: l.itemId,
-          uomId: l.uomId ?? null,
-          qty: +l.qty || 0,
-          unitPrice: +l.unitPrice || 0,
-          discountPct: +l.discountPct || 0,
-          taxMode: l.taxMode || 'Zero-Rated',
-          taxCodeId: l.taxCodeId ?? this.taxModeToTaxCodeId(l.taxMode),
-          description: (l.description || '').trim(),
-          itemSetId: l.itemSetId ?? null,
-          setName: l.setName ?? null,
-          isFromSet: !!l.isFromSet,
+        .map(l => {
+          const taxMode = (l.taxMode || (l.taxCodeId != null ? this.taxCodeIdToTaxMode(l.taxCodeId) : 'Zero-Rated')) as LineTaxMode;
+          const taxCodeId = l.taxCodeId ?? this.taxModeToTaxCodeId(taxMode);
 
-          // ✅ SAVE THIS
-          supplyMethod: l.supplyMethod ?? 0
-        }))
+          return {
+            ...l,
+            itemId: l.itemId,
+            uomId: l.uomId ?? null,
+            qty: +l.qty || 0,
+            unitPrice: +l.unitPrice || 0,
+            discountPct: +l.discountPct || 0,
+            taxMode,
+            taxCodeId,
+            description: (l.description || '').trim(),
+            itemSetId: l.itemSetId ?? null,
+            setName: l.setName ?? null,
+            isFromSet: !!l.isFromSet,
+            supplyMethod: l.supplyMethod ?? 0
+          };
+        })
     };
 
     if (!dto.number || !dto.number.trim?.()) {
@@ -1148,11 +1305,9 @@ export class QuotationscreateComponent implements OnInit {
       itemSetId: null,
       setName: '',
 
-      // ✅ MUST HAVE
       supplyMethod: null,
       supplyMethodText: 'SELECT',
 
-      // flags defaults
       isSellable: false,
       isConsumable: false,
       allowManualFulfillment: false
@@ -1164,10 +1319,7 @@ export class QuotationscreateComponent implements OnInit {
     else this.lines[this.editingIndex] = { ...this.lines[this.editingIndex], ...payload };
 
     this.computeTotals();
-
-    // ✅ load flags for this item and auto assign supplyMethod
     this.loadFlagsForLines([payload]);
-
     this.closeModal();
   }
 

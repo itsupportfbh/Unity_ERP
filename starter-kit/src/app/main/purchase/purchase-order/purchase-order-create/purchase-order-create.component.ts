@@ -76,6 +76,28 @@ export class PurchaseOrderCreateComponent implements OnInit {
 
   lockHeaderByPR: boolean = false;
 
+  ddOL = {
+  open: false,
+  index: -1 as number,
+  field: '' as 'prNo' | 'item' | 'taxCode' | '',
+  options: [] as any[],
+  anchorEl: null as HTMLElement | null,
+  left: 0,
+  top: 0,
+  width: 260,
+  openUp: false
+};
+
+closeOverlay() {
+  this.ddOL.open = false;
+  this.ddOL.index = -1;
+  this.ddOL.field = '';
+  this.ddOL.options = [];
+  this.ddOL.anchorEl = null;
+
+  // ✅ also clear any row dropdown state
+  (this.poLines || []).forEach(l => (l.dropdownOpen = ''));
+}
 
   formatDate(date: Date | string): string {
     if (!date) return '';
@@ -647,6 +669,7 @@ onDocumentClick(event: MouseEvent) {
 
   // ✅ close table row dropdowns
   (this.poLines || []).forEach(line => (line.dropdownOpen = ''));
+  this.closeOverlay(); 
 }
 
  toggleDropdown(field: string, open?: boolean, ev?: Event) {
@@ -769,14 +792,52 @@ onDocumentClick(event: MouseEvent) {
 openDropdown(index: number, field: string, ev?: Event) {
   ev?.stopPropagation();
 
-  this.poLines[index].dropdownOpen = field;
+  // ✅ if same overlay already open, toggle close (fix double click)
+  if (this.ddOL.open && this.ddOL.index === index && this.ddOL.field === field) {
+    this.closeOverlay();
+    return;
+  }
 
+  // ✅ close everything else first
+  (this.poLines || []).forEach(l => (l.dropdownOpen = ''));
+  this.closeOverlay();
+
+  // prepare options
   if (field === 'prNo') this.poLines[index].filteredOptions = [...(this.allPrNos || [])];
   if (field === 'item') this.poLines[index].filteredOptions = [...(this.allItems || [])];
   if (field === 'budget') this.poLines[index].filteredOptions = [...(this.allBudgets || [])];
   if (field === 'recurring') this.poLines[index].filteredOptions = [...(this.allRecurring || [])];
   if (field === 'taxCode') this.poLines[index].filteredOptions = [...(this.allTaxCodes || [])];
   if (field === 'location') this.poLines[index].filteredOptions = [...(this.deliveries || [])];
+
+  // ✅ overlay fields: use ONLY overlay (no inline dropdownOpen)
+  if (field === 'prNo' || field === 'item' || field === 'taxCode') {
+
+    // prevent opening item overlay if locked
+    if (field === 'item' && this.poLines[index].__fromPR) return;
+
+    const t = ev?.target as HTMLElement | null;
+
+    const anchor =
+      (t?.closest('.ig') as HTMLElement) ||
+      (t?.closest('.ig--cell') as HTMLElement) ||
+      (t as HTMLElement);
+
+    this.ddOL.open = true;
+    this.ddOL.index = index;
+    this.ddOL.field = field as any;
+    this.ddOL.options = this.poLines[index].filteredOptions || [];
+    this.ddOL.anchorEl = anchor;
+
+    // ✅ IMPORTANT: do NOT keep row dropdownOpen for these fields
+    this.poLines[index].dropdownOpen = '';
+
+    this.refreshOverlayPos();
+    return;
+  }
+
+  // ✅ non-overlay fields (if you ever use inline dropdown for other columns)
+  this.poLines[index].dropdownOpen = field;
 }
 
   filterOptions(index: number, field: string) {
@@ -819,6 +880,10 @@ openDropdown(index: number, field: string, ev?: Event) {
       const src = this.deliveries || [];
       this.poLines[index].filteredOptions = src
         .filter((x: any) => (x?.name || '').toLowerCase().includes(searchValue));
+    }
+    if (this.ddOL.open && this.ddOL.index === index && this.ddOL.field === field) {
+      this.ddOL.options = this.poLines[index].filteredOptions || [];
+      this.refreshOverlayPos();
     }
   }
 
@@ -894,6 +959,7 @@ openDropdown(index: number, field: string, ev?: Event) {
     }
 
     this.poLines[index].dropdownOpen = ''; // close dropdown
+    this.closeOverlay();
   }
 
   /** ========= APPEND PR → PO LINES (no replace) ========= */
@@ -1538,6 +1604,29 @@ calcTotals(lines: any[], shipping = 0, headerDiscount = 0) {
   );
   return def?.name || 'Exclusive';
   }
+  refreshOverlayPos() {
+  if (!this.ddOL.open || !this.ddOL.anchorEl) return;
+
+  const rect = this.ddOL.anchorEl.getBoundingClientRect();
+
+  // width same as input box width
+  this.ddOL.left = rect.left;
+  this.ddOL.width = rect.width;
+
+  const menuH = 280; // same as css max-height
+  const gap = 8;
+
+  const spaceBelow = window.innerHeight - rect.bottom;
+  this.ddOL.openUp = spaceBelow < (menuH + 20);
+
+  if (this.ddOL.openUp) {
+    // open upwards
+    this.ddOL.top = Math.max(8, rect.top - gap);
+  } else {
+    // open downwards
+    this.ddOL.top = rect.bottom + gap;
+  }
+}
 
   ///// for temp data------////
 

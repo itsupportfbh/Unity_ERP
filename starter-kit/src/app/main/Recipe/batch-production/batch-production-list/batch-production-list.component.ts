@@ -40,7 +40,10 @@ export class BatchProductionListComponent implements OnInit {
     this.api.listBatches().subscribe({
       next: (res: any) => {
         const data = res?.data ?? res ?? [];
-        this.rows = Array.isArray(data) ? data : [];
+        this.rows = (Array.isArray(data) ? data : []).map((x: any) => ({
+        ...x,
+        foodPrepStatus: x.foodPrepStatus ?? x.FoodPrepStatus ?? 1
+      }));
         this.tempRows = [...this.rows];
       },
       error: (e) => console.error(e)
@@ -167,4 +170,63 @@ export class BatchProductionListComponent implements OnInit {
     this.selectedBatch = null;
     this.selectedLines = [];
   }
+openFoodPrepPopup(row: any): void {
+  const id = Number(row?.id || 0);
+  if (!id) return;
+
+  const current = Number(row?.foodPrepStatus ?? 1); // default assume pending
+
+  // ✅ only pending -> completed
+  if (current === 2) {
+    Swal.fire('Info', 'Food Preparation already completed.', 'info');
+    return;
+  }
+
+  Swal.fire({
+    title: 'Complete Food Preparation?',
+    html: `
+      <div style="text-align:left;">
+        <div style="font-size:13px; margin-bottom:8px;">
+          Batch: <b>${row?.batchNo || '-'}</b><br/>
+          Plan: <b>${row?.productionPlanNo || '-'}</b>
+        </div>
+
+        <label style="font-weight:700; font-size:13px;">Remarks (optional)</label>
+        <textarea id="fpRemarks" class="swal2-textarea"
+          placeholder="Optional remarks..."
+          style="min-height:80px"></textarea>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Submit',
+    preConfirm: () => ({
+      remarks: (document.getElementById('fpRemarks') as HTMLTextAreaElement)?.value || ''
+    })
+  }).then(res => {
+    if (!res.isConfirmed) return;
+
+    // ✅ always set 2
+    this.api.updateFoodPrepStatus(id, 2, res.value?.remarks || '').subscribe({
+      next: () => {
+        Swal.fire('Success', 'Food Preparation marked as Completed', 'success');
+        this.loadList();
+      },
+      error: (e) => {
+        console.error(e);
+        Swal.fire('Error', 'Failed to update food preparation', 'error');
+      }
+    });
+  });
+}
+isFoodPrepDisabled(row: any): boolean {
+  return Number(row?.foodPrepStatus ?? 1) === 2;
+}
+foodPrepTooltip(row: any): string {
+  const s = Number(row?.foodPrepStatus ?? 1);
+  return s === 2 ? 'Food Preparation Completed' : 'Click to complete';
+}
+getFoodPrepLabel(row: any): string {
+  const s = Number(row?.foodPrepStatus ?? 1);
+  return s === 2 ? 'Food Prep Done' : 'Food Prep Processing';
+}
 }

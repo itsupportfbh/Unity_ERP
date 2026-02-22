@@ -28,6 +28,7 @@ export interface BatchProductionHeaderDto {
 
   postedBy?: string | null;
   postedDate?: string | null;
+  foodPrepStatus: number; 
 }
 
 export interface BatchProductionLineDto {
@@ -121,6 +122,20 @@ getIngredientExplosion(recipeId: number, warehouseId: number, outputQty: number)
       outputQty: outputQty.toString()
     }
   });
+}
+updateFoodPrepStatus(
+  batchId: number,
+  status: number,        // 1 = Pending, 2 = Completed
+  remarks?: string
+): Observable<any> {
+  return this.http.post(
+    `${this.url}/BatchProduction/${batchId}/food-prep-status`,
+    {
+      status,
+      remarks,
+      user: (localStorage.getItem('username') || 'admin')
+    }
+  );
 }
 
 }

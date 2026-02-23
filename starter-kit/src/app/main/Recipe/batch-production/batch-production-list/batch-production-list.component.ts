@@ -174,7 +174,7 @@ openFoodPrepPopup(row: any): void {
   const id = Number(row?.id || 0);
   if (!id) return;
 
-  const current = Number(row?.foodPrepStatus ?? 1); // default assume pending
+  const current = Number(row?.foodPrepStatus ?? 1);
 
   // ✅ only pending -> completed
   if (current === 2) {
@@ -182,30 +182,54 @@ openFoodPrepPopup(row: any): void {
     return;
   }
 
+  const batchNo = row?.batchNo || '-';
+  const planNo  = row?.productionPlanNo || '-';
+
   Swal.fire({
-    title: 'Complete Food Preparation?',
+    title: 'Complete Food Preparation',
     html: `
-      <div style="text-align:left;">
-        <div style="font-size:13px; margin-bottom:8px;">
-          Batch: <b>${row?.batchNo || '-'}</b><br/>
-          Plan: <b>${row?.productionPlanNo || '-'}</b>
+      <div class="fpX">
+        <div class="fpX__meta">
+          <div class="fpX__pill">
+            <span class="k">Batch</span>
+            <span class="v">${batchNo}</span>
+          </div>
+          <div class="fpX__pill">
+            <span class="k">Plan</span>
+            <span class="v">${planNo}</span>
+          </div>
         </div>
 
-        <label style="font-weight:700; font-size:13px;">Remarks (optional)</label>
-        <textarea id="fpRemarks" class="swal2-textarea"
-          placeholder="Optional remarks..."
-          style="min-height:80px"></textarea>
+        <div class="fpX__hint">
+          Add remarks if needed, then click <b>Submit</b>.
+        </div>
+
+        <label class="fpX__lbl">Remarks (optional)</label>
+        <textarea id="fpRemarks"
+          class="fpX__ta"
+          placeholder="Type remarks..."
+          rows="4"></textarea>
       </div>
     `,
     showCancelButton: true,
     confirmButtonText: 'Submit',
-    preConfirm: () => ({
-      remarks: (document.getElementById('fpRemarks') as HTMLTextAreaElement)?.value || ''
-    })
+    cancelButtonText: 'Cancel',
+    buttonsStyling: false, // ✅ we style by CSS
+    customClass: {
+      popup: 'fpSwal',
+      title: 'fpSwal__title',
+      htmlContainer: 'fpSwal__body',
+      confirmButton: 'fpSwal__ok',
+      cancelButton: 'fpSwal__cancel'
+    },
+    focusConfirm: false,
+    preConfirm: () => {
+      const remarks = (document.getElementById('fpRemarks') as HTMLTextAreaElement)?.value || '';
+      return { remarks };
+    }
   }).then(res => {
     if (!res.isConfirmed) return;
 
-    // ✅ always set 2
     this.api.updateFoodPrepStatus(id, 2, res.value?.remarks || '').subscribe({
       next: () => {
         Swal.fire('Success', 'Food Preparation marked as Completed', 'success');

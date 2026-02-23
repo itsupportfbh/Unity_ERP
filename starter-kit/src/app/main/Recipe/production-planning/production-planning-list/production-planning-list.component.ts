@@ -31,6 +31,7 @@ shortageGrnList: any[] = [];
 shortageGrnCount = 0;
 shortageGrnSearch = '';
 selectedOption = 10;
+selectedPlanId: number | null = null;
 
   constructor(private srv: ProductionPlanService, private router: Router) {}
 
@@ -386,4 +387,64 @@ filteredShortageGrnList(): any[] {
       return String(iso || '');
     }
   }
+  statusLabel(v: any): string {
+  const n = Number(v);
+  switch (n) {
+    case 0: return 'Awaiting Material';
+    case 1: return 'Pending';
+    case 2: return 'Completed';
+    case 8: return 'Deleted';     // optional
+    case 9: return 'Cancelled';   // optional
+    default: return String(v ?? '-');
+  }
+}
+isFirstRowOfPlan(index: number): boolean {
+  const curr = this.filteredShortageGrnList()[index];
+  const prev = this.filteredShortageGrnList()[index - 1];
+  if (!curr) return false;
+  return !prev || Number(prev.productionPlanId) !== Number(curr.productionPlanId);
+}
+
+markPlanAsPending(planId: number): void {
+  debugger
+  if (!planId) return;
+
+  Swal.fire({
+    icon: 'question',
+    title: 'Mark as Pending?',
+    text: `Plan ${planId} status will change from Awaiting Material → Pending`,
+    showCancelButton: true,
+    confirmButtonText: 'Yes',
+    cancelButtonText: 'Cancel'
+  }).then(r => {
+    if (!r.isConfirmed) return;
+
+    this.srv.updatePlanStatus(planId, 1).subscribe({
+      next: () => {
+        // ✅ update main list status immediately (no reload)
+        const upd = (arr: any[]) => (arr || []).forEach(x => {
+          if (Number(x.id) === Number(planId)) x.status = 1;
+        });
+        upd(this.rows);
+        upd(this.allRows);
+
+        // ✅ remove alerts for that plan from popup list (instant disappear)
+        this.shortageGrnList = (this.shortageGrnList || [])
+          .filter(x => Number(x.productionPlanId) !== Number(planId));
+
+        // ✅ update bell count
+        this.shortageGrnCount = this.shortageGrnList.length;
+
+        Swal.fire('Updated', `Plan ${planId} moved to Pending`, 'success');
+      },
+      error: (e) => Swal.fire('Error', e?.error?.message || 'Update failed', 'error')
+    });
+  });
+}
+selectPlan(planId: any) {
+  debugger
+  const id = Number(planId || 0);
+  this.selectedPlanId = id > 0 ? id : null;
+}
+
 }

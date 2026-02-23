@@ -84,7 +84,17 @@
             </ng-template>
           </ngx-datatable-column>
 
-          <ngx-datatable-column name="Status" prop="status" [width]="120"></ngx-datatable-column>
+          <ngx-datatable-column name="Status" [width]="160">
+          <ng-template ngx-datatable-cell-template let-row="row">
+            <span class="badge badge-pill"
+                  [ngClass]="+row.status === 0 ? 'badge-warning'
+                          : +row.status === 1 ? 'badge-primary'
+                          : +row.status === 2 ? 'badge-success'
+                          : 'badge-secondary'">
+              {{ statusLabel(row.status) }}
+            </span>
+          </ng-template>
+        </ngx-datatable-column>
 
           <ngx-datatable-column name="Shortage" prop="totalShortage" [width]="140">
             <ng-template ngx-datatable-cell-template let-row="row">
@@ -219,6 +229,7 @@
               <th style="padding:10px 12px;text-align:left;">Item Code</th>
               <th style="padding:10px 12px;text-align:left;">Item Name</th>
               <th style="padding:10px 12px;text-align:left;">Qty Received</th>
+              <th style="padding:10px 12px;text-align:left;">Action</th>
             </tr>
           </thead>
 
@@ -236,7 +247,14 @@
               <td style="padding:10px 12px;">{{ a.itemCode }}</td>
               <td style="padding:10px 12px;">{{ a.itemName }}</td>
               <td style="padding:10px 12px;">{{ a.qtyReceived }}</td>
-
+              <td style="padding:10px 12px;">
+       <button type="button"
+        (click)="markPlanAsPending(a.productionPlanId); $event.stopPropagation()"
+        style="background:#28a745;color:#fff;border:0;border-radius:10px;
+               padding:10px 16px;font-weight:800;cursor:pointer;">
+  Approved
+</button>
+              </td>
             </tr>
 
             <tr *ngIf="filteredShortageGrnList().length === 0">
@@ -250,6 +268,7 @@
     </div>
 
     <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #eef2f7;">
+      
       <button (click)="closeShortageGrnModal()"
               style="background:#2E5F73;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer;">
         Close

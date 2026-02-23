@@ -160,4 +160,12 @@ deletePlan(planId: number) {
       `${this.url}/ProductionPlan/${id}/print`
     );
   }
+  updatePlanStatus(planId: number, status: number) {
+  const payload = {
+    status,
+    updatedBy: (localStorage.getItem('username') || 'admin')
+  };
+  return this.http.put<any>(`${this.url}/productionplan/${planId}/status`, payload);
 }
+}
+

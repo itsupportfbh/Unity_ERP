@@ -39,7 +39,7 @@ export class ProductionPlanningComponent implements OnInit {
   currentPlanId: number | null = null;
   isEditMode = false;
 
-  status = 'Draft';
+  status: number = 1; // 1 = Pending
   planDate: Date = new Date();
 
   disableCreateButton = false;
@@ -62,6 +62,7 @@ export class ProductionPlanningComponent implements OnInit {
         this.loadPlanById(id);
       } else {
         // create mode
+        this.status = 1;
         this.setDefaultWarehouseIfNeeded();
         this.loadSalesOrders();
       }
@@ -233,7 +234,8 @@ export class ProductionPlanningComponent implements OnInit {
         this.setDefaultWarehouseIfNeeded();
 
         this.outletId = Number(h.outletId || h.OutletId || this.outletId);
-        this.status = String(h.status || h.Status || 'Draft');
+        this.status = Number(h.status ?? h.Status ?? 1);
+        if (![0,1,2].includes(this.status)) this.status = 1;
         this.planDate = h.planDate ? new Date(h.planDate) : new Date();
 
         // load SO list include selected SO
@@ -283,6 +285,77 @@ export class ProductionPlanningComponent implements OnInit {
   // ✅ Save (Create or Update)
   // -----------------------------
  savePlan(): void {
+  // if shortage exists, do not allow status=1 save
+  if (this.shortageCountVal > 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Shortage Found',
+      text: 'Shortage items are available. Please click Create PR.',
+      confirmButtonText: 'OK'
+    });
+    return;
+  }
+
+  // no shortage -> Pending (1)
+  this.savePlanWithStatus(1);
+}
+
+  // -----------------------------
+  // PR
+  // -----------------------------
+  createPR(): void {
+  if (this.shortageCountVal <= 0) {
+    Swal.fire('No Shortage', 'No shortage items found.', 'info');
+    return;
+  }
+
+  Swal.fire({
+    icon: 'question',
+    title: 'Create PR & Save Plan?',
+    text: 'This will create PR and save Production Plan as Pending PR.',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Create',
+    cancelButtonText: 'Cancel'
+  }).then(r => {
+    if (!r.isConfirmed) return;
+
+    const payload = {
+      salesOrderId: this.selectedSoId,
+      warehouseId: this.warehouseId,
+      outletId: this.outletId,
+      userId: Number(localStorage.getItem('id') || 0),
+      userName: (localStorage.getItem('username') || '').trim(),
+      deliveryDate: null,
+      note: `Auto from Production Planning SO:${this.selectedSoId}`
+    };
+
+    this.api.createPrFromRecipeShortage(payload).subscribe({
+      next: (res) => {
+        if (res?.prId > 0) {
+          this.disableCreateButton = true;
+
+          // ✅ Save plan as Pending PR (0)
+          this.savePlanWithStatus(0);
+        } else {
+          this.disableCreateButton = false;
+          Swal.fire('Info', res?.message || 'No shortage items', 'info');
+        }
+      },
+      error: (err) => {
+        Swal.fire('Error', err?.error?.message || 'Failed', 'error');
+      }
+    });
+  });
+}
+  fmt(v: any): string {
+    const n = Number(v ?? 0);
+    return (Math.round(n * 1000) / 1000).toString();
+  }
+
+  onGoToRecipeList(): void {
+    this.router.navigate(['/Recipe/productionplanninglist']);
+  }
+  private savePlanWithStatus(statusValue: number): void {
   if (!this.selectedSoId) return;
 
   if (!this.warehouseId) {
@@ -304,9 +377,9 @@ export class ProductionPlanningComponent implements OnInit {
     return;
   }
 
-  const goList = () => this.router.navigate(['/Recipe/productionplanninglist']); // ✅ change route as your app
+  const goList = () => this.router.navigate(['/Recipe/productionplanninglist']);
 
-  // UPDATE
+  // ✅ UPDATE
   if (this.isEditMode && this.currentPlanId) {
     this.api.updatePlan({
       id: this.currentPlanId,
@@ -314,75 +387,36 @@ export class ProductionPlanningComponent implements OnInit {
       outletId: this.outletId,
       warehouseId: this.warehouseId,
       planDate: this.planDate,
-      status: this.status || 'Draft',
+      status: statusValue,      // ✅ INT
       updatedBy: userName,
       lines
     }).subscribe({
       next: (res: any) => {
         const pid = Number(res?.productionPlanId || res?.id || this.currentPlanId || 0);
         Swal.fire('Updated', `Production Plan Id: ${pid}`, 'success')
-          .then(() => goList());   // ✅ redirect after OK
+          .then(() => goList());
       },
       error: (e) => Swal.fire('Error', e?.error?.message || 'Update failed', 'error')
     });
     return;
   }
 
-  // CREATE
+  // ✅ CREATE (your backend must accept status OR DB default 1 will apply)
   this.api.savePlan({
     salesOrderId: this.selectedSoId,
     outletId: this.outletId,
     warehouseId: this.warehouseId,
-    createdBy: userName
-  }).subscribe({
+    createdBy: userName,
+    status: statusValue          // ✅ if backend not added, ignore safely
+  } as any).subscribe({
     next: (res: any) => {
       const pid = Number(res?.productionPlanId || res?.id || 0);
       if (pid > 0) this.currentPlanId = pid;
 
       Swal.fire('Saved', `Production Plan Id: ${pid}`, 'success')
-        .then(() => goList());     // ✅ redirect after OK
+        .then(() => goList());
     },
-    error: () => Swal.fire('Error', 'Save failed', 'error')
+    error: (e) => Swal.fire('Error', e?.error?.message || 'Save failed', 'error')
   });
 }
-
-
-  // -----------------------------
-  // PR
-  // -----------------------------
-  createPR(): void {
-    const payload = {
-      salesOrderId: this.selectedSoId,
-      warehouseId: this.warehouseId,
-      outletId: this.outletId,
-      userId: Number(localStorage.getItem('id') || 0),
-      userName: (localStorage.getItem('username') || '').trim(),
-      deliveryDate: null,
-      note: `Auto from Production Planning SO:${this.selectedSoId}`
-    };
-
-    this.api.createPrFromRecipeShortage(payload).subscribe({
-      next: (res) => {
-        if (res?.prId > 0) {
-          this.disableCreateButton = true;
-          Swal.fire('Success', `PR created. PR Id: ${res.prId}`, 'success');
-        } else {
-          this.disableCreateButton = false;
-          Swal.fire('Info', res?.message || 'No shortage items', 'info');
-        }
-      },
-      error: (err) => {
-        Swal.fire('Error', err?.error?.message || 'Failed', 'error');
-      }
-    });
-  }
-
-  fmt(v: any): string {
-    const n = Number(v ?? 0);
-    return (Math.round(n * 1000) / 1000).toString();
-  }
-
-  onGoToRecipeList(): void {
-    this.router.navigate(['/Recipe/productionplanninglist']);
-  }
 }

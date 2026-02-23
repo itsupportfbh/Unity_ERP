@@ -1030,7 +1030,7 @@ export class SalesOrderCreateComponent implements OnInit {
         itemName: (l.item || '').toString(),
         uom: l.uom || '',
         description: (l.description || '').toString(),
-
+  locationId: this.locationId, 
         quantity: Number(l.qty) || 0,
         unitPrice: Number(l.unitPrice) || 0,
         discount: Number(l.discountPct) || 0,

@@ -50,6 +50,9 @@ export class PurchaseOrderCreateComponent implements OnInit {
     approvalStatus: '',
     StockReorderId: 0
   };
+  hasPendingSoPrAlert = false;
+pendingSoPrCount = 0;
+pendingSoPrList: any[] = [];
   purchaseOrderId: any;
   approvalLevel: any;
   suppliers: any

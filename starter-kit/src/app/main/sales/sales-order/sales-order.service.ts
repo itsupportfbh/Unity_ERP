@@ -40,10 +40,14 @@ export class SalesOrderService {
   }
 
   // CREATE
-  insertSO(data: any): Observable<ResponseResult<number>> {
-    return this.http.post<ResponseResult<number>>(this.url + SalesOrderApiUrls.CreateSO, data);
-  }
-
+insertSO(data: any): Observable<ResponseResult<number>> {
+  const locId = Number(localStorage.getItem('locationId') || 0);
+  return this.http.post<ResponseResult<number>>(
+    this.url + SalesOrderApiUrls.CreateSO,
+    data,
+    { headers: { 'X-LocationId': String(locId) } }
+  );
+}
   // UPDATE (default: reallocate = true)
   updateSO(data: any, reallocate = true): Observable<ResponseResult<any>> {
     const base = this.url + SalesOrderApiUrls.UpdateSO; // '/SalesOrder/update'
@@ -52,12 +56,11 @@ export class SalesOrderService {
   }
 
   // DELETE
-// sales-order.service.ts
-deleteSO(id: number, updatedBy = 1) {
-  const base = this.url + SalesOrderApiUrls.DeleteSO + id;
-  const query = `?updatedBy=${encodeURIComponent(updatedBy)}`;
-  return this.http.delete<ResponseResult<any>>(base + query);
-}
+  deleteSO(id: number, updatedBy = 1): Observable<ResponseResult<any>> {
+    const base = this.url + SalesOrderApiUrls.DeleteSO + id;
+    const query = `?updatedBy=${encodeURIComponent(updatedBy)}`;
+    return this.http.delete<ResponseResult<any>>(base + query);
+  }
 
   // QUOTATION → DETAILS
   GetByQuatitonDetails(id: number): Observable<ResponseResult<any>> {
@@ -72,30 +75,40 @@ deleteSO(id: number, updatedBy = 1) {
     );
   }
 
-approveSO(id: number, approvedBy = 1) {
-  return this.http.post<ResponseResult<any>>(
-    this.url + SalesOrderApiUrls.ApproveSO(id, approvedBy),
-    {}
-  );
-}
-
-rejectSO(id: number) {
-  return this.http.post<ResponseResult<any>>(
-    this.url + SalesOrderApiUrls.RejectSO(id),
-    {}
-  );
-}
-
-getDrafts() {
-  return this.http.get<ResponseResult<any[]>>(this.url + SalesOrderApiUrls.Drafts);
-}
- getSOByStatus(id): Observable<ResponseResult<any>> {
-    return this.http.get<ResponseResult<any>>(this.url + SalesOrderApiUrls.GetSOByStatus+id);
+  approveSO(id: number, approvedBy = 1) {
+    return this.http.post<ResponseResult<any>>(
+      this.url + SalesOrderApiUrls.ApproveSO(id, approvedBy),
+      {}
+    );
   }
-  getOpenByCustomer(customerId: number): Observable<ResponseResult<any[]>> {
-  return this.http.get<ResponseResult<any[]>>(
-    this.url + SalesOrderApiUrls.GetOpenSOByCustomer + customerId
-  );
-}
 
+  rejectSO(id: number) {
+    return this.http.post<ResponseResult<any>>(
+      this.url + SalesOrderApiUrls.RejectSO(id),
+      {}
+    );
+  }
+
+  getDrafts() {
+    return this.http.get<ResponseResult<any[]>>(this.url + SalesOrderApiUrls.Drafts);
+  }
+
+  getSOByStatus(id: number): Observable<ResponseResult<any>> {
+    return this.http.get<ResponseResult<any>>(this.url + SalesOrderApiUrls.GetSOByStatus + id);
+  }
+
+  getOpenByCustomer(customerId: number): Observable<ResponseResult<any[]>> {
+    return this.http.get<ResponseResult<any[]>>(this.url + SalesOrderApiUrls.GetOpenSOByCustomer + customerId);
+  }
+
+  // ✅ NEW: Availability API
+  // GET /SalesOrder/availability?locationId=1&itemId=1&supplyMethodId=2
+  getAvailability(locationId: number, itemId: number, supplyMethodId: number): Observable<ResponseResult<any>> {
+    const qs =
+      `?locationId=${encodeURIComponent(locationId)}` +
+      `&itemId=${encodeURIComponent(itemId)}` +
+      `&supplyMethodId=${encodeURIComponent(supplyMethodId)}`;
+
+    return this.http.get<ResponseResult<any>>(this.url + SalesOrderApiUrls.Availability + qs);
+  }
 }

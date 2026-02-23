@@ -52,6 +52,7 @@ export class AuthenticationService {
    * @returns user
    */
   login(email: string, password: string) {
+    debugger
     return this._http
       .post<any>(`${environment.apiUrl}/users/authenticate`, { email, password })
       .pipe(

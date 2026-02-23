@@ -46,8 +46,8 @@ export class RecipemastercreateComponent implements OnInit {
   recipeId: number | null = null;
 
   // ✅ Item Type Ids
-  FINISHED_FOODS_TYPE_ID = 1;
-  RAW_MATERIAL_TYPE_ID = 2;
+  FINISHED_FOODS_TYPE_ID = 2;
+  RAW_MATERIAL_TYPE_ID = 1;
 
   constructor(
     private fb: FormBuilder,

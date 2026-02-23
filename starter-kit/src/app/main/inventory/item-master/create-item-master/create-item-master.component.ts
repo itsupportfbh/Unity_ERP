@@ -523,7 +523,11 @@ export class CreateItemMasterComponent implements OnInit {
         });
 
         if (creating) { this.onGoToItemList(); return; }
-        if (this.item?.id) this.loadBomSnapshotOrFallback();
+        if (this.item?.id) 
+          {
+            this.onGoToItemList();
+            this.loadBomSnapshotOrFallback();
+          }
       } else {
         Swal.fire({ icon: 'error', title: 'Failed', text: res?.message || 'Save failed', confirmButtonColor: '#0e3a4c' });
       }

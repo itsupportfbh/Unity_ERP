@@ -124,7 +124,7 @@ export class SalesInvoicecreateComponent implements OnInit, OnDestroy {
         // Load static lookups
         forkJoin({
           taxCodes: this.taxCodeService.getTaxCode(),
-          soList: this.soSrv.getSOByStatus(3),
+          soList: this.soSrv.getSOByStatus(2),
           doList: this.doSrv.getAll()
         })
           .pipe(takeUntil(this.destroy$))

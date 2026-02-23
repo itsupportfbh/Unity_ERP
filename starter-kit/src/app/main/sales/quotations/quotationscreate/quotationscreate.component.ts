@@ -102,7 +102,7 @@ export class QuotationscreateComponent implements OnInit {
   @ViewChild('itemSearchInput', { static: false }) itemSearchInput!: ElementRef<HTMLInputElement>;
 
   header: UiQuotationHeader = {
-    status: 0,
+    status: 1,
     customerId: null,
     currencyId: 0,
     fxRate: 1,
@@ -300,7 +300,7 @@ export class QuotationscreateComponent implements OnInit {
   }
 
   statusLabel(s: number) {
-    return ['Draft', 'Submitted', 'Approved', 'Rejected', 'Posted'][s] ?? 'Draft';
+    return ['Pending', 'Submitted', 'Approved', 'Rejected', 'Posted'][s] ?? 'Pending';
   }
 
   getItemName(id?: number | null) {

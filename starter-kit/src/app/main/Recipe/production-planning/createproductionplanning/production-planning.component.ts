@@ -312,7 +312,7 @@ export class ProductionPlanningComponent implements OnInit {
   Swal.fire({
     icon: 'question',
     title: 'Create PR & Save Plan?',
-    text: 'This will create PR and save Production Plan as Pending PR.',
+    text: 'This will create PR and save Production Plan status as Awaiting Material.',
     showCancelButton: true,
     confirmButtonText: 'Yes, Create',
     cancelButtonText: 'Cancel'

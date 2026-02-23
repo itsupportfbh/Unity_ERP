@@ -127,7 +127,7 @@ export class SalesOrderCreateComponent implements OnInit {
     taxAmount: 0,
     subTotal: 0,
     grandTotal: 0,
-    status: 1,
+    status: 2,
     statusText: 'Pending'
   };
 

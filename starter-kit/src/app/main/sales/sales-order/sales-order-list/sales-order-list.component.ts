@@ -107,7 +107,8 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     discount: false,
     tax: false,
     total: true,
-    lockedQty: true
+    lockedQty: true,
+    ProcurementStatus: 0
   };
 
   // period lock
@@ -122,9 +123,11 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   pdfSoNo = '';
   private pdfDocDef: any = null;
 
-  getLinesColsCount(): number {
-    return 1 + Object.values(this.lineCols).filter(Boolean).length;
-  }
+getLinesColsCount(): number {
+  const dynamicCols = Object.values(this.lineCols).filter(Boolean).length; // uom qty unitPrice discount tax total lockedQty
+  const fixedCols = 2; // Proc.Status + Shortage
+  return 1 + dynamicCols + fixedCols;
+}
 
   constructor(
     private salesOrderService: SalesOrderService,
@@ -509,7 +512,28 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     }
     return lines ?? [];
   }
+getProcStatusText(l: any): string {
+  const s = +(l.procurementStatus ?? l.ProcurementStatus ?? l.status ?? 0);
 
+  return s === 1 ? 'Pending'
+       : s === 2 ? 'PO Created'
+       : s === 3 ? 'Partially Received'
+       : s === 4 ? 'Fully Received'
+       : s === 5 ? 'Shortage Identified'
+       : 'Unknown';
+}
+
+getProcStatusBadgeClass(l: any): any {
+  const s = +(l.procurementStatus ?? l.ProcurementStatus ?? l.status ?? 0);
+
+  return {
+    'badge-secondary': s === 1,  // Pending
+    'badge-info':      s === 2,  // PO Created
+    'badge-warning':   s === 3,  // Partial
+    'badge-success':   s === 4,  // Full
+    'badge-danger':    s === 5   // Shortage optional
+  };
+}
   private buildSoPdfDoc(h: SoHeader, lines: SoLine[]): any {
     const req = this.datePipe.transform(h?.requestedDate, 'dd-MM-yyyy') || '-';
     const del = this.datePipe.transform(h?.deliveryDate, 'dd-MM-yyyy') || '-';

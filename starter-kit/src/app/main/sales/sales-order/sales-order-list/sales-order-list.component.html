@@ -22,10 +22,9 @@
           </div>
 
           <div class="search-wrap">
-            <input [(ngModel)]="searchValue" name="searchValue" type="search"
-                   class="form-control so-search"
-                   placeholder="Search SO no / customer / status / date"
-                   (keyup)="filterUpdate($event)" (search)="filterUpdate($event)" />
+            <input [(ngModel)]="searchValue" name="searchValue" type="search" class="form-control so-search"
+              placeholder="Search SO no / customer / status / date" (keyup)="filterUpdate($event)"
+              (search)="filterUpdate($event)" />
           </div>
 
           <div class="actions">
@@ -35,12 +34,8 @@
               <span *ngIf="draftCount > 0" class="notif-count">{{ draftCount }}</span>
             </button>
 
-            <button
-              (click)="openCreate()"
-              class="btn m-1 d-inline-flex align-items-center"
-              style="background-color:#2E5F73;color:white;gap:6px;"
-              [disabled]="isPeriodLocked"
-              [attr.title]="isPeriodLocked
+            <button (click)="openCreate()" class="btn m-1 d-inline-flex align-items-center"
+              style="background-color:#2E5F73;color:white;gap:6px;" [disabled]="isPeriodLocked" [attr.title]="isPeriodLocked
                 ? (currentPeriodName
                     ? 'Period ' + currentPeriodName + ' is locked'
                     : 'Accounting period is locked')
@@ -52,21 +47,15 @@
         </div>
 
         <!-- Table -->
-        <ngx-datatable class="bootstrap core-bootstrap so-table"
-                       [rows]="rows"
-                       [rowHeight]="50"
-                       [headerHeight]="50"
-                       [footerHeight]="50"
-                       [limit]="selectedOption"
-                       [columnMode]="'force'"
-                       [scrollbarH]="true"
-                       [reorderable]="true">
+        <ngx-datatable class="bootstrap core-bootstrap so-table" [rows]="rows" [rowHeight]="50" [headerHeight]="50"
+          [footerHeight]="50" [limit]="selectedOption" [columnMode]="'force'" [scrollbarH]="true" [reorderable]="true">
 
           <!-- View Details -->
-          <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false" [canAutoResize]="false">
+          <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false"
+            [canAutoResize]="false">
             <ng-template ngx-datatable-cell-template let-row="row">
               <span (click)="openLinesModal(row)" title="View Details"
-                    style="cursor:pointer; font-size:18px; color:#2E5F73;">
+                style="cursor:pointer; font-size:18px; color:#2E5F73;">
                 <i class="fas fa-eye"></i>
               </span>
             </ng-template>
@@ -96,24 +85,22 @@
 
           <ngx-datatable-column name="Status" prop="status" [width]="140">
             <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="badge badge-pill"
-                    [ngClass]="{
+              <span class="badge badge-pill" [ngClass]="{
                       'badge-warning'  : +row.status === 1,
-                      'badge-success'  : +row.status === 2,
-                      'badge-primary'  : +row.status === 3
-                    }"
-                    style="padding:6px 12px; font-size:13px;">
+                      'badge-primary'  : +row.status === 2,
+                      'badge-success'  : +row.status === 3
+                    }" style="padding:6px 12px; font-size:13px;">
                 {{
-                  +row.status === 1 ? 'Pending'   :
-                  +row.status === 2 ? 'Approved'  :
-                  +row.status === 3 ? 'Rejected'  : 'Unknown'
+                +row.status === 1 ? 'Pending' :
+                +row.status === 2 ? 'Approved' :
+                +row.status === 3 ? 'Completed' : 'Unknown'
                 }}
               </span>
             </ng-template>
           </ngx-datatable-column>
 
           <!-- Approval -->
-          <ngx-datatable-column name="Approval" [width]="170">
+          <!-- <ngx-datatable-column name="Approval" [width]="170">
             <ng-template let-row="row" ngx-datatable-cell-template>
 
               <button *ngIf="+row.status === 1"
@@ -133,7 +120,7 @@
               </button>
 
             </ng-template>
-          </ngx-datatable-column>
+          </ngx-datatable-column> -->
 
           <!-- Action -->
           <ngx-datatable-column name="Action" [width]="150">
@@ -148,24 +135,16 @@
               <ng-template #actionsEnabled>
 
                 <!-- ✅ PRINT -->
-                <i class="fas fa-print text-primary mr-2"
-                   style="cursor:pointer;"
-                   (click)="openPrint(row)"
-                   title="Print / PDF">
+                <i class="fas fa-print text-primary mr-2" style="cursor:pointer;" (click)="openPrint(row)"
+                  title="Print / PDF">
                 </i>
 
                 <!-- EDIT -->
-                <i class="fas fa-pen text-success mr-2"
-                   style="cursor: pointer;"
-                   (click)="editSO(row)"
-                   title="Edit">
+                <i class="fas fa-pen text-success mr-2" style="cursor: pointer;" (click)="editSO(row)" title="Edit">
                 </i>
 
                 <!-- DELETE -->
-                <i class="fas fa-trash text-danger"
-                   style="cursor: pointer;"
-                   (click)="deleteSO(row.id)"
-                   title="Delete">
+                <i class="fas fa-trash text-danger" style="cursor: pointer;" (click)="deleteSO(row.id)" title="Delete">
                 </i>
 
               </ng-template>
@@ -198,9 +177,12 @@
               <th *ngIf="lineCols.unitPrice" class="num">Unit Price</th>
               <th *ngIf="lineCols.discount" class="num">Discount(%)</th>
               <th *ngIf="lineCols.tax" class="num">Tax</th>
-              <th *ngIf="lineCols.total" class="num">Total</th>
+             
               <th *ngIf="lineCols.lockedQty" class="num">Allocated</th>
-              <th class="num">Shortage</th>
+
+           <th class="num">Shortage</th>
+               <th *ngIf="lineCols.total" class="num">Total</th>
+              <th class="num">Proc. Status</th>
             </tr>
           </thead>
 
@@ -212,22 +194,36 @@
               <td *ngIf="lineCols.unitPrice" class="num">{{ (l.unitPrice ?? l.price ?? 0) }}</td>
               <td *ngIf="lineCols.discount" class="num">{{ l.discount ?? 0 }}</td>
               <td *ngIf="lineCols.tax" class="num">{{ l.tax ?? 0 }}</td>
-              <td *ngIf="lineCols.total" class="num">{{ l.total ?? 0 }}</td>
+              
               <td *ngIf="lineCols.lockedQty" class="num">{{ l.lockedQty ?? 0 }}</td>
+
+              <!-- ✅ NEW: ProcurementStatus badge -->
+             
+
               <td class="num">{{ getShortageQty(l) }}</td>
+              <td *ngIf="lineCols.total" class="num">{{ l.total ?? 0 }}</td>
+               <td class="num">
+                <span class="badge badge-pill" [ngClass]="getProcStatusBadgeClass(l)"
+                  style="padding:6px 12px; font-size:12px; min-width:140px; display:inline-block; text-align:center;">
+                  {{ getProcStatusText(l) }}
+                </span>
+              </td>
             </tr>
 
             <tr *ngIf="!modalLines?.length">
-              <td [attr.colspan]="getLinesColsCount() + 1" class="empty">No lines</td>
+              <td [attr.colspan]="getLinesColsCount()" class="empty">No lines</td>
             </tr>
           </tbody>
 
           <tfoot *ngIf="modalLines?.length">
-            <tr>
-              <td [attr.colspan]="getLinesColsCount()" class="total-label">Total</td>
-              <td class="total-val num">{{ modalTotal | number:'1.2-2' }}</td>
-            </tr>
-          </tfoot>
+  <tr>
+    <!-- ✅ Total label spans ALL columns except the last one -->
+    <td [attr.colspan]="getLinesColsCount() - 1" class="total-label">Total</td>
+
+    <!-- ✅ Total value always in last column -->
+    <td class="total-val num">{{ modalTotal | number:'1.2-2' }}</td>
+  </tr>
+</tfoot>
         </table>
       </div>
     </div>
@@ -325,10 +321,7 @@
       <div *ngIf="!pdfUrl" class="pv-loading">Generating PDF…</div>
 
       <!-- Chrome PDF viewer toolbar will show -->
-      <iframe *ngIf="pdfUrl"
-              class="pv-frame"
-              [src]="pdfUrl"
-              frameborder="0">
+      <iframe *ngIf="pdfUrl" class="pv-frame" [src]="pdfUrl" frameborder="0">
       </iframe>
     </div>
 

@@ -107,6 +107,7 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSubmit(): void {
+    debugger
     this.submitted = true;
     this.error = '';
 
@@ -145,6 +146,7 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
 
         localStorage.setItem('approvalRoles', JSON.stringify(res.approvalLevelNames || []));
         localStorage.setItem('teams', JSON.stringify(res.teams || []));
+        localStorage.setItem('locationId', res.locationId ?? '');
 
         this.loading = false;
         this._router.navigate([this.returnUrl]);

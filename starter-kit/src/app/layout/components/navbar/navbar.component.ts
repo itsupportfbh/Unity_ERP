@@ -182,6 +182,7 @@ public approvalRoleText: string = '';
     // get the currentUser details from localStorage
     // this.currentUser = JSON.parse(localStorage.getItem('currentUser'));
     this.userName = localStorage.getItem('username');
+    
     let approvalRoles: string[] = [];
   try {
     approvalRoles = JSON.parse(localStorage.getItem('approvalRoles') || '[]');

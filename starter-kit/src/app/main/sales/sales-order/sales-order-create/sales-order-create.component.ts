@@ -28,13 +28,27 @@ type LineTaxMode = 'Standard-Rated' | 'Zero-Rated' | 'Exempt';
  *  3 = Both
  *  null = Select
  *
- * supplyMethod:
- *  0 = Direct DO
+ * supplyMethod (MATCH HTML / DB):
  *  1 = PP
+ *  2 = Direct DO
  *  null = Select
  */
 type FulfillmentMode = 1 | 2 | 3 | null;
 type SupplyMethod = 1 | 2 | null;
+
+type ItemFlagsDto = {
+  itemId: number;
+  isSellable: boolean;
+  isConsumable: boolean;
+  allowManualFulfillment?: boolean;
+  fulfillmentText?: string;
+};
+
+type ItemAvailabilityDto = {
+  itemId: number;
+  itemName: string;
+  available: number;
+};
 
 type SoLine = {
   __id?: number;
@@ -44,7 +58,6 @@ type SoLine = {
   uom?: string;
   description?: string;
 
-  // ✅ MATCH HTML
   qty?: number | string;
   unitPrice?: number | string;
   discountPct?: number | string;
@@ -58,14 +71,20 @@ type SoLine = {
 
   warehouses?: WarehouseInfo[];
 
-  // ✅ read-only flags
   isSellable?: boolean;
   isConsumable?: boolean;
 
-  // ✅ SO decisions
-  fulfillmentMode?: FulfillmentMode; // 1/2/3/null
-  supplyMethod?: SupplyMethod;       // 0/1/null
+  fulfillmentMode?: FulfillmentMode;
+  supplyMethod?: SupplyMethod;
   __supplyLocked?: boolean;
+
+  // optional compatibility
+  isSetHeader?: boolean;
+  allowManualFulfillment?: boolean;
+  fulfillmentText?: string;
+
+  // ✅ NEW: availability for this line based on LocationId + ItemId + SupplyMethodId
+  availability?: number;
 };
 
 type ItemSetRef = { id: number; name: string };
@@ -86,6 +105,9 @@ export class SalesOrderCreateComponent implements OnInit {
   private routeId: number | null = null;
 
   userId: any;
+
+  // ✅ get LocationId from localStorage
+  locationId: number = 0;
 
   soHdr: any = {
     id: 0,
@@ -144,6 +166,9 @@ export class SalesOrderCreateComponent implements OnInit {
   countries: any[] = [];
   todayStr = this.toInputDate(new Date());
 
+  // local cache to reduce repeated calls (key = itemId|supplyMethodId)
+  private availabilityCache = new Map<string, number>();
+
   constructor(
     private router: Router,
     private route: ActivatedRoute,
@@ -153,6 +178,16 @@ export class SalesOrderCreateComponent implements OnInit {
     private salesOrderService: SalesOrderService
   ) {
     this.userId = localStorage.getItem('id');
+
+    // ✅ try common keys, fallback to 0
+    const rawLoc =
+      localStorage.getItem('locationId') ||
+      localStorage.getItem('LocationId') ||
+      localStorage.getItem('outletId') ||
+      localStorage.getItem('OutletId') ||
+      '0';
+
+    this.locationId = Number(rawLoc) || 0;
   }
 
   /* ================= HEADER UI GETTERS ================= */
@@ -182,7 +217,6 @@ export class SalesOrderCreateComponent implements OnInit {
   }
 
   getSupplyLabel(v: SupplyMethod | undefined): string {
-    
     if (v === 1) return 'PP';
     if (v === 2) return 'Direct DO';
     return 'Select';
@@ -302,39 +336,136 @@ export class SalesOrderCreateComponent implements OnInit {
     ln.isConsumable = (ln.fulfillmentMode === 2 || ln.fulfillmentMode === 3);
   }
 
-  /* ================= fulfillmentMode -> supplyMethod =================
-     1 Sellable   => 0 Direct DO (locked)
-     2 Consumable => 1 PP       (locked)
-     3 Both       => user choose
-  */
-private applySupplyFromFulfillment(ln: SoLine) {
-  const f = ln.fulfillmentMode ?? null;
+  /* ================= flags -> fulfillmentMode (only if empty) ================= */
+  private applyFulfillmentFromFlagsIfEmpty(ln: SoLine) {
+    if (ln.fulfillmentMode === 1 || ln.fulfillmentMode === 2 || ln.fulfillmentMode === 3) return;
 
-  // ✅ If supply already loaded (edit), don't override unless locked case
-  const hasSupply = (ln.supplyMethod === 1 || ln.supplyMethod === 2);
+    const sell = !!ln.isSellable;
+    const cons = !!ln.isConsumable;
 
-  if (f === 1) {
-    ln.supplyMethod = 2;         // Direct DO
-    ln.__supplyLocked = true;
-    return;
+    if (sell && cons) ln.fulfillmentMode = 3;
+    else if (sell) ln.fulfillmentMode = 1;
+    else if (cons) ln.fulfillmentMode = 2;
+    else ln.fulfillmentMode = null;
+
+    this.applyFlagsFromFulfillmentMode(ln);
   }
 
-  if (f === 2) {
-    ln.supplyMethod = 1;         // PP
-    ln.__supplyLocked = true;
-    return;
-  }
+  /* ================= fulfillmentMode -> supplyMethod (KEEP DB VALUE) ================= */
+  private applySupplyFromFulfillment(ln: SoLine) {
+    const f = ln.fulfillmentMode ?? null;
+    const hasSupply = (ln.supplyMethod === 1 || ln.supplyMethod === 2);
 
-  if (f === 3) {
+    if (f === 1) {
+      if (!hasSupply) ln.supplyMethod = 2; // Direct DO
+      ln.__supplyLocked = true;
+      return;
+    }
+
+    if (f === 2) {
+      if (!hasSupply) ln.supplyMethod = 1; // PP
+      ln.__supplyLocked = true;
+      return;
+    }
+
+    if (f === 3) {
+      if (!hasSupply) ln.supplyMethod = null; // user choose
+      ln.__supplyLocked = false;
+      return;
+    }
+
+    if (!hasSupply) ln.supplyMethod = null;
     ln.__supplyLocked = false;
-    if (!hasSupply) ln.supplyMethod = null; // only if empty
-    return;
   }
 
-  // fulfillment missing => don't destroy loaded supply, just unlock
-  ln.__supplyLocked = false;
-  if (!hasSupply) ln.supplyMethod = null;
-}
+  private applyAutoSupplyMethodIfEmpty(ln: SoLine) {
+    this.applySupplyFromFulfillment(ln);
+  }
+
+  /* ================= BULK FLAGS BY ITEMID (same as QT) ================= */
+  private loadFlagsForSoLines(lines: SoLine[]) {
+    const ids = Array.from(
+      new Set((lines || [])
+        .filter(x => !x.isSetHeader && (x.itemId || 0) > 0)
+        .map(x => Number(x.itemId)))
+    );
+    if (!ids.length) return;
+
+    this.quotationSvc.getItemFlagsBulk(ids).subscribe({
+      next: (res: any) => {
+        const arr: ItemFlagsDto[] = (res?.data ?? res ?? []) as any;
+        const map = new Map<number, ItemFlagsDto>();
+        for (const f of arr) map.set(Number((f as any).itemId), f);
+
+        for (const l of (lines || [])) {
+          if (l.isSetHeader) continue;
+
+          const f = map.get(Number(l.itemId));
+          if (!f) continue;
+
+          l.isSellable = !!(f as any).isSellable;
+          l.isConsumable = !!(f as any).isConsumable;
+          l.allowManualFulfillment = !!(f as any).allowManualFulfillment;
+          if ((f as any).fulfillmentText) l.fulfillmentText = String((f as any).fulfillmentText);
+
+          this.applyFulfillmentFromFlagsIfEmpty(l);
+          this.applyAutoSupplyMethodIfEmpty(l);
+        }
+
+        this.computeTotals();
+
+        // ✅ after flags/supply are stable -> refresh availability
+        this.refreshAvailabilityForAllLines();
+      },
+      error: (err: any) => console.error('getItemFlagsBulk failed', err)
+    });
+  }
+
+  /* ================= AVAILABILITY (LocationId + ItemId + SupplyMethodId) ================= */
+  private availabilityKey(itemId: number, supplyMethodId: number) {
+    return `${itemId}|${supplyMethodId}`;
+  }
+
+  private fetchAvailabilityForLine(ln: SoLine) {
+    const locId = Number(this.locationId || 0);
+    const itemId = Number(ln.itemId || 0);
+    const sm = Number(ln.supplyMethod || 0);
+
+    // needs all 3
+    if (!(locId > 0) || !(itemId > 0) || !(sm === 1 || sm === 2)) {
+      ln.availability = undefined;
+      return;
+    }
+
+    const key = this.availabilityKey(itemId, sm);
+    if (this.availabilityCache.has(key)) {
+      ln.availability = this.availabilityCache.get(key)!;
+      return;
+    }
+
+    // ✅ Angular service method you should have:
+    // getAvailability(locationId:number, itemId:number, supplyMethodId:number)
+    this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
+      next: (res: any) => {
+        const rows: ItemAvailabilityDto[] = (res?.data ?? res ?? []) as any;
+
+        // your SQL is DISTINCT ItemId, ItemName, Available
+        const first = rows?.[0];
+        const available = Number(first?.available ?? first?.available  ?? 0) || 0;
+
+        this.availabilityCache.set(key, available);
+        ln.availability = available;
+      },
+      error: (err: any) => {
+        console.error('getAvailability failed', err);
+        ln.availability = undefined;
+      }
+    });
+  }
+
+  private refreshAvailabilityForAllLines() {
+    (this.soLines || []).forEach(ln => this.fetchAvailabilityForLine(ln));
+  }
 
   /* ✅ compute totals for ONE line */
   private computeLine(ln: SoLine) {
@@ -430,101 +561,95 @@ private applySupplyFromFulfillment(ln: SoLine) {
     this.setGroups = Array.from(map.values()).filter(g => g.lines.length);
   }
 
-private loadSOForEdit(id: number) {
-  this.salesOrderService.getSOById(id).subscribe({
-    next: (res) => {
-      const head = res?.data || {};
+  /* ============ Load SO (Edit) ============ */
+  private loadSOForEdit(id: number) {
+    this.salesOrderService.getSOById(id).subscribe({
+      next: (res) => {
+        const head = res?.data || {};
 
-      // ===== Header =====
-      this.soHdr.id = Number(head.id || 0);
-      this.soHdr.quotationNo = head.quotationNo ?? head.QuotationNo ?? null;
-      this.soHdr.customerId = head.customerId ?? head.CustomerId ?? null;
+        this.soHdr.id = head.id;
+        this.soHdr.quotationNo = head.quotationNo;
+        this.soHdr.customerId = head.customerId;
+        this.searchTexts['quotationNo'] = head.number || head.quotationNo?.toString() || '';
+        this.searchTexts['customer'] = head.customerName || '';
 
-      this.searchTexts['quotationNo'] = head.number || head.Number || head.quotationNo?.toString() || '';
-      this.searchTexts['customer'] = head.customerName || head.CustomerName || '';
+        this.soHdr.requestedDate = this.toInputDate(head.requestedDate);
+        this.soHdr.deliveryDate = this.toInputDate(head.deliveryDate);
 
-      this.soHdr.requestedDate = this.toInputDate(head.requestedDate ?? head.RequestedDate);
-      this.soHdr.deliveryDate  = this.toInputDate(head.deliveryDate  ?? head.DeliveryDate);
+        this.soHdr.deliveryTo = head.deliveryTo ?? head.DeliveryTo ?? '';
+        this.soHdr.remarks = head.remarks ?? head.Remarks ?? '';
 
-      this.soHdr.deliveryTo = String(head.deliveryTo ?? head.DeliveryTo ?? '');
-      this.soHdr.remarks    = String(head.remarks ?? head.Remarks ?? '');
+        this.setHeaderLineSourceAndItemSets(head);
 
-      this.setHeaderLineSourceAndItemSets(head);
+        this.soHdr.shipping = Number(head.shipping ?? 0);
+        this.soHdr.gstPct = Number(head.gstPct ?? 0);
 
-      this.soHdr.shipping = Number(head.shipping ?? head.Shipping ?? 0);
-      this.soHdr.gstPct   = Number(head.gstPct ?? head.GstPct ?? 0);
+        const gst = Number(this.soHdr.gstPct || 0);
+        const lines = (head.lineItems ?? head.lines ?? []) as any[];
 
-      const gst = Number(this.soHdr.gstPct || 0);
-      const apiLines = (head.lineItems ?? head.lines ?? head.LineItems ?? []) as any[];
+        this.soLines = lines.map((l: any) => {
+          const qty = Number(l.qty ?? l.quantity ?? 0);
+          const price = Number(l.unitPrice ?? 0);
+          const discPct = Number(l.discountPct ?? l.discount ?? 0);
+          const mode = this.canonicalTaxMode(l.taxMode ?? l.tax, gst);
 
-      const n = (v: any, def = 0) => {
-        const x = Number(v);
-        return isNaN(x) ? def : x;
-      };
-      const toStr = (v: any) => (v === null || v === undefined) ? '' : String(v);
+          const rawFulfill = (l.fulfillmentMode ?? l.FulfillmentMode);
+          const fulfillmentMode: FulfillmentMode =
+            (rawFulfill === null || rawFulfill === undefined || rawFulfill === '')
+              ? null
+              : (Number(rawFulfill) as any);
 
-      this.soLines = apiLines.map((l: any) => {
-        const qty     = n(l.qty ?? l.quantity ?? l.Quantity, 0);
-        const price   = n(l.unitPrice ?? l.UnitPrice, 0);
-        const discPct = n(l.discountPct ?? l.discount ?? l.Discount, 0);
+          const rawSupply = (l.SupplyMethodId ?? l.supplyMethodId ?? l.supplyMethod ?? l.SupplyMethod);
+          let supplyMethod: SupplyMethod = null;
+          const n = Number(rawSupply);
+          if (n === 1 || n === 2) supplyMethod = n as SupplyMethod;
 
-        const taxMode = this.canonicalTaxMode(l.taxMode ?? l.tax ?? l.Tax, gst);
+          const ln: SoLine = {
+            __id: Number(l.id || l.Id || 0) || undefined,
+            item: l.itemName || l.item || '',
+            itemId: Number(l.itemId ?? 0) || undefined,
+            uom: l.uomName ?? l.uom ?? '',
+            description: (l.description ?? l.Description ?? '').toString(),
 
-        // ✅ FulfillmentMode from API (now backend returns it)
-        const rawFulfill = (l.fulfillmentMode ?? l.FulfillmentMode ?? l.FulfillmentModeId);
-        const fulfillmentMode: FulfillmentMode =
-          (rawFulfill === null || rawFulfill === undefined || rawFulfill === '')
-            ? null
-            : (n(rawFulfill) as any);
+            qty,
+            unitPrice: price,
+            discountPct: discPct,
+            taxMode: mode,
 
-        // ✅ SupplyMethodId from API
-        const rawSupply = (l.supplyMethod ?? l.SupplyMethod ?? l.supplyMethodId ?? l.SupplyMethodId);
-        let supplyMethod: SupplyMethod =
-          (rawSupply === null || rawSupply === undefined || rawSupply === '')
-            ? null
-            : (n(rawSupply) as any);
+            fulfillmentMode,
+            supplyMethod,
 
-        // ✅ only allow 1/2/null
-        if (supplyMethod !== null && supplyMethod !== 1 && supplyMethod !== 2) supplyMethod = null;
+            isSellable: !!(l.isSellable ?? l.IsSellable),
+            isConsumable: !!(l.isConsumable ?? l.IsConsumable),
 
-        const ln: SoLine = {
-          __id: n(l.id ?? l.Id, 0) || undefined,
+            warehouses: [],
+            availability: undefined
+          };
 
-          item: toStr(l.itemName ?? l.ItemName ?? l.item),
-          itemId: n(l.itemId ?? l.ItemId, 0) || undefined,
+          this.applyFlagsFromFulfillmentMode(ln);
+          this.applyFulfillmentFromFlagsIfEmpty(ln);
+          this.applySupplyFromFulfillment(ln);
+          this.computeLine(ln);
 
-          uom: toStr(l.uom ?? l.Uom ?? l.uomName ?? l.UomName),
-          description: toStr(l.description ?? l.Description),
+          return ln;
+        });
 
-          qty,
-          unitPrice: price,
-          discountPct: discPct,
-          taxMode,
+        // ✅ bulk flags -> then availability
+        this.loadFlagsForSoLines(this.soLines);
 
-          fulfillmentMode,
-          supplyMethod,
-          warehouses: []
-        };
+        this.computeTotals();
+        this.buildSetGroups();
 
-        // flags
-        this.applyFlagsFromFulfillmentMode(ln);
+        // ✅ if you want immediate availability even before flags response:
+        this.refreshAvailabilityForAllLines();
+      },
+      error: (err) => {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load Sales Order.' });
+        console.error(err);
+      }
+    });
+  }
 
-        // ✅ auto supply only based on fulfillment, but safe for edit
-        this.applySupplyFromFulfillment(ln);
-
-        this.computeLine(ln);
-        return ln;
-      });
-
-      this.computeTotals();
-      this.buildSetGroups();
-    },
-    error: (err) => {
-      Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load Sales Order.' });
-      console.error(err);
-    }
-  });
-}
   /* ============ Header select (Quotation) ============ */
   select(field: 'quotationNo' | 'customer', item: any) {
     if (this.editMode) return;
@@ -552,6 +677,8 @@ private loadSOForEdit(id: number) {
         this.soHdr.gstPct = Number(head?.gstPct ?? head?.gst ?? 0);
         const gst = Number(this.soHdr.gstPct || 0);
 
+        this.availabilityCache.clear();
+
         this.soLines = lines.map((l: any) => {
           const qty = Number(l.qty ?? l.quantity ?? 0);
           const price = Number(l.unitPrice ?? 0);
@@ -560,11 +687,14 @@ private loadSOForEdit(id: number) {
 
           const rawFulfill = (l.fulfillmentMode ?? l.FulfillmentMode);
           const fulfillmentMode: FulfillmentMode =
-            (rawFulfill === null || rawFulfill === undefined || rawFulfill === '') ? null : (Number(rawFulfill) as any);
+            (rawFulfill === null || rawFulfill === undefined || rawFulfill === '')
+              ? null
+              : (Number(rawFulfill) as any);
 
-          const rawSupply = (l.supplyMethod ?? l.SupplyMethod ?? l.supplymethod ?? l.supplyMethodId);
-          const supplyMethod: SupplyMethod =
-            (rawSupply === null || rawSupply === undefined || rawSupply === '') ? null : (Number(rawSupply) as any);
+          const rawSupply = (l.SupplyMethodId ?? l.supplyMethodId ?? l.supplyMethod ?? l.SupplyMethod);
+          let supplyMethod: SupplyMethod = null;
+          const n = Number(rawSupply);
+          if (n === 1 || n === 2) supplyMethod = n as SupplyMethod;
 
           const ln: SoLine = {
             __id: undefined,
@@ -581,18 +711,29 @@ private loadSOForEdit(id: number) {
             fulfillmentMode,
             supplyMethod,
 
-            warehouses: Array.isArray(l.warehouses) ? l.warehouses : []
+            isSellable: !!(l.isSellable ?? l.IsSellable),
+            isConsumable: !!(l.isConsumable ?? l.IsConsumable),
+
+            warehouses: Array.isArray(l.warehouses) ? l.warehouses : [],
+            availability: undefined
           };
 
           this.applyFlagsFromFulfillmentMode(ln);
+          this.applyFulfillmentFromFlagsIfEmpty(ln);
           this.applySupplyFromFulfillment(ln);
           this.computeLine(ln);
 
           return ln;
         });
 
+        // ✅ bulk flags -> then availability refresh
+        this.loadFlagsForSoLines(this.soLines);
+
         this.computeTotals();
         this.buildSetGroups();
+
+        // ✅ immediate availability (if supplyMethod already present from quotation line)
+        this.refreshAvailabilityForAllLines();
       });
 
       this.dropdownOpen['quotationNo'] = false;
@@ -607,24 +748,65 @@ private loadSOForEdit(id: number) {
     }
   }
 
-  toggleDropdown(field: 'quotationNo' | 'customer' | 'warehouse', open?: boolean) {
-    this.dropdownOpen[field] = open !== undefined ? open : !this.dropdownOpen[field];
+  /* ================= DROPDOWN (FULL FIX) ================= */
+  private closeAllDropdowns() {
+    Object.keys(this.dropdownOpen).forEach(k => (this.dropdownOpen[k] = false));
+  }
+
+  openDropdown(field: 'quotationNo' | 'customer' | 'warehouse') {
+    if (this.editMode) return;
+
+    Object.keys(this.dropdownOpen).forEach(k => (this.dropdownOpen[k] = false));
+    this.dropdownOpen[field] = true;
+
     if (field === 'quotationNo') this.filteredLists[field] = [...this.quotationList];
     if (field === 'customer') this.filteredLists[field] = [...this.customers];
     if (field === 'warehouse') this.filteredLists[field] = [...this.warehousesMaster];
+
+    this.filter(field);
+  }
+
+  toggleDropdown(field: 'quotationNo' | 'customer' | 'warehouse', open?: boolean) {
+    if (this.editMode) return;
+
+    const next = open !== undefined ? open : !this.dropdownOpen[field];
+    Object.keys(this.dropdownOpen).forEach(k => (this.dropdownOpen[k] = false));
+    this.dropdownOpen[field] = next;
+
+    if (next) {
+      if (field === 'quotationNo') this.filteredLists[field] = [...this.quotationList];
+      if (field === 'customer') this.filteredLists[field] = [...this.customers];
+      if (field === 'warehouse') this.filteredLists[field] = [...this.warehousesMaster];
+      this.filter(field);
+    }
+  }
+
+  onInputSearch(field: 'quotationNo' | 'customer' | 'warehouse') {
+    if (this.editMode) return;
+    if (!this.dropdownOpen[field]) this.openDropdown(field);
+    this.filter(field);
   }
 
   filter(field: 'quotationNo' | 'customer' | 'warehouse') {
-    const q = (this.searchTexts[field] || '').toLowerCase();
+    const q = (this.searchTexts[field] || '').toLowerCase().trim();
+
     if (field === 'quotationNo') {
-      this.filteredLists[field] = this.quotationList.filter(x => (x.number || '').toLowerCase().includes(q));
-    } else if (field === 'customer') {
-      this.filteredLists[field] = this.customers.filter(x => (x.customerName || '').toLowerCase().includes(q));
-    } else {
-      this.filteredLists[field] = this.warehousesMaster.filter(x =>
-        (x.warehouseName || '').toLowerCase().includes(q) || String(x.id).includes(q)
+      this.filteredLists[field] = (this.quotationList || []).filter(x =>
+        String(x.number || '').toLowerCase().includes(q)
       );
+      return;
     }
+
+    if (field === 'customer') {
+      this.filteredLists[field] = (this.customers || []).filter(x =>
+        String(x.customerName || x.name || '').toLowerCase().includes(q)
+      );
+      return;
+    }
+
+    this.filteredLists[field] = (this.warehousesMaster || []).filter(x =>
+      String(x.warehouseName || '').toLowerCase().includes(q) || String(x.id).includes(q)
+    );
   }
 
   onClearSearch(field: 'quotationNo' | 'customer') {
@@ -641,23 +823,43 @@ private loadSOForEdit(id: number) {
 
     this.soLines = [];
     this.setGroups = [];
+    this.availabilityCache.clear();
+
     this.recalcTotals();
   }
 
-  /* ============ Close dropdowns ============ */
+  /* ✅ close when clicking outside */
   @HostListener('document:click', ['$event'])
-  onDocClick(e: Event) {
+  onDocClick(e: MouseEvent) {
     const el = e.target as HTMLElement;
-    if (!el.closest('.so-header-dd')) {
-      Object.keys(this.dropdownOpen).forEach(k => (this.dropdownOpen[k] = false));
-    }
+    if (el.closest('.soDD')) return;
+    this.closeAllDropdowns();
+  }
+
+  /* ✅ ESC close */
+  @HostListener('document:keydown.escape', ['$event'])
+  onEsc(ev: KeyboardEvent) {
+    this.closeAllDropdowns();
   }
 
   /* ================= UI EVENTS ================= */
-onSupplyMethodChangedByRef(ln: SoLine) {
-  const v: any = ln.supplyMethod;
-  ln.supplyMethod = (v === null || v === undefined || v === '') ? null : (Number(v) as any);
-}
+  onSupplyMethodChangedByRef(ln: SoLine) {
+    const v: any = ln.supplyMethod;
+    const n = (v === null || v === undefined || v === '') ? null : Number(v);
+    ln.supplyMethod = (n === 1 || n === 2) ? (n as any) : null;
+
+    this.applySupplyFromFulfillment(ln);
+
+    // ✅ supplyMethod changed => refresh availability for that line
+    this.fetchAvailabilityForLine(ln);
+  }
+
+  // ✅ call this when Item dropdown selection happens (if you have such event)
+  onItemChangedByRef(ln: SoLine) {
+    // itemId updated => clear cache for that item/supply pair and refetch
+    ln.availability = undefined;
+    this.fetchAvailabilityForLine(ln);
+  }
 
   /* ============ Totals ============ */
   get totals() {
@@ -732,7 +934,8 @@ onSupplyMethodChangedByRef(ln: SoLine) {
       lineTax: 0,
       lineTotal: 0,
       lineDiscount: 0,
-      warehouses: []
+      warehouses: [],
+      availability: undefined
     };
 
     this.soLines.push(newLine);
@@ -771,17 +974,21 @@ onSupplyMethodChangedByRef(ln: SoLine) {
       return false;
     }
 
-    // ✅ fulfillmentMode must be 1/2/3 (derived from readonly flags usually)
     const badFulfill = this.soLines.find(l => l.fulfillmentMode !== 1 && l.fulfillmentMode !== 2 && l.fulfillmentMode !== 3);
     if (badFulfill) {
       Swal.fire({ icon: 'warning', title: 'Required', text: 'Fulfillment (Sellable/Consumable/Both) is missing for some lines.' });
       return false;
     }
 
-    // ✅ supplyMethod required always; for Both user must choose (0/1)
-    const badSupply = this.soLines.find(l => l.supplyMethod !== 2 && l.supplyMethod !== 1);
+    const badSupply = this.soLines.find(l => l.supplyMethod !== 1 && l.supplyMethod !== 2);
     if (badSupply) {
-      Swal.fire({ icon: 'warning', title: 'Required', text: 'Please select Supply Method (Direct DO / PP) for all lines.' });
+      Swal.fire({ icon: 'warning', title: 'Required', text: 'Please select Supply Method (PP / Direct DO) for all lines.' });
+      return false;
+    }
+
+    // ✅ optional: validate locationId exists
+    if (!(Number(this.locationId || 0) > 0)) {
+      Swal.fire({ icon: 'warning', title: 'Location Missing', text: 'LocationId not found in localStorage.' });
       return false;
     }
 
@@ -824,7 +1031,6 @@ onSupplyMethodChangedByRef(ln: SoLine) {
         uom: l.uom || '',
         description: (l.description || '').toString(),
 
-        // backend expects quantity, discount, tax, total
         quantity: Number(l.qty) || 0,
         unitPrice: Number(l.unitPrice) || 0,
         discount: Number(l.discountPct) || 0,
@@ -832,9 +1038,8 @@ onSupplyMethodChangedByRef(ln: SoLine) {
         taxAmount: Number(l.lineTax || 0),
         total: Number(l.lineTotal) || 0,
 
-        // ✅ your new fields
-        fulfillmentMode: l.fulfillmentMode ?? null, // 1/2/3
-        SupplyMethodId: l.supplyMethod ?? null,       // 0/1
+        fulfillmentMode: l.fulfillmentMode ?? null,
+        SupplyMethodId: l.supplyMethod ?? null,
 
         createdBy: this.userId,
         updatedBy: this.userId
@@ -844,48 +1049,99 @@ onSupplyMethodChangedByRef(ln: SoLine) {
     };
   }
 
-  post(): void {
-    if (!this.validateSO()) return;
+  private ensureAvailabilityBeforeSave(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    // trigger fetch for any lines missing availability
+    (this.soLines || []).forEach(ln => {
+      if (ln.availability === undefined || ln.availability === null) {
+        this.fetchAvailabilityForLine(ln);
+      }
+    });
 
-    const payload = this.buildPayload();
+    // wait a short tick (since your api is async, we just give UI 1 micro delay)
+    // If you want strict, then backend must validate too.
+    setTimeout(() => resolve(), 250);
+  });
+}
+async post(): Promise<void> {
+  if (!this.validateSO()) return;
 
-    if (this.editMode) {
-      this.salesOrderService.updateSO(payload).subscribe({
-        next: () => {
-          Swal.fire({
-            icon: 'success',
-            title: 'Updated!',
-            text: 'Sales Order updated successfully',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#0e3a4c'
-          });
-          this.router.navigate(['/Sales/Sales-Order-list']);
-        },
-        error: (err) => {
-          const msg = err?.error?.message || err?.message || 'Failed to update Sales Order';
-          Swal.fire({ icon: 'error', title: 'Error', text: msg, confirmButtonColor: '#d33' });
-        }
-      });
-    } else {
-      this.salesOrderService.insertSO(payload).subscribe({
-        next: () => {
-          Swal.fire({
-            icon: 'success',
-            title: 'Created!',
-            text: 'Sales Order created successfully',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#0e3a4c'
-          });
-          this.router.navigate(['/Sales/Sales-Order-list']);
-        },
-        error: (err) => {
-          const msg = err?.error?.message || err?.message || 'Failed to create Sales Order';
-          Swal.fire({ icon: 'error', title: 'Error', text: msg, confirmButtonColor: '#d33' });
-        }
-      });
-    }
+  // ✅ ensure availability fetched before checking shortage
+  await this.ensureAvailabilityBeforeSave();
+
+  // 🔴 STEP 1: detect Direct DO shortage
+  const shortageLines = this.getDirectDoShortageLines();
+
+  if (shortageLines.length) {
+    const txt = shortageLines
+      .map(l => {
+        const req = Number(l.qty) || 0;
+        const avl = Number(l.availability ?? 0) || 0;   // ✅ safe
+        return `${l.item} | Req: ${req} | Avl: ${avl}`;
+      })
+      .join('\n');
+
+    const res = await Swal.fire({
+      icon: 'warning',
+      title: 'Stock Not Available',
+      text:
+        `Some Direct DO items do not have enough stock.\n\n` +
+        `${txt}\n\n` +
+        `PR will be auto-created and PO alert will be sent.\nContinue?`,
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Continue',
+      cancelButtonText: 'No',
+      confirmButtonColor: '#0e3a4c'
+    });
+
+    if (!res.isConfirmed) return;
   }
 
+  // 🔴 STEP 2: Save SO normally
+  const payload = this.buildPayload();
+
+  const req$ = this.editMode
+    ? this.salesOrderService.updateSO(payload)
+    : this.salesOrderService.insertSO(payload);
+
+  req$.subscribe({
+    next: (res: any) => {
+      const prCreated = !!res?.data?.prCreated;
+      const poAlert = !!res?.data?.poAlertSent;
+      const prNos = res?.data?.prNos || [];
+
+      let html = 'Sales Order saved successfully.';
+
+      if (prCreated) {
+        html += `<br/><br/><b>PR Auto Created</b>`;
+        if (prNos.length) {
+          html += `<br/>PR No: ${prNos.join(', ')}`;
+        }
+      }
+
+      if (poAlert) {
+        html += `<br/><b>PO Team Alert Sent</b>`;
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        html,
+        confirmButtonColor: '#0e3a4c'
+      }).then(() => {
+        this.router.navigate(['/Sales/Sales-Order-list']);
+      });
+    },
+    error: (err) => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err?.error?.message || 'Failed to save Sales Order',
+        confirmButtonColor: '#d33'
+      });
+    }
+  });
+}
   goToList() {
     this.router.navigate(['/Sales/Sales-Order-list']);
   }
@@ -918,10 +1174,19 @@ onSupplyMethodChangedByRef(ln: SoLine) {
     return (v ?? '').toString().trim() === '';
   }
 
+  private getDirectDoShortageLines() {
+  return (this.soLines || []).filter(l =>
+    Number(l.supplyMethod) === 2 &&           // Direct DO
+    Number(l.itemId || 0) > 0 &&
+    (Number(l.qty) || 0) > 0 &&
+    Number(l.availability ?? 0) < Number(l.qty)
+  );
+}
   cancel() {
     this.router.navigate(['/Sales/Sales-Order-list']);
   }
 }
+
 
 function safeJsonParse<T>(txt: string, fallback: T): T {
   try { return JSON.parse(txt) as T; } catch { return fallback; }

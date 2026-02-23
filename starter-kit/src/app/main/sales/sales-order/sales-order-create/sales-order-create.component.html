@@ -1,86 +1,116 @@
-<button
-  (click)="goToList()"
-  class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
-  style="background-color:#2E5F73; color:white; padding-left:2.25rem;"
->
-  <i
-    class="fas fa-arrow-left position-absolute"
-    style="left:0.75rem; top:50%; transform:translateY(-50%);"
-    aria-hidden="true"
-  ></i>
+<!-- Back button -->
+<button (click)="goToList()" class="soBackBtn" type="button">
+  <i class="fas fa-arrow-left" aria-hidden="true"></i>
   <span>Go to SalesOrder list</span>
 </button>
 
-<div class="so-page pr-typography">
-  <div class="bg-white rounded-2xl shadow px-3 pt-3 pb-6 border border-gray-100 so-card">
+<div class="soX pr-typography">
+
+  <!-- ===== Main Card ===== -->
+  <div class="soCard">
 
     <!-- Header -->
-    <div class="so-head">
-      <h2 class="title">{{ editMode ? 'Edit Sales Order' : 'Sales Order' }}</h2>
+    <div class="soHdr">
+      <div class="soHdr__left">
+        <div class="soHdr__badge">
+          <i class="fas fa-file-invoice"></i>
+        </div>
+        <div class="soHdr__txt">
+          <div class="soHdr__title">{{ editMode ? 'Edit Sales Order' : 'Sales Order' }}</div>
+          <div class="soHdr__sub">Create / Edit sales order with item sets & grouped lines</div>
+        </div>
+      </div>
+
+      <div class="soHdr__right">
+        <div class="soPill">
+          <span class="k">GST</span>
+          <span class="v">{{ soHdr.gstPct || 0 }}%</span>
+        </div>
+
+        <div class="soPill">
+          <span class="k">Source</span>
+          <span class="v">{{ sourceLineText || '-' }}</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Header fields -->
-    <div [ngClass]="gridColsClass(4)" class="so-grid">
+    <!-- ===== Header fields grid ===== -->
+    <div [ngClass]="gridColsClass(4)" class="soGrid">
 
       <!-- Quotation -->
-      <div class="so-header-dd dropdown-input">
+      <div class="soField soDD" (click)="$event.stopPropagation()">
         <label class="lbl">Quotation No</label>
-        <div class="relative">
-          <input type="text" class="so-inp"
+
+        <div class="soCtrl">
+          <i class="fas fa-search soCtrl__ico" aria-hidden="true"></i>
+
+          <input type="text"
+                 class="soInp soInp--withIco"
                  [(ngModel)]="searchTexts['quotationNo']"
-                 (input)="!editMode && filter('quotationNo')"
-                 (focus)="!editMode && toggleDropdown('quotationNo', true)"
+                 (input)="!editMode && onInputSearch('quotationNo')"
+                 (focus)="!editMode && openDropdown('quotationNo')"
                  placeholder="Search Quotation No..."
                  [disabled]="editMode" />
 
-          <button *ngIf="searchTexts['quotationNo'] && !editMode" type="button"
-                  (click)="onClearSearch('quotationNo')" class="btn-clear">✕</button>
+          <button *ngIf="searchTexts['quotationNo'] && !editMode"
+                  type="button"
+                  (click)="onClearSearch('quotationNo'); $event.stopPropagation()"
+                  class="soCtrl__clear"
+                  aria-label="Clear">✕</button>
 
           <button type="button"
-                  (click)="!editMode && toggleDropdown('quotationNo')"
-                  class="btn-caret" [disabled]="editMode">▼</button>
+                  class="soCtrl__caret"
+                  (click)="!editMode && toggleDropdown('quotationNo'); $event.stopPropagation()"
+                  [disabled]="editMode"
+                  aria-label="Open">▾</button>
         </div>
 
-        <ul *ngIf="dropdownOpen['quotationNo'] && !editMode" class="dropdown">
+        <ul *ngIf="dropdownOpen['quotationNo'] && !editMode" class="soDrop">
           <li *ngFor="let c of filteredLists['quotationNo']" (click)="select('quotationNo', c)">
-            {{ c.number }}
+            <div class="soDrop__main">{{ c.number }}</div>
           </li>
         </ul>
       </div>
 
       <!-- Customer -->
-      <div class="so-header-dd">
+      <div class="soField">
         <label class="lbl">Customer</label>
-        <input type="text" class="so-inp" disabled [(ngModel)]="searchTexts['customer']" />
+        <input type="text" class="soInp soInp--ro" disabled [(ngModel)]="searchTexts['customer']" />
       </div>
 
-      <!-- Source Line (readonly) -->
-      <div>
+      <!-- Source Line -->
+      <div class="soField">
         <label class="lbl">Source Line</label>
-        <input class="so-inp" type="text" [value]="sourceLineText" disabled />
+        <input class="soInp soInp--ro" type="text" [value]="sourceLineText" disabled />
       </div>
 
       <!-- Item Set chips -->
-      <div *ngIf="showItemSetBox" class="md:col-span-2">
+      <div *ngIf="showItemSetBox" class="soField md:col-span-2">
         <label class="lbl">Item Set Name</label>
-        <div class="so-inp so-chipbox" title="{{ itemSetNamesText }}">
+
+        <div class="soChipBox" title="{{ itemSetNamesText }}">
           <ng-container *ngIf="soHdr.itemSets?.length; else noItemSet">
-            <span class="so-chip" *ngFor="let s of soHdr.itemSets">{{ s.name }}</span>
+            <span class="soChip" *ngFor="let s of soHdr.itemSets">
+              <i class="fas fa-layer-group"></i>
+              <span>{{ s.name }}</span>
+            </span>
           </ng-container>
-          <ng-template #noItemSet><span class="dim">—</span></ng-template>
+          <ng-template #noItemSet>
+            <span class="soEmpty">—</span>
+          </ng-template>
         </div>
       </div>
 
       <!-- GST -->
-      <div>
+      <div class="soField">
         <label class="lbl">GST (%)</label>
-        <input class="so-inp" type="text" disabled [(ngModel)]="soHdr.gstPct"/>
+        <input class="soInp soInp--ro" type="text" disabled [(ngModel)]="soHdr.gstPct"/>
       </div>
 
       <!-- Requested Date -->
-      <div>
+      <div class="soField">
         <label class="lbl">Requested Date</label>
-        <input class="so-inp so-inp-readonly"
+        <input class="soInp soInp--ro"
                type="date"
                [(ngModel)]="soHdr.requestedDate"
                [min]="todayStr"
@@ -89,9 +119,9 @@
       </div>
 
       <!-- Delivery Date -->
-      <div class="col-span-1 md:col-span-1">
+      <div class="soField">
         <label class="lbl">Delivery Date</label>
-        <input class="so-inp"
+        <input class="soInp"
                type="date"
                [(ngModel)]="soHdr.deliveryDate"
                [ngModelOptions]="{ standalone: true }"
@@ -99,228 +129,229 @@
       </div>
 
       <!-- Delivery To -->
-      <div class="md:col-span-2">
+      <div class="soField md:col-span-2">
         <label class="lbl">Delivery To</label>
-        <textarea class="so-inp so-textarea"
+        <textarea class="soInp soTa"
                   rows="3"
                   [(ngModel)]="soHdr.deliveryTo"
                   placeholder="Delivery address / site / contact person"></textarea>
       </div>
 
       <!-- Remarks -->
-      <div class="md:col-span-2">
+      <div class="soField md:col-span-2">
         <label class="lbl">Remarks</label>
-        <textarea class="so-inp so-textarea"
+        <textarea class="soInp soTa"
                   rows="3"
                   [(ngModel)]="soHdr.remarks"
                   placeholder="Any remarks..."></textarea>
       </div>
     </div>
 
-    <!-- ======================= GROUPED TABLE ======================= -->
-  <!-- ======================= GROUPED TABLE (CORRECT) ======================= -->
-<div class="table-wrap mt-4">
-  <table class="so-table so-table--grouped">
-    <thead>
-      <tr>
-        <th class="col-item">ITEM / SET</th>
-        <th class="col-flags">ITEM MASTER FLAGS</th>
-        <th class="col-desc">DESCRIPTION</th>
-        <th class="col-uom">UOM</th>
-        <th class="col-qty num">QTY</th>
-        <th class="col-price num">UNIT PRICE</th>
-        <th class="col-disc num">DISCOUNT %</th>
-        <th class="col-tax">TAX MODE</th>
+    <!-- ===== Grouped Table ===== -->
+    <div class="soTableWrap mt-4">
+      <table class="soTable soTable--grouped">
+        <thead>
+          <tr>
+            <th class="col-item">ITEM / SET</th>
+            <th class="col-flags">ITEM MASTER FLAGS</th>
+            <th class="col-desc">DESCRIPTION</th>
+            <th class="col-uom">UOM</th>
+            <th class="col-qty num">QTY</th>
+            <th class="col-price num">UNIT PRICE</th>
+            <th class="col-disc num">DISCOUNT %</th>
+            <th class="col-tax">TAX MODE</th>
+            <th class="col-fulfill">FULFILLMENT</th>
+            <th class="col-supply">SUPPLY METHOD (SO)</th>
+            <th class="col-total num">LINE TOTAL</th>
+            <th class="col-act text-right">ACTION</th>
+          </tr>
+        </thead>
 
-        <!-- <th class="col-fulfill">FULFILLMENT</th> -->
-        <th class="col-supply">SUPPLY METHOD (SO)</th>
+        <tbody>
+          <tr *ngIf="!setGroups?.length">
+            <td class="soEmptyRow" colspan="12">No lines yet.</td>
+          </tr>
 
-        <th class="col-total num">LINE TOTAL</th>
-        <th class="col-act text-right">ACTION</th>
-      </tr>
-    </thead>
+          <ng-container *ngFor="let g of setGroups">
 
-    <tbody>
-      <tr *ngIf="!setGroups?.length">
-        <td class="empty" colspan="12">No lines yet.</td>
-      </tr>
+            <!-- SET HEADER -->
+            <tr class="soSetRow">
+              <td colspan="11" class="soSetCell">
+                <div class="soSetLeft">
+                  <span class="soSetIco"><i class="fas fa-layer-group"></i></span>
+                  <span class="soSetName">{{ g.name }}</span>
+                  <span class="soSetCount">{{ g.lines?.length || 0 }} items</span>
+                </div>
+              </td>
 
-      <ng-container *ngFor="let g of setGroups">
+              <td class="text-right soSetAct">
+                <button type="button" class="soDangerLink" (click)="removeSet(g)">
+                  <i class="fas fa-trash"></i>
+                  Remove
+                </button>
+              </td>
+            </tr>
 
-        <!-- SET HEADER -->
-        <tr class="set-row">
-          <td class="set-cell" colspan="11">
-            <div class="set-left">
-              <span class="set-ico"><i class="fas fa-layer-group"></i></span>
-              <span class="set-name">{{ g.name }}</span>
-            </div>
-          </td>
+            <!-- ITEMS -->
+            <tr class="soItemRow" *ngFor="let ln of g.lines; trackBy: trackByLineId">
 
-          <td class="set-action text-right">
-            <button type="button" class="btn-set-remove" (click)="removeSet(g)">
-              <i class="fas fa-trash"></i> Remove
-            </button>
-          </td>
-        </tr>
+              <td class="td-item">
+                <div class="soItemName">{{ ln.item }}</div>
+              </td>
 
-        <!-- ITEMS -->
-        <tr class="item-row" *ngFor="let ln of g.lines; trackBy: trackByLineId">
+              <!-- FLAGS -->
+              <td class="td-flags">
+                <div class="flag-line">
+                  <span class="k">Sellable</span>
+                  <span class="v" [class.yes]="ln.isSellable" [class.no]="ln.isSellable===false">
+                    {{ ln.isSellable ? 'Yes' : 'No' }}
+                  </span>
+                </div>
+                <div class="flag-line">
+                  <span class="k">Consumable</span>
+                  <span class="v" [class.yes]="ln.isConsumable" [class.no]="ln.isConsumable===false">
+                    {{ ln.isConsumable ? 'Yes' : 'No' }}
+                  </span>
+                </div>
+              </td>
 
-          <td class="td-item">
-            <div class="item-text">{{ ln.item }}</div>
-          </td>
+              <td>
+                <input class="soLineInp"
+                       [(ngModel)]="ln.description"
+                       placeholder="-"
+                       (input)="computeTotals()" />
+              </td>
 
-          <!-- FLAGS -->
-          <td class="td-flags">
-            <div class="flag-line">
-              <span class="k">Sellable:</span>
-              <span class="v" [class.yes]="ln.isSellable" [class.no]="ln.isSellable===false">
-                {{ ln.isSellable ? 'Yes' : 'No' }}
-              </span>
-            </div>
-            <div class="flag-line">
-              <span class="k">Consumable:</span>
-              <span class="v" [class.yes]="ln.isConsumable" [class.no]="ln.isConsumable===false">
-                {{ ln.isConsumable ? 'Yes' : 'No' }}
-              </span>
-            </div>
-          </td>
+              <td>
+                <input class="soLineInp soLineInp--uom"
+                       [(ngModel)]="ln.uom"
+                       placeholder="UOM"
+                       [disabled]="editMode" />
+              </td>
 
-          <td>
-            <input class="so-inp so-inp--line"
-                   [(ngModel)]="ln.description"
-                   placeholder="-"
-                   (input)="computeTotals()" />
-          </td>
+<td class="num col-qty">
+  <input type="number"
+         class="soLineInp soLineInp--num soLineInp--qty"
+         [(ngModel)]="ln.qty"
+         (input)="computeTotals()" />
+</td>
 
-          <td>
-            <input class="so-inp so-inp--line so-inp--uom"
-                   [(ngModel)]="ln.uom"
-                   placeholder="UOM"
-                   [disabled]="editMode" />
-          </td>
+              <td class="num">
+                <input type="number"
+                       class="soLineInp soLineInp--num"
+                       [(ngModel)]="ln.unitPrice"
+                       (input)="computeTotals()"
+                       min="0" step="0.01" />
+              </td>
 
-          <td class="num">
-            <input type="number"
-                   class="so-inp so-inp--line so-inp--qty text-right"
-                   [(ngModel)]="ln.qty"
-                   (input)="computeTotals()" />
-          </td>
+              <td class="num">
+                <input type="number"
+                       class="soLineInp soLineInp--num"
+                       [(ngModel)]="ln.discountPct"
+                       (input)="computeTotals()"
+                       placeholder="0" />
+              </td>
 
-          <td class="num">
-            <input type="number"
-                   class="so-inp so-inp--line so-inp--price text-right"
-                   [(ngModel)]="ln.unitPrice"
-                   (input)="computeTotals()"
-                   min="0" step="0.01" />
-          </td>
+              <td>
+                <div class="soSelect">
+                  <select class="soLineInp soLineInp--sel"
+                          [(ngModel)]="ln.taxMode"
+                          (change)="computeTotals()">
+                    <option *ngFor="let m of taxModesForCurrentGst" [ngValue]="m">{{ m }}</option>
+                  </select>
+                  <span class="soSelect__caret">▾</span>
+                </div>
+              </td>
 
-          <td class="num">
-            <input type="number"
-                   class="so-inp so-inp--line so-inp--disc text-right"
-                   [(ngModel)]="ln.discountPct"
-                   (input)="computeTotals()"
-                   placeholder="0" />
-          </td>
+              <!-- Fulfillment -->
+              <td>
+                <div class="soBadge"
+                     [class.soBadge--sell]="ln.fulfillmentMode===1"
+                     [class.soBadge--cons]="ln.fulfillmentMode===2"
+                     [class.soBadge--both]="ln.fulfillmentMode===3"
+                     [class.soBadge--none]="ln.fulfillmentMode==null">
+                  {{ getFulfillmentLabel(ln.fulfillmentMode) }}
+                </div>
+              </td>
 
-          <td>
-            <div class="tax-dd">
-              <select class="so-inp so-inp--line so-inp--tax"
-                      [(ngModel)]="ln.taxMode"
-                      (change)="computeTotals()">
-                <option *ngFor="let m of taxModesForCurrentGst" [ngValue]="m">{{ m }}</option>
-              </select>
-              <span class="tax-caret">▾</span>
-            </div>
-          </td>
+              <!-- SupplyMethod -->
+              <td>
+                <div class="soSelect">
+                  <select class="soLineInp soLineInp--sel"
+                          [(ngModel)]="ln.supplyMethod"
+                          [disabled]="ln.__supplyLocked"
+                          (change)="onSupplyMethodChangedByRef(ln)">
+                    <option [ngValue]="null">SELECT</option>
+                    <option [ngValue]="1">PP</option>
+                    <option [ngValue]="2">DIRECT DO</option>
+                  </select>
+                  <span class="soSelect__caret">▾</span>
+                </div>
 
-          <!-- Fulfillment (readonly label) -->
-          <!-- <td class="td-fulfill">
-            <div class="badge-pill"
-                 [class.badge-sell]="ln.fulfillmentMode===1"
-                 [class.badge-cons]="ln.fulfillmentMode===2"
-                 [class.badge-both]="ln.fulfillmentMode===3"
-                 [class.badge-none]="ln.fulfillmentMode==null">
-              {{ getFulfillmentLabel(ln.fulfillmentMode) }}
-            </div>
-          </td> -->
+                <div class="soMini">
+                  {{ getSupplyLabel(ln.supplyMethod) }}
+                  <span *ngIf="ln.__supplyLocked" class="soLock">• Auto</span>
+                </div>
 
-          <!-- SupplyMethod -->
-          <td class="td-supply">
-            <div class="tax-dd">
-              <select class="so-inp so-inp--line"
-                      [(ngModel)]="ln.supplyMethod"
-                      [disabled]="ln.__supplyLocked"
-                      (change)="onSupplyMethodChangedByRef(ln)">
-                <option [ngValue]="null">SELECT</option>
-               
-                <option [ngValue]="1">PP</option>
-                 <option [ngValue]="2">DIRECT DO</option>
-              </select>
-              <span class="tax-caret">▾</span>
-            </div>
+                <div *ngIf="ln.fulfillmentMode===3 && (ln.supplyMethod===null || ln.supplyMethod===undefined)" class="soWarn">
+                  Both item → choose Direct DO / PP
+                </div>
+              </td>
 
-            <div class="muted-mini">
-              {{ getSupplyLabel(ln.supplyMethod) }}
-              <span *ngIf="ln.__supplyLocked" class="lock-mini">• Auto</span>
-            </div>
+              <td class="num">
+                <span class="soAmt">{{ (ln.lineTotal || 0) | number:'1.2-2' }}</span>
+              </td>
 
-            <div *ngIf="ln.fulfillmentMode===3 && (ln.supplyMethod===null || ln.supplyMethod===undefined)" class="warn-mini">
-              Both item → choose Direct DO / PP
-            </div>
-          </td>
+              <td class="text-right">
+                <button type="button" class="soIconTrash" (click)="removeLineFromSet(g, ln)" aria-label="Remove line">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
 
-          <td class="num">
-            <span class="line-total">{{ (ln.lineTotal || 0) | number:'1.2-2' }}</span>
-          </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
 
-          <td class="text-right">
-            <button type="button" class="btn-icon-trash" (click)="removeLineFromSet(g, ln)" aria-label="Remove line">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
+    <!-- ===== Summary ===== -->
+    <div class="soSummary">
+      <div class="soSummary__spacer"></div>
 
-        </tr>
-
-      </ng-container>
-    </tbody>
-  </table>
-</div>
-    <!-- Summary -->
-    <div class="sum-grid">
-      <div class="sum-grid-spacer"></div>
-
-      <aside class="mini-total-card mtc-spaced">
-        <div class="mtc-row">
-          <span class="mtc-label">Sub Total</span>
-          <input class="so-inp mtc-inp text-right" type="text"
-                 [value]="(totals.subTotal || 0) | number:'1.2-2'" readonly>
+      <aside class="soTotals">
+        <div class="row">
+          <span class="k">Sub Total</span>
+          <span class="v">{{ (totals.subTotal || 0) | number:'1.2-2' }}</span>
+        </div>
+        <div class="row">
+          <span class="k">Tax (GST)</span>
+          <span class="v">{{ (totals.gstAmount || 0) | number:'1.2-2' }}</span>
         </div>
 
-        <div class="mtc-row">
-          <span class="mtc-label">Tax (GST)</span>
-          <input class="so-inp mtc-inp text-right" type="text"
-                 [value]="(totals.gstAmount || 0) | number:'1.2-2'" readonly>
-        </div>
+        <div class="divider"></div>
 
-        <div class="mtc-row">
-          <span class="mtc-label">Net Total</span>
-          <span class="mtc-amt">{{ totals.netTotal | number:'1.2-2' }}</span>
+        <div class="row row--big">
+          <span class="k">Net Total</span>
+          <span class="v v--big">{{ totals.netTotal | number:'1.2-2' }}</span>
         </div>
       </aside>
     </div>
 
   </div>
 
-  <div class="sticky-actions">
-    <div class="container">
-      <button type="button" class="so-btn so-btn-primary" (click)="post()">
+  <!-- Sticky actions -->
+  <div class="soSticky">
+    <div class="soSticky__inner">
+      <button type="button" class="soBtn soBtn--primary" (click)="post()">
+        <i class="fas fa-save"></i>
         {{ editMode ? 'Update' : 'Save' }}
       </button>
 
-      <button type="button" class="so-btn so-btn-danger" (click)="cancel()">
+      <button type="button" class="soBtn soBtn--ghost" (click)="cancel()">
+        <i class="fas fa-times"></i>
         Cancel
       </button>
     </div>
   </div>
+
 </div>

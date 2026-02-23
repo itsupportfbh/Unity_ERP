@@ -227,6 +227,6 @@ foodPrepTooltip(row: any): string {
 }
 getFoodPrepLabel(row: any): string {
   const s = Number(row?.foodPrepStatus ?? 1);
-  return s === 2 ? 'Food Prep Done' : 'Food Prep Processing';
+  return s === 2 ? 'Food Prep Done' : 'Food Prep Started';
 }
 }

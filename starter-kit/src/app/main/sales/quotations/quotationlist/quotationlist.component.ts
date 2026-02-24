@@ -319,7 +319,7 @@ private async ensurePdfMakeReady(): Promise<any> {
   statusLabel(v: number) {
     return v === 0 ? 'Draft'
       : v === 1 ? 'Pending'
-      : v === 2 ? 'Approved'
+      : v === 2 ? 'Completed'
       : v === 3 ? 'Rejected'
       : v === 4 ? 'Posted'
       : 'Unknown';

@@ -1086,7 +1086,7 @@ export class CreateItemMasterComponent implements OnInit {
       isActive: true,
       createdBy: this.userId,
       updatedBy: this.userId,
-      expiryDate: null as string | null
+      expiryDate:new Date()
     };
   }
 

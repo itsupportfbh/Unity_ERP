@@ -75,6 +75,17 @@
                [class.grn-disabled]="isPoDateDisabled" />
       </div>
 
+      <!-- ✅ NEW: Invoice Number -->
+ <!-- ✅ Invoice Number -->
+<div class="grn-field">
+  <label>Invoice Number</label>
+  <input type="text"
+         [(ngModel)]="invoiceNo"
+         placeholder="Enter supplier invoice number"
+         class="grn-ctl"
+         maxlength="50" />
+</div>
+
       <!-- Over Receipt -->
       <div class="grn-field">
         <label>Over-receipt Tolerance (%)</label>
@@ -354,6 +365,12 @@
     <div class="tb-right grn-topbar-right">
       <span class="grn-badge grn-badge-muted">GRN: {{ generatedGRN.grnNo }}</span>
       <span class="grn-badge grn-badge-muted">PO: {{ generatedGRN.poNo || generatedGRN.poid }}</span>
+
+      <!-- ✅ NEW: Invoice badge -->
+      <span *ngIf="generatedGRN?.invoiceNo " class="grn-badge grn-badge-muted">
+        Inv: {{ generatedGRN.invoiceNo  }}
+      </span>
+
       <span class="grn-badge grn-badge-info">Total: {{ generatedGRN.grnJson?.length || 0 }}</span>
     </div>
   </div>
@@ -459,10 +476,62 @@
     <div class="tb-right grn-topbar-right">
       <span class="grn-badge grn-badge-muted">GRN: {{ generatedGRN.grnNo }}</span>
       <span class="grn-badge grn-badge-muted">PO: {{ generatedGRN.poNo || generatedGRN.poid }}</span>
+
+      <!-- ✅ NEW: Invoice badge -->
+      <span *ngIf="generatedGRN?.invoiceNo " class="grn-badge grn-badge-muted">
+        Inv: {{ generatedGRN.invoiceNo  }}
+      </span>
+
       <span *ngIf="hiddenPostedCount > 0" class="grn-badge grn-badge-warn">
         Posted hidden: {{ hiddenPostedCount }}
       </span>
       <span class="grn-badge grn-badge-info">Lines: {{ editRowsWithIndex?.length || 0 }}</span>
+    </div>
+  </div>
+
+  <!-- ✅ Edit mode-ல Invoice Number edit பண்ண வேண்டும் என்றால் இந்த header card-ஐ add பண்ணிக்கலாம் -->
+  <div class="grn-card">
+    <div class="grn-card-hdr">
+      <div class="grn-card-title">Header</div>
+      <div class="grn-actions">
+        <span class="grn-chip grn-chip-info">You can edit invoice number here</span>
+      </div>
+    </div>
+
+    <div class="grn-form-grid">
+      <div class="grn-field">
+        <label>Invoice Number</label>
+        <input type="text"
+               [(ngModel)]="invoiceNo"
+               placeholder="Enter supplier invoice number"
+               class="grn-ctl"
+               maxlength="50" />
+      </div>
+
+      <div class="grn-field">
+        <label>PO Date</label>
+        <input type="date"
+               [(ngModel)]="receiptDate"
+               class="grn-ctl" />
+      </div>
+
+      <div class="grn-field">
+        <label>Over-receipt Tolerance (%)</label>
+        <input type="number"
+               min="0"
+               max="5"
+               placeholder="0"
+               [(ngModel)]="overReceiptTolerance"
+               (keypress)="allowOnlyNumbers($event)"
+               class="grn-ctl" />
+      </div>
+
+      <div class="grn-field">
+        <button class="grn-btn grn-btn-primary" type="button" (click)="saveGRN()">
+          <i class="fa fa-save"></i>
+          <span>Update GRN Header</span>
+        </button>
+      </div>
     </div>
   </div>
 

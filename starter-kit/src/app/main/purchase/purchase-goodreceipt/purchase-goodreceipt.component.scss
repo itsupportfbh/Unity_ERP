@@ -473,3 +473,14 @@
   border-radius: 18px;
   box-shadow: var(--shadow2);
 }
+
+
+.grn-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.grn-ctl {
+  width: 100%;
+}

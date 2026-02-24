@@ -247,7 +247,7 @@ isFoodPrepDisabled(row: any): boolean {
 }
 foodPrepTooltip(row: any): string {
   const s = Number(row?.foodPrepStatus ?? 1);
-  return s === 2 ? 'Food Preparation Completed' : 'Click to complete';
+  return s === 2 ? 'Food Prep Done' : 'Food Prep Started';
 }
 getFoodPrepLabel(row: any): string {
   const s = Number(row?.foodPrepStatus ?? 1);

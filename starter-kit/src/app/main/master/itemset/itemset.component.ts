@@ -87,7 +87,7 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
 
         // ✅ IMPORTANT FIX: itemType is null in your API, so DO NOT filter by finishedfoods.
        this.itemsMaster = (data || []).filter((x: any) =>
-        x?.isActive === true && Number(x?.itemTypeId) === 1   // ✅ only typeId=1
+        x?.isActive === true && Number(x?.itemTypeId) === 2  // ✅ only typeId=1
       );
 
         // debug

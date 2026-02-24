@@ -76,6 +76,8 @@ interface GeneratedGRN {
   poid: number;
   poNo?: string;
   grnJson: any[];
+
+  invoiceNo?: string | null; // ✅ match backend column InvoiceNo
 }
 
 @Component({
@@ -90,6 +92,9 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
   showSummary = false;
 
   currentUsername: string = '';
+
+  // ✅ Header InvoiceNo
+  invoiceNo: string = '';
 
   // Lightbox
   imageViewer = { open: false, src: null as string | null };
@@ -218,7 +223,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     if (!/^\d$/.test(event.key)) event.preventDefault();
   }
 
-  /* ===================== SAVE GRN ===================== */
+  /* ===================== SAVE / UPDATE GRN ===================== */
   saveGRN() {
     if (!this.selectedPO) {
       Swal.fire({ icon: 'warning', title: 'Required', text: 'Please select a PO.', confirmButtonColor: '#0e3a4c' });
@@ -233,7 +238,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
 
       if (!r.warehouseId) errors.push(`${rowNo}) ${itemLabel}: Please select warehouse`);
       if (!r.binId) errors.push(`${rowNo}) ${itemLabel}: Please select bin`);
-       if (!r.strategyId) errors.push(`${rowNo}) ${itemLabel}: Please select Frequency`);
+      if (!r.strategyId) errors.push(`${rowNo}) ${itemLabel}: Please select Frequency`);
 
       const qty = Number(r.qtyReceived);
       if (!r.qtyReceived && r.qtyReceived !== 0) errors.push(`${rowNo}) ${itemLabel}: Please enter received qty`);
@@ -254,7 +259,6 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       return;
     }
 
-    // ✅ store itemName + supplierName into each row JSON (so summary shows)
     const rowsForApi = this.grnRows.map((r: any) => ({
       itemCode: r.itemCode,
       itemName: r.itemName || this.extractItemName(r.itemText) || '',
@@ -296,12 +300,20 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       flagIssueId: r.flagIssueId ?? null
     }));
 
-    const payload = {
+    // ✅ IMPORTANT: keep "" (empty string) — don't convert to null in frontend
+    const inv = String(this.invoiceNo ?? ''); // no trim needed; "" stays ""
+
+    const payload: any = {
       id: this.editingGrnId ?? 0,
       poid: this.selectedPO,
       supplierId: this.currentSupplierId,
       receptionDate: this.receiptDate ? new Date(this.receiptDate) : new Date(),
       overReceiptTolerance: this.overReceiptTolerance,
+
+      // ✅ BACKEND FIELD: InvoiceNo (send both cases)
+      InvoiceNo: inv,
+      invoiceNo: inv,
+
       grnJson: JSON.stringify(rowsForApi),
       grnNo: this.generatedGRN?.grnNo ?? '',
       isActive: true
@@ -310,7 +322,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     this.purchaseGoodReceiptService.createGRN(payload).subscribe({
       next: (res: any) => {
         const grnId = res?.data || res?.id || res;
-        Swal.fire({ icon: 'success', title: 'Created', text: res?.message || 'GRN created.', confirmButtonColor: '#0e3a4c' });
+        Swal.fire({ icon: 'success', title: 'Saved', text: res?.message || 'GRN saved.', confirmButtonColor: '#0e3a4c' });
         if (grnId) {
           this.showSummary = true;
           this.loadSummaryForCreate(grnId);
@@ -408,7 +420,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     });
   }
 
-  /* ===================== FLAG ISSUE FLOW (✅ FULL) ===================== */
+  /* ===================== FLAG ISSUE FLOW ===================== */
   loadFlagIssues() {
     this.flagIssuesService.getAllFlagIssue().subscribe({
       next: (res: any) => { this.flagIssuesList = res?.data || []; },
@@ -481,11 +493,16 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
 
     const receptionDateValue = this.receiptDate ? new Date(this.receiptDate) : new Date();
 
+    const inv = String(this.invoiceNo ?? ''); // keep "" if empty
+
     const body: any = {
       id: this.generatedGRN.id,
       GrnNo: this.generatedGRN.grnNo || '',
       GRNJSON: JSON.stringify(rows),
-      ReceptionDate: receptionDateValue
+      ReceptionDate: receptionDateValue,
+
+      InvoiceNo: inv,
+      invoiceNo: inv
     };
 
     const anySvc: any = this.purchaseGoodReceiptService as any;
@@ -498,12 +515,13 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
             ...body,
             grnNo: body.GrnNo,
             grnJson: body.GRNJSON,
-            receptionDate: body.ReceptionDate
+            receptionDate: body.ReceptionDate,
+            InvoiceNo: body.InvoiceNo,
+            invoiceNo: body.invoiceNo
           })
           : null;
 
     if (!call$) {
-      // rollback
       this.generatedGRN = { ...this.generatedGRN!, grnJson: prevRows };
       console.error('No UpdateFlagIssues/updateGRN method found in service');
       Swal.fire('Error', 'Update API method missing in service.', 'error');
@@ -513,6 +531,12 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     call$.subscribe({
       next: () => {
         this.postedCount = (this.generatedGRN?.grnJson || []).filter((x: any) => !!x.isPostInventory).length;
+
+        this.generatedGRN = {
+          ...this.generatedGRN!,
+          invoiceNo: inv
+        };
+
         if (onSuccess) onSuccess();
       },
       error: (err) => {
@@ -782,6 +806,10 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     this.overReceiptTolerance = 0;
     this.currentSupplierId = null;
     this.currentSupplierName = '';
+
+    // ✅ invoiceNo reset
+    this.invoiceNo = '';
+
     this.showSummary = false;
     this.generatedGRN = null;
 
@@ -869,6 +897,9 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
         this.currentSupplierId = this.toNum(data?.supplierId ?? data?.SupplierId);
         this.currentSupplierName = data?.supplierName || this.currentSupplierName || '';
 
+        // ✅ InvoiceNo load
+        this.invoiceNo = String(data?.invoiceNo ?? data?.InvoiceNo ?? '') ?? '';
+
         let rows: any[] = [];
         try {
           const raw = data?.grnJson ?? data?.GRNJSON ?? '[]';
@@ -909,7 +940,8 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
           grnNo: data?.grnNo,
           poid: data?.poid ?? data?.POId,
           poNo: '',
-          grnJson: rowsCoerced
+          grnJson: rowsCoerced,
+          invoiceNo: String(data?.invoiceNo ?? data?.InvoiceNo ?? this.invoiceNo ?? '')
         };
 
         this.cdRef.detectChanges();
@@ -932,6 +964,9 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
 
         this.currentSupplierId = this.toNum(data?.supplierId ?? data?.SupplierId);
         this.currentSupplierName = data?.supplierName || this.currentSupplierName || '';
+
+        // ✅ InvoiceNo load
+        this.invoiceNo = String(data?.invoiceNo ?? data?.InvoiceNo ?? '') ?? '';
 
         let rows: any[] = [];
         try {
@@ -978,13 +1013,21 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
               grnNo: data?.grnNo,
               poid: data?.poid ?? data?.POId,
               poNo: '',
-              grnJson: rowsWithNames
+              grnJson: rowsWithNames,
+              invoiceNo: String(data?.invoiceNo ?? data?.InvoiceNo ?? this.invoiceNo ?? '')
             };
             this.cdRef.detectChanges();
           },
           error: err => {
             console.error('Bins load failed', err);
-            this.generatedGRN = { id: data?.id, grnNo: data?.grnNo, poid: data?.poid ?? data?.POId, poNo: '', grnJson: rowsWithNames };
+            this.generatedGRN = {
+              id: data?.id,
+              grnNo: data?.grnNo,
+              poid: data?.poid ?? data?.POId,
+              poNo: '',
+              grnJson: rowsWithNames,
+              invoiceNo: String(data?.invoiceNo ?? data?.InvoiceNo ?? this.invoiceNo ?? '')
+            };
             this.cdRef.detectChanges();
           }
         });

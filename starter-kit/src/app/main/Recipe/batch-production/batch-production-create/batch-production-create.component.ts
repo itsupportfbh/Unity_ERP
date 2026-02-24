@@ -99,7 +99,10 @@ export class BatchProductionCreateComponent implements OnInit {
 
     if (this.batchId) {
       this.loadBatch(this.batchId);
-    }
+    }else {
+    // ✅ Create mode: load plans normally
+    this.loadPlans();
+  }
   }
 
   get varianceCount(): number {
@@ -109,34 +112,50 @@ export class BatchProductionCreateComponent implements OnInit {
   // =============================
   // 1) Load plans (with lines)
   // =============================
-  loadPlans(): void {
-    this.isLoading = true;
+loadPlans(): void {
+  this.isLoading = true;
 
-    this.srv.getProductionPlanList().subscribe({
-      next: (res: any) => {
-        const data: ProductionPlanDto[] = res?.data ?? res ?? [];
-        this.planCache = Array.isArray(data) ? data : [];
+  this.srv.getProductionPlanList().subscribe({
+    next: (res: any) => {
+      const raw: any[] = res?.data ?? res ?? [];
+      const allPlans: ProductionPlanDto[] = Array.isArray(raw) ? raw as any : [];
 
-        // build dropdown labels (PR001 - SO-0002 - Draft - 2026-01-28)
-        this.plans = this.planCache.map(p => ({
-          id: p.id,
-          label: `${p.productionPlanNo || 'PLAN'} - ${p.salesOrderNo || ''} - ${p.status || ''}`
-        }));
+      // ✅ Keep ONLY Status = 1 (but keep selected plan in edit mode even if status != 1)
+      const filtered = allPlans.filter(p => {
+        const st = Number((p as any).status ?? (p as any).Status ?? 0);
+        const pid = Number((p as any).id ?? (p as any).Id ?? 0);
 
-        this.isLoading = false;
+        // show only status=1
+        if (st === 1) return true;
 
-        // if batch loaded earlier & selectedPlanId already set, apply now
-        if (this.pendingApplySelectedPlan && this.selectedPlanId) {
-          this.pendingApplySelectedPlan = false;
-          this.applyPlanLinesFromCache(this.selectedPlanId);
-        }
-      },
-      error: () => {
-        this.isLoading = false;
-        Swal.fire('Error', 'Failed to load plans', 'error');
+        // edit mode safety: keep the already selected plan (even if status=2)
+        if (this.selectedPlanId && pid === Number(this.selectedPlanId)) return true;
+
+        return false;
+      });
+
+      this.planCache = filtered;
+
+      // dropdown label
+      this.plans = this.planCache.map(p => ({
+        id: Number((p as any).id ?? 0),
+        label: `${(p as any).productionPlanNo || 'PLAN'} - ${(p as any).salesOrderNo || ''} - ${(p as any).status ?? ''}`
+      }));
+
+      this.isLoading = false;
+
+      // if batch loaded earlier & selectedPlanId already set, apply now
+      if (this.pendingApplySelectedPlan && this.selectedPlanId) {
+        this.pendingApplySelectedPlan = false;
+        this.applyPlanLinesFromCache(this.selectedPlanId);
       }
-    });
-  }
+    },
+    error: () => {
+      this.isLoading = false;
+      Swal.fire('Error', 'Failed to load plans', 'error');
+    }
+  });
+}
 
   // =============================
   // 2) When user selects plan
@@ -203,7 +222,7 @@ export class BatchProductionCreateComponent implements OnInit {
 
       // warehouse is already stored in batch header
       this.selectedWarehouseId = Number(header?.warehouseId ?? header?.WarehouseId ?? 0) || null;
-
+       this.loadPlans();
       // optional display
       this.selectedPlanNo = header?.batchNo || header?.BatchNo || null;
 

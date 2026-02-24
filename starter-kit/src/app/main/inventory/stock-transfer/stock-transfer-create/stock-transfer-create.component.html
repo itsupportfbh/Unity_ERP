@@ -59,17 +59,17 @@
           </div>
         </div>
 
-        <!-- From Outlet -->
+        <!-- From Warehouse -->
         <div class="col-12 col-md-6">
-          <label class="tw-label">From Outlet</label>
+          <label class="tw-label">From Warehouse</label>
           <div class="tw-field">
             <input class="form-control tw-input tw-readonly" [value]="h.fromWarehouseName" readonly />
           </div>
         </div>
 
-        <!-- To Outlet -->
+        <!-- To Warehouse -->
         <div class="col-12 col-md-6">
-          <label class="tw-label">To Outlet</label>
+          <label class="tw-label">To Warehouse</label>
           <div class="tw-field">
             <input class="form-control tw-input tw-readonly" [value]="h.toWarehouseName" readonly />
           </div>
@@ -89,7 +89,7 @@
             <label class="tw-label mb-0">To Bin</label>
 
             <span class="tw-mini" *ngIf="header?.toWarehouseId">
-              ToOutletId: <b>{{ header?.toWarehouseId }}</b>
+              ToWarehouseId: <b>{{ header?.toWarehouseId }}</b>
             </span>
           </div>
 
@@ -106,7 +106,7 @@
           </div>
 
           <div class="tw-help" *ngIf="header?.toWarehouseId">
-            Outlet bins loaded based on selected outlet.
+            Warehouse bins loaded based on selected Warehouse.
           </div>
         </div>
 

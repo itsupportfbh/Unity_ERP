@@ -53,7 +53,7 @@
           <i class="fas fa-sliders-h" aria-hidden="true"></i>
           <span>Options</span>
         </div>
-        <div class="uwso-card-sub">Select MRQ + Outlet, system will auto bind destination.</div>
+        <div class="uwso-card-sub">Select MRQ + Warehouse, system will auto bind destination.</div>
       </div>
 
       <div class="uwso-head-right">
@@ -90,11 +90,11 @@
           </div>
         </div>
 
-        <!-- Destination Outlet -->
+        <!-- Destination Warehouse -->
         <div class="uwso-field">
           <label class="uwso-label">
             <i class="fas fa-store" aria-hidden="true"></i>
-            Destination Outlet (MR Outlet)
+            Destination Warehouse (MR Warehouse)
           </label>
 
           <input
@@ -104,7 +104,7 @@
             placeholder="Auto from MRQ"/>
 
           <div class="uwso-help" *ngIf="destinationOutletId">
-            Destination outlet excluded from From Outlet list.
+            Destination Warehouse excluded from From Warehouse list.
           </div>
         </div>
 
@@ -129,11 +129,11 @@
 
       <!-- Row 2 -->
       <div class="uwso-grid-2 uwso-mt16">
-        <!-- From Outlet -->
+        <!-- From Warehouse -->
         <div class="uwso-field">
           <label class="uwso-label">
             <i class="fas fa-warehouse" aria-hidden="true"></i>
-            From Outlet
+            From Warehouse
           </label>
 
           <ng-select
@@ -175,24 +175,24 @@
 
           </ng-select>
 
-          <div class="uwso-help">Transfer will use selected From Outlet.</div>
+          <div class="uwso-help">Transfer will use selected From Warehouse.</div>
         </div>
 
         <!-- Selected From Outlet -->
         <div class="uwso-field">
           <label class="uwso-label">
             <i class="fas fa-check-circle" aria-hidden="true"></i>
-            Selected From Outlet
+            Selected From Warehouse
           </label>
 
           <input
             class="uwso-input"
             [value]="selectedFromOutletName || ''"
             readonly
-            placeholder="Select From Outlet"/>
+            placeholder="Select From Warehouse"/>
 
           <div class="uwso-help">
-            This outlet stock rows will be shown below.
+            This Warehouse stock rows will be shown below.
             <span *ngIf="selectedFromOutletId && mrLines?.length" class="dot">•</span>
             <span *ngIf="selectedFromOutletId && mrLines?.length">
               Transferable Lines: <b>{{ transferableLineCount }}</b>
@@ -362,10 +362,10 @@
       <div class="uwso-head-left">
         <div class="uwso-card-title">
           <i class="fas fa-boxes" aria-hidden="true"></i>
-          <span>Stock in selected outlet (MR items)</span>
+          <span>Stock in selected Warehouse (MR items)</span>
         </div>
         <div class="uwso-card-sub" *ngIf="selectedFromOutletName">
-          From Outlet: <b>{{ selectedFromOutletName }}</b>
+          From Warehouse: <b>{{ selectedFromOutletName }}</b>
         </div>
       </div>
 
@@ -379,7 +379,7 @@
       <table class="uwso-table uwso-table-wide">
         <thead>
           <tr>
-            <th>Outlet</th>
+            <th>Warehouse</th>
             <th>SKU</th>
             <th>Item</th>
             <th>Supplier</th>
@@ -404,7 +404,7 @@
 
           <tr *ngIf="!filteredRows?.length">
             <td colspan="7" class="uwso-empty">
-              No rows found for selected MR items / outlet.
+              No rows found for selected MR items / Warehouse.
             </td>
           </tr>
         </tbody>

@@ -3,21 +3,21 @@
   <div class="rcx-hero">
     <div class="rcx-hero-left">
       <div class="rcx-title">Receive Confirm</div>
-      <div class="rcx-sub">Destination outlet receives and confirms transfers.</div>
+      <div class="rcx-sub">Destination Warehouse receives and confirms transfers.</div>
     </div>
 
     <div class="rcx-hero-right">
 
-      <!-- To Outlet -->
+      <!-- To Warehouse -->
       <div class="rcx-field">
-        <div class="rcx-lbl">To Outlet</div>
+        <div class="rcx-lbl">To Warehouse</div>
         <div class="rcx-selectwrap">
           <i class="fas fa-store rcx-ic"></i>
 
           <select class="rcx-select"
                   [(ngModel)]="selectedToOutletId"
                   (ngModelChange)="onToOutletChange()">
-            <option [ngValue]="null">Select outlet</option>
+            <option [ngValue]="null">Select Warehouse</option>
             <option *ngFor="let o of toOutletOptions" [ngValue]="o.id">
               {{ o.name }}
             </option>
@@ -66,7 +66,7 @@
       <div class="rcx-empty" *ngIf="isLoading">
         <div class="rcx-empty-ic"><i class="fas fa-spinner fa-spin"></i></div>
         <div class="rcx-empty-h">Loading...</div>
-        <div class="rcx-empty-p">Fetching transfers for selected outlet.</div>
+        <div class="rcx-empty-p">Fetching transfers for selected Warehouse.</div>
       </div>
 
       <!-- datatable -->
@@ -86,7 +86,7 @@
         <ngx-datatable-column name="TRANSFER NO" prop="transferNo" [width]="160"></ngx-datatable-column>
         <ngx-datatable-column name="SKU" prop="sku" [width]="140"></ngx-datatable-column>
         <ngx-datatable-column name="ITEM" prop="name" [width]="180"></ngx-datatable-column>
-        <ngx-datatable-column name="FROM OUTLET" prop="fromWarehouseName" [width]="200"></ngx-datatable-column>
+        <ngx-datatable-column name="FROM Warehouse" prop="fromWarehouseName" [width]="200"></ngx-datatable-column>
         <ngx-datatable-column name="REQUESTED QTY" prop="requestQty" [width]="170"></ngx-datatable-column>
         <ngx-datatable-column name="RECEIVED QTY" prop="receivedQty" [width]="160"></ngx-datatable-column>
 
@@ -128,13 +128,13 @@
       <div class="rcx-empty" *ngIf="!isLoading && selectedToOutletId && filteredRows.length === 0">
         <div class="rcx-empty-ic"><i class="fas fa-inbox"></i></div>
         <div class="rcx-empty-h">No transfers found</div>
-        <div class="rcx-empty-p">Try search keyword or different outlet.</div>
+        <div class="rcx-empty-p">Try search keyword or different Warehouse.</div>
       </div>
 
       <div class="rcx-empty" *ngIf="!isLoading && !selectedToOutletId">
         <div class="rcx-empty-ic"><i class="fas fa-store"></i></div>
-        <div class="rcx-empty-h">Select To Outlet</div>
-        <div class="rcx-empty-p">Choose destination outlet to load transfers.</div>
+        <div class="rcx-empty-h">Select To Warehouse</div>
+        <div class="rcx-empty-p">Choose destination Warehouse to load transfers.</div>
       </div>
 
     </div>
@@ -184,7 +184,7 @@
         </div>
 
         <div class="rcm-field">
-          <label class="rcm-lbl">From Outlet</label>
+          <label class="rcm-lbl">From Warehouse</label>
           <div class="rcm-inpwrap">
             <i class="fas fa-warehouse rcm-ic"></i>
             <input class="rcm-inp" [value]="f.fromWarehouseName" disabled />
@@ -192,7 +192,7 @@
         </div>
 
         <div class="rcm-field">
-          <label class="rcm-lbl">To Outlet</label>
+          <label class="rcm-lbl">To Warehouse</label>
           <div class="rcm-inpwrap">
             <i class="fas fa-store rcm-ic"></i>
             <input class="rcm-inp" [value]="f.toWarehouseName" disabled />

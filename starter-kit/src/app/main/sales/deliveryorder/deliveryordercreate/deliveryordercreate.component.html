@@ -218,6 +218,7 @@
                        [(ngModel)]="l.deliverQty"
                        [min]="0"
                        [max]="l.pendingQty"
+                       disabled
                        (ngModelChange)="recalcTotals()">
               </td>
               <td>
@@ -237,7 +238,7 @@
 
           <tfoot *ngIf="soLines?.length">
             <tr class="prl-tfoot">
-              <th colspan="4" class="text-end">Total Deliver Qty</th>
+              <th colspan="4" class="text-end" >Total Deliver Qty</th>
               <th class="text-end">{{ totalDeliverQty | number:'1.0-2' }}</th>
               <th></th>
             </tr>

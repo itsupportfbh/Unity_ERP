@@ -5,4 +5,6 @@ export class PackingApiUrls {
   public static readonly UpdatePacking = "/Picking/update";
   public static readonly DeletePacking = "/Picking/Delete/";
   public static readonly GeneratePackingCodes = "/Packing/GeneratePackingCodes/";
+  public static readonly GetAvailableSalesOrders = "/Picking/available-salesorders";
+  
 }

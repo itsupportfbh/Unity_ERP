@@ -51,5 +51,13 @@ export class PackingService {
       }>>(`${this.url}/picking/codes`, { soId })
       .pipe(map(r => r.data));   // <-- works once map is imported
   }
+getAvailableSalesOrders(excludePickId?: number | null) {
+  const url =
+    excludePickId
+      ? `${this.url}${PackingApiUrls.GetAvailableSalesOrders}?excludePickId=${excludePickId}`
+      : `${this.url}${PackingApiUrls.GetAvailableSalesOrders}`;
+
+  return this.http.get<any>(url); // backend returns { data: [...] }
+}
  
 }

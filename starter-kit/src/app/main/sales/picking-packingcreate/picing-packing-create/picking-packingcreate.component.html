@@ -99,7 +99,7 @@
             <tr>
               <th>Item</th>
               <th style="width:170px">Warehouse</th>
-              <th style="width:170px">Supplier</th>
+              <!-- <th style="width:170px">Supplier</th> -->
               <th style="width:170px">Bin</th>
               <th class="text-end" style="width:140px">Qty</th>
               <th style="width:220px">Pack to Carton</th>
@@ -116,7 +116,7 @@
               </td>
 
               <td>{{ r.warehouseName }}</td>
-              <td>{{ r.supplierName }}</td>
+              <!-- <td>{{ r.supplierName }}</td> -->
               <td>{{ r.pickBin || r.bin }}</td>
 
               <td class="text-end">
@@ -132,20 +132,20 @@
             </tr>
 
             <tr *ngIf="!selectedSoId">
-              <td colspan="6" class="text-center text-muted">Choose a Sales Order to view items</td>
+              <td colspan="5" class="text-center text-muted">Choose a Sales Order to view items</td>
             </tr>
             <tr *ngIf="selectedSoId && !rows?.length">
-              <td colspan="6" class="text-center text-muted">No pickable lines for this Sales Order</td>
+              <td colspan="5" class="text-center text-muted">No pickable lines for this Sales Order</td>
             </tr>
           </tbody>
-
-          <tfoot *ngIf="rows?.length">
-            <tr class="table-light">
-              <th colspan="4" class="text-end">Total Qty</th>
-              <th class="text-end">{{ totalDeliverQty | number:'1.0-2' }}</th>
-              <th></th>
-            </tr>
-          </tfoot>
+<tfoot *ngIf="rows?.length">
+  <tr class="table-light">
+    <th colspan="2"></th> <!-- Item + Warehouse -->
+    <th class="text-end">TOTAL QTY</th> <!-- Bin -->
+    <th class="text-end">{{ totalDeliverQty | number:'1.0-2' }}</th> <!-- Qty -->
+    <th></th> <!-- Pack to Carton -->
+  </tr>
+</tfoot>
         </table>
       </div>
 

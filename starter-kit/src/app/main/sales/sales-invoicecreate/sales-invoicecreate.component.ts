@@ -951,7 +951,7 @@ export class SalesInvoicecreateComponent implements OnInit, OnDestroy {
         shippingCost: Number(this.shipping || 0),
         taxAmount: this.totalTax,              // 🔹 header total GST
         total: this.total,
-        remarks: this.remarks || null,
+        remarks: this.remarks || 'Test',
         advanceAdjustments,
         lines: this.lines.map(l => {
           const { gross, tax } = this.calcLineAmounts(l);

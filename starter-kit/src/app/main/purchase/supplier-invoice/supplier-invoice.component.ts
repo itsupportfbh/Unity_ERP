@@ -491,6 +491,8 @@ private replaceLinesWith(lines: PinLine[]): void {
 
     const payload = {
       invoiceNo: v.invoiceNo,
+      grnId: v.grnId,     // ✅ ADD
+  grnNo: v.grnNo, 
       invoiceDate: v.invoiceDate,
       supplierId: v.supplierId,
       currencyId: v.currencyId,

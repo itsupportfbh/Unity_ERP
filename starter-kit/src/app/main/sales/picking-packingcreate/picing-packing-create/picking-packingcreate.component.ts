@@ -97,27 +97,31 @@ export class PickingPackingcreateComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    debugger
-    this.salesOrderService.getSO().subscribe({
-      next: (res: any) => {
-        const items = res?.data ?? [];   // <-- use data from the wrapper
-        this.soList = items.map((s: any) => ({
-          ...s,
-          number: s.number ?? s.QuotationNumber
-        }));
-      },
-      error: err => {
-        console.error('Failed to load SO list', err);
-        this.soList = [];
-      }
-    });
+     const paramId = Number(this.route.snapshot.paramMap.get('id'));
+  if (paramId && !Number.isNaN(paramId)) {
+    this.isEdit = true;
+    this.pickId = paramId;
+  }
 
-    const paramId = Number(this.route.snapshot.paramMap.get('id'));
-    if (paramId && !Number.isNaN(paramId)) {
-      this.isEdit = true;
-      this.pickId = paramId;
-      this.loadForEdit(paramId);                   // NEW
+  this.packingService.getAvailableSalesOrders(this.isEdit ? this.pickId : null)
+  .subscribe({
+    next: (res: any) => {
+      const items = res?.data ?? [];   // ✅ IMPORTANT
+      this.soList = items.map((s: any) => ({
+        ...s,
+        number: s.salesOrderNo ?? s.number ?? s.QuotationNumber
+      }));
+
+      if (this.isEdit && this.pickId) {
+        this.loadForEdit(this.pickId);
+      }
+    },
+    error: err => {
+      console.error('Failed to load available SO list', err);
+      this.soList = [];
+      if (this.isEdit && this.pickId) this.loadForEdit(this.pickId);
     }
+  });
   }
 
   private ensureDataUrl(b64?: string | null): string {
@@ -309,7 +313,7 @@ export class PickingPackingcreateComponent implements OnInit {
         .filter(r => (r.quantity ?? 0) > 0)
         .map(r => ({
           id:r.id,
-          soLineId: this.selectedSoId,
+          soLineId: r.soLineId,
           itemId: r.itemId,
           warehouseId: r.warehouseId,
           warehouseName: r.warehouseName,

@@ -166,7 +166,7 @@
                 <i
                   class="fas fa-print text-info"
                   title="Print / Download PDF"
-                  (click)="openPdfPreview(row)">
+                  (click)="printFromRow(row)">
                 </i>
 
                 <!-- Disable edit/delete for Approved/Posted etc -->
@@ -251,63 +251,4 @@
 </div>
 
 <!-- ✅ PDF Preview Modal -->
-<div *ngIf="showPdfModal" class="pdf-overlay" (click)="closePdfModal()">
-  <div class="pdf-modal" (click)="$event.stopPropagation()">
 
-    <!-- Header -->
-    <div class="pdf-head">
-      <div class="pdf-title">
-        <h3>Print Preview — {{ pdfQt?.number }}</h3>
-        <small *ngIf="pdfLoading">Generating PDF...</small>
-      </div>
-
-      <div class="pdf-actions">
-        <button type="button" class="btn btn-outline-secondary"
-                (click)="printCurrentPdf()"
-                [disabled]="pdfLoading || !pdfBlob">
-          <i class="fas fa-print mr-50"></i> Print
-        </button>
-
-        <button type="button" class="btn btn-brand"
-                (click)="downloadCurrentPdf()"
-                [disabled]="pdfLoading || !pdfBlob">
-          <i class="fas fa-download mr-50"></i> Download
-        </button>
-
-        <button type="button" class="btn btn-light close-x" (click)="closePdfModal()">×</button>
-      </div>
-    </div>
-
-    <!-- Body -->
-    <div class="pdf-body">
-      <div *ngIf="pdfLoading" class="pdf-loading">
-        <div class="spinner-border" role="status"></div>
-        <p class="mt-1 mb-0">Preparing PDF preview...</p>
-      </div>
-
-      <ng-container *ngIf="!pdfLoading">
-        <div *ngIf="pdfSafeUrl; else noPdf" class="pdf-frame-wrap">
-          <iframe
-            class="pdf-frame"
-            [src]="pdfSafeUrl"
-            title="Quotation PDF Preview"
-            loading="eager">
-          </iframe>
-        </div>
-
-        <ng-template #noPdf>
-          <div class="pdf-empty">
-            <i class="far fa-file-pdf"></i>
-            <p class="mb-0">PDF not available.</p>
-          </div>
-        </ng-template>
-      </ng-container>
-    </div>
-
-    <!-- Footer -->
-    <div class="pdf-foot">
-      <button class="btn btn-secondary" (click)="closePdfModal()">Close</button>
-    </div>
-
-  </div>
-</div>

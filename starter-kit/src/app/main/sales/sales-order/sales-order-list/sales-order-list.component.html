@@ -123,34 +123,40 @@
           </ngx-datatable-column> -->
 
           <!-- Action -->
-          <ngx-datatable-column name="Action" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-
-              <ng-container *ngIf="isRowLocked(row); else actionsEnabled">
-                <i class="fas fa-print text-gray-300 mr-2" title="Disabled for approved/rejected SO"></i>
-                <i class="fas fa-pen text-gray-300 mr-2" title="Disabled for approved/rejected SO"></i>
-                <i class="fas fa-trash text-gray-300" title="Disabled for approved/rejected SO"></i>
-              </ng-container>
-
-              <ng-template #actionsEnabled>
-
-                <!-- ✅ PRINT -->
-                <i class="fas fa-print text-primary mr-2" style="cursor:pointer;" (click)="openPrint(row)"
-                  title="Print / PDF">
-                </i>
-
-                <!-- EDIT -->
-                <i class="fas fa-pen text-success mr-2" style="cursor: pointer;" (click)="editSO(row)" title="Edit">
-                </i>
-
-                <!-- DELETE -->
-                <i class="fas fa-trash text-danger" style="cursor: pointer;" (click)="deleteSO(row.id)" title="Delete">
-                </i>
-
-              </ng-template>
-
-            </ng-template>
-          </ngx-datatable-column>
+        <ngx-datatable-column name="Action" [width]="150">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+ 
+    <!-- ✅ PRINT (Always enabled) -->
+    <i class="fas fa-print text-primary mr-2"
+       style="cursor:pointer;"
+       (click)="openPrint(row)"
+       title="Print / PDF">
+    </i>
+ 
+    <!-- ✅ EDIT + DELETE only disabled when locked -->
+    <ng-container *ngIf="isRowLocked(row); else actionsEnabled">
+      <i class="fas fa-pen text-gray-300 mr-2" title="Disabled for approved/rejected SO"></i>
+      <i class="fas fa-trash text-gray-300" title="Disabled for approved/rejected SO"></i>
+    </ng-container>
+ 
+    <ng-template #actionsEnabled>
+      <i class="fas fa-pen text-success mr-2"
+         style="cursor:pointer;"
+         (click)="editSO(row)"
+         title="Edit">
+      </i>
+ 
+      <i class="fas fa-trash text-danger"
+         style="cursor:pointer;"
+         (click)="deleteSO(row.id)"
+         title="Delete">
+      </i>
+    </ng-template>
+ 
+  </ng-template>
+</ngx-datatable-column>
+ 
+ 
 
         </ngx-datatable>
       </div>
@@ -296,38 +302,3 @@
 </div>
 
 <!-- ✅ PDF PREVIEW MODAL (Screenshot style) -->
-<div *ngIf="showPdfModal" class="backdrop" (click)="closePdf()">
-  <div class="modal-card modal-xl" (click)="$event.stopPropagation()">
-
-    <div class="pv-head">
-      <div class="pv-title">
-        Print Preview — <span class="pv-docno">{{ pdfSoNo }}</span>
-      </div>
-
-      <div class="pv-actions">
-        <button class="pv-btn pv-btn-outline" type="button" (click)="printPdf()">
-          <i class="fas fa-print mr-1"></i> Print
-        </button>
-
-        <button class="pv-btn pv-btn-primary" type="button" (click)="downloadPdf()">
-          <i class="fas fa-download mr-1"></i> Download
-        </button>
-
-        <button class="pv-x" type="button" (click)="closePdf()" aria-label="Close">×</button>
-      </div>
-    </div>
-
-    <div class="pv-body">
-      <div *ngIf="!pdfUrl" class="pv-loading">Generating PDF…</div>
-
-      <!-- Chrome PDF viewer toolbar will show -->
-      <iframe *ngIf="pdfUrl" class="pv-frame" [src]="pdfUrl" frameborder="0">
-      </iframe>
-    </div>
-
-    <div class="pv-foot">
-      <button class="pv-close" type="button" (click)="closePdf()">Close</button>
-    </div>
-
-  </div>
-</div>

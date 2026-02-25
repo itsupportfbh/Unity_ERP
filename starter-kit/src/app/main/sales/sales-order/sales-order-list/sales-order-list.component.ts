@@ -1,31 +1,20 @@
 // app/main/sales/sales-order/list/sales-order-list.component.ts
-import { Component, OnInit, ViewChild, ViewEncapsulation, AfterViewInit, AfterViewChecked } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  ViewEncapsulation,
+  AfterViewInit,
+  AfterViewChecked
+} from '@angular/core';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { ColumnMode, DatatableComponent } from '@swimlane/ngx-datatable';
 import { DatePipe } from '@angular/common';
 import * as feather from 'feather-icons';
+
 import { SalesOrderService } from '../sales-order.service';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
-
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-
-// pdfmake
-// pdfmake
-import * as pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-
-// ✅ SAFE: supports BOTH export shapes
-const vfs =
-  (pdfFonts as any)?.pdfMake?.vfs ||   // common
-  (pdfFonts as any)?.vfs;              // some builds
-
-if (vfs) {
-  (pdfMake as any).vfs = vfs;
-} else {
-  console.warn('pdfMake vfs not found. Check vfs_fonts import shape:', pdfFonts);
-}
-
 
 type SoLine = {
   id?: number;
@@ -45,6 +34,11 @@ type SoLine = {
   binId?: number | null;
   supplierId?: number | null;
   lockedQty?: number | null;
+
+  // procurement status fields (some APIs use different casing)
+  procurementStatus?: number;
+  ProcurementStatus?: number;
+  status?: number;
 };
 
 type SoHeader = {
@@ -115,26 +109,11 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   isPeriodLocked = false;
   currentPeriodName = '';
 
-  // ✅ PDF modal (toolbar preview)
-  showPdfModal = false;
-  pdfUrl: SafeResourceUrl | null = null;
-  private pdfBlobUrl: string | null = null;
-  private lastPdfBlob: Blob | null = null;
-  pdfSoNo = '';
-  private pdfDocDef: any = null;
-
-getLinesColsCount(): number {
-  const dynamicCols = Object.values(this.lineCols).filter(Boolean).length; // uom qty unitPrice discount tax total lockedQty
-  const fixedCols = 2; // Proc.Status + Shortage
-  return 1 + dynamicCols + fixedCols;
-}
-
   constructor(
     private salesOrderService: SalesOrderService,
     private router: Router,
     private datePipe: DatePipe,
-    private periodService: PeriodCloseService,
-    private sanitizer: DomSanitizer
+    private periodService: PeriodCloseService
   ) {}
 
   ngOnInit(): void {
@@ -147,6 +126,12 @@ getLinesColsCount(): number {
 
   ngAfterViewInit(): void { feather.replace(); }
   ngAfterViewChecked(): void { feather.replace(); }
+
+  getLinesColsCount(): number {
+    const dynamicCols = Object.values(this.lineCols).filter(Boolean).length;
+    const fixedCols = 2;
+    return 1 + dynamicCols + fixedCols;
+  }
 
   private checkPeriodLockForDate(dateStr: string): void {
     if (!dateStr) return;
@@ -221,6 +206,7 @@ getLinesColsCount(): number {
   // ---------- Search ----------
   filterUpdate(event: any): void {
     const val = (event?.target?.value ?? this.searchValue ?? '').toString().toLowerCase().trim();
+
     const temp = this.tempData.filter((d: SoHeader) => {
       const soNo = (d.salesOrderNo || '').toString().toLowerCase();
       const cust = (d.customerName || '').toString().toLowerCase();
@@ -258,10 +244,12 @@ getLinesColsCount(): number {
   isRowLocked(row: SoHeader): boolean {
     const v = row?.approvalStatus ?? row?.status;
     if (v == null) return false;
+
     if (typeof v === 'string') {
       const s = v.trim().toLowerCase();
       return s === 'approved' || s === 'rejected';
     }
+
     const code = Number(v);
     return [2, 3].includes(code);
   }
@@ -299,6 +287,7 @@ getLinesColsCount(): number {
       confirmButtonText: 'Yes, delete it!'
     }).then(res => {
       if (!res.isConfirmed) return;
+
       this.salesOrderService.deleteSO(id, 1).subscribe({
         next: () => {
           this.loadRequests();
@@ -313,7 +302,8 @@ getLinesColsCount(): number {
   // ---------- Approve / Reject ----------
   onApprove(row: SoHeader): void {
     if (this.hasInsufficientQty(row)) {
-      Swal.fire('Cannot Approve',
+      Swal.fire(
+        'Cannot Approve',
         'This Sales Order has Insufficient stock / allocation incomplete. Please resolve Draft lines first.',
         'warning'
       );
@@ -329,6 +319,7 @@ getLinesColsCount(): number {
       confirmButtonColor: '#2E5F73'
     }).then(res => {
       if (!res.isConfirmed) return;
+
       this.salesOrderService.approveSO(row.id, 1).subscribe({
         next: () => {
           row.status = 2;
@@ -351,6 +342,7 @@ getLinesColsCount(): number {
       confirmButtonColor: '#b91c1c'
     }).then(res => {
       if (!res.isConfirmed) return;
+
       this.salesOrderService.rejectSO(row.id).subscribe({
         next: () => {
           row.status = 3;
@@ -393,6 +385,7 @@ getLinesColsCount(): number {
 
   openDrafts(): void {
     this.draftLoading = true;
+
     this.salesOrderService.getDrafts().subscribe({
       next: (res) => {
         this.draftRows = (res?.data ?? []).map((x: any) => ({
@@ -406,233 +399,322 @@ getLinesColsCount(): number {
         this.draftLoading = false;
         this.showDraftsModal = true;
       },
-      error: (err) => { this.draftLoading = false; console.error(err); }
+      error: (err) => {
+        this.draftLoading = false;
+        console.error(err);
+      }
     });
   }
 
   closeDrafts(): void { this.showDraftsModal = false; }
 
   // =========================
-  // ✅ PRINT / PDF PREVIEW
+  // ✅ PRINT (HTML like Quotation)
   // =========================
   openPrint(row: SoHeader): void {
     const lines = this.extractLinesFromRow(row);
+    const html = this.buildSoPrintHtml(row, lines);
 
-    this.pdfSoNo = row?.salesOrderNo || '';
-    this.showPdfModal = true;
-    this.pdfUrl = null;
-    this.lastPdfBlob = null;
+    const w = window.open('', 'SO_PRINT_' + Date.now(), 'width=1200,height=780');
+    if (!w) return;
 
-    this.pdfDocDef = this.buildSoPdfDoc(row, lines);
-
-    (pdfMake as any).createPdf(this.pdfDocDef).getBlob((blob: Blob) => {
-      this.lastPdfBlob = blob;
-
-      if (this.pdfBlobUrl) URL.revokeObjectURL(this.pdfBlobUrl);
-      this.pdfBlobUrl = URL.createObjectURL(blob);
-
-      // ✅ Force toolbar like screenshot
-      const viewerUrl = this.pdfBlobUrl + '#toolbar=1&navpanes=0&scrollbar=1';
-      this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(viewerUrl);
-    });
-  }
-
-  closePdf(): void {
-    this.showPdfModal = false;
-    this.pdfUrl = null;
-    this.pdfSoNo = '';
-    this.pdfDocDef = null;
-    this.lastPdfBlob = null;
-
-    if (this.pdfBlobUrl) {
-      URL.revokeObjectURL(this.pdfBlobUrl);
-      this.pdfBlobUrl = null;
-    }
-  }
-
-  printPdf(): void {
-    // ✅ Best print: open blob in new tab then print (same like your screenshot behavior)
-    if (this.lastPdfBlob) {
-      const url = URL.createObjectURL(this.lastPdfBlob);
-      const w = window.open(url, '_blank');
-      if (!w) return;
-
-      const timer = setInterval(() => {
-        try {
-          if (w.document.readyState === 'complete') {
-            clearInterval(timer);
-            w.focus();
-            w.print();
-          }
-        } catch {}
-      }, 300);
-
-      // cleanup url later
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-      return;
-    }
-
-    // fallback
-    if (this.pdfDocDef) (pdfMake as any).createPdf(this.pdfDocDef).print();
-  }
-
-  downloadPdf(): void {
-    // ✅ Download from blob (fast)
-    if (this.lastPdfBlob) {
-      const fileName = (this.pdfSoNo ? this.pdfSoNo : 'SalesOrder') + '.pdf';
-      const url = URL.createObjectURL(this.lastPdfBlob);
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
-
-      setTimeout(() => URL.revokeObjectURL(url), 800);
-      return;
-    }
-
-    // fallback
-    if (this.pdfDocDef) {
-      const fileName = (this.pdfSoNo ? this.pdfSoNo : 'SalesOrder') + '.pdf';
-      (pdfMake as any).createPdf(this.pdfDocDef).download(fileName);
-    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
   }
 
   private extractLinesFromRow(row: SoHeader): SoLine[] {
     let lines: SoLine[] = [];
+
     try {
-      if (Array.isArray(row?.lineItems)) lines = row.lineItems as SoLine[];
-      else if (row?.lineItems) lines = JSON.parse(row.lineItems as any);
-      else if ((row as any)?.poLines) {
+      if (Array.isArray(row?.lineItems)) {
+        lines = row.lineItems as SoLine[];
+      } else if (row?.lineItems) {
+        lines = JSON.parse(row.lineItems as any);
+      } else if ((row as any)?.poLines) {
         const poLines = (row as any).poLines;
         lines = Array.isArray(poLines) ? poLines : JSON.parse(poLines);
       }
     } catch {
       lines = [];
     }
+
     return lines ?? [];
   }
-getProcStatusText(l: any): string {
-  const s = +(l.procurementStatus ?? l.ProcurementStatus ?? l.status ?? 0);
 
+  // ---------- Procurement status (modal badges) ----------
+  getProcStatusText(l: any): string {
+    const s = +(l.procurementStatus ?? l.ProcurementStatus ?? l.status ?? 0);
+
+    return s === 1 ? 'Pending'
+      : s === 2 ? 'PO Created'
+      : s === 3 ? 'Partially Received'
+      : s === 4 ? 'Fully Received'
+      : s === 5 ? 'Shortage Identified'
+      : 'Unknown';
+  }
+
+  getProcStatusBadgeClass(l: any): any {
+    const s = +(l.procurementStatus ?? l.ProcurementStatus ?? l.status ?? 0);
+
+    return {
+      'badge-secondary': s === 1,
+      'badge-info':      s === 2,
+      'badge-warning':   s === 3,
+      'badge-success':   s === 4,
+      'badge-danger':    s === 5
+    };
+  }
+
+
+
+private getSoPrintStatus(h: any, lines: any[]): string {
+  // 1) ✅ If header has ProcurementStatus use it first
+  const headerPs =
+    +(h?.procurementStatus ?? h?.ProcurementStatus ?? 0);
+
+  if (headerPs > 0) {
+    return this.mapProcToText(headerPs);
+  }
+
+  // 2) ✅ Else compute from lines
+  const statuses = (lines || [])
+    .map(l => +(l?.procurementStatus ?? l?.ProcurementStatus ?? 0))
+    .filter(x => x > 0);
+
+  if (!statuses.length) return this.statusToText(h?.status ?? 1); // fallback to existing status
+
+  if (statuses.every(s => s === 4)) return 'Completed';
+  if (statuses.some(s => s === 5)) return 'Shortage';
+  if (statuses.some(s => s === 3)) return 'Partially Received';
+  if (statuses.some(s => s === 2)) return 'PO Created';
+
+  return 'Pending';
+}
+
+private mapProcToText(s: number): string {
   return s === 1 ? 'Pending'
-       : s === 2 ? 'PO Created'
-       : s === 3 ? 'Partially Received'
-       : s === 4 ? 'Fully Received'
-       : s === 5 ? 'Shortage Identified'
-       : 'Unknown';
+    : s === 2 ? 'PO Created'
+    : s === 3 ? 'Partially Received'
+    : s === 4 ? 'Completed'
+    : s === 5 ? 'Shortage'
+    : 'Pending';
 }
 
-getProcStatusBadgeClass(l: any): any {
-  const s = +(l.procurementStatus ?? l.ProcurementStatus ?? l.status ?? 0);
+  // =========================
+  // ✅ PRINT HTML BUILD HELPERS
+  // =========================
+  private escapeHtml(s: any): string {
+    const str = String(s ?? '');
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
-  return {
-    'badge-secondary': s === 1,  // Pending
-    'badge-info':      s === 2,  // PO Created
-    'badge-warning':   s === 3,  // Partial
-    'badge-success':   s === 4,  // Full
-    'badge-danger':    s === 5   // Shortage optional
-  };
-}
-  private buildSoPdfDoc(h: SoHeader, lines: SoLine[]): any {
-    const req = this.datePipe.transform(h?.requestedDate, 'dd-MM-yyyy') || '-';
-    const del = this.datePipe.transform(h?.deliveryDate, 'dd-MM-yyyy') || '-';
-    const status = this.statusToText(h?.approvalStatus ?? h?.status);
+  private fmtDate(d: any): string {
+    if (!d) return '-';
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return '-';
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const yy = dt.getFullYear();
+    return `${dd}-${mm}-${yy}`;
+  }
 
-    // ✅ clean subtotal (no TS 2881 warnings)
-    const subTotal = (lines || []).reduce((s, l: any) => {
-      const qty = Number(l?.quantity ?? l?.qty ?? 0);
-      const up  = Number(l?.unitPrice ?? l?.price ?? 0);
-      const total = Number(l?.total ?? (qty * up));
-      return s + (isNaN(total) ? 0 : total);
-    }, 0);
+  private fmtNum(v: any, dec: number): string {
+    const x = Number(v ?? 0);
+    return (isNaN(x) ? 0 : x).toFixed(dec);
+  }
 
-    const grandTotal = Number(h?.grandTotal ?? subTotal) || subTotal;
+  private fmtQty(n: any): string {
+    const x = +n || 0;
+    return x.toFixed(3).replace(/\.?0+$/, '');
+  }
 
-    const tableBody: any[] = [
-      [
-        { text: 'Item', style: 'th' },
-        { text: 'UOM', style: 'th' },
-        { text: 'Qty', style: 'th', alignment: 'right' },
-        { text: 'Unit Price', style: 'th', alignment: 'right' },
-        { text: 'Allocated', style: 'th', alignment: 'right' },
-        { text: 'Shortage', style: 'th', alignment: 'right' },
-        { text: 'Total', style: 'th', alignment: 'right' }
-      ]
-    ];
+  private buildSoPrintHtml(h: SoHeader, lines: SoLine[]): string {
+    // ✅ White theme + dark title
+    const brand = '#2E5F73';
+    const dark = '#0f172a';
+    const text = '#111827';
+    const muted = '#6b7280';
+    const line = '#d1d5db';
 
-    for (const l of (lines || [])) {
+    // ✅ Company
+    const companyName = 'Continental Catering Solutions Pvt Ltd';
+    const companyAddr1 = 'No: 3/8, Church Street';
+    const companyAddr2 = 'Nungambakkam, Chennai - 600034';
+    const companyPhone = '+91 98765 43210';
+    const companyEmail = 'info@unityworks.com';
+
+    const soNo = this.escapeHtml(h?.salesOrderNo || '-');
+    const customer = this.escapeHtml(h?.customerName || '-');
+    const reqDate = this.escapeHtml(this.datePipe.transform(h?.requestedDate as any, 'dd-MM-yyyy') || this.fmtDate(h?.requestedDate));
+    const delDate = this.escapeHtml(this.datePipe.transform(h?.deliveryDate as any, 'dd-MM-yyyy') || this.fmtDate(h?.deliveryDate));
+    const deliveryTo = this.escapeHtml(
+  (h as any)?.deliveryTo ?? (h as any)?.DeliveryTo ?? '-'
+);
+    const status = this.escapeHtml(
+  this.getSoPrintStatus(h, lines)
+  
+);
+
+    const rowsHtml = (lines || []).map((l: any, i: number) => {
       const qty = Number(l?.quantity ?? l?.qty ?? 0);
       const up = Number(l?.unitPrice ?? l?.price ?? 0);
       const locked = Number(l?.lockedQty ?? 0);
       const shortage = Math.max(qty - locked, 0);
       const total = Number(l?.total ?? (qty * up));
 
-      tableBody.push([
-        (l?.itemName || l?.item || '-'),
-        (l?.uom || '-'),
-        { text: qty.toString(), alignment: 'right' },
-        { text: up.toFixed(2), alignment: 'right' },
-        { text: locked.toString(), alignment: 'right' },
-        { text: shortage.toString(), alignment: 'right' },
-        { text: (isNaN(total) ? 0 : total).toFixed(2), alignment: 'right' }
-      ]);
-    }
+      return `
+        <tr>
+          <td class="c">${i + 1}</td>
+          <td class="wrap">${this.escapeHtml(l?.itemName || l?.item || '-')}</td>
+          <td class="c">${this.escapeHtml(l?.uom || '-')}</td>
+          <td class="r">${this.fmtQty(qty)}</td>
+          <td class="r">${this.fmtNum(up, 2)}</td>
+          <td class="r">${this.fmtQty(locked)}</td>
+          <td class="r">${this.fmtQty(shortage)}</td>
+          <td class="r b">${this.fmtNum(isNaN(total) ? 0 : total, 2)}</td>
+          <td class="c">${this.escapeHtml(this.getProcStatusText(l))}</td>
+        </tr>
+      `;
+    }).join('');
 
-    return {
-      pageSize: 'A4',
-      pageMargins: [30, 30, 30, 30],
-      content: [
-        { text: 'SALES ORDER', style: 'title' },
+    const subTotal = (lines || []).reduce((s, l: any) => {
+      const qty = Number(l?.quantity ?? l?.qty ?? 0);
+      const up  = Number(l?.unitPrice ?? l?.price ?? 0);
+      const t = Number(l?.total ?? (qty * up));
+      return s + (isNaN(t) ? 0 : t);
+    }, 0);
 
-        {
-          columns: [
-            [
-              { text: `SO No: ${h?.salesOrderNo || '-'}`, style: 'kv' },
-              { text: `Customer: ${h?.customerName || '-'}`, style: 'kv' }
-            ],
-            [
-              { text: `Requested Date: ${req}`, style: 'kv' },
-              { text: `Delivery Date: ${del}`, style: 'kv' },
-              { text: `Status: ${status}`, style: 'kv' }
-            ]
-          ],
-          columnGap: 20,
-          margin: [0, 10, 0, 12]
-        },
+    const grandTotal = Number(h?.grandTotal ?? subTotal) || subTotal;
 
-        {
-          table: {
-            headerRows: 1,
-            widths: ['*', 45, 35, 55, 55, 55, 55],
-            body: tableBody
-          },
-          layout: 'lightHorizontalLines'
-        },
+    const tableHtml = (lines && lines.length)
+      ? `
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:55px;">S.NO</th>
+              <th>ITEM</th>
+              <th style="width:80px;" class="c">UOM</th>
+              <th style="width:85px;" class="r">QTY</th>
+              <th style="width:95px;" class="r">UNIT PRICE</th>
+              <th style="width:95px;" class="r">ALLOCATED</th>
+              <th style="width:90px;" class="r">SHORTAGE</th>
+              <th style="width:110px;" class="r">TOTAL</th>
+              <th style="width:150px;" class="c">PROC. STATUS</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      `
+      : `<div class="empty">No lines</div>`;
 
-        {
-          columns: [
-            { text: '' },
-            {
-              width: 240,
-              table: {
-                widths: ['*', 90],
-                body: [
-                  [{ text: 'Sub Total', bold: true }, { text: subTotal.toFixed(2), alignment: 'right' }],
-                  [{ text: 'Grand Total', bold: true }, { text: grandTotal.toFixed(2), alignment: 'right' }]
-                ]
-              },
-              layout: 'lightHorizontalLines',
-              margin: [0, 12, 0, 0]
-            }
-          ]
+    return `
+    <html>
+    <head>
+      <title>Sales Order - ${soNo}</title>
+      <style>
+        @page { margin: 8mm 10mm 14mm 10mm; }
+        * { box-sizing:border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        body { font-family: Arial, Helvetica, sans-serif; margin:0; background:#fff; color:${text}; }
+
+        .hdr{
+          display:flex; gap:16px;
+          padding-bottom:14px; margin-bottom:14px;
+          border-bottom:2px solid ${brand};
         }
-      ],
-      styles: {
-        title: { fontSize: 16, bold: true, alignment: 'center' },
-        kv: { fontSize: 10, margin: [0, 2, 0, 2] },
-        th: { fontSize: 10, bold: true, fillColor: '#f3f4f6' }
-      }
-    };
+        .logo{
+          width:48px; height:48px; border-radius:14px;
+          background:${brand}; color:#fff;
+          display:flex; align-items:center; justify-content:center;
+          font-weight:900;
+        }
+        .cname{ font-size:20px; font-weight:900; }
+        .doc{ font-size:14px; font-weight:900; color:${dark}; letter-spacing:1px; margin-top:2px; }
+        .cmeta{ font-size:12px; color:${muted}; margin-top:4px; }
+
+        .meta{
+          display:grid; grid-template-columns: 1fr 1fr;
+          gap:10px 24px;
+          padding:14px;
+          border:1px solid ${line};
+          border-radius:12px;
+          margin-bottom:12px;
+        }
+        .row{ display:grid; grid-template-columns: 150px 1fr; gap:10px; }
+        .k{ color:${muted}; font-weight:700; }
+        .v{ font-weight:800; word-break:break-word; }
+
+        .tbl{ width:100%; border-collapse:collapse; font-size:13px; }
+        .tbl th, .tbl td{ border:1px solid ${line}; padding:10px; vertical-align:top; }
+        .tbl thead th{ background:${brand}; color:#fff; font-weight:900; text-transform:uppercase; }
+        .wrap{ white-space:normal; word-break:break-word; }
+        .c{ text-align:center; }
+        .r{ text-align:right; }
+        .b{ font-weight:900; }
+
+        .totals{ margin-top:12px; display:flex; justify-content:flex-end; }
+        .totTbl{ width:300px; border-collapse:collapse; }
+        .totTbl td{ border:1px solid ${line}; padding:10px 12px; }
+
+        .footer{
+          position: fixed; left:10mm; right:10mm; bottom:6mm;
+          font-size:11px; color:${muted};
+          display:flex; justify-content:space-between;
+        }
+        .empty{
+          border:1px dashed ${muted}; color:${muted};
+          padding:18px; text-align:center; border-radius:12px; font-size:14px; margin-top:10px;
+        }
+      </style>
+    </head>
+
+    <body>
+      <div class="hdr">
+        <div class="logo">CC</div>
+        <div>
+          <div class="cname">${this.escapeHtml(companyName)}</div>
+          <div class="doc">SALES ORDER</div>
+          <div class="cmeta">
+            ${this.escapeHtml(companyAddr1)}<br/>
+            ${this.escapeHtml(companyAddr2)}<br/>
+            ${this.escapeHtml(companyPhone)} · ${this.escapeHtml(companyEmail)}
+          </div>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div class="row"><div class="k">SO No</div><div class="v">${soNo}</div></div>
+        <div class="row"><div class="k">Status</div><div class="v">${status}</div></div>
+
+        <div class="row"><div class="k">Customer</div><div class="v">${customer}</div></div>
+        <div class="row"><div class="k">Requested Date</div><div class="v">${reqDate}</div></div>
+         <div class="row"><div class="k">Delivery Date</div><div class="v">${delDate}</div></div>
+
+       <div class="row"><div class="k">Delivery To</div><div class="v">${deliveryTo}</div></div>
+        <div class="row"><div class="k"></div><div class="v"></div></div>
+      </div>
+
+      ${tableHtml}
+
+      <div class="totals">
+        <table class="totTbl">
+          <tr><td>Sub Total</td><td class="r b">${this.fmtNum(subTotal, 2)}</td></tr>
+          <tr><td>Grand Total</td><td class="r b">${this.fmtNum(grandTotal, 2)}</td></tr>
+        </table>
+      </div>
+
+      <div class="footer">
+        <div>Generated by ERP · ${this.escapeHtml(this.fmtDate(new Date()))}</div>
+        <div>Page 1</div>
+      </div>
+
+      <script>window.onload = () => window.print();</script>
+    </body>
+    </html>`;
   }
 }

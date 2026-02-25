@@ -27,6 +27,7 @@ import { ItemMasterService } from 'app/main/inventory/item-master/item-master.se
   styleUrls: ['./purchase-order-create.component.scss']
 })
 export class PurchaseOrderCreateComponent implements OnInit {
+  private suppressNextFocusOpen: { [key: string]: boolean } = {}
   hover = false;
   poHdr: any = {
     id: 0,
@@ -675,8 +676,13 @@ onDocumentClick(event: MouseEvent) {
   this.closeOverlay(); 
 }
 
- toggleDropdown(field: string, open?: boolean, ev?: Event) {
+toggleDropdown(field: string, open?: boolean, ev?: Event) {
   ev?.stopPropagation();
+
+  // ✅ close other header dropdowns (optional but best)
+  Object.keys(this.dropdownOpen).forEach(k => {
+    if (k !== field) this.dropdownOpen[k] = false;
+  });
 
   this.dropdownOpen[field] = open !== undefined ? open : !this.dropdownOpen[field];
 
@@ -779,6 +785,8 @@ onDocumentClick(event: MouseEvent) {
     }
     this.dropdownOpen[field] = false;
   }
+
+  
   isSGDCurrency(): boolean {
     const code = (this.poHdr.currencyName || '').toUpperCase();
     return code === 'SGD';
@@ -843,6 +851,17 @@ openDropdown(index: number, field: string, ev?: Event) {
   this.poLines[index].dropdownOpen = field;
 }
 
+onFocusOpen(field: string, ev?: Event) {
+  ev?.stopPropagation();
+
+  // ✅ selecting time la focus open block
+  if (this.suppressNextFocusOpen[field]) {
+    this.suppressNextFocusOpen[field] = false;
+    return;
+  }
+
+  this.toggleDropdown(field, true, ev);
+}
   filterOptions(index: number, field: string) {
     debugger
     const searchValue = (this.poLines[index][field] || '').toLowerCase();

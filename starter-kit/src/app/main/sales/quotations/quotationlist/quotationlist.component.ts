@@ -1,8 +1,18 @@
-import { Component, OnInit, ViewEncapsulation, OnDestroy } from '@angular/core';
+// quotationlist.component.ts
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewEncapsulation,
+  AfterViewInit,
+  AfterViewChecked
+} from '@angular/core';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import * as feather from 'feather-icons';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+
+import { of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 // Services
 import { QuotationsService } from '../quotations.service';
@@ -19,21 +29,28 @@ type QuotationRow = {
   currencyId: number;
   fxRate: number;
   paymentTermsId: number;
+  paymentTermsName: string;
+
   validityDate: string | Date | null;
+  deliveryDate?: any;
+
   subtotal: number;
   taxAmount: number;
   rounding: number;
   grandTotal: number;
+
   createdDate?: string | Date | null;
-  paymentTermsName: string;
-  deliveryDate?: any;
+
+  // optional meta if your API sends in list
+  remarks?: string | null;
+  deliveryTo?: string | null;
 };
 
 type QuotationLineRow = {
   id: number;
   quotationId: number;
   itemId: number;
-  itemCode?: string;          // ✅ added
+  itemCode?: string; // ✅ added
   uomId: number | null;
   qty: number;
   unitPrice: number;
@@ -48,55 +65,22 @@ type QuotationLineRow = {
   description?: string;
 };
 
-type QuotationPrintDTO = {
-  id: number;
-  number: string;
-  status: number;
-  customerId: number;
-  customerName?: string;
-  currencyId: number;
-  currencyName?: string;
-  fxRate: number;
-  paymentTermsId: number;
-  paymentTermsName?: string;
-  deliveryDate?: any;
-  remarks?: string;
-  deliveryTo?: string;
-  subtotal: number;
-  taxAmount: number;
-  rounding: number;
-  grandTotal: number;
-  lines: Array<{
-    id: number;
-    quotationId: number;
-    itemId: number;
-    itemCode?: string;       // ✅ added
-    itemName?: string;
-    uomId: number | null;
-    uomName?: string;
-    qty: number;
-    unitPrice: number;
-    discountPct: number;
-    lineNet: number;
-    lineTax: number;
-    lineTotal: number;
-    description?: string;
-  }>;
-};
-
 @Component({
   selector: 'app-quotationlist',
   templateUrl: './quotationlist.component.html',
   styleUrls: ['./quotationlist.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class QuotationlistComponent implements OnInit, OnDestroy {
+export class QuotationlistComponent
+  implements OnInit, OnDestroy, AfterViewInit, AfterViewChecked {
 
+  // table
   rows: QuotationRow[] = [];
   allRows: QuotationRow[] = [];
   selectedOption = 10;
   searchValue = '';
 
+  // lookups
   customerMap = new Map<number, string>();
   currencyMap = new Map<number, string>();
   uomMap      = new Map<number, string>();
@@ -109,146 +93,27 @@ export class QuotationlistComponent implements OnInit, OnDestroy {
   modalLines: QuotationLineRow[] = [];
   modalTotals = { net: 0, tax: 0, total: 0 };
 
-  // PDF modal
-  showPdfModal = false;
-  pdfLoading = false;
-  pdfQt: QuotationRow | null = null;
-  pdfPrintDto: QuotationPrintDTO | null = null;
-
-  pdfBlob: Blob | null = null;
-  pdfObjectUrl: string | null = null;
-  pdfSafeUrl: SafeResourceUrl | null = null;
-
-private _pdfReady = false;
-private _pdfMake: any = null;
-
-  private companyInfo = {
-    name: 'UnityWorks ERP',
-    address1: 'No: 3/8, Church Street',
-    address2: 'Nungambakkam, Chennai - 600034',
-    phone: '+91 98765 43210',
-    email: 'info@unityworks.com',
-  };
-
-  private _logoDataUrl: string | null = null;
-
   constructor(
     private router: Router,
     private quotationSvc: QuotationsService,
     private customerSvc: CustomerMasterService,
     private currencySvc: CurrencyService,
     private itemsSvc: ItemsService,
-    private uomSvc: UomService,
-    private sanitizer: DomSanitizer
+    private uomSvc: UomService
   ) {}
 
   ngOnInit(): void {
     this.loadLookups();
     this.loadQuotations();
-    setTimeout(() => feather.replace(), 0);
   }
 
-  ngOnDestroy(): void {
-    this.clearPdfPreview();
-    this.unlockBodyScroll();
-  }
+  ngOnDestroy(): void {}
 
-  // ✅ Lock body scroll when PDF modal open
-  private lockBodyScroll() {
-    document.body.classList.add('modal-open-no-scroll');
-  }
-  private unlockBodyScroll() {
-    document.body.classList.remove('modal-open-no-scroll');
-  }
+  ngAfterViewInit(): void { feather.replace(); }
+  ngAfterViewChecked(): void { feather.replace(); }
 
-private async ensurePdfMakeReady(): Promise<any> {
-  if (this._pdfReady && this._pdfMake) return this._pdfMake;
-
-  // 1) Load pdfMake
-  const pdfMakeMod: any = await import('pdfmake/build/pdfmake');
-  const pdfMake: any = pdfMakeMod?.default ?? pdfMakeMod;
-
-  // 2) Load vfs_fonts
-  const pdfFontsMod: any = await import('pdfmake/build/vfs_fonts');
-
-  // Your build exports VFS directly (font file keys), so use:
-  const vfs: any =
-    pdfFontsMod?.default ||          // ✅ your console shows "default"
-    pdfFontsMod?.vfs ||              // other possible shapes
-    pdfFontsMod;                     // last fallback: module itself
-
-  // If module wrapper, unwrap again
-  const resolvedVfs =
-    (vfs && typeof vfs === 'object' && (vfs.default || vfs)) || vfs;
-
-  // Basic validation: should contain Roboto font keys
-  if (!resolvedVfs || !resolvedVfs['Roboto-Regular.ttf']) {
-    console.error('vfs_fonts exports:', Object.keys(pdfFontsMod), pdfFontsMod);
-    throw new Error('pdfMake VFS not found/invalid. vfs_fonts did not provide Roboto VFS.');
-  }
-
-  // 3) Assign
-  pdfMake.vfs = resolvedVfs;
-
-  // (Optional) ensure font mapping exists
-  pdfMake.fonts = pdfMake.fonts || {
-    Roboto: {
-      normal: 'Roboto-Regular.ttf',
-      bold: 'Roboto-Medium.ttf',
-      italics: 'Roboto-Italic.ttf',
-      bolditalics: 'Roboto-MediumItalic.ttf'
-    }
-  };
-
-  this._pdfMake = pdfMake;
-  this._pdfReady = true;
-  return pdfMake;
-}
-
-  // ✅ generate a PNG logo via canvas (always valid for pdfMake)
-  private async getCanvasLogoDataUrl(): Promise<string> {
-    if (this._logoDataUrl) return this._logoDataUrl;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 520;
-    canvas.height = 140;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/6X8kKkAAAAASUVORK5CYII=';
-
-    ctx.fillStyle = '#2E5F73';
-    this.roundRect(ctx, 0, 0, canvas.width, canvas.height, 28, true, false);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 56px Arial';
-    ctx.fillText('UnityWorks', 36, 82);
-
-    ctx.fillStyle = '#DDEFF6';
-    ctx.font = '24px Arial';
-    ctx.fillText('ERP • Finance • Inventory', 38, 118);
-
-    this._logoDataUrl = canvas.toDataURL('image/png');
-    return this._logoDataUrl;
-  }
-
-  private roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, fill: boolean, stroke: boolean) {
-    const radius = Math.min(r, w / 2, h / 2);
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.arcTo(x + w, y, x + w, y + h, radius);
-    ctx.arcTo(x + w, y + h, x, y + h, radius);
-    ctx.arcTo(x, y + h, x, y, radius);
-    ctx.arcTo(x, y, x + w, y, radius);
-    ctx.closePath();
-    if (fill) ctx.fill();
-    if (stroke) ctx.stroke();
-  }
-
-  private async getCompanyLogoDataUrl(): Promise<string> {
-    return await this.getCanvasLogoDataUrl();
-  }
-
-  // ---------- Load Lookups ----------
-  loadLookups() {
+  // ---------- Lookups ----------
+  private loadLookups(): void {
     this.customerSvc.getAllCustomerMaster().subscribe((res: any) => {
       const arr = res?.data ?? [];
       for (const r of arr) {
@@ -268,11 +133,11 @@ private async ensurePdfMakeReady(): Promise<any> {
     });
 
     this.itemsSvc.getAllItem().subscribe((res: any) => {
-      const arr = res?.data ?? [];
+      const arr = res?.data ?? res ?? [];
       for (const r of arr) {
-        const id = Number(r.id ?? r.itemId ?? 0);
-        const name = String(r.itemName ?? r.name ?? '').trim();
-        const code = String(r.sku ?? r.itemCode ?? r.code ?? '').trim(); // ✅ try common fields
+        const id = Number(r.id ?? r.itemId ?? r.ItemId ?? 0);
+        const name = String(r.itemName ?? r.name ?? r.ItemName ?? '').trim();
+        const code = String(r.sku ?? r.itemCode ?? r.code ?? r.ItemCode ?? '').trim();
         if (id) this.itemNameMap.set(id, name);
         if (id && code) this.itemCodeMap.set(id, code);
       }
@@ -289,28 +154,37 @@ private async ensurePdfMakeReady(): Promise<any> {
   }
 
   // ---------- Load Quotations ----------
-  loadQuotations() {
+  private loadQuotations(): void {
     this.quotationSvc.getAll().subscribe((res: any) => {
       const data = res?.data ?? res ?? [];
-      this.allRows = data.map((q: any) => ({
+
+      this.allRows = (data || []).map((q: any) => ({
         id: Number(q.id ?? q.Id),
         number: String(q.number ?? q.Number ?? ''),
         status: Number(q.status ?? q.Status ?? 0),
+
         customerId: Number(q.customerId ?? q.CustomerId ?? 0),
         currencyId: Number(q.currencyId ?? q.CurrencyId ?? 0),
         fxRate: Number(q.fxRate ?? q.FxRate ?? 1),
+
         paymentTermsId: Number(q.paymentTermsId ?? q.PaymentTermsId ?? 0),
         paymentTermsName: String(q.paymentTermsName ?? q.PaymentTermsName ?? ''),
+
         validityDate: q.validityDate ?? q.ValidityDate ?? null,
         deliveryDate: q.deliveryDate ?? q.DeliveryDate ?? null,
+
         subtotal: Number(q.subtotal ?? q.Subtotal ?? 0),
         taxAmount: Number(q.taxAmount ?? q.TaxAmount ?? 0),
         rounding: Number(q.rounding ?? q.Rounding ?? 0),
         grandTotal: Number(q.grandTotal ?? q.GrandTotal ?? 0),
+
         createdDate: q.createdDate ?? q.CreatedDate ?? null,
-         createdUserName: q.createdUserName ?? q.createdByName ?? q.createdBy ?? '-',
-      modifiedUserName: q.modifiedUserName ?? q.modifiedByName ?? q.modifiedBy ?? '-',
-      }));
+
+        // optional if list sends
+        remarks: q.remarks ?? q.Remarks ?? null,
+        deliveryTo: q.deliveryTo ?? q.DeliveryTo ?? null
+      })) as QuotationRow[];
+
       this.rows = [...this.allRows];
     });
   }
@@ -340,7 +214,7 @@ private async ensurePdfMakeReady(): Promise<any> {
   getItemCode(id?: number)     { return (id && this.itemCodeMap.get(id)) || ''; }
   getUomName(id?: number | null) { return (id != null ? (this.uomMap.get(id) || '') : ''); }
 
-  private formatDate(d: any) {
+  private fmtDate(d: any) {
     if (!d) return '-';
     const dt = new Date(d);
     if (isNaN(dt.getTime())) return '-';
@@ -350,9 +224,24 @@ private async ensurePdfMakeReady(): Promise<any> {
     return `${dd}-${mm}-${yy}`;
   }
 
-  private n(v: any, dec: number) {
+  private fmtNum(v: any, dec: number) {
     const x = Number(v ?? 0);
     return x.toFixed(dec);
+  }
+
+  private fmtQty(n: any) {
+    const x = +n || 0;
+    return x.toFixed(3).replace(/\.?0+$/, '');
+  }
+
+  private escapeHtml(s: any): string {
+    const str = String(s ?? '');
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   // ---------- Paging + Search ----------
@@ -378,38 +267,56 @@ private async ensurePdfMakeReady(): Promise<any> {
     this.activeQt = row;
     this.showLinesModal = true;
 
-    this.quotationSvc.getById(row.id).subscribe((res: any) => {
-      const dto = res?.data ?? res ?? null;
-      const apiLines = dto?.lines ?? [];
+    this.quotationSvc.getById(row.id).subscribe({
+      next: (res: any) => {
+        const dto = res?.data ?? res ?? null;
+        const apiLines = dto?.lines ?? dto?.Lines ?? [];
 
-      this.modalLines = apiLines.map((l: any) => {
-        const itemId = Number(l.itemId ?? l.ItemId ?? 0);
-        return ({
-          id: Number(l.id ?? l.Id ?? 0),
-          quotationId: Number(l.quotationId ?? l.QuotationId ?? row.id),
-          itemId,
-          itemCode: String(l.itemCode ?? l.ItemCode ?? this.getItemCode(itemId) ?? ''),
-          itemName: String(l.itemName ?? l.ItemName ?? ''),
-          uomId: (l.uomId ?? l.UomId) != null ? Number(l.uomId ?? l.UomId) : null,
-          uomName: String(l.uomName ?? l.UomName ?? ''),
-          qty: Number(l.qty ?? l.Qty ?? 0),
-          unitPrice: Number(l.unitPrice ?? l.UnitPrice ?? 0),
-          discountPct: Number(l.discountPct ?? l.DiscountPct ?? 0),
-          taxCodeId: l.taxCodeId ?? l.TaxCodeId ?? null,
-          lineNet: Number(l.lineNet ?? l.LineNet ?? 0),
-          lineTax: Number(l.lineTax ?? l.LineTax ?? 0),
-          lineTotal: Number(l.lineTotal ?? l.LineTotal ?? 0),
-          description: String(l.description ?? l.Description ?? '')
+        // ✅ pull extra header meta from getById if available
+        if (dto && this.activeQt) {
+          this.activeQt.remarks = dto.remarks ?? dto.Remarks ?? this.activeQt.remarks ?? null;
+          this.activeQt.deliveryTo = dto.deliveryTo ?? dto.DeliveryTo ?? this.activeQt.deliveryTo ?? null;
+          this.activeQt.validityDate = dto.validityDate ?? dto.ValidityDate ?? this.activeQt.validityDate ?? null;
+          this.activeQt.deliveryDate = dto.deliveryDate ?? dto.DeliveryDate ?? this.activeQt.deliveryDate ?? null;
+        }
+
+        this.modalLines = (apiLines || []).map((l: any) => {
+          const itemId = Number(l.itemId ?? l.ItemId ?? 0);
+          const uomId = (l.uomId ?? l.UomId) != null ? Number(l.uomId ?? l.UomId) : null;
+
+          return ({
+            id: Number(l.id ?? l.Id ?? 0),
+            quotationId: Number(l.quotationId ?? l.QuotationId ?? row.id),
+            itemId,
+            itemCode: String(l.itemCode ?? l.ItemCode ?? this.getItemCode(itemId) ?? ''),
+            itemName: String(l.itemName ?? l.ItemName ?? ''),
+            uomId,
+            uomName: String(l.uomName ?? l.UomName ?? ''),
+            qty: Number(l.qty ?? l.Qty ?? 0),
+            unitPrice: Number(l.unitPrice ?? l.UnitPrice ?? 0),
+            discountPct: Number(l.discountPct ?? l.DiscountPct ?? 0),
+            taxCodeId: l.taxCodeId ?? l.TaxCodeId ?? null,
+            lineNet: Number(l.lineNet ?? l.LineNet ?? 0),
+            lineTax: Number(l.lineTax ?? l.LineTax ?? 0),
+            lineTotal: Number(l.lineTotal ?? l.LineTotal ?? 0),
+            description: String(l.description ?? l.Description ?? '')
+          }) as QuotationLineRow;
         });
-      });
 
-      let net = 0, tax = 0, total = 0;
-      for (const l of this.modalLines) {
-        net += +l.lineNet || 0;
-        tax += +l.lineTax || 0;
-        total += +l.lineTotal || 0;
+        let net = 0, tax = 0, total = 0;
+        for (const l of this.modalLines) {
+          net += +l.lineNet || 0;
+          tax += +l.lineTax || 0;
+          total += +l.lineTotal || 0;
+        }
+        this.modalTotals = { net, tax, total };
+
+        setTimeout(() => feather.replace(), 0);
+      },
+      error: () => {
+        this.modalLines = [];
+        this.modalTotals = { net: 0, tax: 0, total: 0 };
       }
-      this.modalTotals = { net, tax, total };
     });
   }
 
@@ -420,374 +327,353 @@ private async ensurePdfMakeReady(): Promise<any> {
     this.modalTotals = { net: 0, tax: 0, total: 0 };
   }
 
-  // ---------- ✅ PDF preview ----------
-  openPdfPreview(row: QuotationRow) {
-    this.pdfQt = row;
-    this.showPdfModal = true;
-    this.lockBodyScroll();
+  // ---------------- PRINT (HTML like DO) ----------------
 
-    this.pdfLoading = true;
-    this.clearPdfPreview();
-    this.pdfPrintDto = null;
+  /** Build HTML using current activeQt + modalLines + modalTotals */
+private buildQtPrintHtml(): string {
+  // ✅ White theme colors
+  const brand = '#2E5F73';     // accent line / table header
+  const dark = '#0f172a';      // QUOTATION text (dark)
+  const text = '#111827';      // normal text
+  const muted = '#6b7280';     // labels
+  const line = '#d1d5db';      // borders
 
-    this.quotationSvc.getById(row.id).subscribe({
-      next: async (res: any) => {
-        try {
-          const dto = res?.data ?? res ?? null;
-          if (!dto) {
-            this.pdfLoading = false;
-            Swal.fire({ icon: 'error', title: 'No data to print' });
-            return;
-          }
+  // Company info
+  const companyName = 'Continental Catering Solutions Pvt Ltd';
+  const companyAddr1 = 'No: 3/8, Church Street';
+  const companyAddr2 = 'Nungambakkam, Chennai - 600034';
+  const companyPhone = '+91 98765 43210';
+  const companyEmail = 'info@unityworks.com';
 
-          const printDto: QuotationPrintDTO = {
-            id: Number(dto.id ?? dto.Id ?? row.id),
-            number: String(dto.number ?? dto.Number ?? row.number ?? ''),
-            status: Number(dto.status ?? dto.Status ?? row.status ?? 0),
-            customerId: Number(dto.customerId ?? dto.CustomerId ?? row.customerId ?? 0),
-            customerName: String(dto.customerName ?? dto.CustomerName ?? ''),
-            currencyId: Number(dto.currencyId ?? dto.CurrencyId ?? row.currencyId ?? 0),
-            currencyName: String(dto.currencyName ?? dto.CurrencyName ?? ''),
-            fxRate: Number(dto.fxRate ?? dto.FxRate ?? row.fxRate ?? 1),
-            paymentTermsId: Number(dto.paymentTermsId ?? dto.PaymentTermsId ?? row.paymentTermsId ?? 0),
-            paymentTermsName: String(dto.paymentTermsName ?? dto.PaymentTermsName ?? row.paymentTermsName ?? ''),
-            deliveryDate: dto.deliveryDate ?? dto.DeliveryDate ?? row.deliveryDate ?? null,
-            remarks: String(dto.remarks ?? dto.Remarks ?? ''),
-            deliveryTo: String(dto.deliveryTo ?? dto.DeliveryTo ?? ''),
-            subtotal: Number(dto.subtotal ?? dto.Subtotal ?? row.subtotal ?? 0),
-            taxAmount: Number(dto.taxAmount ?? dto.TaxAmount ?? row.taxAmount ?? 0),
-            rounding: Number(dto.rounding ?? dto.Rounding ?? row.rounding ?? 0),
-            grandTotal: Number(dto.grandTotal ?? dto.GrandTotal ?? row.grandTotal ?? 0),
-            lines: []
-          };
+  const qtNo = this.activeQt?.number || '-';
+  const status = this.statusLabel(this.activeQt?.status ?? 0);
 
-          printDto.lines = (dto.lines ?? dto.Lines ?? []).map((l: any) => {
-            const itemId = Number(l.itemId ?? l.ItemId ?? 0);
-            return ({
-              id: Number(l.id ?? l.Id ?? 0),
-              quotationId: Number(l.quotationId ?? l.QuotationId ?? printDto.id),
-              itemId,
-              itemCode: String(l.itemCode ?? l.ItemCode ?? this.getItemCode(itemId) ?? ''), // ✅
-              itemName: String(l.itemName ?? l.ItemName ?? ''),
-              uomId: (l.uomId ?? l.UomId) != null ? Number(l.uomId ?? l.UomId) : null,
-              uomName: String(l.uomName ?? l.UomName ?? ''),
-              qty: Number(l.qty ?? l.Qty ?? 0),
-              unitPrice: Number(l.unitPrice ?? l.UnitPrice ?? 0),
-              discountPct: Number(l.discountPct ?? l.DiscountPct ?? 0),
-              lineNet: Number(l.lineNet ?? l.LineNet ?? 0),
-              lineTax: Number(l.lineTax ?? l.LineTax ?? 0),
-              lineTotal: Number(l.lineTotal ?? l.LineTotal ?? 0),
-              description: String(l.description ?? l.Description ?? '')
-            });
-          });
+  const customerName = (this.getCustomerName(this.activeQt?.customerId) || '-').trim();
+  const currency = (this.getCurrencyCode(this.activeQt?.currencyId) || '-').trim();
+  const paymentTerms = (this.activeQt?.paymentTermsName || '-')?.trim();
 
-          this.pdfPrintDto = printDto;
+  const validityDate = this.fmtDate(this.activeQt?.validityDate);
+  const deliveryDate = this.fmtDate(this.activeQt?.deliveryDate);
 
-          const blob = await this.generatePdfBlob(printDto);
-          this.pdfBlob = blob;
+  const deliveryTo = this.escapeHtml(this.activeQt?.deliveryTo ?? '-');
+  const remarks = this.escapeHtml(this.activeQt?.remarks ?? '-');
 
-          // ✅ iframe black screen avoid => set url after small delay
-          const url = URL.createObjectURL(blob);
-          this.pdfObjectUrl = url;
+  const lines = this.modalLines || [];
 
-          // ✅ FitH + zoom + scrollbar
-          const hash = '#toolbar=1&navpanes=0&scrollbar=1&view=FitH&zoom=110';
+  const rowsHtml = lines.map((l, i) => {
+    const itemId = Number(l.itemId ?? 0);
 
-          this.pdfSafeUrl = null;
-          setTimeout(() => {
-            this.pdfSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url + hash);
-          }, 30);
+    return `
+      <tr>
+        <td class="c">${i + 1}</td>
+        <td>${this.escapeHtml(l.itemCode ?? this.getItemCode(itemId) ?? '-')}</td>
+        <td class="wrap">${this.escapeHtml(l.itemName ?? this.getItemName(itemId) ?? '-')}</td>
+        <td class="wrap">${this.escapeHtml(l.description ?? '-')}</td>
+        <td class="c">${this.escapeHtml(l.uomName || this.getUomName(l.uomId) || '-')}</td>
+        <td class="r">${this.fmtQty(l.qty)}</td>
+        <td class="r">${this.fmtNum(l.unitPrice, 2)}</td>
+        <td class="r">${this.fmtNum(l.discountPct, 2)}</td>
+        <td class="r">${this.fmtNum(l.lineNet, 2)}</td>
+        <td class="r">${this.fmtNum(l.lineTax, 2)}</td>
+        <td class="r b">${this.fmtNum(l.lineTotal, 2)}</td>
+      </tr>
+    `;
+  }).join('');
 
-          this.pdfLoading = false;
-          setTimeout(() => feather.replace(), 0);
-        } catch (e: any) {
-          this.pdfLoading = false;
-          Swal.fire({ icon: 'error', title: 'PDF generate failed', text: String(e?.message || e) });
-        }
-      },
-      error: () => {
-        this.pdfLoading = false;
-        Swal.fire({ icon: 'error', title: 'Unable to load quotation' });
+  const net = this.modalTotals?.net ?? 0;
+  const tax = this.modalTotals?.tax ?? 0;
+  const total = this.modalTotals?.total ?? 0;
+
+  return `
+  <html>
+  <head>
+    <title>Quotation - ${qtNo}</title>
+    <style>
+      @page { margin: 8mm 10mm 14mm 10mm; }
+
+      * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
-    });
+
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 0;
+        color: ${text};
+        background: #ffffff;
+      }
+
+      /* Header */
+      .hdr {
+        display: flex;
+        gap: 16px;
+        padding-bottom: 14px;
+        margin-bottom: 14px;
+        border-bottom: 2px solid ${brand};
+      }
+
+      .logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: ${brand};
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+      }
+
+      .cname {
+        font-size: 20px;
+        font-weight: 900;
+      }
+
+      /* ✅ DARK QUOTATION TEXT */
+      .doc {
+        font-size: 14px;
+        font-weight: 900;
+        color: ${dark};
+        letter-spacing: 1px;
+        margin-top: 2px;
+      }
+
+      .cmeta {
+        font-size: 12px;
+        color: ${muted};
+        margin-top: 4px;
+      }
+
+      /* Meta box */
+      .meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 24px;
+        padding: 14px;
+        border: 1px solid ${line};
+        border-radius: 12px;
+        margin-bottom: 12px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 10px;
+      }
+
+      .k { color: ${muted}; font-weight: 700; }
+      .v { font-weight: 800; }
+
+      /* Remarks */
+      .note {
+        border: 1px solid ${line};
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 14px;
+      }
+
+      .note .t {
+        font-weight: 900;
+        color: ${dark};
+        margin-bottom: 4px;
+      }
+
+      /* Table */
+      .tbl {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .tbl th, .tbl td {
+        border: 1px solid ${line};
+        padding: 10px;
+      }
+
+      .tbl thead th {
+        background: ${brand};
+        color: #fff;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .wrap { white-space: normal; word-break: break-word; }
+      .c { text-align: center; }
+      .r { text-align: right; }
+      .b { font-weight: 900; }
+
+      /* Totals */
+      .totals {
+        margin-top: 12px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .totTbl {
+        width: 300px;
+        border-collapse: collapse;
+      }
+
+      .totTbl td {
+        border: 1px solid ${line};
+        padding: 10px 12px;
+      }
+
+      .footer {
+        position: fixed;
+        left: 10mm;
+        right: 10mm;
+        bottom: 6mm;
+        font-size: 11px;
+        color: ${muted};
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="hdr">
+      <div class="logo">CC</div>
+      <div>
+        <div class="cname">${companyName}</div>
+        <div class="doc">QUOTATION</div>
+        <div class="cmeta">
+          ${companyAddr1}<br/>
+          ${companyAddr2}<br/>
+          ${companyPhone} · ${companyEmail}
+        </div>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="row"><div class="k">QT No</div><div class="v">${qtNo}</div></div>
+      <div class="row"><div class="k">Status</div><div class="v">${status}</div></div>
+
+      <div class="row"><div class="k">Customer</div><div class="v">${customerName}</div></div>
+      <div class="row"><div class="k">Currency</div><div class="v">${currency}</div></div>
+
+      <div class="row"><div class="k">Payment Terms</div><div class="v">${paymentTerms}</div></div>
+      <div class="row"><div class="k">Validity Date</div><div class="v">${validityDate}</div></div>
+
+      <div class="row"><div class="k">Delivery Date</div><div class="v">${deliveryDate}</div></div>
+      <div class="row"><div class="k">Delivery To</div><div class="v">${deliveryTo}</div></div>
+    </div>
+
+    <div class="note">
+      <div class="t">Remarks</div>
+      <div>${remarks}</div>
+    </div>
+
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>S.NO</th><th>ITEM CODE</th><th>ITEM</th><th>DESCRIPTION</th>
+          <th>UOM</th><th>QTY</th><th>PRICE</th><th>DISC %</th>
+          <th>NET</th><th>TAX</th><th>TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+
+    <div class="totals">
+      <table class="totTbl">
+        <tr><td>Subtotal</td><td class="r b">${this.fmtNum(net,2)}</td></tr>
+        <tr><td>Tax</td><td class="r b">${this.fmtNum(tax,2)}</td></tr>
+        <tr><td>Grand Total</td><td class="r b">${this.fmtNum(total,2)}</td></tr>
+      </table>
+    </div>
+
+    <div class="footer">
+      <div>Generated by ERP · ${this.fmtDate(new Date())}</div>
+      <div>Page 1</div>
+    </div>
+
+    <script>window.onload = () => window.print();</script>
+  </body>
+  </html>`;
+}
+
+  private printQuotationLines(): void {
+    const html = this.buildQtPrintHtml();
+    const w = window.open('', 'QT_PRINT_' + Date.now(), 'width=1200,height=780');
+    if (!w) return;
+
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
   }
 
-  closePdfModal() {
-    this.showPdfModal = false;
-    this.pdfQt = null;
-    this.pdfLoading = false;
-    this.pdfPrintDto = null;
-    this.clearPdfPreview();
-    this.unlockBodyScroll();
+  /** Load lines for print (uses getById) */
+  private loadLinesForPrint(qtId: number) {
+    return this.quotationSvc.getById(qtId).pipe(
+      map((res: any) => res?.data ?? res),
+      map((dto: any) => {
+        // ✅ update activeQt header meta from getById (so print has remarks/deliveryTo)
+        if (dto && this.activeQt) {
+          this.activeQt.remarks = dto.remarks ?? dto.Remarks ?? this.activeQt.remarks ?? null;
+          this.activeQt.deliveryTo = dto.deliveryTo ?? dto.DeliveryTo ?? this.activeQt.deliveryTo ?? null;
+          this.activeQt.validityDate = dto.validityDate ?? dto.ValidityDate ?? this.activeQt.validityDate ?? null;
+          this.activeQt.deliveryDate = dto.deliveryDate ?? dto.DeliveryDate ?? this.activeQt.deliveryDate ?? null;
+        }
+
+        const linesRaw = dto?.lines ?? dto?.Lines ?? [];
+        return (linesRaw || []).map((l: any) => {
+          const itemId = Number(l.itemId ?? l.ItemId ?? 0);
+          const uomId = (l.uomId ?? l.UomId) != null ? Number(l.uomId ?? l.UomId) : null;
+
+          return ({
+            id: Number(l.id ?? l.Id ?? 0),
+            quotationId: Number(l.quotationId ?? l.QuotationId ?? qtId),
+            itemId,
+            itemCode: String(l.itemCode ?? l.ItemCode ?? this.getItemCode(itemId) ?? ''),
+            itemName: String(l.itemName ?? l.ItemName ?? ''),
+            uomId,
+            uomName: String(l.uomName ?? l.UomName ?? ''),
+            qty: Number(l.qty ?? l.Qty ?? 0),
+            unitPrice: Number(l.unitPrice ?? l.UnitPrice ?? 0),
+            discountPct: Number(l.discountPct ?? l.DiscountPct ?? 0),
+            taxCodeId: l.taxCodeId ?? l.TaxCodeId ?? null,
+            lineNet: Number(l.lineNet ?? l.LineNet ?? 0),
+            lineTax: Number(l.lineTax ?? l.LineTax ?? 0),
+            lineTotal: Number(l.lineTotal ?? l.LineTotal ?? 0),
+            description: String(l.description ?? l.Description ?? '')
+          }) as QuotationLineRow;
+        });
+      }),
+      catchError(() => of([]))
+    );
   }
 
-  downloadCurrentPdf() {
-    if (!this.pdfBlob) return;
-
-    const fileNo = (this.pdfQt?.number || 'Quotation').replace(/[^\w\-]+/g, '_');
-    const filename = `${fileNo}.pdf`;
-
-    const url = URL.createObjectURL(this.pdfBlob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-    URL.revokeObjectURL(url); // ✅ correct
-  }
-
-  printCurrentPdf() {
-    if (!this.pdfBlob) return;
-
-    const url = URL.createObjectURL(this.pdfBlob);
-    const w = window.open(url, '_blank');
-    if (!w) {
-      Swal.fire({ icon: 'info', title: 'Popup blocked', text: 'Allow popups to print.' });
-      URL.revokeObjectURL(url);
+  /** Call this from row print icon click */
+  printFromRow(row: QuotationRow): void {
+    // already loaded for same row
+    if (this.activeQt?.id === row.id && this.modalLines?.length) {
+      this.printQuotationLines();
       return;
     }
-    w.onload = () => {
-      w.focus();
-      w.print();
-    };
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
-  }
 
-  private clearPdfPreview() {
-    if (this.pdfObjectUrl) {
-      URL.revokeObjectURL(this.pdfObjectUrl);
-      this.pdfObjectUrl = null;
-    }
-    this.pdfSafeUrl = null;
-    this.pdfBlob = null;
-  }
+    this.activeQt = row;
 
-  // ✅ PDF generator
-  private async generatePdfBlob(dto: QuotationPrintDTO): Promise<Blob> {
-    const pdfMake: any = await this.ensurePdfMakeReady();
+    this.loadLinesForPrint(row.id).subscribe({
+      next: (lines: QuotationLineRow[]) => {
+        this.modalLines = lines || [];
 
-    const currency = dto.currencyName || this.getCurrencyCode(dto.currencyId) || '';
-    const customerName = (dto.customerName || this.getCustomerName(dto.customerId) || '-').trim();
-    const deliveryTo = (dto.deliveryTo || '-').trim();
-    const remarks = (dto.remarks || '-').trim();
-
-    const logoDataUrl = await this.getCompanyLogoDataUrl();
-
-    // ✅ table body
-    const body: any[] = [];
-    body.push([
-      { text: 'No', style: 'th', alignment: 'center' },
-      { text: 'Item Code', style: 'th' },
-      { text: 'Item', style: 'th' },
-      { text: 'Description', style: 'th' },
-      { text: 'UOM', style: 'th', alignment: 'center' },
-      { text: 'Qty', style: 'th', alignment: 'right' },
-      { text: 'Price', style: 'th', alignment: 'right' },
-      { text: 'Disc %', style: 'th', alignment: 'right' },
-      { text: 'Net', style: 'th', alignment: 'right' },
-      { text: 'Tax', style: 'th', alignment: 'right' },
-      { text: 'Total', style: 'th', alignment: 'right' }
-    ]);
-
-    const lines = dto.lines || [];
-    for (let idx = 0; idx < lines.length; idx++) {
-      const l = lines[idx];
-      const itemName = (l.itemName || this.getItemName(l.itemId) || `${l.itemId}`).trim();
-      const itemCode = (l.itemCode || this.getItemCode(l.itemId) || '-').trim();
-      const desc = (l.description || '').trim();
-
-      body.push([
-        { text: String(idx + 1), style: 'td', alignment: 'center' },
-        { text: itemCode || '-', style: 'td' },
-        { text: itemName || '-', style: 'td' },
-        { text: desc || '-', style: 'td' },
-        { text: (l.uomName || this.getUomName(l.uomId) || '-'), style: 'td', alignment: 'center' },
-        { text: this.n(l.qty, 3), style: 'td', alignment: 'right' },
-        { text: this.n(l.unitPrice, 2), style: 'td', alignment: 'right' },
-        { text: this.n(l.discountPct, 2), style: 'td', alignment: 'right' },
-        { text: this.n(l.lineNet, 2), style: 'td', alignment: 'right' },
-        { text: this.n(l.lineTax, 2), style: 'td', alignment: 'right' },
-        { text: this.n(l.lineTotal, 2), style: 'td', alignment: 'right' }
-      ]);
-    }
-
-    if (!lines.length) {
-      body.push([{ text: 'No line items', colSpan: 11, alignment: 'center', margin: [0, 12, 0, 12] }, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}]);
-    }
-
-    const totalsBody = [
-      [{ text: 'Subtotal', style: 'totLabel' }, { text: this.n(dto.subtotal, 2), style: 'totVal' }],
-      [{ text: 'Tax', style: 'totLabel' }, { text: this.n(dto.taxAmount, 2), style: 'totVal' }],
-      [{ text: 'Rounding', style: 'totLabel' }, { text: this.n(dto.rounding, 2), style: 'totVal' }],
-      [{ text: 'Grand Total', style: 'totLabelBold' }, { text: this.n(dto.grandTotal, 2), style: 'totValBold' }]
-    ];
-
-    const dd: any = {
-      pageSize: 'A4',
-      pageOrientation: 'landscape', // ✅ IMPORTANT: wide columns fit better
-      pageMargins: [20, 18, 20, 30],
-      defaultStyle: { fontSize: 9, color: '#111827' },
-
-      content: [
-        {
-          columns: [
-            {
-              width: 170,
-              stack: [
-                { image: logoDataUrl, width: 150, height: 42, margin: [0, 0, 0, 6] },
-                { text: 'QUOTATION', style: 'docTitle' }
-              ]
-            },
-            {
-              width: '*',
-              stack: [
-                { text: this.companyInfo.name, style: 'compName' },
-                { text: this.companyInfo.address1, style: 'compText' },
-                { text: this.companyInfo.address2, style: 'compText' },
-                { text: `${this.companyInfo.phone}  |  ${this.companyInfo.email}`, style: 'compText' },
-              ],
-              margin: [0, 4, 0, 0]
-            },
-            {
-              width: 190,
-              stack: [
-                { text: `QT No: ${dto.number}`, style: 'meta' },
-                { text: `Status: ${this.statusLabel(dto.status)}`, style: 'meta' },
-                { text: `Date: ${this.formatDate(new Date())}`, style: 'meta' }
-              ],
-              alignment: 'right',
-              margin: [0, 6, 0, 0]
-            }
-          ],
-          columnGap: 10
-        },
-
-        {
-          margin: [0, 10, 0, 8],
-          columns: [
-            this.makeInfoBox('Customer', customerName),
-            this.makeInfoBox('Delivery To', deliveryTo),
-            this.makeInfoBox('Remarks', remarks)
-          ],
-          columnGap: 10
-        },
-
-        {
-          margin: [0, 0, 0, 8],
-          columns: [
-            { text: `Currency: ${currency || '-'}`, style: 'chip' },
-            { text: `Payment Terms: ${dto.paymentTermsName || '-'}`, style: 'chip' },
-            { text: `Delivery Date: ${this.formatDate(dto.deliveryDate)}`, style: 'chip' }
-          ],
-          columnGap: 10
-        },
-
-        { text: 'Line Items', style: 'sectionTitle', margin: [0, 4, 0, 6] },
-
-        {
-          table: {
-            headerRows: 1,
-            // ✅ widths tuned for landscape
-            widths: [18, 55, 70, '*', 32, 34, 36, 36, 40, 36, 42],
-            body
-          },
-          layout: {
-            fillColor: (rowIndex: number) => {
-              if (rowIndex === 0) return '#2E5F73';
-              return rowIndex % 2 === 0 ? '#F3F6F8' : null;
-            },
-            hLineColor: () => '#D9E2E8',
-            vLineColor: () => '#D9E2E8',
-            paddingLeft: () => 5,
-            paddingRight: () => 5,
-            paddingTop: () => 4,
-            paddingBottom: () => 4
-          }
-        },
-
-        {
-          margin: [0, 10, 0, 0],
-          columns: [
-            { width: '*', text: '' },
-            {
-              width: 260,
-              table: { widths: ['*', 92], body: totalsBody },
-              layout: {
-                fillColor: (row: number) => (row === 3 ? '#EEF6F2' : null),
-                hLineColor: () => '#D9E2E8',
-                vLineColor: () => '#D9E2E8',
-                paddingLeft: () => 8,
-                paddingRight: () => 8,
-                paddingTop: () => 6,
-                paddingBottom: () => 6
-              }
-            }
-          ]
+        let net = 0, tax = 0, total = 0;
+        for (const l of this.modalLines) {
+          net += +l.lineNet || 0;
+          tax += +l.lineTax || 0;
+          total += +l.lineTotal || 0;
         }
-      ],
+        this.modalTotals = { net, tax, total };
 
-      footer: (currentPage: number, pageCount: number) => ({
-        margin: [20, 0, 20, 0],
-        columns: [
-          { text: `Generated: ${this.formatDate(new Date())}`, fontSize: 8, color: '#6b7280' },
-          { text: `Page ${currentPage} / ${pageCount}`, alignment: 'right', fontSize: 8, color: '#6b7280' }
-        ]
-      }),
-
-      styles: {
-        docTitle: { fontSize: 14, bold: true, color: '#111827' },
-        compName: { fontSize: 12, bold: true, color: '#0f172a' },
-        compText: { fontSize: 9, color: '#334155' },
-        meta: { fontSize: 9, color: '#334155' },
-
-        chip: { fillColor: '#EEF4F7', color: '#0f172a', margin: [6, 5, 6, 5] },
-
-        sectionTitle: { fontSize: 12, bold: true, color: '#111827' },
-
-        th: { color: '#ffffff', bold: true, fontSize: 9 },
-        td: { fontSize: 9, color: '#111827' },
-
-        totLabel: { fontSize: 10, color: '#111827' },
-        totVal: { fontSize: 10, alignment: 'right', color: '#111827' },
-        totLabelBold: { fontSize: 10, bold: true, color: '#111827' },
-        totValBold: { fontSize: 10, bold: true, alignment: 'right', color: '#111827' },
-
-        boxHead: { fontSize: 9, bold: true, color: '#2E5F73' },
-        boxText: { fontSize: 10, color: '#111827' }
-      }
-    };
-
-    return new Promise((resolve, reject) => {
-      try {
-        pdfMake.createPdf(dd).getBlob((blob: Blob) => resolve(blob));
-      } catch (e) {
-        reject(e);
+        this.printQuotationLines();
+      },
+      error: () => {
+        Swal.fire({ icon: 'error', title: 'Print failed', text: 'Unable to load quotation lines.' });
       }
     });
-  }
-
-  private makeInfoBox(title: string, value: string) {
-    return {
-      width: '*',
-      table: {
-        widths: ['*'],
-        body: [[{
-          stack: [
-            { text: title, style: 'boxHead' },
-            { text: value || '-', style: 'boxText' }
-          ],
-          margin: [6, 6, 6, 6]
-        }]]
-      },
-      layout: {
-        fillColor: () => '#F6FAFC',
-        hLineColor: () => '#D9E2E8',
-        vLineColor: () => '#D9E2E8'
-      }
-    };
   }
 
   // ---------- Actions ----------
@@ -816,7 +702,4 @@ private async ensurePdfMakeReady(): Promise<any> {
       });
     });
   }
-
-  ngAfterViewInit(): void { feather.replace(); }
-  ngAfterViewChecked(): void { feather.replace(); }
 }

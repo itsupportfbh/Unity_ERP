@@ -310,7 +310,7 @@ export class QuotationscreateComponent implements OnInit {
   getUomName = (id?: number | null) => this.uomList.find(u => u.id === id)?.name ?? '';
 
   supplyMethodLabel(v: number | null | undefined) {
-    return v === 0 ? 'DIRECT DO' : v === 1 ? 'PP' : 'SELECT';
+    return v === 2 ? 'DIRECT DO' : v === 1 ? 'PP' : 'SELECT';
   }
 
   // =========================
@@ -318,20 +318,31 @@ export class QuotationscreateComponent implements OnInit {
   // =========================
   private applyAutoSupplyMethodIfEmpty(l: UiLine) {
     if (l.isSetHeader) return;
+
+    // ✅ If already selected, keep (also normalize to number)
     if (l.supplyMethod !== null && l.supplyMethod !== undefined) {
+      l.supplyMethod = Number(l.supplyMethod);
       l.supplyMethodText = this.supplyMethodLabel(l.supplyMethod);
       return;
     }
 
-    if (l.isSellable && !l.isConsumable) l.supplyMethod = 0;
-    else if (l.isConsumable && !l.isSellable) l.supplyMethod = 1;
-    else if (l.isSellable && l.isConsumable) l.supplyMethod = 1;
-    else l.supplyMethod = null;
+    const isSellable = !!l.isSellable;
+    const isConsumable = !!l.isConsumable;
+
+    // ✅ FIXED RULES (matches dropdown):
+    // Sellable only  -> Direct DO (2)
+    // Consumable only-> PP (1)
+    // Both/Select    -> null (user decide)
+    if (isSellable && !isConsumable) l.supplyMethod = 2;      // ✅ was 0 (wrong)
+    else if (!isSellable && isConsumable) l.supplyMethod = 1; // ✅ PP
+    else l.supplyMethod = null;                               // ✅ was PP before; now Select
 
     l.supplyMethodText = this.supplyMethodLabel(l.supplyMethod);
   }
 
   onSupplyMethodChanged(l: UiLine, i: number) {
+    // ✅ normalize to number to match [ngValue] numeric
+    l.supplyMethod = (l.supplyMethod == null) ? null : Number(l.supplyMethod);
     l.supplyMethodText = this.supplyMethodLabel(l.supplyMethod);
     this.onLineChanged(i);
   }
@@ -360,6 +371,9 @@ export class QuotationscreateComponent implements OnInit {
           l.isConsumable = !!f.isConsumable;
           l.allowManualFulfillment = !!f.allowManualFulfillment;
           if ((f as any).fulfillmentText) l.fulfillmentText = (f as any).fulfillmentText;
+
+          // ✅ normalize supplyMethod first (avoid string mismatch)
+          l.supplyMethod = (l.supplyMethod == null) ? null : Number(l.supplyMethod);
 
           this.applyAutoSupplyMethodIfEmpty(l);
         }
@@ -1151,7 +1165,9 @@ export class QuotationscreateComponent implements OnInit {
             itemSetId: l.itemSetId ?? null,
             setName: l.setName ?? null,
             isFromSet: !!l.isFromSet,
-            supplyMethod: l.supplyMethod ?? 0
+
+            // ✅ FIX: don't force 0; keep null or 1/2
+            supplyMethod: (l.supplyMethod == null ? null : Number(l.supplyMethod))
           };
         })
     };

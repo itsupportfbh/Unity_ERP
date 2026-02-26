@@ -3,14 +3,69 @@
 @import '@core/scss/angular/libs/select.component.scss';
 @import '@core/scss/angular/libs/sweet-alerts.component.scss';
 
-::ng-deep .ngx-datatable .datatable-body-cell .datatable-body-cell-label{
-  white-space: normal !important;
-  line-height: 1.25;
+/* ===== Customer list card – match Supplier UI ===== */
+
+#customer-list .card {
+  border-radius: 1.5rem;
+  border: none;
 }
 
-.po-wrap-cell{
+#customer-list .card-title {
+  font-weight: 600;
+  color: #2E5F73;
+}
+
+#customer-list .card-header {
+  padding: 0.9rem 1.5rem 0.2rem 1.5rem;
+}
+
+#customer-list .card-body {
+  padding: 0.75rem 1.5rem 1.1rem 1.5rem;
+}
+
+/* table wrapper spacing */
+#customer-list .table-wrap {
+  margin-top: 0.5rem;
+}
+
+/* header cells bold like supplier */
+#customer-list .customers-table .datatable-header-cell {
+  font-weight: 600;
+}
+
+/* wrap long text like your old customer */
+::ng-deep #customer-list .ngx-datatable .datatable-body-cell .datatable-body-cell-label {
+  white-space: normal !important;
+  line-height: 1.2;
+}
+
+.po-wrap-cell {
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
 }
 
+/* 1) remove any forced height on the datatable wrapper/body */
+::ng-deep .ngx-datatable.scroll-vertical,
+::ng-deep .ngx-datatable.fixed-header {
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* 2) let datatable body expand */
+::ng-deep .ngx-datatable .datatable-body {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* 3) remove body wrapper scrollbars */
+::ng-deep .ngx-datatable .datatable-body .datatable-body-row,
+::ng-deep .ngx-datatable .datatable-body .datatable-scroll {
+  overflow: visible !important;
+}
+
+/* 4) make parent wrapper not scroll */
+.table-responsive.table-wrap {
+  overflow: visible !important;
+}

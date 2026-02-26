@@ -47,3 +47,28 @@
   word-break: break-word;
   overflow-wrap: anywhere;
 }
+
+/* 1) remove any forced height on the datatable wrapper/body */
+::ng-deep .ngx-datatable.scroll-vertical,
+::ng-deep .ngx-datatable.fixed-header {
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* 2) let datatable body expand */
+::ng-deep .ngx-datatable .datatable-body {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* 3) remove body wrapper scrollbars */
+::ng-deep .ngx-datatable .datatable-body .datatable-body-row,
+::ng-deep .ngx-datatable .datatable-body .datatable-scroll {
+  overflow: visible !important;
+}
+
+/* 4) make parent wrapper not scroll */
+.table-responsive.table-wrap {
+  overflow: visible !important;
+}

@@ -62,6 +62,16 @@ export const menu: any[] = [
   approvalRoles: ['Admin', 'Super Admin'],
 
   children: [
+       // ✅ Customer => Sales Team (and Super Admin can see)
+    {
+      id: 'customermaster',
+      title: 'Customer',
+      type: 'item',
+      icon: 'circle',
+      url: '/Businesspartners/customermaster',
+      teams: ['Sales Team'],
+      approvalRoles: ['Super Admin']
+    },
     // ✅ Supplier => Purchase Team (and Super Admin can see)
     {
       id: 'supplier',
@@ -73,16 +83,6 @@ export const menu: any[] = [
       approvalRoles: ['Super Admin']
     },
 
-    // ✅ Customer => Sales Team (and Super Admin can see)
-    {
-      id: 'customermaster',
-      title: 'Customer',
-      type: 'item',
-      icon: 'circle',
-      url: '/Businesspartners/customermaster',
-      teams: ['Sales Team'],
-      approvalRoles: ['Super Admin']
-    },
 
     // ✅ Users => only Super Admin (change if you want Admin also)
     {

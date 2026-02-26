@@ -393,7 +393,7 @@ export class ProductionPlanningComponent implements OnInit {
     }).subscribe({
       next: (res: any) => {
         const pid = Number(res?.productionPlanId || res?.id || this.currentPlanId || 0);
-        Swal.fire('Updated', `Production Plan Id: ${pid}`, 'success')
+        Swal.fire('Updated', `Production Plan updated successfully`, 'success')
           .then(() => goList());
       },
       error: (e) => Swal.fire('Error', e?.error?.message || 'Update failed', 'error')
@@ -413,7 +413,7 @@ export class ProductionPlanningComponent implements OnInit {
       const pid = Number(res?.productionPlanId || res?.id || 0);
       if (pid > 0) this.currentPlanId = pid;
 
-      Swal.fire('Saved', `Production Plan Id: ${pid}`, 'success')
+      Swal.fire('Saved', `Production Plan Created Successfully`, 'success')
         .then(() => goList());
     },
     error: (e) => Swal.fire('Error', e?.error?.message || 'Save failed', 'error')

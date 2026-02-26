@@ -50,106 +50,7 @@ export const menu: any[] = [
 
     ]
   },
-
-  // Purchase (Purchase Team OR Super Admin)
-  {
-    id: 'purchase',
-    title: 'Purchase',
-    translate: 'MENU.PURCHASE.TITLE',
-    type: 'collapsible',
-    icon: 'file',
-    teams: ['Purchase Team'],
-    approvalRoles: ['Super Admin'],
-    children: [
-      { id: 'PR', title: 'Purchase Request', type: 'item', icon: 'circle', url: '/purchase/list-PurchaseRequest', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'rfq', title: 'RFQ', type: 'item', icon: 'circle', url: '/purchase/rfq', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'PO', title: 'Purchase Order', type: 'item', icon: 'circle', url: '/purchase/list-purchaseorder', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'mobilereceiving', title: 'Mobile Receiving', type: 'item', icon: 'circle', url: '/purchase/mobilereceiving', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'GRN', title: 'Goods Receipt Note', type: 'item', icon: 'circle', url: '/purchase/list-Purchasegoodreceipt', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'SupplierInvoice', title: 'Supplier Invoice', type: 'item', icon: 'circle', url: '/purchase/list-SupplierInvoice', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'DebitNote', title: 'Debit Note', type: 'item', icon: 'circle', url: '/purchase/list-debitnote', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] }
-    ]
-  },
-
-  // Inventory (Purchase Team OR Super Admin)
-  {
-    id: 'inventory',
-    title: 'Inventory',
-    translate: 'MENU.INVENTORY.TITLE',
-    type: 'collapsible',
-    icon: 'file',
-    teams: ['Purchase Team'],
-    approvalRoles: ['Super Admin'],
-    children: [
-      { id: 'ItemMaster', title: 'Item Master', type: 'item', icon: 'circle', url: '/Inventory/List-itemmaster', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-              { id: 'material-requisition', title: 'Material-Requisition', type: 'item', icon: 'circle', url: '/Inventory/list-material-requisition', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      // { id: 'StackOverview', title: 'Stock-Overview', type: 'item', icon: 'circle', url: '/Inventory/list-stackoverview', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      // { id: 'StackTransfer', title: 'Stock-Transfer', type: 'item', icon: 'circle', url: '/Inventory/list-stocktransfer', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'list-stock-transfer-receipt', title: 'Stock-Transfer-Receipt', type: 'item', icon: 'circle', url: '/Inventory/list-stock-transfer-receipt', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'StockTake', title: 'Stock-Take', type: 'item', icon: 'circle', url: '/Inventory/list-stocktake', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'StockReorderPlanning', title: 'Stock-Reorder-Planning', type: 'item', icon: 'circle', url: '/Inventory/list-stockreorderplanning', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] }
-    ]
-  },
-
-  // Sales (Sales Team OR Super Admin)
-  {
-    id: 'sales',
-    title: 'Sales',
-    translate: 'MENU.SALES.TITLE',
-    type: 'collapsible',
-    icon: 'shopping-cart',
-    teams: ['Sales Team'],
-    approvalRoles: ['Super Admin'],
-    children: [
-      { id: 'Quotation', title: 'Quotation', type: 'item', icon: 'circle', url: '/Sales/Quotation-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
-      { id: 'SalesOrder', title: 'Sales Order', type: 'item', icon: 'circle', url: '/Sales/Sales-Order-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
-      { id: 'Picking', title: 'Picking & Packing', type: 'item', icon: 'circle', url: '/Sales/Picking-packing-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
-      { id: 'DeliveryOrder', title: 'Delivery Order', type: 'item', icon: 'circle', url: '/Sales/Delivery-order-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
-      { id: 'SalesInvoice', title: 'Sales Invoice', type: 'item', icon: 'circle', url: '/Sales/Sales-Invoice-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
-      { id: 'ReturnCredit', title: 'Credit Note', type: 'item', icon: 'circle', url: '/Sales/Return-credit-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
-      { id: 'Report', title: 'Report', type: 'item', icon: 'circle', url: '/Sales/Reports-create', teams: ['Sales Team'], approvalRoles: ['Super Admin'] }
-    ]
-  },
-    {
-    id: 'recipe',
-    title: 'Recipe',
-    translate: 'MENU.RECIPE.TITLE',
-    type: 'collapsible',
-    icon: 'shopping-cart',
-  //  teams: ['Sales Team'],
-   // approvalRoles: ['Super Admin'],
-    children: [
-      { id: 'recipe', title: 'Recipe Master', type: 'item', icon: 'circle', url: '/Recipe/recipelist',  approvalRoles: ['Super Admin'] },
-       { id: 'recipe', title: 'Production Planning', type: 'item', icon: 'circle', url: '/Recipe/productionplanninglist',  approvalRoles: ['Super Admin'] },
-      { id: 'recipe', title: 'Batch Production', type: 'item', icon: 'circle', url: '/Recipe/batchproductionlist',  approvalRoles: ['Super Admin'] },
-    ]
-  },
-
-  // Financial (Finance Team OR Super Admin)
-  {
-    id: 'financial',
-    title: 'Financial',
-    translate: 'MENU.FINANCIAL.TITLE',
-    type: 'collapsible',
-    icon: 'dollar-sign',
-    teams: ['Finance Team'],
-    approvalRoles: ['Super Admin'],
-    children: [
-      { id: 'ledger', title: 'General Ledger', type: 'item', icon: 'circle', url: '/financial/ledger', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
-      { id: 'ChartofAccount', title: 'Chart of Account', type: 'item', icon: 'circle', url: '/financial/ChartOfAccount', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
-      { id: 'journal', title: 'Journal', type: 'item', icon: 'circle', url: '/financial/journal', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
-      { id: 'AR', title: 'Accounts Receivable', type: 'item', icon: 'circle', url: '/financial/AR', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
-      { id: 'AccountPayable', title: 'Accounts Payable', type: 'item', icon: 'circle', url: '/financial/AccountPayable', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
-      { id: 'tax-gst', title: 'Tax & Gst', type: 'item', icon: 'circle', url: '/financial/tax-gst', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
-      { id: 'Period-close', title: 'Period-close', type: 'item', icon: 'circle', url: '/financial/Period-close', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
-      { id: 'invoice-email', title: 'Invoice Email', type: 'item', icon: 'circle', url: '/financial/Invoice-email', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
-      { id: 'report', title: 'Trail Balance', type: 'item', icon: 'circle', url: '/financial/report', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
-      { id: 'finance-report', title: 'Reports', type: 'item', icon: 'circle', url: '/financial/finance-report', teams: ['Finance Team'], approvalRoles: ['Super Admin'] }
-    ]
-  },
-
-  // Business Partners (Admin / Super Admin)
-  {
+ {
   id: 'businesspartners',
   title: 'Business Partners',
   translate: 'MENU.BUSINESSPARTNERS.TITLE',
@@ -193,6 +94,106 @@ export const menu: any[] = [
       approvalRoles: ['Super Admin']
     }
   ]
-}
+},
+ {
+    id: 'sales',
+    title: 'Sales',
+    translate: 'MENU.SALES.TITLE',
+    type: 'collapsible',
+    icon: 'shopping-cart',
+    teams: ['Sales Team'],
+    approvalRoles: ['Super Admin'],
+    children: [
+      { id: 'Quotation', title: 'Quotation', type: 'item', icon: 'circle', url: '/Sales/Quotation-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
+      { id: 'SalesOrder', title: 'Sales Order', type: 'item', icon: 'circle', url: '/Sales/Sales-Order-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
+      { id: 'Picking', title: 'Picking & Packing', type: 'item', icon: 'circle', url: '/Sales/Picking-packing-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
+      { id: 'DeliveryOrder', title: 'Delivery Order', type: 'item', icon: 'circle', url: '/Sales/Delivery-order-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
+      { id: 'SalesInvoice', title: 'Sales Invoice', type: 'item', icon: 'circle', url: '/Sales/Sales-Invoice-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
+      { id: 'ReturnCredit', title: 'Credit Note', type: 'item', icon: 'circle', url: '/Sales/Return-credit-list', teams: ['Sales Team'], approvalRoles: ['Super Admin'] },
+      { id: 'Report', title: 'Report', type: 'item', icon: 'circle', url: '/Sales/Reports-create', teams: ['Sales Team'], approvalRoles: ['Super Admin'] }
+    ]
+  },
+  // Purchase (Purchase Team OR Super Admin)
+  {
+    id: 'purchase',
+    title: 'Purchase',
+    translate: 'MENU.PURCHASE.TITLE',
+    type: 'collapsible',
+    icon: 'file',
+    teams: ['Purchase Team'],
+    approvalRoles: ['Super Admin'],
+    children: [
+      { id: 'PR', title: 'Purchase Request', type: 'item', icon: 'circle', url: '/purchase/list-PurchaseRequest', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'rfq', title: 'RFQ', type: 'item', icon: 'circle', url: '/purchase/rfq', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'PO', title: 'Purchase Order', type: 'item', icon: 'circle', url: '/purchase/list-purchaseorder', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'mobilereceiving', title: 'Mobile Receiving', type: 'item', icon: 'circle', url: '/purchase/mobilereceiving', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'GRN', title: 'Goods Receipt Note', type: 'item', icon: 'circle', url: '/purchase/list-Purchasegoodreceipt', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'SupplierInvoice', title: 'Supplier Invoice', type: 'item', icon: 'circle', url: '/purchase/list-SupplierInvoice', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'DebitNote', title: 'Debit Note(Purchase Return)', type: 'item', icon: 'circle', url: '/purchase/list-debitnote', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] }
+    ]
+  },
+
+  // Inventory (Purchase Team OR Super Admin)
+  {
+    id: 'inventory',
+    title: 'Inventory',
+    translate: 'MENU.INVENTORY.TITLE',
+    type: 'collapsible',
+    icon: 'file',
+    teams: ['Purchase Team'],
+    approvalRoles: ['Super Admin'],
+    children: [
+      { id: 'ItemMaster', title: 'Item Master', type: 'item', icon: 'circle', url: '/Inventory/List-itemmaster', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+              { id: 'material-requisition', title: 'Material-Requisition', type: 'item', icon: 'circle', url: '/Inventory/list-material-requisition', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      // { id: 'StackOverview', title: 'Stock-Overview', type: 'item', icon: 'circle', url: '/Inventory/list-stackoverview', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      // { id: 'StackTransfer', title: 'Stock-Transfer', type: 'item', icon: 'circle', url: '/Inventory/list-stocktransfer', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'list-stock-transfer-receipt', title: 'Stock-Transfer-Receipt', type: 'item', icon: 'circle', url: '/Inventory/list-stock-transfer-receipt', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'StockTake', title: 'Stock-Take', type: 'item', icon: 'circle', url: '/Inventory/list-stocktake', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'StockReorderPlanning', title: 'Stock-Reorder-Planning', type: 'item', icon: 'circle', url: '/Inventory/list-stockreorderplanning', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] }
+    ]
+  },
+ {
+    id: 'financial',
+    title: 'Financial',
+    translate: 'MENU.FINANCIAL.TITLE',
+    type: 'collapsible',
+    icon: 'dollar-sign',
+    teams: ['Finance Team'],
+    approvalRoles: ['Super Admin'],
+    children: [
+      { id: 'ledger', title: 'General Ledger', type: 'item', icon: 'circle', url: '/financial/ledger', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
+      { id: 'ChartofAccount', title: 'Chart of Account', type: 'item', icon: 'circle', url: '/financial/ChartOfAccount', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
+      { id: 'journal', title: 'Journal', type: 'item', icon: 'circle', url: '/financial/journal', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
+      { id: 'AR', title: 'Accounts Receivable', type: 'item', icon: 'circle', url: '/financial/AR', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
+      { id: 'AccountPayable', title: 'Accounts Payable', type: 'item', icon: 'circle', url: '/financial/AccountPayable', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
+      { id: 'tax-gst', title: 'Tax & Gst', type: 'item', icon: 'circle', url: '/financial/tax-gst', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
+      { id: 'Period-close', title: 'Period-close', type: 'item', icon: 'circle', url: '/financial/Period-close', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
+      { id: 'invoice-email', title: 'Invoice Email', type: 'item', icon: 'circle', url: '/financial/Invoice-email', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
+      { id: 'report', title: 'Trail Balance', type: 'item', icon: 'circle', url: '/financial/report', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
+      { id: 'finance-report', title: 'Reports', type: 'item', icon: 'circle', url: '/financial/finance-report', teams: ['Finance Team'], approvalRoles: ['Super Admin'] }
+    ]
+  },
+  // Sales (Sales Team OR Super Admin)
+ 
+    {
+    id: 'recipe',
+    title: 'Recipe',
+    translate: 'MENU.RECIPE.TITLE',
+    type: 'collapsible',
+    icon: 'shopping-cart',
+  //  teams: ['Sales Team'],
+   // approvalRoles: ['Super Admin'],
+    children: [
+      { id: 'recipe', title: 'Recipe Master', type: 'item', icon: 'circle', url: '/Recipe/recipelist',  approvalRoles: ['Super Admin'] },
+       { id: 'recipe', title: 'Production Planning', type: 'item', icon: 'circle', url: '/Recipe/productionplanninglist',  approvalRoles: ['Super Admin'] },
+      { id: 'recipe', title: 'Batch Production', type: 'item', icon: 'circle', url: '/Recipe/batchproductionlist',  approvalRoles: ['Super Admin'] },
+    ]
+  },
+
+  // Financial (Finance Team OR Super Admin)
+ 
+
+  // Business Partners (Admin / Super Admin)
+ 
 
 ];

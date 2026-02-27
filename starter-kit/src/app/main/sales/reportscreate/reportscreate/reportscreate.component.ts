@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 import feather from 'feather-icons';
 import { ReportsService } from '../reports.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-reportscreate',
@@ -9,16 +10,14 @@ import { ReportsService } from '../reports.service';
 })
 export class ReportscreateComponent implements OnInit, AfterViewInit {
 
-  activeReport: 'sales' | 'margin' | 'delivery' | null = 'sales';
+  // ✅ added daybook
+  activeReport: 'sales' | 'margin' | 'delivery'  | null = null;
 
-  // 🔢 metric values
-  totalQuantitySold = 0;      // sum of quantity from Sales By Item report
-  averageMarginPct  = 0;      // average of marginPct from Margin report
-  onTimeDeliveryPct = 0;      // placeholder for later (from deliveries)
+  totalQuantitySold = 0;
+  averageMarginPct  = 0;
+  onTimeDeliveryPct = 0;
 
-  constructor(
-    private _reportsService: ReportsService
-  ) {}
+  constructor(private _reportsService: ReportsService,  private router: Router,) {}
 
   ngOnInit(): void {
     this.loadSummaryMetrics();
@@ -28,39 +27,31 @@ export class ReportscreateComponent implements OnInit, AfterViewInit {
     setTimeout(() => feather.replace(), 0);
   }
 
-  openReport(type: 'sales' | 'margin' | 'delivery'): void {
+  openReport(type: 'sales' | 'margin' | 'delivery' ): void {
     this.activeReport = this.activeReport === type ? null : type;
     setTimeout(() => feather.replace(), 0);
   }
 
-  // ===== Load summary metrics =====
   private loadSummaryMetrics(): void {
-    // 1) Total quantity sold from Sales By Item
     this._reportsService.GetSalesByItemAsync().subscribe((res: any) => {
       if (res && res.isSuccess && Array.isArray(res.data)) {
         const rows = res.data;
-        this.totalQuantitySold = rows.reduce(
-          (sum: number, r: any) => sum + (Number(r.quantity) || 0),
-          0
-        );
+        this.totalQuantitySold = rows.reduce((sum: number, r: any) => sum + (Number(r.quantity) || 0), 0);
       }
     });
 
-    // 2) Average margin % from Sales Margin report
     this._reportsService.GetSalesMarginAsync().subscribe((res: any) => {
       if (res && res.isSuccess && Array.isArray(res.data) && res.data.length > 0) {
         const rows = res.data;
-        const totalMargin = rows.reduce(
-          (sum: number, r: any) => sum + (Number(r.marginPct) || 0),
-          0
-        );
+        const totalMargin = rows.reduce((sum: number, r: any) => sum + (Number(r.marginPct) || 0), 0);
         this.averageMarginPct = totalMargin / rows.length;
       } else {
         this.averageMarginPct = 0;
       }
     });
 
-    // 3) On-time delivery % – you can calculate later from DO report
-    // this._reportsService.GetDeliveriesReportAsync().subscribe(...)
+    // delivery on-time % later
   }
+
+   goToDeliveryNoteSummary() { this.router.navigate(['/Sales/Delivery-Note-list']); }
 }

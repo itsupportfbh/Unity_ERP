@@ -3,9 +3,6 @@
 @import '@core/scss/angular/libs/select.component.scss';
 @import '@core/scss/angular/libs/sweet-alerts.component.scss';
 
-/* -------------------------------
-   Theme tokens
---------------------------------*/
 $coa-header-bg: #2E5F73;
 $coa-header-fg: #ffffff;
 
@@ -14,26 +11,16 @@ $coa-header-fg: #ffffff;
   margin-top: 0.75rem;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2E5F73;
+  color: $coa-header-bg;
 }
 
-.search-input {
-  min-width: 220px;
-}
+.search-input { min-width: 220px; }
+.table-wrap { width: 100%; }
 
-.table-wrap {
-  width: 100%;
-}
-
-/* ================================================
-   General Ledger Table Styling (ngx-datatable)
-   ================================================ */
 .coa-table {
 
-  /* ================= HEADER ================= */
-  ::ng-deep .datatable-header {
-    background: $coa-header-bg;
-  }
+  /* HEADER */
+  ::ng-deep .datatable-header { background: $coa-header-bg; }
 
   ::ng-deep .datatable-header-cell {
     color: $coa-header-fg !important;
@@ -48,20 +35,15 @@ $coa-header-fg: #ffffff;
     color: $coa-header-fg !important;
   }
 
-  /* ================= BODY (NO VERTICAL SCROLL EVER) ================= */
+  /* BODY */
   ::ng-deep .datatable-body {
-    overflow-y: hidden !important;  /* force OFF */
+    overflow-y: hidden !important;
     overflow-x: hidden !important;
     max-height: none !important;
   }
+  ::ng-deep .datatable-scroll { overflow: hidden !important; }
 
-  ::ng-deep .datatable-scroll {
-    overflow: hidden !important;
-  }
-
-  ::ng-deep .datatable-body-row {
-    align-items: center;
-  }
+  ::ng-deep .datatable-body-row { align-items: center; }
 
   ::ng-deep .datatable-body-cell {
     padding: 10px 12px !important;
@@ -70,24 +52,23 @@ $coa-header-fg: #ffffff;
     vertical-align: middle;
   }
 
-  /* Make sure numbers never get cut */
   ::ng-deep .datatable-body-cell .datatable-body-cell-label {
     display: block;
     width: 100%;
   }
 
-  /* ================= HEAD NAME CELL ================= */
+  /* HEAD NAME */
   .head-cell {
     display: flex;
     align-items: center;
     gap: 10px;
-    min-width: 0; /* important to allow wrapping inside */
-    white-space: nowrap; /* ROOT stays single line */
+    min-width: 0;
+    white-space: nowrap;
   }
 
   .head-cell.child {
     align-items: flex-start;
-    white-space: normal; /* CHILD can wrap */
+    white-space: normal;
   }
 
   .head-text {
@@ -98,42 +79,48 @@ $coa-header-fg: #ffffff;
     overflow-wrap: anywhere;
   }
 
-  .indent {
+  .indent { flex: 0 0 auto; }
+
+  /* ✅ TOGGLE BUTTON (NO ng-deep needed, it is in your template) */
+  .coa-toggle-btn {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+
+    border: 0;
+    border-radius: 5px;
+
+    background: $coa-header-bg;
+    color: #fff;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+    line-height: 1;
+    font-size: 16px;
+    font-weight: 700;
+
+    cursor: pointer;
+    user-select: none;
+
+    box-shadow: none;
+    outline: none;
+    appearance: none;
+
+    /* prevent stretch */
     flex: 0 0 auto;
+    align-self: center;
+    box-sizing: border-box;
   }
 
-  /* ================= TOGGLE (+ / -) ================= */
-.toggle-btn {
-  flex: 0 0 auto;
-  width: 20px;          /* 🔽 smaller box */
-  height: 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+  .coa-toggle-btn:hover { filter: brightness(0.95); }
+  .coa-toggle-btn:active { transform: scale(0.95); }
+  .coa-toggle-btn:focus { outline: none; box-shadow: none; }
 
-  background: #2E5F73;
-  color: #fff;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 16px;      /* 🔽 smaller + / − */
-  font-weight: 700;
-  line-height: 1;
-  padding: 0;
-  user-select: none;
-}
-
-.toggle-btn:hover {
-  filter: brightness(0.95);
-}
-
-.toggle-btn:active {
-  transform: scale(0.95);
-}
-
-  /* ================= NUMBERS ================= */
+  /* NUMBERS */
   .num {
     display: block;
     width: 100%;
@@ -142,11 +129,8 @@ $coa-header-fg: #ffffff;
     font-variant-numeric: tabular-nums;
   }
 
-  .cell-text {
-    white-space: nowrap;
-  }
+  .cell-text { white-space: nowrap; }
 }
 
-/* SweetAlert small spacing */
 .swal2-actions { gap: .5rem !important; }
 .swal2-actions .swal2-styled { margin: 0 .5rem !important; }

@@ -30,6 +30,7 @@ import { ReportsFiltersComponent } from './reportscreate/reports-filters/reports
 import { CoreCommonModule } from '@core/common.module';
 import { CoreSidebarModule } from '@core/components';
  import { ReturnCreditnoteListComponent } from './return-creditcreate/return-creditnote-list/return-creditnote-list.component';
+import { DeliveryNoteReportComponent } from './reportscreate/delivery-Note-summary/delivery-note-report/delivery-note-report.component';
 
 const routes = [
   {
@@ -147,6 +148,11 @@ const routes = [
     component: SalesOrderCreateComponent,
     data: { animation: 'SalesOrderEditComponent' }
   },
+     {
+    path: 'Delivery-Note-list',
+    component: DeliveryNoteReportComponent,
+    data: { animation: 'DeliveryNoteReportComponent' }
+  },
 ]
 
 @NgModule({
@@ -172,6 +178,7 @@ const routes = [
     ReportsDeliveriesComponent,
     ReportsFiltersComponent,
      ReturnCreditnoteListComponent,
+     DeliveryNoteReportComponent,
   ],
   imports: [
     CommonModule,

@@ -1,41 +1,41 @@
 <div class="content-wrapper p-0 pin-page">
   <div class="content-body">
-     <div class="row px-1 pt-1 pb-0">
-          <div class="col-6 col-md-3 mb-1">
-            <div class="pin-kpi-card">
-              <div class="pin-kpi-title">Total Pending</div>
-              <div class="pin-kpi-value text-warning">{{ totalPending }}</div>
-            </div>
-          </div>
 
-          <div class="col-6 col-md-3 mb-1">
-            <div class="pin-kpi-card">
-              <div class="pin-kpi-title">Auto-Matched</div>
-              <div class="pin-kpi-value text-success">{{ autoMatched }}</div>
-            </div>
-          </div>
-
-          <div class="col-6 col-md-3 mb-1">
-            <div class="pin-kpi-card">
-              <div class="pin-kpi-title">Mismatched</div>
-              <div class="pin-kpi-value text-danger">{{ mismatched }}</div>
-            </div>
-          </div>
-
-          <div class="col-6 col-md-3 mb-1">
-            <div class="pin-kpi-card">
-              <div class="pin-kpi-title">Awaiting Approval</div>
-              <div class="pin-kpi-value text-primary">{{ awaitingApproval }}</div>
-            </div>
-          </div>
+    <!-- KPI ROW -->
+    <div class="row px-1 pt-1 pb-0">
+      <div class="col-6 col-md-3 mb-1">
+        <div class="pin-kpi-card">
+          <div class="pin-kpi-title">Total Pending</div>
+          <div class="pin-kpi-value text-warning">{{ totalPending }}</div>
         </div>
+      </div>
+
+      <div class="col-6 col-md-3 mb-1">
+        <div class="pin-kpi-card">
+          <div class="pin-kpi-title">Auto-Matched</div>
+          <div class="pin-kpi-value text-success">{{ autoMatched }}</div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3 mb-1">
+        <div class="pin-kpi-card">
+          <div class="pin-kpi-title">Mismatched</div>
+          <div class="pin-kpi-value text-danger">{{ mismatched }}</div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3 mb-1">
+        <div class="pin-kpi-card">
+          <div class="pin-kpi-title">Awaiting Approval</div>
+          <div class="pin-kpi-value text-primary">{{ awaitingApproval }}</div>
+        </div>
+      </div>
+    </div>
+
     <section class="users-list-wrapper">
       <div class="card">
 
-        <!-- ===== TOP SUMMARY CARDS ===== -->
-       
-
-        <!-- ===== HEADER ROW ===== -->
+        <!-- HEADER -->
         <div class="row">
           <div class="col-md-6 col-12">
             <h4 class="card-text pin-title">Supplier Invoice List</h4>
@@ -52,9 +52,11 @@
                 entries
               </label>
             </div>
-             <div *ngIf="isPeriodLocked"
-                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
-                 style="font-size: 0.8rem;">
+
+            <div
+              *ngIf="isPeriodLocked"
+              class="alert alert-warning py-1 px-2 mx-2 mb-2"
+              style="font-size:0.8rem;">
               Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
             </div>
           </div>
@@ -72,31 +74,22 @@
                   (search)="filterUpdate($event)" />
               </label>
 
-              <!-- <button
+              <button
                 (click)="goToCreate()"
                 class="btn m-1 d-inline-flex align-items-center"
-                style="background-color:#2E5F73; color:white; gap:4px;">
+                style="background-color:#2E5F73;color:white;gap:6px;"
+                [disabled]="isPeriodLocked"
+                [attr.title]="isPeriodLocked
+                  ? (currentPeriodName ? ('Period ' + currentPeriodName + ' is locked') : 'Accounting period is locked')
+                  : 'Create Supplier Invoice'">
                 <i data-feather="plus-circle" class="w-4 h-4"></i>
                 <span>Add</span>
-              </button> -->
-              <button
-                  (click)="goToCreate()"
-                  class="btn m-1 d-inline-flex align-items-center"
-                  style="background-color:#2E5F73;color:white;gap:6px;"
-                  [disabled]="isPeriodLocked"
-                  [attr.title]="isPeriodLocked
-                    ? (currentPeriodName
-                        ? 'Period ' + currentPeriodName + ' is locked'
-                        : 'Accounting period is locked')
-                    : 'Create Purchase Request'">
-                  <i data-feather="plus-circle" class="w-4 h-4"></i>
-                  <span>Add</span>
-                </button>
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- ===== TABLE ===== -->
+        <!-- TABLE -->
         <ngx-datatable
           class="bootstrap core-bootstrap pin-table"
           [rows]="rows"
@@ -108,18 +101,11 @@
           [scrollbarH]="false"
           [reorderable]="true">
 
-          <!-- Eye column -->
-          <ngx-datatable-column
-            [width]="50"
-            [resizeable]="false"
-            [sortable]="false"
-            [draggable]="false"
-            [canAutoResize]="false">
+          <!-- View lines -->
+          <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false"
+            [draggable]="false" [canAutoResize]="false">
             <ng-template ngx-datatable-cell-template let-row="row">
-              <span
-                (click)="openLinesModal(row)"
-                title="View lines"
-                class="pin-eye">
+              <span (click)="openLinesModal(row)" title="View lines" class="pin-eye">
                 <i class="fas fa-eye"></i>
               </span>
             </ng-template>
@@ -146,92 +132,77 @@
           </ngx-datatable-column>
 
           <!-- Status -->
-          <ngx-datatable-column name="Status" prop="status" [width]="150">
+      
+
+         
+
+  <ngx-datatable-column name="GRN" prop="grnNos" [width]="220">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <span title="{{ row.grnNos }}">{{ row.grnNos || '-' }}</span>
+    </ng-template>
+  </ngx-datatable-column>
+    <ngx-datatable-column name="Status" prop="status" [width]="160">
             <ng-template let-value="value" ngx-datatable-cell-template>
-              <div
-                class="badge badge-pill text-center"
+              <div class="badge badge-pill text-center"
                 [ngClass]="{
-                  'badge-secondary': value === 0,
-                  'badge-info'     : value === 1,
-                  'badge-warning'  : value === 2,
-                  'badge-success'  : value === 3
+                  'badge-secondary': +value === 0,
+                  'badge-info'     : +value === 1,
+                  'badge-warning'  : +value === 2,
+                  'badge-success'  : +value === 3
                 }">
                 {{
-                  value === 0 ? 'Draft' :
-                  value === 1 ? 'Hold'  :
-                  value === 2 ? 'Debit Note Created' :
-                  value === 3 ? 'Posted to A/P' :
-                                'Unknown'
+                  +value === 0 ? 'Draft' :
+                  +value === 1 ? 'Hold' :
+                  +value === 2 ? 'Debit Note Created' :
+                  +value === 3 ? 'Posted to A/P' :
+                                 'Unknown'
                 }}
               </div>
             </ng-template>
           </ngx-datatable-column>
+  <ngx-datatable-column name="3-Way Match" [width]="170">
+    <ng-template let-row="row" ngx-datatable-cell-template>
+      <button
+        type="button"
+        class="btn btn-sm"
+        [ngClass]="{
+          'btn-outline-primary' : row.matchStatus !== 'MISMATCH',
+          'btn-outline-danger'  : row.matchStatus === 'MISMATCH'
+        }"
+        (click)="openMatchModal(row)">
+        {{ row.matchStatus === 'MISMATCH' ? (row.mismatchLabel || 'Mismatch') : '3-Way Match' }}
+      </button>
+    </ng-template>
+  </ngx-datatable-column>
 
-          <!-- 3-Way Match column -->
-          <ngx-datatable-column name="3-Way Match" [width]="160">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <button
-                type="button"
-                class="btn btn-sm"
-                [ngClass]="{
-                  'btn-outline-primary' : row.matchStatus === 'OK' || !row.matchStatus,
-                  'btn-outline-danger'  : row.matchStatus === 'MISMATCH'
-                }"
-                (click)="openMatchModal(row)">
-                {{ row.matchStatus === 'MISMATCH' ? 'Mismatch' : '3-Way Match' }}
-              </button>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Action column -->
+          <!-- Actions -->
           <ngx-datatable-column name="Action" [width]="140">
             <ng-template let-row="row" ngx-datatable-cell-template>
-              <!-- Locked state when Posted to A/P -->
-              <!-- <ng-container *ngIf="+row.status === 3; else actionsEnabled">
-                <i
-                  class="fas fa-pen text-gray-300 cursor-not-allowed mr-2"
-                  aria-disabled="true"
-                  title="Disabled for Posted"></i>
-                <i
-                  class="fas fa-trash text-gray-300 cursor-not-allowed"
-                  aria-disabled="true"
-                  title="Disabled for Posted"></i>
-              </ng-container> -->
-<ng-container
-                  *ngIf="+row.status === 2 || +row.status === 3 || +row.status === 4 || isPeriodLocked; else actionsEnabled">
-                  <i
-                    class="fas fa-pen text-gray-300 mr-2"
-                    [attr.title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
-                  <i
-                    class="fas fa-trash text-gray-300"
-                    [attr.title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
-                </ng-container>
+              <ng-container *ngIf="+row.status === 2 || +row.status === 3 || isPeriodLocked; else actionsEnabled">
+                <i class="fas fa-pen text-gray-300 mr-2" [attr.title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
+                <i class="fas fa-trash text-gray-300" [attr.title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
+              </ng-container>
 
-              <!-- Enabled state -->
               <ng-template #actionsEnabled>
-                <i
-                  class="fas fa-pen text-blue-600 cursor-pointer mr-2"
+                <i class="fas fa-pen text-blue-600 cursor-pointer mr-2"
                   title="Edit"
                   (click)="editInvoice(row.id)"></i>
-                <i
-                  class="fas fa-trash text-danger cursor-pointer"
+
+                <i class="fas fa-trash text-danger cursor-pointer"
                   title="Delete"
                   (click)="deleteInvoice(row.id)"></i>
               </ng-template>
             </ng-template>
           </ngx-datatable-column>
+
         </ngx-datatable>
       </div>
     </section>
   </div>
 </div>
 
-<!-- ===== Lines modal ===== -->
-<!-- PIN Lines modal -->
-<div
-  *ngIf="showLinesModal"
-  (click)="closeLinesModal()"
-  class="pin-overlay">
+<!-- LINES MODAL -->
+<div *ngIf="showLinesModal" (click)="closeLinesModal()" class="pin-overlay">
   <div (click)="$event.stopPropagation()" class="pin-modal">
     <div class="pin-modal-head">
       <h3>PIN Lines</h3>
@@ -253,33 +224,17 @@
           </thead>
 
           <tbody>
-            <tr
-              *ngFor="let l of modalLines; let i = index"
-              [class.alt]="i % 2 === 0">
+            <tr *ngFor="let l of modalLines; let i = index" [class.alt]="i % 2 === 0">
               <td class="truncate">{{ l.item || '-' }}</td>
               <td class="truncate">{{ l.location || '-' }}</td>
               <td class="text-right">{{ l.qty || 0 }}</td>
-              <td class="text-right">
-                {{
-                  (l.unitPrice != null ? l.unitPrice : l.price || 0)
-                    | number:'1.2-2'
-                }}
-              </td>
-              <td class="text-right">
-                {{ l.discountPct != null ? (l.discountPct | number:'1.2-2') : '0.00' }}
-              </td>
-              <td class="text-right">
-                {{
-                  (l.lineTotal != null
-                    ? l.lineTotal
-                    : (l.qty || 0) * (l.unitPrice || l.price || 0))
-                    | number:'1.2-2'
-                }}
-              </td>
-              </tr>
+              <td class="text-right">{{ (l.unitPrice ?? l.price ?? 0) | number:'1.2-2' }}</td>
+              <td class="text-right">{{ (l.discountPct ?? 0) | number:'1.2-2' }}</td>
+              <td class="text-right">{{ (l.lineTotal ?? ((l.qty||0) * (l.unitPrice ?? l.price ?? 0))) | number:'1.2-2' }}</td>
+            </tr>
 
             <tr *ngIf="!modalLines?.length">
-              <td colspan="8" class="empty">No lines</td>
+              <td colspan="6" class="empty">No lines</td>
             </tr>
           </tbody>
 
@@ -290,10 +245,7 @@
               <td class="text-right">{{ modalTotalQty }}</td>
               <td></td>
               <td></td>
-              <td class="text-right">
-                {{ modalTotalAmt | number:'1.2-2' }}
-              </td>
-              <td colspan="2"></td>
+              <td class="text-right">{{ modalTotalAmt | number:'1.2-2' }}</td>
             </tr>
           </tfoot>
         </table>
@@ -306,16 +258,9 @@
   </div>
 </div>
 
-
-<!-- ===== 3-Way Match modal ===== -->
-<div
-  *ngIf="showMatchModal"
-  class="pin-overlay"
-  (click)="closeMatchModal()">
-  <div
-    class="pin-modal match-modal"
-    (click)="$event.stopPropagation()">
-
+<!-- 3-WAY MATCH MODAL -->
+<div *ngIf="showMatchModal" class="pin-overlay" (click)="closeMatchModal()">
+  <div class="pin-modal match-modal" (click)="$event.stopPropagation()">
     <div class="pin-modal-head">
       <h3>3-Way Match</h3>
       <button (click)="closeMatchModal()" aria-label="Close">×</button>
@@ -323,7 +268,6 @@
 
     <div class="pin-modal-body">
       <div class="match-body" *ngIf="threeWay; else loadingMatch">
-        <!-- PO card -->
         <div class="match-card match-card-po">
           <h4>PO</h4>
           <p>Qty: {{ threeWay.poQty || 0 }}</p>
@@ -331,7 +275,6 @@
           <p>Total: {{ (threeWay.poTotal || 0) | number:'1.2-2' }}</p>
         </div>
 
-        <!-- GRN card -->
         <div class="match-card match-card-grn">
           <h4>GRN</h4>
           <p>Received: {{ threeWay.grnReceivedQty || 0 }}</p>
@@ -339,57 +282,42 @@
           <p>Status: {{ threeWay.grnStatus || 'OK' }}</p>
         </div>
 
-        <!-- PIN card -->
         <div class="match-card match-card-pin">
           <h4>PIN</h4>
           <p>Invoice Qty: {{ threeWay.pinQty || 0 }}</p>
           <p>Total: {{ (threeWay.pinTotal || 0) | number:'1.2-2' }}</p>
-         <p [ngClass]="threeWay.pinMatch ? 'text-success' : 'text-danger'">
-  {{ threeWay.pinMatch ? 'Match' : (pinMismatchLabel || 'Mismatch') }}
-</p>
 
+          <p [ngClass]="threeWay.pinMatch ? 'text-success' : 'text-danger'">
+            {{ threeWay.pinMatch ? 'Match' : (pinMismatchLabel || 'Mismatch') }}
+          </p>
+
+          <div *ngIf="!threeWay.pinMatch && matchIssues?.length" class="mt-1 text-danger" style="font-size:0.85rem">
+            <div *ngFor="let m of matchIssues">• {{ m }}</div>
+          </div>
         </div>
       </div>
 
-    
       <ng-template #loadingMatch>
-        <div class="py-3 text-center text-muted">
-          Loading 3-way match details...
-        </div>
+        <div class="py-3 text-center text-muted">Loading 3-way match details...</div>
       </ng-template>
     </div>
 
     <div class="match-footer">
-      <!-- Go to Debit Note -->
       <button
         type="button"
         class="btn btn-secondary"
         (click)="goToDebitNote()"
-        [disabled]="
-          isPosting ||
-          !currentRow ||
-          !threeWay ||
-          threeWay.pinMatch ||
-          +currentRow.status >= 2
-        ">
+        [disabled]="isPosting || !currentRow || !threeWay || threeWay.pinMatch || +currentRow.status >= 2">
         Go to Debit Note
       </button>
 
-      <!-- Approve & Post to A/P -->
       <button
         type="button"
         class="btn btn-primary"
         (click)="approveAndPostToAp()"
-        [disabled]="
-          isPosting ||
-          !currentRow ||
-          !threeWay ||
-          +currentRow.status === 3 ||
-          (!threeWay.pinMatch && +currentRow.status !== 2)
-        ">
+        [disabled]="isPosting || !currentRow || !threeWay || +currentRow.status === 3 || (!threeWay.pinMatch && +currentRow.status !== 2)">
         Approve &amp; Post to A/P
       </button>
     </div>
-
   </div>
 </div>

@@ -1,110 +1,59 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'environments/environment';
 import { Observable } from 'rxjs';
-import { SupplierInvoiceAPIUrls } from 'Urls/SupplierInvoiceAPIUrls ';
-import { SupplierApiUrls } from 'Urls/SuppliersApiUrls';
-import { DebitNoteApiUrls } from 'Urls/DebitNoteApiUrls';   // 🔹 add this
 
-export interface OcrInvoiceLine {
-  poNo?: string;
-  grnNo?: string;
-  item?: string;
-  qty?: number;
-  price?: number;
-}
-
-export interface OcrInvoiceResult {
-  invoiceNo?: string;
-  invoiceDate?: string; // yyyy-mm-dd
-  amount?: number;
-  tax?: number;
-  currency?: string;
-  lines?: OcrInvoiceLine[];
-}
-
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class SupplierInvoiceService {
   private url = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
-  // 🔹 GET all supplier invoices (PIN)
+  // ======================
+  // PIN CRUD
+  // ======================
   getAll(): Observable<any> {
-    return this.http.get<any[]>(this.url + SupplierInvoiceAPIUrls.GetAll);
+    return this.http.get(this.url + '/SupplierInvoicePin/GetAll');
   }
 
-  // 🔹 CREATE PIN
-  create(data: any): Observable<any> {
-    return this.http.post(this.url + SupplierInvoiceAPIUrls.Create, data);
+  getById(id: number): Observable<any> {
+    return this.http.get(`${this.url}/SupplierInvoicePin/GetById/${id}`);
   }
 
-  // 🔹 UPDATE PIN
-  update(id: number, data: any): Observable<any> {
-    return this.http.put(
-      `${this.url + SupplierInvoiceAPIUrls.Update}${id}`,
-      data
-    );
+  create(payload: any): Observable<any> {
+    return this.http.post(this.url + '/SupplierInvoicePin/Create', payload);
   }
 
-  // 🔹 DELETE PIN
+  update(id: number, payload: any): Observable<any> {
+    return this.http.put(`${this.url}/SupplierInvoicePin/Update/${id}`, payload);
+  }
+
   delete(id: number): Observable<any> {
-    return this.http.delete(
-      `${this.url + SupplierInvoiceAPIUrls.Delete}${id}`
-    );
+    return this.http.delete(`${this.url}/SupplierInvoicePin/Delete/${id}`);
   }
 
-  // 🔹 GET PIN by Id
-  GetSupplierInvoiceById(id: number): Observable<any> {
-    return this.http.get(
-      `${this.url + SupplierInvoiceAPIUrls.GetById}${id}`
-    );
-  }
-
-  // 🔹 3-Way match
+  // ======================
+  // 3-way match
+  // ======================
   getThreeWayMatch(pinId: number): Observable<any> {
-    return this.http.get<any>(
-      this.url + SupplierInvoiceAPIUrls.GetThreeWayMatch + pinId
-    );
+    return this.http.get(`${this.url}/SupplierInvoicePin/GetThreeWayMatch/${pinId}`);
   }
 
-  // 🔹 Post to A/P
   postToAp(pinId: number): Observable<any> {
-    // controller: [HttpPost("PostToAp/{id}")]
-    return this.http.post<any>(
-      this.url + SupplierInvoiceAPIUrls.PostToAp + pinId,
-      {}
-    );
+    return this.http.post(`${this.url}/SupplierInvoicePin/PostToAp/${pinId}`, {});
   }
 
-  // 🔹 Flag for Review (Hold / Flagged)
-  flagForReview(pinId: number): Observable<any> {
-    // controller: [HttpPost("FlagForReview/{id}")]
-    return this.http.post<any>(
-      this.url + SupplierInvoiceAPIUrls.FlagForReview + pinId,
-      {}
-    );
-  }
+  // ======================
+  // ✅ Debit Note: Missing methods (FIX)
+  // ======================
 
-  // 🔹 NEW: Get Debit Note source (used when creating Debit Note from PIN)
-  // hits SupplierDebitNoteController.GetDebitNoteSource(id)
+  /** Debit Note create screen needs PO/GRN/PIN source details */
   getDebitNoteSource(pinId: number): Observable<any> {
-    return this.http.get<any>(
-      this.url + DebitNoteApiUrls.GetDebitNoteSource + pinId
-    );
+    return this.http.get(`${this.url}/SupplierDebitNote/GetSourceByPin/${pinId}`);
   }
-  markDebitNote(pinId: number): Observable<any> {
-    return this.http.post<any>(
-      this.url + DebitNoteApiUrls.MarkDebitNote + pinId,
-      {}
-    );
-  }
-  getSupplierAdvancesBySupplier(supplierId: number) {
-  return this.http.get<any>(
-    this.url +DebitNoteApiUrls.getSupplierAdvancesBySupplier + supplierId
-  );
-}
 
+  /** After DN created -> mark PIN as DN created (or update status) */
+  markDebitNote(pinId: number): Observable<any> {
+    return this.http.post(`${this.url}/SupplierInvoicePin/MarkDebitNote/${pinId}`, {});
+  }
 }

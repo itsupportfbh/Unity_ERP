@@ -9,6 +9,8 @@ export class GRNApiUrls {
   public static readonly GetAllGRNByPOId = "/PurchaseGoodReceipt/GetAllGRNByPoId";
 
   public static readonly ApplyGrnAndUpdateSalesOrder = "/PurchaseGoodReceipt/apply-grn-update-salesorder";
+public static readonly  GetAvailableForPinCreate= "/PurchaseGoodReceipt/AvailableForPinCreate";
+ public static readonly GetAvailableForPinEdit = "/PurchaseGoodReceipt/AvailableForPinEdit/";
 
 }
 

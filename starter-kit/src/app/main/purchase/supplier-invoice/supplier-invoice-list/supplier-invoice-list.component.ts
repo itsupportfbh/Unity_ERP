@@ -31,34 +31,21 @@ interface ThreeWayMatch {
   pinQty: number;
   pinTotal: number;
 
-  pinMatch: boolean; // true = match, false = mismatch
+  pinMatch: boolean;
 }
+
 export interface PeriodStatusDto {
   isLocked: boolean;
   periodName?: string;
-  periodCode?: string;
-  startDate?: string;
-  endDate?: string;
 }
 
-// this matches what you showed
-export interface PeriodStatusResponseRaw {
-  isSuccess?: boolean;
-  isLocked?: boolean;
-  periodName?: string;
-  startDate?: string;
-  endDate?: string;
-  // in case backend later wraps in data
-  data?: PeriodStatusDto | null;
-}
 @Component({
   selector: 'app-supplier-invoice-list',
   templateUrl: './supplier-invoice-list.component.html',
   styleUrls: ['./supplier-invoice-list.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class SupplierInvoiceListComponent
-  implements OnInit, AfterViewInit, AfterViewChecked {
+export class SupplierInvoiceListComponent implements OnInit, AfterViewInit, AfterViewChecked {
 
   @ViewChild(DatatableComponent) table!: DatatableComponent;
 
@@ -68,62 +55,61 @@ export class SupplierInvoiceListComponent
   ColumnMode = ColumnMode;
   selectedOption = 10;
 
-  // KPI counters
+  // KPI
   totalPending = 0;
   autoMatched = 0;
   mismatched = 0;
   awaitingApproval = 0;
 
-  // lines modal
+  // Lines modal
   showLinesModal = false;
   modalLines: any[] = [];
   modalTotalQty = 0;
   modalTotalAmt = 0;
 
-  // 3-way match modal
+  // Match modal
   showMatchModal = false;
   currentRow: any = null;
   threeWay: ThreeWayMatch | null = null;
   matchIssues: string[] = [];
-   pinMismatchLabel: string | null = null;
+  pinMismatchLabel: string | null = null;
   isPosting = false;
+
+  // Period Lock
   isPeriodLocked = false;
   currentPeriodName = '';
+
   constructor(
     private api: SupplierInvoiceService,
     private router: Router,
-     private periodService: PeriodCloseService
+    private periodService: PeriodCloseService
   ) {}
 
   ngOnInit(): void {
-     const today = new Date().toISOString().substring(0, 10);
+    const today = new Date().toISOString().substring(0, 10);
     this.checkPeriodLockForDate(today);
     this.loadInvoices();
   }
 
-  ngAfterViewInit(): void {
-    feather.replace();
+  ngAfterViewInit(): void { feather.replace(); }
+  ngAfterViewChecked(): void { feather.replace(); }
+
+  private checkPeriodLockForDate(dateStr: string): void {
+    if (!dateStr) return;
+
+    this.periodService.getStatusForDateWithName(dateStr).subscribe({
+      next: (res: PeriodStatusDto | null) => {
+        this.isPeriodLocked = !!res?.isLocked;
+        this.currentPeriodName = res?.periodName || '';
+      },
+      error: () => {
+        this.isPeriodLocked = false;
+        this.currentPeriodName = '';
+      }
+    });
   }
 
-  ngAfterViewChecked(): void {
-    feather.replace();
-  }
-    private checkPeriodLockForDate(dateStr: string): void {
-      if (!dateStr) { return; }
-  
-      this.periodService.getStatusForDateWithName(dateStr).subscribe({
-        next: (res: PeriodStatusDto | null) => {
-          this.isPeriodLocked = !!res?.isLocked;
-          this.currentPeriodName = res?.periodName || '';
-        },
-        error: () => {
-          // if fails, UI side don’t hard-lock; backend will still protect
-          this.isPeriodLocked = false;
-          this.currentPeriodName = '';
-        }
-      });
-    }
-private showPeriodLockedSwal(action: string): void {
+  private showPeriodLockedSwal(action: string): void {
     Swal.fire(
       'Period Locked',
       this.currentPeriodName
@@ -132,65 +118,63 @@ private showPeriodLockedSwal(action: string): void {
       'warning'
     );
   }
-  // ================= LOAD & SUMMARY =================
 
-  loadInvoices(): void {
-    this.api.getAll().subscribe({
-      next: (res: any) => {
-        const data = res?.data || res || [];
-        const mapped = data.map((x: any) => ({
+  // ================= LOAD =================
+
+loadInvoices(): void {
+  this.api.getAll().subscribe({
+    next: (res: any) => {
+      const data = res?.data || res || [];
+
+      const mapped = data.map((x: any) => {
+        // ✅ SAFE boolean
+        const raw = (x.pinMatch ?? x.PinMatch);
+        const pinMatch = (raw === true || raw === 1 || raw === '1' || raw === 'true');
+
+        return {
           id: x.id,
           invoiceNo: x.invoiceNo,
           invoiceDate: x.invoiceDate,
           amount: x.amount,
           tax: x.tax,
-          currency: x.currency || 'SGD',
+          currencyId: x.currencyId,
           status: Number(x.status ?? 0),
-          linesJson: x.linesJson || '[]',
-          // optional fields from backend, if you later add them
-          pinMatch: x.pinMatch ?? null,
-          matchStatus: x.matchStatus ?? null  // 'OK' | 'MISMATCH'
-        }));
 
-        this.rows = mapped;
-        this.tempData = [...mapped];
-        if (this.table) this.table.offset = 0;
+          // ✅ show GRNs
+          grnNos: x.grnNos || '',
 
-        // compute KPIs from statuses and any existing match flags
-        this.recalcSummary();
-      },
-      error: (e) => console.error(e)
-    });
-  }
+          // ✅ Match button
+          pinMatch,
+          matchStatus: pinMatch ? 'OK' : 'MISMATCH',
+          mismatchLabel: x.mismatchLabel || null,
 
-  private recalcSummary(): void {
-    const all = this.rows || [];
+          linesJson: x.linesJson || '[]'
+        };
+      });
 
-    // Not posted to AP
-    this.totalPending = all.filter(r => r.status !== 3).length;
+      this.rows = mapped;
+      this.tempData = [...mapped];
+      if (this.table) this.table.offset = 0;
 
-    // Awaiting approval: here using status=2 (Debit Note Created)
-    this.awaitingApproval = all.filter(r => r.status === 2).length;
+      this.recalcSummary();
+    },
+    error: (e) => console.error(e)
+  });
+}
 
-    // If some rows already have matchStatus / pinMatch info, count them
-    this.autoMatched = all.filter(r => r.status !== 3 && r.pinMatch === true).length;
-    this.mismatched = all.filter(r => r.status !== 3 && r.pinMatch === false).length;
-  }
+private recalcSummary(): void {
+  const all = this.rows || [];
+  this.totalPending = all.filter(r => +r.status !== 3).length;
+  this.awaitingApproval = all.filter(r => +r.status === 2).length;
 
-  // recompute KPIs when one row's match result is known
-  private updateMatchSummaryForRow(rowId: number, pinMatch: boolean): void {
-    const idx = this.rows.findIndex(r => r.id === rowId);
-    if (idx !== -1) {
-      this.rows[idx].pinMatch = pinMatch;
-      this.rows[idx].matchStatus = pinMatch ? 'OK' : 'MISMATCH';
-    }
-    this.recalcSummary();
-  }
+  this.autoMatched = all.filter(r => +r.status !== 3 && r.pinMatch === true).length;
+  this.mismatched  = all.filter(r => +r.status !== 3 && r.pinMatch === false).length;
+}
 
-  // =============== FILTER / SEARCH ===============
+ 
 
   filterUpdate(event: any): void {
-    const val = (event?.target?.value || '').toLowerCase();
+    const val = (event?.target?.value || '').toLowerCase().trim();
 
     if (!val) {
       this.rows = [...this.tempData];
@@ -198,56 +182,39 @@ private showPeriodLockedSwal(action: string): void {
       return;
     }
 
-    const matches = (d: any) =>
+    this.rows = this.tempData.filter(d =>
       (d.invoiceNo || '').toLowerCase().includes(val) ||
-      (d.currency || '').toLowerCase().includes(val) ||
       String(d.amount || '').toLowerCase().includes(val) ||
-      this.statusText(d.status).toLowerCase().includes(val) ||
-      (d.invoiceDate
-        ? new Date(d.invoiceDate).toLocaleDateString().toLowerCase()
-        : ''
-      ).includes(val);
+      this.statusText(+d.status).toLowerCase().includes(val) ||
+      (d.invoiceDate ? new Date(d.invoiceDate).toLocaleDateString().toLowerCase() : '').includes(val)
+    );
 
-    this.rows = this.tempData.filter(matches);
     if (this.table) this.table.offset = 0;
   }
 
-  // 0=Draft, 1=Hold, 2=Debit Note, 3=Posted to A/P
   statusText(s: number): string {
-    return s === 0
-      ? 'Draft'
-      : s === 1
-      ? 'Hold'
-      : s === 2
-      ? 'Debit Note Created'
-      : s === 3
-      ? 'Posted to A/P'
+    return s === 0 ? 'Draft'
+      : s === 1 ? 'Hold'
+      : s === 2 ? 'Debit Note Created'
+      : s === 3 ? 'Posted to A/P'
       : 'Unknown';
   }
 
-  // =============== NAVIGATION / CRUD ===============
+  // ================= NAV =================
 
   goToCreate(): void {
-     if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('Create Purchase Requests');
-      return;
-    }
+    if (this.isPeriodLocked) { this.showPeriodLockedSwal('create Supplier Invoice'); return; }
     this.router.navigate(['/purchase/Create-SupplierInvoice']);
   }
 
   editInvoice(id: number): void {
-     if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('edit Purchase Requests');
-      return;
-    }
+    if (this.isPeriodLocked) { this.showPeriodLockedSwal('edit Supplier Invoice'); return; }
     this.router.navigate(['/purchase/Edit-SupplierInvoice', id]);
   }
 
   deleteInvoice(id: number): void {
-     if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('edit Purchase Requests');
-      return;
-    }
+    if (this.isPeriodLocked) { this.showPeriodLockedSwal('delete Supplier Invoice'); return; }
+
     Swal.fire({
       title: 'Are you sure?',
       text: 'This will permanently delete the supplier invoice.',
@@ -255,122 +222,88 @@ private showPeriodLockedSwal(action: string): void {
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!',
-      customClass: {
-        confirmButton:
-          'px-2 py-1 text-xs rounded-md text-white bg-red-600 hover:bg-red-700 mx-1',
-        cancelButton:
-          'px-2 py-1 text-xs rounded-md text-white bg-blue-600 hover:bg-blue-700 mx-1'
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.api.delete(id).subscribe({
-          next: () => {
-            this.loadInvoices();
-            Swal.fire(
-              'Deleted!',
-              'Supplier invoice has been deleted.',
-              'success'
-            );
-          },
-          error: (err) => console.error('Error deleting invoice', err)
-        });
-      }
+      confirmButtonText: 'Yes, delete it!'
+    }).then(r => {
+      if (!r.isConfirmed) return;
+
+      this.api.delete(id).subscribe({
+        next: () => {
+          this.loadInvoices();
+          Swal.fire('Deleted!', 'Supplier invoice has been deleted.', 'success');
+        },
+        error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Delete failed', 'error')
+      });
     });
   }
 
-openLinesModal(row: any): void {
-  let lines: any[] = [];
-  try {
-    lines = JSON.parse(row?.linesJson || '[]');
-  } catch {
-    lines = [];
+  // ================= LINES MODAL =================
+
+  openLinesModal(row: any): void {
+    let lines: any[] = [];
+    try { lines = JSON.parse(row?.linesJson || '[]'); } catch { lines = []; }
+
+    this.modalLines = lines;
+
+    this.modalTotalQty = lines.reduce((s, l) => s + (Number(l?.qty) || 0), 0);
+
+    this.modalTotalAmt = lines.reduce((s, l) => {
+      const qty = Number(l?.qty) || 0;
+      const unit = l?.unitPrice != null ? Number(l.unitPrice) : Number(l?.price || 0);
+      const lineTotal = l?.lineTotal != null ? Number(l.lineTotal) : qty * unit;
+      return s + lineTotal;
+    }, 0);
+
+    this.showLinesModal = true;
   }
 
-  this.modalLines = lines;
+  closeLinesModal(): void { this.showLinesModal = false; }
 
-  // total qty
-  this.modalTotalQty = lines.reduce(
-    (s, l) => s + (Number(l?.qty) || 0),
-    0
-  );
-
-  // total amount = Σ lineTotal (fallback to qty * unitPrice/price)
-  this.modalTotalAmt = lines.reduce((s, l) => {
-    const qty = Number(l?.qty) || 0;
-    const unit = l?.unitPrice != null ? Number(l.unitPrice) : Number(l?.price || 0);
-    const lineTotal =
-      l?.lineTotal != null ? Number(l.lineTotal) : qty * unit;
-
-    return s + lineTotal;
-  }, 0);
-
-  this.showLinesModal = true;
-}
-
-
-  closeLinesModal(): void {
-    this.showLinesModal = false;
-  }
-
-  // =============== 3-WAY MATCH MODAL ===============
+  // ================= 3-WAY MATCH =================
 
   openMatchModal(row: any): void {
     this.currentRow = row;
     this.showMatchModal = true;
     this.threeWay = null;
     this.matchIssues = [];
+    this.pinMismatchLabel = null;
 
     this.api.getThreeWayMatch(row.id).subscribe({
       next: (res: any) => {
         const d = res?.data || res || null;
-        if (!d) {
-          this.threeWay = null;
-          return;
-        }
+        if (!d) return;
 
-        const match: ThreeWayMatch = {
-          ...d,
-          pinMatch: !!(d.pinMatch ?? d.PinMatch)
-        };
+        const match: ThreeWayMatch = { ...d, pinMatch: !!(d.pinMatch ?? d.PinMatch) };
         this.threeWay = match;
 
-       const issues: string[] = [];
-const qtyDiff = Math.abs((match.pinQty || 0) - (match.poQty || 0));
-const totalDiff = Math.abs((match.pinTotal || 0) - (match.poTotal || 0));
+        // Issues
+        const issues: string[] = [];
+        const qtyDiff = Math.abs((match.pinQty || 0) - (match.poQty || 0));
+        const totalDiff = Math.abs((match.pinTotal || 0) - (match.poTotal || 0));
 
-// qty issue
-if (qtyDiff > 0.0001) {
-  issues.push(`Quantity mismatch: PO ${match.poQty || 0}, PIN ${match.pinQty || 0}`);
-}
+        if (qtyDiff > 0.0001) issues.push(`Quantity mismatch: PO ${match.poQty || 0}, PIN ${match.pinQty || 0}`);
+        if (totalDiff > 0.01) issues.push(`Price/Total mismatch: PO ${(match.poTotal ?? 0).toFixed(2)}, PIN ${(match.pinTotal ?? 0).toFixed(2)}`);
 
-// price/total issue
-if (totalDiff > 0.01) {
-  const poTotal = (match.poTotal ?? 0).toFixed(2);
-  const pinTotal = (match.pinTotal ?? 0).toFixed(2);
-  issues.push(`Price/Total mismatch: PO ${poTotal}, PIN ${pinTotal}`);
-}
+        this.matchIssues = issues;
 
-this.matchIssues = issues;
+        if (!match.pinMatch) {
+          const tags: string[] = [];
+          if (qtyDiff > 0.0001) tags.push('Qty');
+          if (totalDiff > 0.01) tags.push('Total');
+          this.pinMismatchLabel = tags.length ? `Mismatch (${tags.join(' & ')})` : 'Mismatch';
+        } else {
+          this.pinMismatchLabel = 'Match';
+        }
 
-// 👉 short label near "Mismatch"
-if (!match.pinMatch) {
-  const tags: string[] = [];
-  if (qtyDiff > 0.0001) tags.push('Qty');
-  if (totalDiff > 0.01) tags.push('Total');
-
-  this.pinMismatchLabel = tags.length
-    ? `Mismatch (${tags.join(' & ')})`
-    : 'Mismatch';
-} else {
-  this.pinMismatchLabel = 'Match';
-}
-
-// update row + KPI
-this.updateMatchSummaryForRow(row.id, match.pinMatch);
+        // Update list row for KPI + button label
+        const idx = this.rows.findIndex(r => r.id === row.id);
+        if (idx !== -1) {
+          this.rows[idx].pinMatch = match.pinMatch;
+          this.rows[idx].matchStatus = match.pinMatch ? 'OK' : 'MISMATCH';
+          this.rows[idx].mismatchLabel = this.pinMismatchLabel;
+        }
+        this.recalcSummary();
       },
-      error: (err) => {
-        console.error('Error loading 3-way match', err);
+      error: () => {
         this.showMatchModal = false;
         Swal.fire('Error', 'Unable to load 3-way match details.', 'error');
       }
@@ -382,39 +315,28 @@ this.updateMatchSummaryForRow(row.id, match.pinMatch);
     this.currentRow = null;
     this.threeWay = null;
     this.matchIssues = [];
+    this.pinMismatchLabel = null;
     this.isPosting = false;
   }
 
-  // NEW: navigate to Debit Note create screen with this PIN
   goToDebitNote(): void {
-    if (!this.currentRow) { return; }
-
-    this.router.navigate(['/purchase/create-debitnote'], {
-      queryParams: {
-        pinId: this.currentRow.id
-      }
-    });
-
+    if (!this.currentRow) return;
+    this.router.navigate(['/purchase/create-debitnote'], { queryParams: { pinId: this.currentRow.id } });
     this.closeMatchModal();
   }
 
-  // =============== STATUS ACTIONS ===============
-
-  // Status 3 = Posted to A/P
   approveAndPostToAp(): void {
     if (!this.currentRow) return;
 
     this.isPosting = true;
     this.api.postToAp(this.currentRow.id).subscribe({
       next: () => {
-        this.currentRow.status = 3;
         this.isPosting = false;
         this.closeMatchModal();
         this.loadInvoices();
         Swal.fire('Posted', 'Invoice posted to A/P.', 'success');
       },
-      error: (err) => {
-        console.error('Post to A/P failed', err);
+      error: () => {
         this.isPosting = false;
         Swal.fire('Error', 'Failed to post to A/P.', 'error');
       }

@@ -52,52 +52,66 @@
         <div class="pinX__section">
           <div class="pinX__grid">
             <!-- GRN combobox -->
-            <div class="pinX__field pinX__field--grn grn-combobox">
-              <label class="pinX__label">GRN #</label>
+         <!-- GRN combobox -->
+<div class="pinX__field pinX__field--grn grn-combobox">
+  <label class="pinX__label">GRN #</label>
 
-              <div class="pinX__combo">
-                <input
-                  type="text"
-                  class="pinX__input pinX__input--withCaret"
-                  [value]="grnSearch"
-                  (input)="onGrnSearch($event)"
-                  (focus)="onGrnFocus()"
-                  placeholder="Search GRN…"
-                  [attr.aria-expanded]="grnOpen"
-                />
+  <div class="pinX__combo">
+    <input
+      type="text"
+      class="pinX__input pinX__input--withCaret"
+      [value]="grnSearch"
+      (input)="onGrnSearch($event)"
+      (focus)="onGrnFocus()"
+      placeholder="Search GRN…"
+      [attr.aria-expanded]="grnOpen"
+    />
 
-                <button
-                  type="button"
-                  class="pinX__caretBtn"
-                  (click)="grnOpen = !grnOpen"
-                  aria-label="Toggle GRN list"
-                >
-                  <i class="fas fa-chevron-down"></i>
-                </button>
-              </div>
+    <button
+      type="button"
+      class="pinX__caretBtn"
+      (click)="grnOpen = !grnOpen"
+      aria-label="Toggle GRN list">
+      <i class="fas fa-chevron-down"></i>
+    </button>
+  </div>
 
-              <input type="hidden" formControlName="grnId" />
-              <input type="hidden" formControlName="grnNo" />
+  <!-- ✅ multi-grn controls -->
+  <input type="hidden" formControlName="grnIds" />
+  <input type="hidden" formControlName="grnNos" />
 
-              <div *ngIf="grnOpen" class="pinX__dropdown">
-                <div class="pinX__dropHead">Choose GRN</div>
+  <div *ngIf="grnOpen" class="pinX__dropdown">
+    <div class="pinX__dropHead">Choose GRN</div>
 
-                <button
-                  type="button"
-                  class="pinX__dropItemOneLine"
-                  *ngFor="let g of grnFiltered; trackBy: trackByLine"
-                  (click)="selectGrn(g)"
-                >
-                  <span class="xNo">{{ g.grnNo }}</span>
-                  <span class="xSep">•</span>
-                  <span class="xSup">{{ g.supplierName || '-' }}</span>
-                  <span class="xSep" *ngIf="g.poNo">•</span>
-                  <span class="xPo" *ngIf="g.poNo">PO: {{ g.poNo }}</span>
-                </button>
+    <button
+      type="button"
+      class="pinX__dropItemOneLine"
+      *ngFor="let g of grnFiltered"
+      (click)="toggleGrn(g)">
 
-                <div *ngIf="!grnFiltered?.length" class="pinX__dropEmpty">No results</div>
-              </div>
-            </div>
+      <span class="xNo">{{ g.grnNo }}</span>
+      <span class="xSep">•</span>
+      <span class="xSup">{{ g.supplierName || '-' }}</span>
+      <span class="xSep" *ngIf="g.poNo">•</span>
+      <span class="xPo" *ngIf="g.poNo">PO: {{ g.poNo }}</span>
+
+      <!-- ✅ selected tick -->
+      <span class="ml-auto" *ngIf="isGrnSelected(g.id)">
+        <i class="fas fa-check text-success"></i>
+      </span>
+    </button>
+
+    <div *ngIf="!grnFiltered?.length" class="pinX__dropEmpty">No results</div>
+  </div>
+
+  <!-- ✅ show selected chips -->
+  <div class="mt-50" *ngIf="selectedGrnNos?.length">
+    <span class="badge badge-pill badge-light mr-25" *ngFor="let n of selectedGrnNos">
+      {{ n }}
+      <i class="fas fa-times ml-25 cursor-pointer" (click)="removeGrnByNo(n)"></i>
+    </span>
+  </div>
+</div>
 
             <!-- Supplier -->
             <div class="pinX__field">

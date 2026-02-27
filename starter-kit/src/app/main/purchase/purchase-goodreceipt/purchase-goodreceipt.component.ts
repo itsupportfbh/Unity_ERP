@@ -68,6 +68,12 @@ export interface LineRow {
   isFlagIssue?: boolean;
   isPostInventory?: boolean;
   flagIssueId?: number | null;
+  
+
+  // ✅ add these
+  poQty?: number | null;        // ordered qty from PO
+  remainingQty?: number | null; // for now same as poQty (later remaining)
+  isPartial?: boolean;
 }
 
 interface GeneratedGRN {
@@ -275,7 +281,8 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       strategyId: r.strategyId ?? null,
       strategyName: r.strategyName ?? this.lookupStrategyName(r.strategyId),
 
-      qtyReceived: r.qtyReceived ?? null,
+     qtyReceived: r.qtyReceived ?? null,
+  isPartial: !!r.isPartial,
       qualityCheck: r.qualityCheck ?? '',
       batchSerial: r.batchSerial ?? '',
 
@@ -301,23 +308,23 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     }));
 
     // ✅ IMPORTANT: keep "" (empty string) — don't convert to null in frontend
-    const inv = String(this.invoiceNo ?? ''); // no trim needed; "" stays ""
+const inv = String(this.invoiceNo ?? '');
+const isPartial = (this.grnRows || []).some((x: any) => !!x.isPartial);
 
-    const payload: any = {
-      id: this.editingGrnId ?? 0,
-      poid: this.selectedPO,
-      supplierId: this.currentSupplierId,
-      receptionDate: this.receiptDate ? new Date(this.receiptDate) : new Date(),
-      overReceiptTolerance: this.overReceiptTolerance,
+const payload: any = {
+  id: this.editingGrnId ?? 0,
+  poid: this.selectedPO,
+  supplierId: this.currentSupplierId,
+  receptionDate: this.receiptDate ? new Date(this.receiptDate) : new Date(),
+  overReceiptTolerance: this.overReceiptTolerance,
 
-      // ✅ BACKEND FIELD: InvoiceNo (send both cases)
-      InvoiceNo: inv,
-      invoiceNo: inv,
+  isPartial: isPartial,
+  invoiceNo: inv,
 
-      grnJson: JSON.stringify(rowsForApi),
-      grnNo: this.generatedGRN?.grnNo ?? '',
-      isActive: true
-    };
+  grnJson: JSON.stringify(rowsForApi),
+  grnNo: this.generatedGRN?.grnNo ?? '',
+  isActive: true
+};
 
     this.purchaseGoodReceiptService.createGRN(payload).subscribe({
       next: (res: any) => {
@@ -621,6 +628,28 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       this.currentSupplierName = name || po.supplierName || '';
       this.buildRowsFromPo(po, this.currentSupplierId, this.currentSupplierName);
     });
+    this.buildRowsFromPo(po, this.currentSupplierId, this.currentSupplierName);
+
+this.purchaseGoodReceiptService.getReceivedAggByPO(selectedId).subscribe({
+  next: (res: any) => {
+    const list = res?.data ?? res ?? [];
+    const map = new Map<string, number>();
+    (list || []).forEach((x: any) => {
+      map.set(String(x.itemCode || '').trim().toUpperCase(), Number(x.totalReceived || 0));
+    });
+
+    this.grnRows = (this.grnRows || []).map(r => {
+      const code = String(r.itemCode || '').trim().toUpperCase();
+      const poQty = Number(r.poQty ?? 0);
+      const already = Number(map.get(code) ?? 0);
+      const remaining = Math.max(0, poQty - already);
+
+      return { ...r, remainingQty: remaining, alreadyReceived: already };
+    });
+
+    this.cdRef.detectChanges(); // ✅ important
+  }
+});
   }
 
   private loadSupplierById(id: number) {
@@ -631,69 +660,75 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
     );
   }
 
-  /* ================= Build rows from PO ================= */
-  private buildRowsFromPo(
-    po: { poLines?: string },
-    supplierId: number | null,
-    supplierName: string
-  ) {
-    let lines: any[] = [];
-    try { lines = po.poLines ? JSON.parse(po.poLines) : []; } catch { lines = []; }
-    if (!lines.length) { lines = [{}]; }
+private buildRowsFromPo(
+  po: { poLines?: string },
+  supplierId: number | null,
+  supplierName: string
+) {
+  let lines: any[] = [];
+  try { lines = po.poLines ? JSON.parse(po.poLines) : []; } catch { lines = []; }
+  if (!lines.length) { lines = [{}]; }
 
-    this.grnRows = lines.map(line => {
-      const itemText = String(line?.item || '').trim();
-      const itemCode = this.extractItemCode(itemText);
-      const itemName = this.extractItemName(itemText);
+  this.grnRows = lines.map(line => {
+    const itemText = String(line?.item || '').trim();
+    const itemCode = this.extractItemCode(itemText);
+    const itemName = this.extractItemName(itemText);
 
-      const unitPrice =
-        this.getNumberOrNull(line?.unitPrice) ??
-        this.getNumberOrNull(line?.UnitPrice) ??
-        this.getNumberOrNull(line?.price) ??
-        null;
+    const poQty =
+  this.getNumberOrNull(line?.qty ?? line?.Qty ?? line?.quantity ?? line?.Quantity) ?? 0;
 
-      const barcode = line?.barcode ?? line?.Barcode ?? null;
+    const unitPrice =
+      this.getNumberOrNull(line?.unitPrice) ??
+      this.getNumberOrNull(line?.UnitPrice) ??
+      this.getNumberOrNull(line?.price) ??
+      null;
 
-      return {
-        itemText,
-        itemCode,
-        itemName,
+    const barcode = line?.barcode ?? line?.Barcode ?? null;
 
-        supplierId,
-        supplierName,
+    return {
+      itemText,
+      itemCode,
+      itemName,
 
-        supplierCode: null,
-        warehouseId: null,
-        binId: null,
-        warehouseName: null,
-        binName: null,
-        strategyId: null,
-        strategyName: null,
-        qtyReceived: null,
-        qualityCheck: 'notverify',
-        batchSerial: '',
-        unitPrice,
-        barcode,
-        storageType: 'Chilled',
-        surfaceTemp: '',
-        expiry: '',
-        pestSign: 'No',
-        drySpillage: 'No',
-        odor: 'No',
-        plateNumber: '',
-        defectLabels: 'No',
-        damagedPackage: 'No',
-        time: '',
-        initial: this.currentUsername,
-        remarks: '',
-        createdAt: new Date(),
-        photos: [],
-        isFlagIssue: false,
-        isPostInventory: false,
-        flagIssueId: null
-      } as LineRow;
-    });
-  }
+      supplierId,
+      supplierName,
+
+      // existing...
+      warehouseId: null,
+      binId: null,
+      strategyId: null,
+      qtyReceived: null,
+
+      // ✅ set po qty
+      poQty,
+      remainingQty: poQty,   // (later: poQty - alreadyReceived)
+      isPartial: false,
+
+      qualityCheck: 'notverify',
+      batchSerial: '',
+      unitPrice,
+      barcode,
+
+      storageType: 'Chilled',
+      surfaceTemp: '',
+      expiry: '',
+      pestSign: 'No',
+      drySpillage: 'No',
+      odor: 'No',
+      plateNumber: '',
+      defectLabels: 'No',
+      damagedPackage: 'No',
+      time: '',
+      initial: this.currentUsername,
+      remarks: '',
+      createdAt: new Date(),
+      photos: [],
+      isFlagIssue: false,
+      isPostInventory: false,
+      flagIssueId: null
+    } as LineRow;
+  });
+}
 
   private extractItemCode(itemText: string): string {
     const m = String(itemText).match(/^\s*([A-Za-z0-9_-]+)/);
@@ -1035,4 +1070,19 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       error: (err) => console.error('Edit load failed', err)
     });
   }
+onQtyChange(r: any) {
+  const qty = Number(r.qtyReceived ?? 0);
+  const rem = Number(r.remainingQty ?? r.poQty ?? 0);
+
+  if (qty < 0) r.qtyReceived = 0;
+
+  r.isPartial = (qty > 0 && qty < rem);
+
+  if (qty >= rem && rem > 0) r.isPartial = false;
+
+  if (qty > rem && rem > 0) {
+    r.qtyReceived = rem;
+    Swal.fire('Limit', `Max allowed is ${rem}`, 'warning');
+  }
+}
 }

@@ -40,5 +40,7 @@ private url = environment.apiUrl;
 applyGrnAndUpdateSalesOrder(req: any): Observable<any> {
   return this.http.post<any>(this.url + GRNApiUrls.ApplyGrnAndUpdateSalesOrder, req);
 }
-
+getReceivedAggByPO(poid: number) {
+  return this.http.get<any>(`${this.url}/PurchaseGoodReceipt/getReceivedAggByPO?poid=${poid}`);
+}
 }

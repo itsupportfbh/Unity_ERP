@@ -121,6 +121,7 @@
             <th>Frequency</th>
             <th>Batch / Serial</th>
             <th class="th-num">Qty Received</th>
+            <th>Partial</th>
             <th>Quality Check</th>
             <th>Frozen/Chilled/Dry</th>
             <th class="th-num">Surface Temp</th>
@@ -212,14 +213,18 @@
             </td>
 
             <!-- Qty -->
-            <td class="w-150">
-              <input type="number"
-                     min="0"
-                     [(ngModel)]="r.qtyReceived"
-                     (keypress)="allowOnlyNumbers($event)"
-                     class="grn-ctl grn-ctl-num" />
-            </td>
-
+          <td class="w-150">
+  <input type="number"
+       min="0"
+       [(ngModel)]="r.qtyReceived"
+       (ngModelChange)="onQtyChange(r)"
+       class="grn-ctl grn-ctl-num" />
+</td>
+<td class="w-120 grn-center">
+ <input type="checkbox"
+  [(ngModel)]="r.isPartial"
+  [disabled]="!( (r.qtyReceived||0) > 0 && (r.qtyReceived||0) < (r.remainingQty||r.poQty||0) )" />
+</td>
             <!-- Quality -->
             <td class="w-200">
               <div class="grn-select-wrap">

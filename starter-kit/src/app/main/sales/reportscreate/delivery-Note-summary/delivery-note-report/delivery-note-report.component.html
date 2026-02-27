@@ -1,0 +1,431 @@
+<div class="content-wrapper p-0 dn-page">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card dn-card">
+
+        <!-- =========================
+             HEADER
+        ========================== -->
+        <div class="dn-head">
+          <div class="dn-head-left">
+            <h4 class="dn-title">Delivery Order Summary</h4>
+
+            <div class="dn-meta">
+              <label class="dn-limit">
+                <span>Show</span>
+                <select class="form-control dn-select"
+                        (change)="onLimitChangeValue($event)"
+                        [disabled]="summaryVisible">
+                  <option [selected]="selectedOption===10" value="10">10</option>
+                  <option [selected]="selectedOption===25" value="25">25</option>
+                  <option [selected]="selectedOption===50" value="50">50</option>
+                  <option [selected]="selectedOption===100" value="100">100</option>
+                </select>
+                <span>entries</span>
+              </label>
+            </div>
+
+            <div *ngIf="isPeriodLocked" class="dn-lock">
+              <span class="dn-lock-dot"></span>
+              Period <b>{{ currentPeriodName || 'current' }}</b> is locked.
+            </div>
+          </div>
+
+          <div class="dn-head-right">
+
+            <!-- =========================
+                 SUMMARY MODE ACTIONS
+            ========================== -->
+            <ng-container *ngIf="summaryVisible; else listModeActions">
+              <div class="dn-actions dn-actions-tight">
+                <button class="btn dn-btn dn-btn-outline dn-round dn-btn-sm"
+                        type="button"
+                        (click)="backToList()">
+                  ← Back to List
+                </button>
+
+                <button class="btn dn-btn dn-btn-soft dn-round dn-btn-sm"
+                        type="button"
+                        (click)="clearSummary()">
+                  Clear Summary
+                </button>
+
+                <!-- ✅ Print icon button -->
+                <button class="btn dn-btn dn-btn-outline dn-round dn-btn-sm dn-iconbtn"
+                        type="button"
+                        (click)="printSummary()"
+                        title="Print">
+                  <i data-feather="printer"></i>
+                </button>
+              </div>
+            </ng-container>
+
+            <!-- =========================
+                 LIST MODE ACTIONS
+            ========================== -->
+            <ng-template #listModeActions>
+              <div class="dn-actions dn-actions-tight dn-one-line">
+
+                <!-- Search -->
+                <div class="dn-searchwrap dn-searchwrap-sm">
+                  <span class="dn-searchlabel dn-searchlabel-sm">Search:</span>
+
+                  <input [(ngModel)]="searchValue"
+                         name="searchValue"
+                         type="search"
+                         class="form-control dn-searchbox dn-searchbox-sm"
+                         (keyup)="filterUpdate($event)"
+                         (search)="filterUpdate($event)"
+                         placeholder="DO NO / Driver"
+                         [disabled]="!listLoaded && mustPickColumns" />
+                </div>
+
+                <!-- Buttons -->
+                <div class="dn-action-buttons dn-action-buttons-sm"
+                     *ngIf="listLoaded && (searchValue?.trim()?.length || !mustPickColumns)">
+
+                  <button class="btn dn-btn dn-btn-outline dn-round dn-btn-sm"
+                          type="button"
+                          (click)="openHeaderModal(false)"
+                          [disabled]="!listLoaded && mustPickColumns">
+                    Columns
+                  </button>
+
+                  <button class="btn dn-btn dn-btn-primary dn-round dn-btn-sm"
+                          type="button"
+                          (click)="submitSelected()"
+                          [disabled]="!listLoaded || selectedRowIds.size === 0">
+                    <span class="dn-icon-circle dn-icon-circle-sm">
+                      <i data-feather="check"></i>
+                    </span>
+                    <span>Submit Selected</span>
+                    <span class="dn-badge dn-badge-sm">{{ selectedRowIds.size }}</span>
+                  </button>
+
+                </div>
+              </div>
+            </ng-template>
+
+          </div>
+        </div>
+
+        <!-- =========================
+             FIRST LOAD HINT
+        ========================== -->
+        <div class="dn-hint" *ngIf="!listLoaded && !summaryVisible">
+          <div class="dn-hint-card">
+            <div class="h1">Select columns to load the report</div>
+            <div class="h2">Popup will open automatically. Choose columns and click <b>Submit</b>.</div>
+          </div>
+        </div>
+
+        <!-- =========================
+             ✅ SUMMARY (MODERN)
+        ========================== -->
+        <div class="dn-sum" *ngIf="summaryVisible">
+
+          <!-- Summary top -->
+          <div class="dn-sum-top">
+            <div class="dn-sum-left">
+              <div class="dn-sum-title">Summary</div>
+              <div class="dn-sum-sub">
+                <span>{{ summaryMeta.createdAt | date:'dd/MM/yyyy, hh:mm:ss a' }}</span>
+              </div>
+            </div>
+
+            <div class="dn-sum-right">
+              <div class="dn-kpis dn-kpis-tight">
+                <div class="dn-kpi dn-kpi-sm">
+                  <div class="k">Docs</div>
+                  <div class="v">{{ summaryMeta.selectedDocs }}</div>
+                </div>
+
+                <div class="dn-kpi dn-kpi-sm" *ngIf="summaryMeta.groupsCount">
+                  <div class="k">Groups</div>
+                  <div class="v">{{ summaryMeta.groupsCount }}</div>
+                </div>
+
+                <div class="dn-kpi dn-kpi-sm dn-kpi-accent" *ngIf="summaryMeta.sumLabel">
+                  <div class="k">{{ summaryMeta.sumLabel }}</div>
+                  <div class="v">{{ summaryMeta.sumValue | number:'1.0-3' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid -->
+          <div class="dn-sum-grid">
+
+            <!-- Group summary -->
+            <div class="dn-panel">
+              <div class="dn-panel-head">
+                <div class="t">Group Summary</div>
+                <div class="tag">{{ summaryMeta.groupByLabel }}</div>
+              </div>
+
+              <div class="dn-table-wrap">
+                <table class="dn-table dn-table-darkhead">
+                  <thead>
+                    <tr>
+                      <th class="ta-left">{{ summaryMeta.groupByLabel }}</th>
+                      <th class="ta-center">Docs</th>
+                      <th class="ta-right" *ngFor="let col of summaryNumericCols">{{ col.label }}</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr *ngFor="let g of summaryGroups">
+                      <td class="ta-left fw-800">{{ g.group }}</td>
+                      <td class="ta-center">{{ g.docs }}</td>
+                      <td class="ta-right" *ngFor="let col of summaryNumericCols">
+                        {{ (g.sums[col.key] ?? 0) | number:'1.0-3' }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- selection info -->
+            <div class="dn-panel dn-panel-soft">
+              <div class="dn-panel-head">
+                <div class="t">Selection</div>
+                <div class="tag">{{ summaryMeta.selectedDocs }} docs</div>
+              </div>
+
+              <div class="dn-mini-list">
+                <div class="dn-mini-row">
+                  <span class="l">Columns</span>
+                  <span class="r">{{ summarySelectedHeaders?.length || 0 }}</span>
+                </div>
+                <div class="dn-mini-row">
+                  <span class="l">Created</span>
+                  <span class="r">{{ summaryMeta.createdAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Detail table -->
+          <div class="dn-panel dn-mt">
+            <div class="dn-panel-head">
+              <div class="t">Selected Documents</div>
+              <div class="tag">{{ summaryDetailRows.length }}</div>
+            </div>
+
+            <div class="dn-table-wrap">
+              <table class="dn-table dn-table-lighthead">
+                <thead>
+                  <tr>
+                    <th *ngFor="let c of selectedColumnsOrdered"
+                        [class.ta-left]="!isNumericCol(c.key)"
+                        [class.ta-right]="isNumericCol(c.key)">
+                      {{ c.label }}
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr *ngFor="let r of summaryDetailRows">
+                    <td *ngFor="let c of selectedColumnsOrdered"
+                        [class.ta-left]="!isNumericCol(c.key)"
+                        [class.ta-right]="isNumericCol(c.key)">
+                      <ng-container [ngSwitch]="c.key">
+                        <ng-container *ngSwitchCase="'deliveryDate'">
+                          {{ r.deliveryDate ? (r.deliveryDate | date:'dd-MM-yyyy') : '-' }}
+                        </ng-container>
+
+                        <ng-container *ngSwitchCase="'customer'">
+                          {{ r.customerName || '-' }}
+                        </ng-container>
+
+                        <ng-container *ngSwitchCase="'qty'">
+                          {{ (r.totalQty ?? 0) | number:'1.0-3' }}
+                        </ng-container>
+
+                        <ng-container *ngSwitchCase="'driver'">
+                          {{ getDriverName(r.driverId) || (r.driverId ? ('#' + r.driverId) : '-') }}
+                        </ng-container>
+
+                        <ng-container *ngSwitchCase="'driverContact'">
+                          {{ r.driverMobileNo || '-' }}
+                        </ng-container>
+
+                        <ng-container *ngSwitchCase="'vehicle'">
+                          {{ getVehicleNo(r.vehicleId) || '-' }}
+                        </ng-container>
+
+                        <ng-container *ngSwitchCase="'location'">
+                          {{ r.routeName || '-' }}
+                        </ng-container>
+
+                        <ng-container *ngSwitchCase="'posted'">
+                          <span class="dn-pill" [class.ok]="!!r.isPosted" [class.no]="!r.isPosted">
+                            {{ !!r.isPosted ? 'Posted' : 'Not Posted' }}
+                          </span>
+                        </ng-container>
+
+                        <ng-container *ngSwitchDefault>
+                          {{ getColValue(r, c.key) || '-' }}
+                        </ng-container>
+                      </ng-container>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- =========================
+             COLUMN PICKER MODAL
+        ========================== -->
+        <div *ngIf="showHeaderModal" class="dn-modal" (click)="onOverlayClickClose()">
+          <div class="dn-modal-card" (click)="$event.stopPropagation()">
+            <div class="dn-modal-head">
+              <div class="t">Columns</div>
+              <button class="dn-x" type="button" (click)="closeHeaderModal()">✕</button>
+            </div>
+
+            <div class="dn-modal-search">
+              <input type="text" class="form-control"
+                     placeholder="Search column..."
+                     [(ngModel)]="headerSearch" />
+            </div>
+
+            <div class="dn-modal-top">
+              <label class="dn-check">
+                <input type="checkbox" [checked]="isAllColumnsChecked" (change)="onToggleAllColumns($event)" />
+                <span>Select All</span>
+              </label>
+
+              <div class="dn-count">Selected: <b>{{ selectedColumnCount }}</b></div>
+            </div>
+
+            <div class="dn-modal-list">
+              <label class="dn-col" *ngFor="let c of filteredColumns">
+                <input type="checkbox" [(ngModel)]="c.checked" />
+                <span>{{ c.label }}</span>
+              </label>
+            </div>
+
+            <div class="dn-modal-foot">
+              <button class="btn dn-btn dn-btn-outline dn-round dn-btn-sm" type="button" (click)="closeHeaderModal()">Cancel</button>
+              <button class="btn dn-btn dn-btn-primary dn-round dn-btn-sm" type="button" (click)="applyHeadersAndClose()">
+                <span class="dn-icon-circle dn-icon-circle-sm">
+                  <i data-feather="check"></i>
+                </span>
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================
+             MAIN DATATABLE
+        ========================== -->
+        <ngx-datatable
+          *ngIf="listLoaded && !summaryVisible"
+          class="bootstrap core-bootstrap dn-table-grid"
+          [rows]="rows"
+          [rowHeight]="50"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="selectedOption"
+          [columnMode]="'force'"
+          [scrollbarH]="true"
+          [reorderable]="true">
+
+          <!-- checkbox -->
+          <ngx-datatable-column [width]="48" [sortable]="false" [draggable]="false" [canAutoResize]="false">
+            <ng-template ngx-datatable-header-template>
+              <input type="checkbox"
+                     [checked]="rows?.length && selectedRowIds.size === rows.length"
+                     (change)="onToggleAllRows($event)" />
+            </ng-template>
+
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <input type="checkbox"
+                     [checked]="isRowSelected(row)"
+                     (change)="onToggleRow(row, $event)" />
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('doNumber')" name="Delivery No" prop="doNumber" [width]="getColWidth('doNumber', 160)"></ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('deliveryDate')" name="Date" prop="deliveryDate" [width]="getColWidth('deliveryDate', 170)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.deliveryDate ? (row.deliveryDate | date:'dd-MM-yyyy') : '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('customer')" name="Customer" [width]="getColWidth('customer', 220)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.customerName || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('qty')" name="Qty" [width]="getColWidth('qty', 120)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <span class="ta-right d-block">{{ (row.totalQty ?? 0) | number:'1.0-3' }}</span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('soNo')" name="SO No" [width]="getColWidth('soNo', 160)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.salesOrderNo || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('driver')" name="Driver" [width]="getColWidth('driver', 180)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ getDriverName(row.driverId) || (row.driverId ? ('#' + row.driverId) : '-') }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('driverContact')" name="Driver Contact" [width]="getColWidth('driverContact', 170)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.driverMobileNo || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('receivedPerson')" name="Received Person" [width]="getColWidth('receivedPerson', 200)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.receivedPersonName || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('receivedContact')" name="Received Contact" [width]="getColWidth('receivedContact', 170)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.receivedPersonMobileNo || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('vehicle')" name="Vehicle" [width]="getColWidth('vehicle', 160)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ getVehicleNo(row.vehicleId) || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('location')" name="Location" [width]="getColWidth('location', 200)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.routeName || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column *ngIf="isColOn('posted')" name="Posted" [width]="getColWidth('posted', 120)">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <span class="dn-pill" [class.ok]="!!row.isPosted" [class.no]="!row.isPosted">
+                {{ row.isPosted ? 'Posted' : 'Not Posted' }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+        </ngx-datatable>
+
+      </div>
+    </section>
+  </div>
+</div>

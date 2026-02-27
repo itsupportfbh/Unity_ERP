@@ -1,87 +1,97 @@
 $brand: #2E5F73;
 
-.metrics-row {
-  row-gap: 1rem;
-  justify-content: center;
+.reports-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 8px 4px;
 }
 
-/* ============================
-   METRIC CARD STYLING
-============================ */
-.metric-card {
-  border-radius: 16px;
+.report-card {
   background: #fff;
-  transition: all 0.25s ease;
-  cursor: pointer;
-  border: 1px solid rgba(46, 95, 115, 0.15);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(46, 95, 115, 0.14);
+  border-radius: 18px;
+  padding: 16px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
 
-  .card-body {
-    padding: 1.5rem 1rem;
-  }
-
-  /* --- Icon Circle --- */
-  .metric-icon {
-    width: 58px;
-    height: 58px;
-    margin: 0 auto 12px;
-    display: grid;
-    place-items: center;
-    border-radius: 16px;
-    background: rgba($brand, 0.08);
-    border: 1px solid rgba($brand, 0.18);
-    transition: all 0.25s ease;
-
-    svg {
-      width: 24px;
-      height: 24px;
-      stroke: $brand;
-    }
-  }
-
-  /* --- Title --- */
-  .metric-title {
-    margin: 8px 0 4px;
-    font-weight: 800;
-    color: #0f172a;
-    font-size: 1.9rem;
-    line-height: 1.2;
-  }
-
-  /* --- Subtitle --- */
-  .metric-subtitle {
-    color: #64748b;
-    font-size: 0.9rem;
-    letter-spacing: 0.25px;
-  }
-
-  /* --- Hover Effect --- */
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba($brand, 0.15);
-    border-color: rgba($brand, 0.3);
+    transform: translateY(-2px);
+    border-color: rgba(46, 95, 115, 0.28);
+    box-shadow: 0 10px 26px rgba(46, 95, 115, 0.12);
+  }
+}
 
-    .metric-icon {
-      background: rgba($brand, 0.15);
-      transform: scale(1.05);
-    }
+.report-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.report-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba($brand, 0.08);
+  border: 1px solid rgba($brand, 0.18);
+
+  svg {
+    width: 20px;
+    height: 20px;
+    stroke: $brand;
+  }
+}
+
+.report-text {
+  min-width: 0;
+}
+
+.report-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.report-subtitle {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-open {
+  border: 1px solid rgba($brand, 0.25);
+  background: #fff;
+  color: $brand;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($brand, 0.08);
+    border-color: rgba($brand, 0.45);
   }
 
-  /* --- Active State (clicked) --- */
-  &.active {
-    border: 2px solid $brand;
-    box-shadow: 0 0 0 4px rgba($brand, 0.15);
-    transform: translateY(-2px);
+  &:active {
+    transform: scale(0.98);
+  }
+}
 
-    .metric-icon {
-      background: rgba($brand, 0.18);
-      svg {
-        stroke: darken($brand, 5%);
-      }
-    }
-
-    .metric-title {
-      color: $brand;
-    }
+@media (min-width: 992px) {
+  .reports-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }

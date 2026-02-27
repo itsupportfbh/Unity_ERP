@@ -1,67 +1,91 @@
 <div class="content-wrapper container-xxl p-0">
   <div class="content-body">
-    <div class="row g-3 metrics-row">
 
-      <!-- Total Sales (Quantity Sold) -->
-      <div class="col-md-4">
-        <div
-          class="card h-100 text-center metric-card clickable"
-          (click)="openReport('sales')"
-          [class.active]="activeReport === 'sales'">
-          <div class="card-body">
-            <div class="metric-icon">
-              <i data-feather="shopping-cart"></i>
-            </div>
-            <h4 class="metric-title">
-              {{ totalQuantitySold | number:'1.0-0' }}
-            </h4>
-            <div class="metric-subtitle">Total Quantity Sold</div>
+    <div class="reports-grid">
+
+      <!-- SALES -->
+      <div class="report-card">
+        <div class="report-left">
+          <div class="report-icon">
+            <i data-feather="shopping-cart"></i>
           </div>
+
+          <div class="report-text">
+            <div class="report-title">Sales By Item</div>
+            <div class="report-subtitle">Reports &gt; Sales</div>
+          </div>
+        </div>
+
+        <div class="report-right">
+          <button class="btn-open" type="button" (click)="openReport('sales')">Open</button>
         </div>
       </div>
 
-      <!-- Average Margin -->
-      <div class="col-md-4">
-        <div
-          class="card h-100 text-center metric-card clickable"
-          (click)="openReport('margin')"
-          [class.active]="activeReport === 'margin'">
-          <div class="card-body">
-            <div class="metric-icon">
-              <i data-feather="trending-up"></i>
-            </div>
-            <h4 class="metric-title">
-              {{ averageMarginPct | number:'1.1-1' }}%
-            </h4>
-            <div class="metric-subtitle">Average Margin</div>
+      <!-- MARGIN -->
+      <div class="report-card">
+        <div class="report-left">
+          <div class="report-icon">
+            <i data-feather="trending-up"></i>
           </div>
+
+          <div class="report-text">
+            <div class="report-title">Average Margin</div>
+            <div class="report-subtitle">Reports &gt; Profitability</div>
+          </div>
+        </div>
+
+        <div class="report-right">
+          <button class="btn-open" type="button" (click)="openReport('margin')">Open</button>
         </div>
       </div>
 
-      <!-- On-Time Delivery -->
-      <div class="col-md-4">
-        <div
-          class="card h-100 text-center metric-card clickable"
-          (click)="openReport('delivery')"
-          [class.active]="activeReport === 'delivery'">
-          <div class="card-body">
-            <div class="metric-icon">
-              <i data-feather="clock"></i>
-            </div>
-            <h4 class="metric-title">
-              {{ onTimeDeliveryPct | number:'1.1-1' }}%
-            </h4>
-            <div class="metric-subtitle">On-Time Delivery</div>
+      <!-- DELIVERY -->
+      <div class="report-card">
+        <div class="report-left">
+          <div class="report-icon">
+            <i data-feather="clock"></i>
+          </div>
+
+          <div class="report-text">
+            <div class="report-title">Deliveries</div>
+            <div class="report-subtitle">Reports &gt; Logistics</div>
           </div>
         </div>
+
+        <div class="report-right">
+          <button class="btn-open" type="button" (click)="openReport('delivery')">Open</button>
+        </div>
       </div>
+
+      <!-- ✅ NEW CARD (top-la innonu) -->
+      <div class="report-card">
+        <div class="report-left">
+          <div class="report-icon">
+            <i data-feather="file-text"></i>
+          </div>
+
+          <div class="report-text">
+            <div class="report-title">Delivery Note</div>
+            <div class="report-subtitle">Reports &gt; Summary</div>
+          </div>
+        </div>
+
+        <div class="report-right">
+          <button class="btn-open" type="button" (click)="goToDeliveryNoteSummary()">Open</button>
+        </div>
+      </div>
+
     </div>
 
-    <!-- dynamic section -->
+    <!-- dynamic section (same as your code) -->
     <div class="mt-3">
       <app-reports-sales-by-item *ngIf="activeReport === 'sales'"></app-reports-sales-by-item>
       <app-reports-avarage-margin *ngIf="activeReport === 'margin'"></app-reports-avarage-margin>
       <app-reports-deliveries *ngIf="activeReport === 'delivery'"></app-reports-deliveries>
+
+      <!-- ✅ NEW -->
+      <!-- <app-reports-daybook *ngIf="activeReport === 'deliveryNote'"></app-reports-daybook> -->
     </div>
+
   </div>
 </div>

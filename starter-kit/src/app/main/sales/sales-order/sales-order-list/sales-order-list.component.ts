@@ -692,7 +692,7 @@ private mapProcToText(s: number): string {
         <div class="row"><div class="k">Status</div><div class="v">${status}</div></div>
 
         <div class="row"><div class="k">Customer</div><div class="v">${customer}</div></div>
-        <div class="row"><div class="k">Requested Date</div><div class="v">${reqDate}</div></div>
+        <div class="row"><div class="k">Order Date</div><div class="v">${reqDate}</div></div>
          <div class="row"><div class="k">Delivery Date</div><div class="v">${delDate}</div></div>
 
        <div class="row"><div class="k">Delivery To</div><div class="v">${deliveryTo}</div></div>

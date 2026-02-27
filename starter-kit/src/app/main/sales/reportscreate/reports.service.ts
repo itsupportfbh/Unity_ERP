@@ -19,6 +19,12 @@ export class ReportsService {
      GetSalesMarginAsync(): Observable<any> {
       return this.http.get<any[]>(this.url + SalesReportApiUrls.GetSalesMarginAsync);
     }
+
+    
+     GetDeliveryNoteReport(): Observable<any> {
+      return this.http.get<any[]>(this.url + SalesReportApiUrls.GetDeliveryNote);
+    }
+  
   
   
 }

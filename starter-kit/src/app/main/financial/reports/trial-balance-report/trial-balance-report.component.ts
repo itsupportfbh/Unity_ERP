@@ -84,6 +84,11 @@ export class TrialBalanceReportComponent implements OnInit {
       next: (res: any) => {
         this.rawRows = res.data || [];
 
+         this.totalOpeningDebit  = this.rawRows.reduce((s, r) => s + (+r.openingDebit  || 0), 0);
+          this.totalOpeningCredit = this.rawRows.reduce((s, r) => s + (+r.openingCredit || 0), 0);
+          this.totalClosingDebit  = this.rawRows.reduce((s, r) => s + (+r.closingDebit  || 0), 0);
+          this.totalClosingCredit = this.rawRows.reduce((s, r) => s + (+r.closingCredit || 0), 0);
+
         const mapByCode = new Map<string, TbNode>();
 
         this.rawRows.forEach((r: any) => {
@@ -133,25 +138,25 @@ export class TrialBalanceReportComponent implements OnInit {
         this.roots.forEach(r => (r.expanded = false));
         this.rebuildDisplayRows();
 
-        const leafNodes: TbNode[] = [];
-        this.collectLeaves(this.roots, leafNodes);
+        // const leafNodes: TbNode[] = [];
+        // this.collectLeaves(this.roots, leafNodes);
 
-        this.totalOpeningDebit = leafNodes.reduce(
-          (s, n) => s + (n.openingDebit || 0),
-          0
-        );
-        this.totalOpeningCredit = leafNodes.reduce(
-          (s, n) => s + (n.openingCredit || 0),
-          0
-        );
-        this.totalClosingDebit = leafNodes.reduce(
-          (s, n) => s + (n.closingDebit || 0),
-          0
-        );
-        this.totalClosingCredit = leafNodes.reduce(
-          (s, n) => s + (n.closingCredit || 0),
-          0
-        );
+        // this.totalOpeningDebit = leafNodes.reduce(
+        //   (s, n) => s + (n.openingDebit || 0),
+        //   0
+        // );
+        // this.totalOpeningCredit = leafNodes.reduce(
+        //   (s, n) => s + (n.openingCredit || 0),
+        //   0
+        // );
+        // this.totalClosingDebit = leafNodes.reduce(
+        //   (s, n) => s + (n.closingDebit || 0),
+        //   0
+        // );
+        // this.totalClosingCredit = leafNodes.reduce(
+        //   (s, n) => s + (n.closingCredit || 0),
+        //   0
+        // );
 
         this.isLoading = false;
       },

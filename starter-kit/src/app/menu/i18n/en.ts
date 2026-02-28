@@ -28,7 +28,8 @@ export const locale = {
         STOCKTRANSFERRECIPT:'list-stock-transfer-receipt',
         STOCKTAKE: 'STOCKTAKE',
         STOCKADJUSTMENT: 'StockAdjustment',
-        STOCKREORDERPLANNING: 'StockReorderPlanning'
+        STOCKREORDERPLANNING: 'StockReorderPlanning',
+        STOCKCOGS: 'StockCogs'
       },
       FINANCIAL: {
         TITLE: 'Financial',

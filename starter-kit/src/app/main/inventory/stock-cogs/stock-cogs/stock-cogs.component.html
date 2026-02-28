@@ -1,0 +1,162 @@
+<div class="panel panel-left">
+<div class="cogs-page">
+  <!-- Top KPI Cards -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-title">Opening Stock</div>
+      <div class="kpi-value">₹{{ money(report?.summary?.openingStock ?? 0) }}</div>
+      <div class="kpi-sub">From latest stocktake before period</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-title">Purchases</div>
+      <div class="kpi-value">₹{{ money(report?.summary?.purchases ?? 0) }}</div>
+      <div class="kpi-sub">GRN within selected dates</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-title">Closing Stock</div>
+      <div class="kpi-value">₹{{ money(report?.summary?.closingStock ?? 0) }}</div>
+      <div class="kpi-sub">Latest stocktake up to period end</div>
+    </div>
+
+    <div class="kpi-card kpi-strong">
+      <div class="kpi-title">COGS</div>
+      <div class="kpi-value">₹{{ money(report?.summary?.cogs ?? 0) }}</div>
+      <div class="kpi-pill">OK</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- Left Panel: Period Inputs -->
+    <div class="panel">
+      <div class="panel-title">Period Inputs</div>
+
+      <label class="field">
+        <div class="lbl">From Date</div>
+        <input class="inp" type="date" [(ngModel)]="fromDate" />
+      </label>
+
+      <label class="field">
+        <div class="lbl">To Date</div>
+        <input class="inp" type="date" [(ngModel)]="toDate" />
+      </label>
+
+      <label class="field">
+        <div class="lbl">WarehouseId (optional)</div>
+        <input class="inp" type="number" [(ngModel)]="warehouseId" placeholder="e.g. 1" />
+      </label>
+
+      <label class="field">
+        <div class="lbl">BinId (optional)</div>
+        <input class="inp" type="number" [(ngModel)]="binId" placeholder="e.g. 1" />
+      </label>
+
+      <button class="btn primary" (click)="load()" [disabled]="loading">
+        {{ loading ? 'Loading...' : 'Load COGS' }}
+      </button>
+
+      <div class="mini-box">
+        <div class="mini-row">
+          <div class="mini-l">Goods Available</div>
+          <div class="mini-r">₹{{ money(report?.summary?.goodsAvailable ?? 0) }}</div>
+        </div>
+        <div class="mini-row">
+          <div class="mini-l">COGS</div>
+          <div class="mini-r strong">₹{{ money(report?.summary?.cogs ?? 0) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Summary + Table -->
+    <div class="panel wide">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">COGS Summary</div>
+          <div class="panel-sub">COGS computed using: (Opening + Purchases) - Closing</div>
+        </div>
+
+        <div class="panel-tools">
+          <div class="search">
+            <span class="icon">🔍</span>
+            <input class="search-inp" [(ngModel)]="search" placeholder="Search item..." />
+          </div>
+
+          <div class="tabs">
+            <button class="tab" [class.active]="activeTab==='table'" (click)="setTab('table')">Table</button>
+            <button class="tab" [class.active]="activeTab==='chart'" (click)="setTab('chart')">Chart</button>
+            <button class="tab" [class.active]="activeTab==='formula'" (click)="setTab('formula')">Formula</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div *ngIf="activeTab==='table'" class="table-wrap">
+        <table class="cogs-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="num">Opening Qty</th>
+              <th class="num">Opening</th>
+              <th class="num">Purchase Qty</th>
+              <th class="num">Purchases</th>
+              <th class="num">Closing Qty</th>
+              <th class="num">Closing</th>
+              <th class="num">COGS</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let r of rows">
+              <td class="item">
+                <div class="name">{{ r.itemName }}</div>
+                <div class="muted">#{{ r.itemId }}</div>
+              </td>
+
+              <td class="num">{{ r.openingQty }}</td>
+              <td class="num">₹{{ money(r.openingValue) }}</td>
+
+              <td class="num">{{ r.purchaseQty }}</td>
+              <td class="num">₹{{ money(r.purchaseValue) }}</td>
+
+              <td class="num">{{ r.closingQty }}</td>
+              <td class="num">₹{{ money(r.closingValue) }}</td>
+
+              <td class="num strong">₹{{ money(r.cogsValue) }}</td>
+            </tr>
+
+            <tr *ngIf="!(rows?.length)">
+              <td colspan="8" class="empty">No rows</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- CHART (placeholder) -->
+      <div *ngIf="activeTab==='chart'" class="placeholder">
+        <div class="ph-title">Chart View</div>
+        <div class="ph-sub">You can plug in Chart.js later (Opening / Purchases / Closing / COGS).</div>
+      </div>
+
+      <!-- FORMULA -->
+      <div *ngIf="activeTab==='formula'" class="placeholder">
+        <div class="ph-title">Formula</div>
+        <div class="ph-box">
+          <div class="eq">COGS = (Opening Stock + Purchases) − Closing Stock</div>
+
+          <div class="eq2">
+            = (₹{{ money(report?.summary?.openingStock ?? 0) }} + ₹{{ money(report?.summary?.purchases ?? 0) }})
+            − ₹{{ money(report?.summary?.closingStock ?? 0) }}
+          </div>
+
+          <div class="eq3 strong">= ₹{{ money(report?.summary?.cogs ?? 0) }}</div>
+        </div>
+      </div>
+
+      <div class="tip">
+        Tip: Later we can add filters like Outlet/WarehouseType/Supplier/Category.
+      </div>
+    </div>
+  </div>
+</div>
+</div>

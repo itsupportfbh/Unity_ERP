@@ -480,7 +480,7 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
 
       const res = await Swal.fire({
         title: 'Full Invoice?',
-        text: 'Qty change pannirukeenga. Idhu FULL invoice-aa?',
+        text: 'You have changed the quantity. Is this a FULL invoice?',
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'YES (Full)',

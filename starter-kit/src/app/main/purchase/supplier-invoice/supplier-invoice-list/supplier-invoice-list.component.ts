@@ -13,17 +13,17 @@ import { SupplierInvoiceService } from '../supplier-invoice.service';
 import * as feather from 'feather-icons';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
 
-interface ThreeWayMatch {
+export interface ThreeWayMatch {
   poId: number;
   poNo: string;
   poQty: number;
   poPrice: number;
   poTotal: number;
 
-  grnId: number;
-  grnNo: string;
+  grnCount: number;
+  grnNos: string;
   grnReceivedQty: number;
-  grnVarianceQty: number;
+  pendingReceiveQty: number; // ✅ new
   grnStatus: string;
 
   pinId: number;
@@ -31,7 +31,12 @@ interface ThreeWayMatch {
   pinQty: number;
   pinTotal: number;
 
+  totalInvoicedQty: number;
+  lastPinId: number;
+  isLastPinInGroup: boolean;
+
   pinMatch: boolean;
+  mismatchLabel?: string | null;
 }
 
 export interface PeriodStatusDto {
@@ -119,47 +124,68 @@ export class SupplierInvoiceListComponent implements OnInit, AfterViewInit, Afte
     );
   }
 
-  // ================= LOAD =================
-
 loadInvoices(): void {
   this.api.getAll().subscribe({
     next: (res: any) => {
       const data = res?.data || res || [];
 
-      const mapped = data.map((x: any) => {
-        // ✅ SAFE boolean
-        const raw = (x.pinMatch ?? x.PinMatch);
-        const pinMatch = (raw === true || raw === 1 || raw === '1' || raw === 'true');
+      const mapped = (data || []).map((x: any) => {
+        // ✅ SAFE bool
+        const rawMatch = (x.pinMatch ?? x.PinMatch);
+        const pinMatch = (rawMatch === true || rawMatch === 1 || rawMatch === '1' || rawMatch === 'true');
 
         return {
           id: x.id,
           invoiceNo: x.invoiceNo,
           invoiceDate: x.invoiceDate,
-          amount: x.amount,
-          tax: x.tax,
+          amount: this.toNumber(x.amount),
+          tax: this.toNumber(x.tax),
           currencyId: x.currencyId,
           status: Number(x.status ?? 0),
 
-          // ✅ show GRNs
-          grnNos: x.grnNos || '',
+          supplierId: x.supplierId,
+          supplierName: x.supplierName,
 
-          // ✅ Match button
+          // ✅ GRN info
+          grnNos: x.grnNos ?? '',
+          grnCount: Number(x.grnCount ?? 0),
+
+          // ✅ List status (IMPORTANT)
+          listStatusCode: Number(x.listStatusCode ?? 0),
+          listStatusLabel: x.listStatusLabel ?? '',
+          linkedWithInvoiceNo: x.linkedWithInvoiceNo ?? null,
+
+          // ✅ action flags (from API)
+          canEdit: (x.canEdit === true || x.canEdit === 1 || x.canEdit === 'true'),
+          canApproveToAp: (x.canApproveToAp === true || x.canApproveToAp === 1 || x.canApproveToAp === 'true'),
+
+          // ✅ match ui
           pinMatch,
-          matchStatus: pinMatch ? 'OK' : 'MISMATCH',
-          mismatchLabel: x.mismatchLabel || null,
+          matchStatus: x.matchStatus ?? (pinMatch ? 'OK' : 'MISMATCH'),
+          mismatchLabel: x.mismatchLabel ?? null,
 
-          linesJson: x.linesJson || '[]'
+          // json
+          linesJson: x.linesJson || '[]',
+
+          // partial
+          isPartialInvoice: (x.isPartialInvoice === true || x.isPartialInvoice === 1 || x.isPartialInvoice === 'true')
         };
       });
 
       this.rows = mapped;
       this.tempData = [...mapped];
+
       if (this.table) this.table.offset = 0;
 
       this.recalcSummary();
     },
     error: (e) => console.error(e)
   });
+}
+
+private toNumber(v: any): number {
+  const n = Number(v);
+  return isNaN(n) ? 0 : n;
 }
 
 private recalcSummary(): void {
@@ -246,12 +272,19 @@ private recalcSummary(): void {
 
     this.modalTotalQty = lines.reduce((s, l) => s + (Number(l?.qty) || 0), 0);
 
-    this.modalTotalAmt = lines.reduce((s, l) => {
-      const qty = Number(l?.qty) || 0;
-      const unit = l?.unitPrice != null ? Number(l.unitPrice) : Number(l?.price || 0);
-      const lineTotal = l?.lineTotal != null ? Number(l.lineTotal) : qty * unit;
-      return s + lineTotal;
-    }, 0);
+   this.modalTotalAmt = (lines || []).reduce((s: number, l: any) => {
+  // ✅ prefer lineGrandTotal (with tax)
+  const grand = l?.lineGrandTotal != null ? Number(l.lineGrandTotal) : null;
+
+  if (grand != null && !isNaN(grand)) return s + grand;
+
+  // fallback: if grand not present, fallback to lineTotal or qty*unit
+  const qty = Number(l?.qty) || 0;
+  const unit = l?.unitPrice != null ? Number(l.unitPrice) : Number(l?.price || 0);
+  const base = l?.lineTotal != null ? Number(l.lineTotal) : (qty * unit);
+
+  return s + (isNaN(base) ? 0 : base);
+}, 0);
 
     this.showLinesModal = true;
   }
@@ -260,56 +293,95 @@ private recalcSummary(): void {
 
   // ================= 3-WAY MATCH =================
 
-  openMatchModal(row: any): void {
-    this.currentRow = row;
-    this.showMatchModal = true;
-    this.threeWay = null;
-    this.matchIssues = [];
-    this.pinMismatchLabel = null;
+openMatchModal(row: any): void {
+  this.currentRow = row;
+  this.showMatchModal = true;
+  this.threeWay = null;
+  this.pinMismatchLabel = null;
+  this.matchIssues = [];
 
-    this.api.getThreeWayMatch(row.id).subscribe({
-      next: (res: any) => {
-        const d = res?.data || res || null;
-        if (!d) return;
+  this.api.getThreeWayMatch(row.id).subscribe({
+    next: (res: any) => {
+      const x = res?.data ?? res ?? null;
+      if (!x) return;
 
-        const match: ThreeWayMatch = { ...d, pinMatch: !!(d.pinMatch ?? d.PinMatch) };
-        this.threeWay = match;
+      // normalize booleans
+      const pinMatch = (x.pinMatch === true || x.pinMatch === 1 || x.pinMatch === '1' || x.pinMatch === 'true');
+      const isLast = (x.isLastPinInGroup === true || x.isLastPinInGroup === 1 || x.isLastPinInGroup === '1' || x.isLastPinInGroup === 'true');
 
-        // Issues
-        const issues: string[] = [];
-        const qtyDiff = Math.abs((match.pinQty || 0) - (match.poQty || 0));
-        const totalDiff = Math.abs((match.pinTotal || 0) - (match.poTotal || 0));
+     this.threeWay = {
+  poId: x.poId,
+  poNo: x.poNo,
+  poQty: Number(x.poQty ?? 0),
+  poPrice: Number(x.poPrice ?? 0),
+  poTotal: Number(x.poTotal ?? 0),
 
-        if (qtyDiff > 0.0001) issues.push(`Quantity mismatch: PO ${match.poQty || 0}, PIN ${match.pinQty || 0}`);
-        if (totalDiff > 0.01) issues.push(`Price/Total mismatch: PO ${(match.poTotal ?? 0).toFixed(2)}, PIN ${(match.pinTotal ?? 0).toFixed(2)}`);
+  grnCount: Number(x.grnCount ?? 0),
+  grnNos: x.grnNos ?? '',
+  grnReceivedQty: Number(x.grnReceivedQty ?? 0),
+  pendingReceiveQty: Number(x.pendingReceiveQty ?? 0), // ✅
+  grnStatus: x.grnStatus ?? 'OK',
 
-        this.matchIssues = issues;
+  pinId: x.pinId,
+  pinNo: x.pinNo,
+  pinQty: Number(x.pinQty ?? 0),
+  pinTotal: Number(x.pinTotal ?? 0),
 
-        if (!match.pinMatch) {
-          const tags: string[] = [];
-          if (qtyDiff > 0.0001) tags.push('Qty');
-          if (totalDiff > 0.01) tags.push('Total');
-          this.pinMismatchLabel = tags.length ? `Mismatch (${tags.join(' & ')})` : 'Mismatch';
-        } else {
-          this.pinMismatchLabel = 'Match';
-        }
+  totalInvoicedQty: Number(x.totalInvoicedQty ?? 0),
+  lastPinId: Number(x.lastPinId ?? 0),
+  isLastPinInGroup: this.toBool(x.isLastPinInGroup),
 
-        // Update list row for KPI + button label
-        const idx = this.rows.findIndex(r => r.id === row.id);
-        if (idx !== -1) {
-          this.rows[idx].pinMatch = match.pinMatch;
-          this.rows[idx].matchStatus = match.pinMatch ? 'OK' : 'MISMATCH';
-          this.rows[idx].mismatchLabel = this.pinMismatchLabel;
-        }
-        this.recalcSummary();
-      },
-      error: () => {
-        this.showMatchModal = false;
-        Swal.fire('Error', 'Unable to load 3-way match details.', 'error');
+  pinMatch: this.toBool(x.pinMatch),
+  mismatchLabel: x.mismatchLabel ?? null
+};
+
+      // mismatch label + issues
+      this.pinMismatchLabel = x.mismatchLabel ?? (pinMatch ? null : 'Mismatch');
+
+      const issues: string[] = [];
+      if (Math.abs(this.threeWay.grnReceivedQty - this.threeWay.poQty) > 0.0001) {
+        issues.push(`GRN vs PO Qty mismatch (${this.threeWay.grnReceivedQty} vs ${this.threeWay.poQty})`);
       }
-    });
+      if (Math.abs(this.threeWay.pinQty - this.threeWay.grnReceivedQty) > 0.0001) {
+        issues.push(`PIN vs GRN Qty mismatch (${this.threeWay.pinQty} vs ${this.threeWay.grnReceivedQty})`);
+      }
+
+      // group status info
+      if (!this.threeWay.isLastPinInGroup) {
+        issues.push(`Linked: This is not last invoice. Last PIN ID: ${this.threeWay.lastPinId}`);
+      }
+
+      this.matchIssues = issues;
+
+      // ✅ IMPORTANT: canApproveToAp only for last invoice and all qty invoiced equals GRN
+      const canApprove =
+        this.threeWay.isLastPinInGroup &&
+        Math.abs(this.threeWay.totalInvoicedQty - this.threeWay.grnReceivedQty) <= 0.0001 &&
+        this.threeWay.pinMatch === true;
+
+      // row-level flag used by Approve button disable
+      this.currentRow.canApproveToAp = canApprove;
+    },
+    error: (e) => console.error(e)
+  });
+}
+private toBool(v: any): boolean {
+  if (v === true) return true;
+  if (v === false) return false;
+
+  // number
+  if (v === 1 || v === '1') return true;
+  if (v === 0 || v === '0') return false;
+
+  // string
+  if (typeof v === 'string') {
+    const s = v.trim().toLowerCase();
+    if (s === 'true' || s === 'yes' || s === 'y') return true;
+    if (s === 'false' || s === 'no' || s === 'n') return false;
   }
 
+  return false;
+}
   closeMatchModal(): void {
     this.showMatchModal = false;
     this.currentRow = null;
@@ -342,4 +414,50 @@ private recalcSummary(): void {
       }
     });
   }
+isPartialRow(row: any): boolean {
+  const v = row?.isPartialInvoice ?? row?.IsPartialInvoice;
+  return v === true || v === 'true' || v === 1 || v === '1';
+}
+
+isActionDisabled(row: any): boolean {
+  const status = Number(row?.status || 0);
+
+  if (this.isPeriodLocked) return true;     // locked => all disabled
+  if (status === 3) return true;            // posted => all disabled
+
+  // ✅ status=2 normally disabled, BUT partial should still allow edit
+  if (status === 2 && this.isPartialRow(row)) return false;
+
+  // status=2 not partial => disable
+  if (status === 2) return true;
+
+  return false; // others enabled
+}
+
+canShowEdit(row: any): boolean {
+  const status = Number(row?.status || 0);
+
+  if (this.isPeriodLocked) return false;
+  if (status === 3) return false;
+
+  // ✅ partial => always show edit (even if status=2)
+  if (this.isPartialRow(row)) return true;
+
+  // (optional) hold => show edit
+  return status === 1;
+}
+
+canShowDelete(row: any): boolean {
+  const status = Number(row?.status || 0);
+
+  if (this.isPeriodLocked) return false;
+  if (status === 3) return false;
+
+  // ✅ partial => usually DON'T allow delete (safe)
+  if (this.isPartialRow(row)) return false;
+
+  // allow delete only in Hold
+  return status === 1;
+}
+
 }

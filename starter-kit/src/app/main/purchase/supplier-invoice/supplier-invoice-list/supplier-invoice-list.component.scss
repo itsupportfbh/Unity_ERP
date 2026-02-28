@@ -296,3 +296,36 @@
     margin-bottom: 8px;
   }
 }
+.pin-truncate {
+  max-width: 200px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.pin-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  line-height: 1;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #f3f4f6;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.pin-status-pill.s1 { background:#e0f2fe; border-color:#7dd3fc; color:#075985; } /* info */
+.pin-status-pill.s2 { background:#fef3c7; border-color:#fcd34d; color:#92400e; } /* warning */
+.pin-status-pill.s3 { background:#ede9fe; border-color:#c4b5fd; color:#5b21b6; } /* primary */
+.pin-status-pill.s4 { background:#dcfce7; border-color:#86efac; color:#166534; } /* success */
+
+.pin-status-link {
+  font-weight: 500;
+  opacity: 0.85;
+}

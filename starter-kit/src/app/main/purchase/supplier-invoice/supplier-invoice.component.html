@@ -91,8 +91,7 @@
 
       <span class="xNo">{{ g.grnNo }}</span>
       <span class="xSep">•</span>
-      <span class="xSup">{{ g.supplierName || '-' }}</span>
-      <span class="xSep" *ngIf="g.poNo">•</span>
+   
       <span class="xPo" *ngIf="g.poNo">PO: {{ g.poNo }}</span>
 
       <!-- ✅ selected tick -->
@@ -104,13 +103,14 @@
     <div *ngIf="!grnFiltered?.length" class="pinX__dropEmpty">No results</div>
   </div>
 
-  <!-- ✅ show selected chips -->
-  <div class="mt-50" *ngIf="selectedGrnNos?.length">
-    <span class="badge badge-pill badge-light mr-25" *ngFor="let n of selectedGrnNos">
-      {{ n }}
-      <i class="fas fa-times ml-25 cursor-pointer" (click)="removeGrnByNo(n)"></i>
-    </span>
-  </div>
+<div class="mt-50" *ngIf="selectedGrnNos?.length">
+  <span class="pinX__grnBadge"
+        *ngFor="let n of selectedGrnNos">
+    {{ n }}
+    <i class="fas fa-times"
+       (click)="removeGrnByNo(n)"></i>
+  </span>
+</div>
 </div>
 
             <!-- Supplier -->
@@ -136,26 +136,25 @@
               <label class="pinX__label">Tax</label>
 
               <div class="pinX__taxRow">
-                <select class="pinX__input pinX__select" formControlName="taxMode" (change)="onTaxModeChange()">
+                <!-- <select class="pinX__input pinX__select" formControlName="taxMode" (change)="onTaxModeChange()">
                   <option value="EXCLUSIVE">Exclusive</option>
                   <option value="INCLUSIVE">Inclusive</option>
                   <option value="ZERO">0% (No tax)</option>
-                </select>
+                </select> -->
 
                 <div class="pinX__taxPct">
-                  <input type="number"
-                         class="pinX__input"
-                         formControlName="tax"
-                         [readonly]="taxMode === 'ZERO'"
-                         (input)="onTaxChange()"
-                         placeholder="%" />
+                 <input type="number"
+       class="pinX__input"
+       formControlName="tax"
+       (input)="onTaxChange()"
+       placeholder="%" />
                   <span class="pinX__suffix">%</span>
                 </div>
               </div>
 
-              <div class="pinX__hint">
+              <!-- <div class="pinX__hint">
                 Mode: <b>{{ taxMode }}</b>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
@@ -178,15 +177,17 @@
 
               <div class="pinX__tableWrap pinX__tableFixed">
                 <!-- Header -->
-                <div class="pinX__tableHead pinX__rowFixed">
-                  <div class="c1">Item</div>
-                  <div class="c2">Ledger Name</div>
-                  <div class="c3">Location</div>
-                  <div class="c4">Qty</div>
-                  <div class="c5">Unit Price</div>
-                  <div class="c6">Discount %</div>
-                  <div class="c7 tR">Total</div>
-                </div>
+             <div class="pinX__tableHead pinX__rowFixed">
+  <div class="c1">Item</div>
+  <div class="c2">Ledger Name</div>
+  <div class="c3">Location</div>
+  <div class="c4">Qty</div>
+  <div class="c5">Price</div>
+  <div class="c6">Discount(%)</div>
+  <div class="c7">TaxCode</div>
+  <div class="c8">Tax Amt</div>
+  <div class="c9">Total</div>
+</div>
 
                 <div formArrayName="lines">
                   <div *ngIf="lines.length === 0" class="pinX__empty">No lines yet.</div>
@@ -226,7 +227,7 @@
                     </div>
 
                     <div class="c4">
-                      <input type="number" class="pinX__input pinX__cellInput" formControlName="qty" (input)="onCellChange(i)" />
+                      <input type="number" class="pinX__input pinX__cellInput" formControlName="qty" (input)="onCellChange1(i)" />
                     </div>
 
                     <div class="c5">
@@ -236,10 +237,24 @@
                     <div class="c6">
                       <input type="number" class="pinX__input pinX__cellInput" formControlName="discountPct" (input)="onCellChange(i)" />
                     </div>
+<div class="c7">
+  <select class="pinX__input pinX__cellInput"
+          formControlName="taxMode"
+          (change)="onLineTaxChange(i)">
+    <option value="EXCLUSIVE">Exclusive</option>
+    <option value="INCLUSIVE">Inclusive</option>
+    <option value="ZERO">0%</option>
+  </select>
+</div>
 
-                    <div class="c7 tR pinX__lineTotal">
-                      {{ (row.get('lineTotal')?.value || 0) | number:'1.2-2' }}
-                    </div>
+<div class="c8">
+  {{ (row.get('taxAmt')?.value || 0) | number:'1.2-2' }}
+</div>
+
+<div class="c9">
+  {{ (row.get('lineGrandTotal')?.value || 0) | number:'1.2-2' }}
+</div>
+ 
                   </div>
                 </div>
               </div>
@@ -269,7 +284,7 @@
 
                 <div class="r">
                   <div class="k">
-                    Tax <span class="muted">({{ form.get('tax')?.value || 0 }}% - {{ taxMode }})</span>
+                   Tax <span class="muted">({{ form.get('tax')?.value || 0 }}%)</span>
                   </div>
                   <div class="v">{{ taxAmount | number:'1.2-2' }}</div>
                 </div>

@@ -154,7 +154,10 @@
   border-radius:16px 16px 0 0;
   overflow:hidden; /* only header corners */
 }
-.pinX__tableHead > div{padding:10px}
+.pinX__tableHead > div{
+  padding:10px;
+  white-space:nowrap;
+}
 
 /* rows */
 .pinX__tr{
@@ -164,17 +167,18 @@
 .pinX__tr:nth-child(even){background:#fbfdff}
 .pinX__tr > div{padding:10px}
 
-/* ✅ column grid */
 .pinX__rowFixed{
   display:grid;
   grid-template-columns:
-    200px              /* Item */
-    420px              /* Ledger */
-    220px              /* Location */
-    110px              /* Qty */
-    150px              /* Unit price */
-    150px              /* Discount */
-    170px;             /* Total */
+    200px  /* c1 Item */
+    420px  /* c2 Ledger */
+    220px  /* c3 Location */
+    110px  /* c4 Qty */
+    140px  /* c5 Price */
+    140px  /* c6 Discount(%) */
+    140px  /* c7 TaxCode */
+    120px  /* c8 Tax Amt */
+    160px; /* c9 Total */
   align-items:center;
   column-gap:12px;
 }
@@ -201,18 +205,20 @@
 /* empty */
 .pinX__empty{padding:14px;text-align:center;color:#94a3b8;font-weight:800;font-size:12.5px}
 
-/* responsive shrink (still keep all columns) */
 @media (max-width: 1200px){
-  .pinX__tableWrap{ min-width: 1080px; }
+  .pinX__tableWrap{ min-width: 1280px; }
+
   .pinX__rowFixed{
     grid-template-columns:
-      180px
-      360px
-      200px
-      100px
-      140px
-      140px
-      160px;
+      180px  /* Item */
+      340px  /* Ledger */
+      190px  /* Location */
+      90px   /* Qty */
+      120px  /* Price */
+      120px  /* Discount */
+      130px  /* TaxCode */
+      110px  /* Tax Amt */
+      140px; /* Total */
   }
 }
 
@@ -298,4 +304,46 @@
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+}
+/* =========================
+   GRN Selected Badges
+   ========================= */
+
+.pinX__grnBadge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-right:8px;
+  margin-bottom:6px;
+
+  padding:6px 12px;
+  border-radius:999px;
+
+  font-size:12px;
+  font-weight:800;
+
+  background:linear-gradient(135deg, rgba(46,95,115,.15), rgba(46,95,115,.08));
+  color:#0e3a4c;
+
+  border:1px solid rgba(46,95,115,.25);
+
+  transition:all .15s ease;
+  cursor:default;
+}
+
+.pinX__grnBadge:hover{
+  background:linear-gradient(135deg, rgba(46,95,115,.22), rgba(46,95,115,.12));
+  transform:translateY(-1px);
+}
+
+.pinX__grnBadge i{
+  font-size:11px;
+  cursor:pointer;
+  color:#c53030;
+  transition:transform .15s ease, color .15s ease;
+}
+
+.pinX__grnBadge i:hover{
+  transform:scale(1.15);
+  color:#9b2c2c;
 }

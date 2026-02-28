@@ -31,7 +31,6 @@ type DoRow = {
   isPosted: boolean | number;
 
   customerName?: string | null;
-
   totalQty?: number | null;
 };
 
@@ -60,6 +59,9 @@ type ColumnDef = {
   checked: boolean;
   width?: number;
   tags?: string;
+
+  group: 'basic' | 'logistics' | 'finance';
+  groupLabel?: string;
 };
 
 type NumSummaryCol = { key: ColKey; label: string };
@@ -83,54 +85,47 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
   selectedOption = 10;
   searchValue = '';
 
-  // gating: only load list after first modal submit
   listLoaded = false;
   mustPickColumns = true;
 
-  // lookups
   driverMap  = new Map<number, string>();
   vehicleMap = new Map<number, string>();
   itemNameMap = new Map<number, string>();
   uomMap      = new Map<number, string>();
 
-  // period lock
   isPeriodLocked = false;
   currentPeriodName = '';
 
-  // header modal
   showHeaderModal = false;
   headerSearch = '';
   private columnsSnapshot: ColumnDef[] = [];
 
+  activeTab: 'basic' | 'logistics' | 'finance' | 'all' = 'basic';
+
   columns: ColumnDef[] = [
-    { key: 'doNumber',       label: 'Delivery No',      checked: true,  width: 160, tags: 'do delivery number' },
-    { key: 'deliveryDate',   label: 'Date',             checked: true,  width: 170, tags: 'date delivery date' },
-    { key: 'customer',       label: 'Customer',         checked: true,  width: 220, tags: 'customer name' },
-    { key: 'qty',            label: 'Qty',              checked: true,  width: 120, tags: 'qty total quantity' },
-    { key: 'soNo',           label: 'SO No',            checked: false, width: 160, tags: 'so sales order' },
-    { key: 'driver',         label: 'Driver',           checked: false, width: 180, tags: 'driver' },
-    { key: 'driverContact',  label: 'Driver Contact',   checked: false, width: 170, tags: 'driver contact mobile' },
-    { key: 'receivedPerson', label: 'Received Person',  checked: false, width: 200, tags: 'received person' },
-    { key: 'receivedContact',label: 'Received Contact', checked: false, width: 170, tags: 'received contact' },
-    { key: 'vehicle',        label: 'Vehicle',          checked: false, width: 160, tags: 'vehicle' },
-    { key: 'location',       label: 'Location',         checked: false, width: 200, tags: 'route location' },
-    { key: 'posted',         label: 'Posted',           checked: false, width: 120, tags: 'posted' }
+    // BASIC
+    { key: 'doNumber',     label: 'Delivery No', checked: true,  width: 160, tags: 'do delivery number', group: 'basic', groupLabel: 'Basic' },
+    { key: 'deliveryDate', label: 'Date',        checked: true,  width: 170, tags: 'date delivery date', group: 'basic', groupLabel: 'Basic' },
+    { key: 'customer',     label: 'Customer',    checked: true,  width: 220, tags: 'customer name', group: 'basic', groupLabel: 'Basic' },
+    { key: 'qty',          label: 'Qty',         checked: true,  width: 120, tags: 'qty total quantity', group: 'basic', groupLabel: 'Basic' },
+    { key: 'soNo',         label: 'SO No',       checked: false, width: 160, tags: 'so sales order', group: 'basic', groupLabel: 'Basic' },
+
+    // LOGISTICS
+    { key: 'driver',         label: 'Driver',          checked: false, width: 180, tags: 'driver', group: 'logistics', groupLabel: 'Logistics' },
+    { key: 'driverContact',  label: 'Driver Contact',  checked: false, width: 170, tags: 'driver contact mobile', group: 'logistics', groupLabel: 'Logistics' },
+    { key: 'receivedPerson', label: 'Received Person', checked: false, width: 200, tags: 'received person', group: 'logistics', groupLabel: 'Logistics' },
+    { key: 'receivedContact',label: 'Received Contact',checked: false, width: 170, tags: 'received contact', group: 'logistics', groupLabel: 'Logistics' },
+    { key: 'vehicle',        label: 'Vehicle',         checked: false, width: 160, tags: 'vehicle', group: 'logistics', groupLabel: 'Logistics' },
+    { key: 'location',       label: 'Location',        checked: false, width: 200, tags: 'route location', group: 'logistics', groupLabel: 'Logistics' },
+    { key: 'posted',         label: 'Posted',          checked: false, width: 120, tags: 'posted', group: 'logistics', groupLabel: 'Logistics' },
   ];
 
-  // row selection
   selectedRowIds = new Set<number>();
 
-  // ✅ Summary state
   summaryVisible = false;
-
-  // A) aggregated groups
   summaryGroups: SummaryGroup[] = [];
   summaryNumericCols: NumSummaryCol[] = [];
-
-  // B) detail rows (selected documents)
   summaryDetailRows: DoRow[] = [];
-
-  // chips
   summarySelectedHeaders: string[] = [];
 
   summaryMeta = {
@@ -159,18 +154,24 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     this.checkPeriodLockForDate(today);
     this.loadLookups();
 
-    // first time open => show modal immediately
     setTimeout(() => this.openHeaderModal(true), 0);
   }
 
   ngAfterViewInit(): void { feather.replace(); }
   ngAfterViewChecked(): void { feather.replace(); }
 
-  // ---------- Header modal helpers ----------
+  setTab(tab: 'basic' | 'logistics' | 'finance' | 'all') {
+    this.activeTab = tab;
+  }
+
   get filteredColumns(): ColumnDef[] {
     const q = (this.headerSearch || '').trim().toLowerCase();
-    if (!q) return this.columns;
-    return this.columns.filter(c => c.label.toLowerCase().includes(q) || (c.tags || '').toLowerCase().includes(q));
+
+    let list = this.columns;
+    if (this.activeTab !== 'all') list = list.filter(c => c.group === this.activeTab);
+
+    if (!q) return list;
+    return list.filter(c => c.label.toLowerCase().includes(q) || (c.tags || '').toLowerCase().includes(q));
   }
 
   get selectedColumnCount(): number {
@@ -181,7 +182,6 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     return this.columns.length > 0 && this.columns.every(c => c.checked);
   }
 
-  // ✅ Selected columns in original order (used by Summary Detail table AND Print)
   get selectedColumnsOrdered(): ColumnDef[] {
     return this.columns.filter(c => c.checked);
   }
@@ -189,6 +189,7 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
   openHeaderModal(force: boolean) {
     this.columnsSnapshot = this.columns.map(c => ({ ...c }));
     this.headerSearch = '';
+    this.activeTab = 'basic';
     this.showHeaderModal = true;
     if (force) this.mustPickColumns = true;
   }
@@ -199,7 +200,15 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
   }
 
   closeHeaderModal() {
-   this.router.navigate(['/Sales/Reports-create']);
+    if (this.mustPickColumns) return;
+    this.showHeaderModal = false;
+    this.headerSearch = '';
+  }
+
+  cancelHeaderModal() {
+    if (this.mustPickColumns) return;
+    this.columns = this.columnsSnapshot.map(x => ({ ...x }));
+    this.closeHeaderModal();
   }
 
   private toggleAllColumns(checked: boolean) {
@@ -209,6 +218,16 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
   onToggleAllColumns(event: Event) {
     const checked = (event.target as HTMLInputElement)?.checked === true;
     this.toggleAllColumns(checked);
+  }
+
+  selectAllInTab() {
+    const list = this.activeTab === 'all' ? this.columns : this.columns.filter(c => c.group === this.activeTab);
+    for (const c of list) c.checked = true;
+  }
+
+  clearAllInTab() {
+    const list = this.activeTab === 'all' ? this.columns : this.columns.filter(c => c.group === this.activeTab);
+    for (const c of list) c.checked = false;
   }
 
   applyHeadersAndClose() {
@@ -234,14 +253,12 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     return this.columns.find(c => c.key === key)?.width || fallback;
   }
 
-  // ---------- Page size ----------
   onLimitChangeValue(event: Event) {
     const value = (event.target as HTMLSelectElement)?.value;
     const n = Number(value);
     this.selectedOption = n || 10;
   }
 
-  // ---------- Period lock ----------
   private checkPeriodLockForDate(dateStr: string): void {
     if (!dateStr) return;
 
@@ -257,7 +274,6 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     });
   }
 
-  // ---------- Lookups ----------
   private loadLookups(): void {
     this.driverSvc.getAllDriver().subscribe((res: any) => {
       const arr = res?.data ?? res ?? [];
@@ -296,7 +312,6 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     });
   }
 
-  // ---------- List ----------
   private loadList(): void {
     this.doSvc.GetDeliveryNoteReport().subscribe((res: any) => {
       const data = res?.data ?? res ?? [];
@@ -331,32 +346,25 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     });
   }
 
-  // ---------- helpers ----------
   getDriverName(id?: number | null) { return id ? (this.driverMap.get(id) || '') : ''; }
   getVehicleNo(id?: number | null) { return id ? (this.vehicleMap.get(id) || '') : ''; }
-  getItemName(id?: number | null) { return id ? (this.itemNameMap.get(id) || '') : ''; }
-  getUomName(id?: number | null)  { return id != null ? (this.uomMap.get(id) || '') : ''; }
 
-  // ---------- Search ----------
   filterUpdate(_: any) {
     if (!this.listLoaded) return;
 
     const q = (this.searchValue || '').trim().toLowerCase();
-    if (!q) {
-      this.rows = [...this.allRows];
-      return;
-    }
+    if (!q) { this.rows = [...this.allRows]; return; }
 
     this.rows = this.allRows.filter(r => {
       const doNum  = (r.doNumber || '').toLowerCase();
       const route  = (r.routeName || '').toLowerCase();
       const driver = this.getDriverName(r.driverId)?.toLowerCase() || '';
+      const cust   = String(r.customerName ?? '').toLowerCase();
       const soNo   = String(r.salesOrderNo ?? '').toLowerCase();
-      return doNum.includes(q) || route.includes(q) || driver.includes(q) || soNo.includes(q);
+      return doNum.includes(q) || route.includes(q) || driver.includes(q) || soNo.includes(q) || cust.includes(q);
     });
   }
 
-  // ---------- Row selection ----------
   onToggleAllRows(event: Event) {
     const checked = (event.target as HTMLInputElement)?.checked === true;
     this.toggleAllRows(checked);
@@ -378,9 +386,7 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
 
   private toggleAllRows(checked: boolean) {
     this.selectedRowIds.clear();
-    if (checked) {
-      for (const r of this.rows) if (r?.id) this.selectedRowIds.add(r.id);
-    }
+    if (checked) for (const r of this.rows) if (r?.id) this.selectedRowIds.add(r.id);
   }
 
   get selectedRows(): DoRow[] {
@@ -388,12 +394,8 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     return this.allRows.filter(r => ids.has(r.id));
   }
 
-  // ✅ numeric columns
-  isNumericCol(key: ColKey): boolean {
-    return key === 'qty';
-  }
+  isNumericCol(key: ColKey): boolean { return key === 'qty'; }
 
-  // ✅ get display value by key
   getColValue(row: DoRow, key: ColKey): any {
     switch (key) {
       case 'doNumber': return row.doNumber ?? '';
@@ -412,14 +414,12 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     }
   }
 
-  // ✅ groupBy preference
   private getGroupByKey(): ColKey {
     const selectedKeys = this.columns.filter(c => c.checked).map(c => c.key);
     if (selectedKeys.includes('customer')) return 'customer';
     return 'doNumber';
   }
 
-  // ---------- Summary ----------
   submitSelected() {
     if (!this.listLoaded) return;
 
@@ -447,9 +447,7 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
       const groupValRaw = this.getColValue(r, groupByKey);
       const groupVal = String(groupValRaw || 'Unknown').trim() || 'Unknown';
 
-      if (!map.has(groupVal)) {
-        map.set(groupVal, { group: groupVal, docs: 0, sums: {} });
-      }
+      if (!map.has(groupVal)) map.set(groupVal, { group: groupVal, docs: 0, sums: {} });
 
       const g = map.get(groupVal)!;
       g.docs += 1;
@@ -484,18 +482,14 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     this.summaryVisible = true;
 
     setTimeout(() => {
-      const el = document.querySelector('.sum-card');
-      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('dnSummaryRoot')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 0);
   }
 
-  backToList() {
-    this.summaryVisible = false;
-  }
+  backToList() { this.summaryVisible = false; }
 
   clearSummary(clearSelection: boolean = true) {
     this.summaryVisible = false;
-
     this.summaryGroups = [];
     this.summaryNumericCols = [];
     this.summaryDetailRows = [];
@@ -515,17 +509,13 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     if (clearSelection) this.selectedRowIds.clear();
   }
 
-   goToDeliveryNoteSummary() { this.router.navigate(['/Sales/Delivery-Note-list']); }
-  // ============================
-  // ✅ PRINT SUMMARY (ONLY selected columns)
-  // ============================
   printSummary() {
     if (!this.summaryVisible) {
       Swal.fire('Print', 'Summary is not visible. Please submit selected first.', 'info');
       return;
     }
 
-    const cols = this.selectedColumnsOrdered; // ✅ ONLY selected columns
+    const cols = this.selectedColumnsOrdered;
     if (!cols?.length) {
       Swal.fire('Print', 'No columns selected.', 'warning');
       return;
@@ -551,7 +541,6 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     .brand h1 { font-size: 18px; margin: 0; }
     .brand .sub { font-size: 12px; color: #666; margin-top: 2px; }
     .hr { height: 2px; background:#2E5F73; margin: 10px 0 14px; }
-
     .meta-box {
       border: 1px solid #cfd8dc;
       border-radius: 10px;
@@ -564,7 +553,6 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     .meta-row { display:flex; justify-content: space-between; gap: 12px; font-size: 13px; }
     .meta-row b { font-weight: 700; }
     .meta-row .k { color:#2E5F73; font-weight: 700; min-width: 130px; }
-
     .section-title {
       background:#2E5F73;
       color:#fff;
@@ -574,29 +562,22 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
       font-size: 13px;
       margin-top: 14px;
     }
-
     table { width: 100%; border-collapse: collapse; }
     th, td { border: 1px solid #cfd8dc; padding: 10px; font-size: 13px; }
     th { background: #2E5F73; color: #fff; text-align: left; }
     td.num, th.num { text-align: right; }
     td.center, th.center { text-align: center; }
-
-    .tfoot td { font-weight: 700; }
     @media print {
       body { padding: 0; }
-      .section-title { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .hr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .logo { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .section-title, th, .hr, .logo { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
 </head>
 <body>
-
   <div class="brand">
-    <div class="logo">CC</div>
+    <div class="logo">FBH</div>
     <div>
-      <h1>Continental Catering Solutions Pvt Ltd</h1>
+      <h1>FBH UnityWorks ERP</h1>
       <div class="sub">Delivery Summary</div>
     </div>
   </div>
@@ -624,16 +605,12 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
     `;
 
     const w = window.open('', '_blank', 'width=1100,height=750');
-    if (!w) {
-      Swal.fire('Popup blocked', 'Allow popups to print.', 'warning');
-      return;
-    }
+    if (!w) { Swal.fire('Popup blocked', 'Allow popups to print.', 'warning'); return; }
     w.document.open();
     w.document.write(html);
     w.document.close();
   }
 
-  // ===== Print helpers =====
   private buildGroupTableHtml(groupLabel: string): string {
     const hasNum = (this.summaryNumericCols?.length || 0) > 0;
 
@@ -658,6 +635,8 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
       })
       .join('');
 
+    const colspan = hasNum ? (2 + this.summaryNumericCols.length) : 2;
+
     return `
       <table>
         <thead>
@@ -668,45 +647,39 @@ export class DeliveryNoteReportComponent implements OnInit, AfterViewInit, After
           </tr>
         </thead>
         <tbody>
-          ${body || `<tr><td colspan="${hasNum ? (2 + this.summaryNumericCols.length) : 2}">-</td></tr>`}
+          ${body || `<tr><td colspan="${colspan}">-</td></tr>`}
         </tbody>
       </table>
     `;
   }
 
-private buildDetailTableHtml(cols: ColumnDef[]): string {
-  const thead = cols.map(c => {
-    const cls = this.isNumericCol(c.key) ? 'num' : '';
-    return `<th class="${cls}">${this.escapeHtml(c.label)}</th>`;
-  }).join('');
-
-  const rows = (this.summaryDetailRows || []).map(r => {
-    const tds = cols.map(c => {
-      let val = this.getColValue(r, c.key);
-
-      // format date
-      if (c.key === 'deliveryDate') val = this.formatDate(val);
-
-      // numeric
-      if (this.isNumericCol(c.key)) {
-        return `<td class="num">${this.formatNumber(Number(val ?? 0) || 0)}</td>`;
-      }
-
-      return `<td>${this.escapeHtml(String(val ?? '-'))}</td>`;
+  private buildDetailTableHtml(cols: ColumnDef[]): string {
+    const thead = cols.map(c => {
+      const cls = this.isNumericCol(c.key) ? 'num' : '';
+      return `<th class="${cls}">${this.escapeHtml(c.label)}</th>`;
     }).join('');
 
-    return `<tr>${tds}</tr>`;
-  }).join('');
+    const rows = (this.summaryDetailRows || []).map(r => {
+      const tds = cols.map(c => {
+        let val = this.getColValue(r, c.key);
+        if (c.key === 'deliveryDate') val = this.formatDate(val);
 
-  return `
-    <table>
-      <thead><tr>${thead}</tr></thead>
-      <tbody>
-        ${rows || `<tr><td colspan="${cols.length}">-</td></tr>`}
-      </tbody>
-    </table>
-  `;
-}
+        if (this.isNumericCol(c.key)) return `<td class="num">${this.formatNumber(Number(val ?? 0) || 0)}</td>`;
+        return `<td>${this.escapeHtml(String(val ?? '-'))}</td>`;
+      }).join('');
+
+      return `<tr>${tds}</tr>`;
+    }).join('');
+
+    return `
+      <table>
+        <thead><tr>${thead}</tr></thead>
+        <tbody>
+          ${rows || `<tr><td colspan="${cols.length}">-</td></tr>`}
+        </tbody>
+      </table>
+    `;
+  }
 
   private formatDate(value: any): string {
     if (!value) return '-';
@@ -735,11 +708,8 @@ private buildDetailTableHtml(cols: ColumnDef[]): string {
   }
 
   private formatNumber(n: number): string {
-    try {
-      return new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 }).format(n);
-    } catch {
-      return String(n);
-    }
+    try { return new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 }).format(n); }
+    catch { return String(n); }
   }
 
   private escapeHtml(s: string): string {
@@ -749,5 +719,10 @@ private buildDetailTableHtml(cols: ColumnDef[]): string {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  Cancel()
+   { 
+    this.router.navigate(['/Sales/Reports-create']); 
   }
 }

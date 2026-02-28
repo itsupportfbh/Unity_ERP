@@ -10,7 +10,7 @@
           <div class="dn-head-left">
             <h4 class="dn-title">Delivery Order Summary</h4>
 
-            <div class="dn-meta">
+            <!-- <div class="dn-meta">
               <label class="dn-limit">
                 <span>Show</span>
                 <select class="form-control dn-select"
@@ -23,7 +23,7 @@
                 </select>
                 <span>entries</span>
               </label>
-            </div>
+            </div> -->
 
             <div *ngIf="isPeriodLocked" class="dn-lock">
               <span class="dn-lock-dot"></span>
@@ -37,11 +37,11 @@
                  SUMMARY MODE ACTIONS
             ========================== -->
             <ng-container *ngIf="summaryVisible; else listModeActions">
-              <div class="dn-actions dn-actions-tight">
+              <div class="dn-actions dn-actions-tight dn-one-line">
                 <button class="btn dn-btn dn-btn-outline dn-round dn-btn-sm"
                         type="button"
                         (click)="backToList()">
-                  ← Back to List
+                  ← Back
                 </button>
 
                 <button class="btn dn-btn dn-btn-soft dn-round dn-btn-sm"
@@ -50,7 +50,14 @@
                   Clear Summary
                 </button>
 
-                <!-- ✅ Print icon button -->
+                <!-- Columns (summary mode too) -->
+                <button class="btn dn-btn dn-btn-outline dn-round dn-btn-sm"
+                        type="button"
+                        (click)="openHeaderModal(false)">
+                  Columns
+                </button>
+
+                <!-- Print icon -->
                 <button class="btn dn-btn dn-btn-outline dn-round dn-btn-sm dn-iconbtn"
                         type="button"
                         (click)="printSummary()"
@@ -76,13 +83,12 @@
                          class="form-control dn-searchbox dn-searchbox-sm"
                          (keyup)="filterUpdate($event)"
                          (search)="filterUpdate($event)"
-                         placeholder="DO NO / Driver"
+                         placeholder="DO No / Driver / Customer"
                          [disabled]="!listLoaded && mustPickColumns" />
                 </div>
 
                 <!-- Buttons -->
-                <div class="dn-action-buttons dn-action-buttons-sm"
-                     *ngIf="listLoaded && (searchValue?.trim()?.length || !mustPickColumns)">
+                <div class="dn-action-buttons dn-action-buttons-sm">
 
                   <button class="btn dn-btn dn-btn-outline dn-round dn-btn-sm"
                           type="button"
@@ -120,16 +126,17 @@
         </div>
 
         <!-- =========================
-             ✅ SUMMARY (MODERN)
+             SUMMARY
         ========================== -->
-        <div class="dn-sum" *ngIf="summaryVisible">
+        <div class="dn-sum" *ngIf="summaryVisible" id="dnSummaryRoot">
 
-          <!-- Summary top -->
           <div class="dn-sum-top">
             <div class="dn-sum-left">
-              <div class="dn-sum-title">Summary</div>
+              <div class="dn-sum-title">Delivery Summary</div>
               <div class="dn-sum-sub">
                 <span>{{ summaryMeta.createdAt | date:'dd/MM/yyyy, hh:mm:ss a' }}</span>
+                <span class="sep">•</span>
+                <span><b>{{ summaryMeta.selectedDocs }}</b> docs</span>
               </div>
             </div>
 
@@ -153,10 +160,13 @@
             </div>
           </div>
 
-          <!-- Grid -->
+          <!-- Selected headers chips -->
+          <div class="dn-chips">
+            <span class="dn-chip" *ngFor="let h of summarySelectedHeaders">{{ h }}</span>
+          </div>
+
           <div class="dn-sum-grid">
 
-            <!-- Group summary -->
             <div class="dn-panel">
               <div class="dn-panel-head">
                 <div class="t">Group Summary</div>
@@ -172,7 +182,6 @@
                       <th class="ta-right" *ngFor="let col of summaryNumericCols">{{ col.label }}</th>
                     </tr>
                   </thead>
-
                   <tbody>
                     <tr *ngFor="let g of summaryGroups">
                       <td class="ta-left fw-800">{{ g.group }}</td>
@@ -186,7 +195,6 @@
               </div>
             </div>
 
-            <!-- selection info -->
             <div class="dn-panel dn-panel-soft">
               <div class="dn-panel-head">
                 <div class="t">Selection</div>
@@ -196,18 +204,21 @@
               <div class="dn-mini-list">
                 <div class="dn-mini-row">
                   <span class="l">Columns</span>
-                  <span class="r">{{ summarySelectedHeaders?.length || 0 }}</span>
+                  <span class="r">{{ selectedColumnsOrdered?.length || 0 }}</span>
                 </div>
                 <div class="dn-mini-row">
                   <span class="l">Created</span>
                   <span class="r">{{ summaryMeta.createdAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+
+                <div class="dn-mini-note">
+                  Summary shows <b>only</b> selected headers and selected rows.
                 </div>
               </div>
             </div>
 
           </div>
 
-          <!-- Detail table -->
           <div class="dn-panel dn-mt">
             <div class="dn-panel-head">
               <div class="t">Selected Documents</div>
@@ -232,6 +243,7 @@
                         [class.ta-left]="!isNumericCol(c.key)"
                         [class.ta-right]="isNumericCol(c.key)">
                       <ng-container [ngSwitch]="c.key">
+
                         <ng-container *ngSwitchCase="'deliveryDate'">
                           {{ r.deliveryDate ? (r.deliveryDate | date:'dd-MM-yyyy') : '-' }}
                         </ng-container>
@@ -269,6 +281,7 @@
                         <ng-container *ngSwitchDefault>
                           {{ getColValue(r, c.key) || '-' }}
                         </ng-container>
+
                       </ng-container>
                     </td>
                   </tr>
@@ -280,40 +293,94 @@
         </div>
 
         <!-- =========================
-             COLUMN PICKER MODAL
+             COLUMN PICKER MODAL (Tabs)
         ========================== -->
         <div *ngIf="showHeaderModal" class="dn-modal" (click)="onOverlayClickClose()">
-          <div class="dn-modal-card" (click)="$event.stopPropagation()">
+          <div class="dn-modal-card dn-modal-card-lg" (click)="$event.stopPropagation()">
+
             <div class="dn-modal-head">
-              <div class="t">Columns</div>
-              <button class="dn-x" type="button" (click)="closeHeaderModal()">✕</button>
+              <div>
+                <div class="t">Headers (Columns)</div>
+                <div class="s">Pick columns for list + summary.</div>
+              </div>
+
+              <button class="dn-x" type="button"
+                      (click)="Cancel()"
+                      [title]="mustPickColumns ? 'Select and submit columns first' : 'Close'">
+                ✕
+              </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="dn-tabs">
+              <button type="button" class="dn-tab"
+                      [class.active]="activeTab==='basic'"
+                      (click)="setTab('basic')">Basic</button>
+
+              <button type="button" class="dn-tab"
+                      [class.active]="activeTab==='logistics'"
+                      (click)="setTab('logistics')">Logistics</button>
+
+              <button type="button" class="dn-tab"
+                      [class.active]="activeTab==='finance'"
+                      (click)="setTab('finance')">Finance</button>
+
+              <button type="button" class="dn-tab"
+                      [class.active]="activeTab==='all'"
+                      (click)="setTab('all')">All</button>
+
+              <div class="dn-tabs-meta">
+                Selected: <b>{{ selectedColumnCount }}</b> / {{ columns.length }}
+              </div>
             </div>
 
             <div class="dn-modal-search">
               <input type="text" class="form-control"
-                     placeholder="Search column..."
+                     placeholder="Search header..."
                      [(ngModel)]="headerSearch" />
             </div>
 
             <div class="dn-modal-top">
               <label class="dn-check">
-                <input type="checkbox" [checked]="isAllColumnsChecked" (change)="onToggleAllColumns($event)" />
+                <input type="checkbox"
+                       [checked]="isAllColumnsChecked"
+                       (change)="onToggleAllColumns($event)" />
                 <span>Select All</span>
               </label>
 
-              <div class="dn-count">Selected: <b>{{ selectedColumnCount }}</b></div>
+              <div class="dn-top-actions">
+                <button type="button"
+                        class="btn dn-btn dn-btn-outline dn-round dn-btn-xs"
+                        (click)="selectAllInTab()">Select Tab</button>
+
+                <button type="button"
+                        class="btn dn-btn dn-btn-outline dn-round dn-btn-xs"
+                        (click)="clearAllInTab()">Clear Tab</button>
+              </div>
             </div>
 
-            <div class="dn-modal-list">
-              <label class="dn-col" *ngFor="let c of filteredColumns">
+            <div class="dn-modal-list dn-modal-list-grid">
+              <label class="dn-col dn-col-card" *ngFor="let c of filteredColumns">
+                <div class="left">
+                  <div class="lbl">{{ c.label }}</div>
+                  <div class="sub">{{ c.groupLabel }}</div>
+                </div>
+
                 <input type="checkbox" [(ngModel)]="c.checked" />
-                <span>{{ c.label }}</span>
               </label>
             </div>
 
             <div class="dn-modal-foot">
-              <button class="btn dn-btn dn-btn-outline dn-round dn-btn-sm" type="button" (click)="closeHeaderModal()">Cancel</button>
-              <button class="btn dn-btn dn-btn-primary dn-round dn-btn-sm" type="button" (click)="applyHeadersAndClose()">
+              <button class="btn dn-btn dn-btn-outline dn-round dn-btn-sm"
+                      type="button"
+                      (click)="Cancel()"
+                     >
+                Cancel
+              </button>
+
+              <button class="btn dn-btn dn-btn-primary dn-round dn-btn-sm"
+                      type="button"
+                      (click)="applyHeadersAndClose()">
                 <span class="dn-icon-circle dn-icon-circle-sm">
                   <i data-feather="check"></i>
                 </span>

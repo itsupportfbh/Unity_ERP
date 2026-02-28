@@ -4,7 +4,7 @@
 @import '@core/scss/angular/libs/sweet-alerts.component.scss';
 
 :root{
-  --brand:#2E5F73;          /* button bg */
+  --brand:#2E5F73;
   --brand-dark:#254d5e;
   --ink:#0f172a;
   --muted:#6b7280;
@@ -84,7 +84,6 @@
   }
 }
 
-/* actions row */
 .dn-actions{
   display:flex;
   align-items:center;
@@ -93,25 +92,29 @@
   flex-wrap:wrap;
 }
 
-/* =========================
-   ✅ Search like screenshot
-========================= */
-.dn-searchwrap{
-  display:flex;
-  align-items:center;
-  gap:12px;
+/* ONE LINE + SMALL CONTROLS */
+.dn-actions-tight{ gap: 12px !important; }
+
+.dn-one-line{
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+
+  @media (max-width: 992px){
+    flex-wrap: wrap !important;
+  }
 }
 
-.dn-searchlabel{
-  font-size: 18px;
-  color: #6b7280;
-  font-weight: 500;
-}
+/* Search smaller */
+.dn-searchwrap{ display:flex; align-items:center; gap:12px; }
+.dn-searchwrap-sm{ gap: 10px !important; }
+
+.dn-searchlabel{ font-size: 18px; color: #6b7280; font-weight: 500; }
+.dn-searchlabel-sm{ font-size: 16px !important; }
 
 .dn-searchbox{
-  width: 320px;        /* screenshot like */
+  width: 320px;
   height: 44px;
-  border-radius: 10px; /* ✅ rounded rectangle */
+  border-radius: 10px;
   border: 1px solid var(--line);
   background: #fff;
   padding: 0 14px;
@@ -119,10 +122,7 @@
   color: var(--ink);
   box-shadow: 0 1px 0 rgba(0,0,0,.02);
 
-  &::placeholder{
-    color: #b7bec8;
-    font-weight: 500;
-  }
+  &::placeholder{ color: #b7bec8; font-weight: 500; }
 
   &:focus{
     border-color: rgba(46,95,115,.45);
@@ -130,19 +130,26 @@
   }
 }
 
-.dn-action-buttons{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  flex-wrap:wrap;
+.dn-searchbox-sm{
+  width: 260px !important;
+  height: 38px !important;
+  border-radius: 10px !important;
+  padding: 0 12px !important;
+
+  @media (max-width: 1200px){ width: 220px !important; }
+  @media (max-width: 992px){ width: 100% !important; }
 }
 
-/* =========================
-   ✅ Buttons like screenshot
-========================= */
-.dn-round{
-  border-radius: 10px !important;
+.dn-action-buttons{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.dn-action-buttons-sm{
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+
+  @media (max-width: 992px){ flex-wrap: wrap !important; }
 }
+
+/* Buttons */
+.dn-round{ border-radius: 10px !important; }
 
 .dn-btn{
   height: 44px;
@@ -154,30 +161,29 @@
   border-radius: 10px !important;
 }
 
-/* primary */
+.dn-btn-sm{
+  height: 38px !important;
+  padding: 0 14px !important;
+  font-size: 14px !important;
+  gap: 10px !important;
+}
+
 .dn-btn-primary{
   background: var(--brand);
   border: 1px solid var(--brand);
   color: #fff;
 
-  &:hover{
-    background: var(--brand-dark);
-    border-color: var(--brand-dark);
-  }
+  &:hover{ background: var(--brand-dark); border-color: var(--brand-dark); }
 }
 
-/* outline */
 .dn-btn-outline{
   background:#fff;
   color: var(--brand);
   border:1px solid rgba(46,95,115,.35);
 
-  &:hover{
-    background: rgba(46,95,115,.06);
-  }
+  &:hover{ background: rgba(46,95,115,.06); }
 }
 
-/* soft */
 .dn-btn-soft{
   background: #f1f5f9;
   color:#334155;
@@ -186,7 +192,6 @@
   &:hover{ background:#eaf0f6; }
 }
 
-/* icon circle inside button (like +) */
 .dn-icon-circle{
   width: 26px;
   height: 26px;
@@ -200,7 +205,13 @@
   i{ width: 16px; height: 16px; }
 }
 
-/* badge */
+.dn-icon-circle-sm{
+  width: 22px !important;
+  height: 22px !important;
+  border-width: 2px !important;
+  i{ width: 14px !important; height: 14px !important; }
+}
+
 .dn-badge{
   display:inline-flex;
   align-items:center;
@@ -213,6 +224,21 @@
   border: 1px solid rgba(255,255,255,.35);
   font-size: 12px;
   font-weight: 900;
+}
+.dn-badge-sm{
+  height: 20px !important;
+  min-width: 20px !important;
+  padding: 0 7px !important;
+  font-size: 11px !important;
+}
+
+/* Print icon btn */
+.dn-iconbtn{
+  width: 38px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+
+  i{ width: 16px; height: 16px; }
 }
 
 /* hint */
@@ -228,7 +254,7 @@
   .h2{ color: #64748b; font-size: 13px; }
 }
 
-/* datatable wrap fixes */
+/* datatable label wrap */
 ::ng-deep .ngx-datatable .datatable-body-cell .datatable-body-cell-label{
   white-space: normal !important;
   line-height: 1.2;
@@ -250,7 +276,7 @@
 }
 
 /* =========================
-   SUMMARY UI (same modern)
+   SUMMARY UI
 ========================= */
 .dn-sum{
   padding: 14px;
@@ -269,11 +295,7 @@
   box-shadow: 0 10px 24px rgba(0,0,0,.06);
 }
 
-.dn-sum-title{
-  font-size: 18px;
-  font-weight: 1000;
-  color: var(--ink);
-}
+.dn-sum-title{ font-size: 18px; font-weight: 1000; color: var(--ink); }
 .dn-sum-sub{
   margin-top:6px;
   color: #64748b;
@@ -301,10 +323,14 @@
   .k{ font-size: 12px; color: #64748b; font-weight: 800; }
   .v{ font-size: 18px; color: var(--ink); font-weight: 1000; margin-top: 4px; }
 }
-.dn-kpi-accent{
-  background: rgba(46,95,115,.08);
-  border-color: rgba(46,95,115,.22);
+.dn-kpis-tight{ gap: 8px !important; }
+.dn-kpi-sm{
+  min-width: 110px !important;
+  padding: 8px 10px !important;
+  .k{ font-size: 11px !important; }
+  .v{ font-size: 16px !important; }
 }
+.dn-kpi-accent{ background: rgba(46,95,115,.08); border-color: rgba(46,95,115,.22); }
 
 .dn-chips{
   padding: 10px 6px 4px 6px;
@@ -340,13 +366,11 @@
   box-shadow: 0 10px 24px rgba(0,0,0,.06);
   overflow:hidden;
 }
-
 .dn-panel-soft{
   background:
     radial-gradient(900px 260px at 30% 0%, rgba(46,95,115,.10), transparent 60%),
     #fff;
 }
-
 .dn-panel-head{
   padding: 12px 14px;
   display:flex;
@@ -368,7 +392,6 @@
 }
 
 .dn-table-wrap{ overflow:auto; }
-
 .dn-table{
   width: 100%;
   min-width: 520px;
@@ -439,11 +462,10 @@
   font-size: 12.5px;
   line-height: 1.35;
 }
-
 .dn-mt{ margin-top: 14px; }
 
 /* =========================
-   MODAL
+   MODAL + TABS
 ========================= */
 .dn-modal{
   position: fixed;
@@ -456,24 +478,38 @@
   justify-content:center;
   padding: 18px;
 }
-
 .dn-modal-card{
   width: 460px;
   max-width: 95vw;
+
+  /* ✅ HEIGHT reduce */
+  max-height: 78vh;           /* adjust: 70vh / 75vh / 80vh */
+  display: flex;
+  flex-direction: column;
+
   background:#fff;
   border:1px solid #e5e7eb;
   border-radius: 18px;
   box-shadow: 0 30px 80px rgba(0,0,0,.20);
-  overflow:hidden;
+  overflow: hidden;
+}
+.dn-modal-card-lg{
+  width: 560px;
+  max-width: 95vw;
+  max-height: 78vh;           /* same height limit */
+  display: flex;
+  flex-direction: column;
 }
 
 .dn-modal-head{
   padding: 14px 16px 10px 16px;
   display:flex;
   justify-content:space-between;
-  align-items:center;
-
+  align-items:flex-start;
+ flex: 0 0 auto;
   .t{ font-size: 16px; font-weight: 1000; color: var(--ink); }
+  .s{ margin-top: 4px; font-size: 12px; color: #64748b; font-weight: 700; }
+
   .dn-x{
     border:0;
     background: transparent;
@@ -481,11 +517,50 @@
     font-size: 16px;
     color:#64748b;
     cursor:pointer;
+
+    &:disabled{
+      cursor: not-allowed;
+      opacity: .35;
+    }
   }
 }
 
+.dn-tabs{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding: 10px 16px;
+  border-top: 1px solid #eef2f7;
+  border-bottom: 1px solid #eef2f7;
+  background: #fafcff;
+  flex: 0 0 auto;
+}
+.dn-tab{
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #334155;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-weight: 1000;
+  font-size: 13px;
+  cursor: pointer;
+
+  &.active{
+    border-color: rgba(46,95,115,.30);
+    background: rgba(46,95,115,.08);
+    color: var(--brand);
+  }
+}
+.dn-tabs-meta{
+  margin-left:auto;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 800;
+}
+
 .dn-modal-search{
-  padding: 0 16px 12px 16px;
+  padding: 12px 16px 10px 16px;
+   flex: 0 0 auto;
 
   input{
     height: 40px;
@@ -501,8 +576,10 @@
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap: 12px;
   color:#334155;
   font-size: 13px;
+   flex: 0 0 auto;
 }
 
 .dn-check{
@@ -519,26 +596,48 @@
   span{ font-weight: 900; }
 }
 
-.dn-count{
-  background:#f1f5f9;
-  border:1px solid #e2e8f0;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
+.dn-top-actions{
+  display:flex;
+  gap: 8px;
+  align-items:center;
+}
+
+.dn-btn-xs{
+  height: 34px !important;
+  padding: 0 12px !important;
+  font-size: 13px !important;
 }
 
 .dn-modal-list{
-  max-height: 340px;
-  overflow:auto;
-  padding: 6px 10px 12px 10px;
+  flex: 1 1 auto;
+  overflow: auto;
+  max-height: none;           /* remove old max-height */
+  padding: 6px 14px 12px 14px;
+}
+
+@media (max-height: 750px){
+  .dn-modal-card,
+  .dn-modal-card-lg{
+    max-height: 72vh;
+  }
+}
+
+.dn-modal-list-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  @media (max-width: 520px){
+    grid-template-columns: 1fr;
+  }
 }
 
 .dn-col{
   display:flex;
   align-items:center;
+  justify-content:space-between;
   gap: 12px;
   padding: 12px 12px;
-  margin: 8px;
   border-radius: 14px;
   background:#fff;
   border: 1px solid #e5e7eb;
@@ -546,7 +645,16 @@
 
   &:hover{ background: var(--soft); border-color:#cbd5e1; }
   input{ transform: scale(1.10); }
-  span{ font-weight: 900; }
+}
+
+.dn-col-card{
+  .left{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .lbl{ font-weight: 1000; }
+  .sub{ font-size: 12px; color: #64748b; font-weight: 800; }
 }
 
 .dn-modal-foot{
@@ -556,126 +664,15 @@
   gap:10px;
   border-top: 1px solid #eef2f7;
   background:#fff;
+   flex: 0 0 auto;
 }
 
 /* datatable header polish */
 .dn-table-grid{
-  ::ng-deep .datatable-header{
-    background: var(--brand);
-  }
+  ::ng-deep .datatable-header{ background: var(--brand); }
   ::ng-deep .datatable-header-cell{
     color:#fff !important;
     font-weight: 900;
     white-space: nowrap;
   }
-}
-
-
-/* =========================
-   ✅ ONE LINE + SMALL CONTROLS
-========================= */
-.dn-actions-tight{
-  gap: 12px !important;
-}
-
-/* force one row on desktop */
-.dn-one-line{
-  flex-wrap: nowrap !important;
-  align-items: center !important;
-
-  @media (max-width: 992px){
-    flex-wrap: wrap !important;   /* mobile-la wrap ok */
-  }
-}
-
-/* Search smaller */
-.dn-searchwrap-sm{
-  gap: 10px !important;
-}
-.dn-searchlabel-sm{
-  font-size: 16px !important;
-}
-
-/* reduce search width so it won't push buttons */
-.dn-searchbox-sm{
-  width: 260px !important;
-  height: 38px !important;
-  border-radius: 10px !important;
-  padding: 0 12px !important;
-
-  @media (max-width: 1200px){
-    width: 220px !important;
-  }
-  @media (max-width: 992px){
-    width: 100% !important;
-  }
-}
-
-/* Buttons smaller */
-.dn-btn-sm{
-  height: 38px !important;
-  padding: 0 14px !important;
-  font-size: 14px !important;
-  gap: 10px !important;
-}
-
-/* icon circle smaller inside submit button */
-.dn-icon-circle-sm{
-  width: 22px !important;
-  height: 22px !important;
-  border-width: 2px !important;
-
-  i{
-    width: 14px !important;
-    height: 14px !important;
-  }
-}
-
-/* badge smaller */
-.dn-badge-sm{
-  height: 20px !important;
-  min-width: 20px !important;
-  padding: 0 7px !important;
-  font-size: 11px !important;
-}
-
-/* action buttons group tight */
-.dn-action-buttons-sm{
-  gap: 10px !important;
-  flex-wrap: nowrap !important;
-
-  @media (max-width: 992px){
-    flex-wrap: wrap !important;
-  }
-}
-
-/* =========================
-   ✅ PRINT ICON BUTTON
-========================= */
-.dn-iconbtn{
-  width: 38px !important;
-  padding: 0 !important;
-  justify-content: center !important;
-
-  i{
-    width: 16px;
-    height: 16px;
-  }
-}
-
-/* summary top right alignment */
-.dn-sum-right{
-  display:flex;
-  align-items:flex-start;
-  gap: 10px;
-}
-.dn-kpis-tight{
-  gap: 8px !important;
-}
-.dn-kpi-sm{
-  min-width: 110px !important;
-  padding: 8px 10px !important;
-
-  .k{ font-size: 11px !important; }
-  .v{ font-size: 16px !important; }
 }

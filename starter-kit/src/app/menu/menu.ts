@@ -147,7 +147,8 @@ export const menu: any[] = [
       // { id: 'StackTransfer', title: 'Stock-Transfer', type: 'item', icon: 'circle', url: '/Inventory/list-stocktransfer', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
       { id: 'list-stock-transfer-receipt', title: 'Stock-Transfer-Receipt', type: 'item', icon: 'circle', url: '/Inventory/list-stock-transfer-receipt', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
       { id: 'StockTake', title: 'Stock-Take', type: 'item', icon: 'circle', url: '/Inventory/list-stocktake', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
-      { id: 'StockReorderPlanning', title: 'Stock-Reorder-Planning', type: 'item', icon: 'circle', url: '/Inventory/list-stockreorderplanning', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] }
+      { id: 'StockReorderPlanning', title: 'Stock-Reorder-Planning', type: 'item', icon: 'circle', url: '/Inventory/list-stockreorderplanning', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] },
+      { id: 'StockCogs', title: 'Stock-COGS', type: 'item', icon: 'circle', url: '/Inventory/stockcogs', teams: ['Purchase Team'], approvalRoles: ['Super Admin'] }
     ]
   },
  {

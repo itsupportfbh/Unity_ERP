@@ -1,0 +1,391 @@
+$c-brand: #2E5F73;
+
+.cogs-page {
+  padding: 16px;
+  background: #f6f8fb;
+}
+
+/* KPI cards */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid #e7edf5;
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  position: relative;
+}
+
+.kpi-title {
+  font-size: 13px;
+  color: #607086;
+  margin-bottom: 6px;
+}
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.2px;
+}
+
+.kpi-sub {
+  font-size: 12px;
+  color: #7b8aa1;
+  margin-top: 6px;
+}
+
+.kpi-strong .kpi-value { color: $c-brand; }
+
+.kpi-pill {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  background: #0f172a;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Layout */
+.main-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e7edf5;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.panel.wide { padding: 16px 16px 12px; }
+
+.panel-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.panel-sub {
+  font-size: 12px;
+  color: #72839b;
+  margin-top: 2px;
+}
+
+/* Left fields */
+.field { display: block; margin-top: 12px; }
+.lbl { font-size: 12px; color: #607086; margin-bottom: 6px; }
+
+.inp {
+  width: 100%;
+  border: 1px solid #e3eaf3;
+  border-radius: 12px;
+  padding: 10px 12px;
+  outline: none;
+  background: #fbfdff;
+}
+
+.inp:focus {
+  border-color: rgba(46, 95, 115, 0.4);
+  box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.12);
+}
+
+.btn {
+  width: 100%;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 12px;
+  padding: 11px 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: $c-brand;
+  color: #fff;
+}
+
+.btn.primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.mini-box {
+  margin-top: 14px;
+  border: 1px solid #e7edf5;
+  border-radius: 14px;
+  background: #fbfdff;
+  padding: 12px;
+}
+
+.mini-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  color: #1f2937;
+}
+
+.mini-l { color: #607086; font-size: 13px; }
+.mini-r { font-weight: 800; }
+.mini-r.strong { color: $c-brand; }
+
+/* Right head */
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panel-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e3eaf3;
+  border-radius: 999px;
+  padding: 10px 12px;
+  background: #fff;
+  min-width: 260px;
+}
+
+.icon { font-size: 13px; opacity: 0.7; }
+
+.search-inp {
+  border: 0;
+  outline: none;
+  width: 100%;
+  font-size: 13px;
+}
+
+/* Tabs */
+.tabs {
+  background: #f1f5f9;
+  border-radius: 999px;
+  padding: 4px;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.tab {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+/* Table */
+.table-wrap { margin-top: 8px; }
+
+.cogs-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid #e7edf5;
+}
+
+.cogs-table thead th {
+  background: #f8fafc;
+  color: #52667f;
+  font-weight: 900;
+  font-size: 12px;
+  text-align: left;
+  padding: 12px 12px;
+  border-bottom: 1px solid #e7edf5;
+  white-space: nowrap;
+}
+
+.cogs-table tbody td {
+  padding: 12px 12px;
+  border-bottom: 1px solid #eef3f8;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.cogs-table tbody tr:hover td {
+  background: #fbfdff;
+}
+
+.num { text-align: right; }
+.strong { font-weight: 900; }
+.item .name { font-weight: 900; }
+.muted { font-size: 12px; color: #7b8aa1; margin-top: 2px; }
+
+.empty {
+  text-align: center;
+  color: #7b8aa1;
+  padding: 18px !important;
+}
+
+.placeholder {
+  border: 1px dashed #d7e1ee;
+  border-radius: 14px;
+  padding: 16px;
+  background: #fbfdff;
+}
+
+.ph-title { font-weight: 900; margin-bottom: 6px; }
+.ph-sub { color: #6b7f99; font-size: 13px; }
+
+.ph-box {
+  margin-top: 10px;
+  background: #fff;
+  border: 1px solid #e7edf5;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.eq { font-weight: 900; }
+.eq2 { margin-top: 8px; color: #475569; }
+.eq3 { margin-top: 8px; color: $c-brand; font-size: 18px; }
+
+.tip {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #7b8aa1;
+}
+/* ✅ IMPORTANT: no inner scroll anywhere inside page */
+.cogs-page,
+.main-grid,
+.panel,
+.panel.wide,
+.table-wrap {
+  overflow: visible !important;
+}
+
+/* if you added max-height earlier, remove it */
+.table-wrap {
+  max-height: none !important;
+  height: auto !important;
+}
+/* =========================================================
+   REMOVE INNER SCROLL (make it like GRN page)
+   Vuexy usually scrolls inside .content-wrapper / .content-body.
+   We force them to be auto-height and overflow visible.
+   ========================================================= */
+
+:host {
+  display: block;
+}
+
+/* 🔥 Kill inner scroll on Vuexy wrappers ONLY for this page */
+:host ::ng-deep .content-wrapper,
+:host ::ng-deep .content-body,
+:host ::ng-deep .app-content,
+:host ::ng-deep .app-content .content-wrapper,
+:host ::ng-deep .app-content .content-body {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* If Vuexy uses a perfect-scrollbar / ps container */
+:host ::ng-deep .ps,
+:host ::ng-deep .ps-content,
+:host ::ng-deep .ps-container,
+:host ::ng-deep perfect-scrollbar,
+:host ::ng-deep .perfect-scrollbar {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Make sure ngx-datatable / tables don't create their own scroll */
+:host ::ng-deep .datatable-body,
+:host ::ng-deep .datatable-scroll,
+:host ::ng-deep .ngx-datatable,
+:host ::ng-deep .ngx-datatable .datatable-body {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Your page containers */
+.cogs-page,
+.main-grid,
+.panel,
+.panel.wide,
+.table-wrap {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* Compact Period Inputs panel */
+.panel-left {
+  padding: 12px;                 // ✅ was 16px
+}
+
+.panel-left .panel-title {
+  font-size: 15px;               // ✅ smaller title
+  margin-bottom: 2px;
+}
+
+.panel-left .field {
+  margin-top: 10px;              // ✅ was 12px
+}
+
+.panel-left .lbl {
+  font-size: 11px;               // ✅ was 12px
+  margin-bottom: 5px;
+}
+
+.panel-left .inp {
+  padding: 8px 10px;             // ✅ was 10px 12px
+  border-radius: 10px;           // ✅ was 12px
+  font-size: 13px;
+  height: 38px;                  // ✅ compact height
+}
+
+.panel-left .btn {
+  margin-top: 12px;              // ✅ was 14px
+  padding: 10px 12px;            // ✅ was 11px 12px
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.panel-left .mini-box {
+  margin-top: 12px;              // ✅ was 14px
+  padding: 10px;                 // ✅ was 12px
+  border-radius: 12px;
+}
+
+.panel-left .mini-row {
+  padding: 5px 0;                // ✅ was 6px
+}
+
+.panel-left .mini-l {
+  font-size: 12px;               // ✅ was 13px
+}

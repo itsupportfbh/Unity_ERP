@@ -11,7 +11,7 @@ type TabKey = 'table' | 'chart' | 'formula';
 })
 export class StockCogsComponent implements OnInit {
 
-   loading = false;
+  loading = false;
 
   // UI state
   activeTab: TabKey = 'table';
@@ -32,27 +32,27 @@ export class StockCogsComponent implements OnInit {
     this.load();
   }
 
- load(): void {
-  this.loading = true;
+  load(): void {
+    this.loading = true;
 
-  this.api.getCogs(this.fromDate, this.toDate, this.warehouseId, this.binId).subscribe({
-    next: (res: any) => {
-      // ✅ unwrap API payload
-      this.report = res?.data;
+    this.api.getCogs(this.fromDate, this.toDate, this.warehouseId, this.binId).subscribe({
+      next: (res: any) => {
+        this.report = res?.data;
 
-      // (optional) remove dummy itemId 0 row
-      if (this.report?.items?.length) {
-        this.report.items = this.report.items.filter(x => (x?.itemId ?? 0) > 0);
+        // optional: remove dummy row
+        if (this.report?.items?.length) {
+          this.report.items = this.report.items.filter(x => (x?.itemId ?? 0) > 0);
+        }
+
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.loading = false;
       }
+    });
+  }
 
-      this.loading = false;
-    },
-    error: (err) => {
-      console.error(err);
-      this.loading = false;
-    }
-  });
-}
   setTab(t: TabKey) {
     this.activeTab = t;
   }
@@ -79,10 +79,10 @@ export class StockCogsComponent implements OnInit {
     const dd = String(d.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
   }
-
+  unitPrice(value: number, qty: number): number {
+  const q = Number(qty || 0);
+  const v = Number(value || 0);
+  if (!q) return 0;
+  return v / q;
 }
-
-
-
-
-
+}

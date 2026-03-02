@@ -1,3 +1,4 @@
+/* stock-cogs.component.scss */
 $c-brand: #2E5F73;
 
 .cogs-page {
@@ -5,7 +6,18 @@ $c-brand: #2E5F73;
   background: #f6f8fb;
 }
 
-/* KPI cards */
+/* ✅ Never allow cards/panels to exceed screen */
+.kpi-row,
+.filter-bar,
+.panel,
+.panel.wide {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* =========================================================
+   KPI cards
+   ========================================================= */
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(180px, 1fr));
@@ -22,11 +34,7 @@ $c-brand: #2E5F73;
   position: relative;
 }
 
-.kpi-title {
-  font-size: 13px;
-  color: #607086;
-  margin-bottom: 6px;
-}
+.kpi-title { font-size: 13px; color: #607086; margin-bottom: 6px; }
 
 .kpi-value {
   font-size: 26px;
@@ -35,11 +43,7 @@ $c-brand: #2E5F73;
   letter-spacing: 0.2px;
 }
 
-.kpi-sub {
-  font-size: 12px;
-  color: #7b8aa1;
-  margin-top: 6px;
-}
+.kpi-sub { font-size: 12px; color: #7b8aa1; margin-top: 6px; }
 
 .kpi-strong .kpi-value { color: $c-brand; }
 
@@ -55,13 +59,79 @@ $c-brand: #2E5F73;
   font-weight: 700;
 }
 
-/* Layout */
-.main-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 16px;
+/* =========================================================
+   Period Inputs
+   ========================================================= */
+.filter-bar {
+  background: #fff;
+  border: 1px solid #e7edf5;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  margin-bottom: 14px;
 }
 
+.fb-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.fb-title { font-size: 16px; font-weight: 900; color: #0f172a; }
+.fb-sub { font-size: 12px; color: #72839b; }
+
+.fb-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(170px, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.lbl { font-size: 11px; color: #607086; margin-bottom: 6px; }
+
+.inp {
+  width: 100%;
+  border: 1px solid #e3eaf3;
+  border-radius: 12px;
+  padding: 8px 10px;
+  outline: none;
+  background: #fbfdff;
+  height: 38px;
+  font-size: 13px;
+}
+
+.inp:focus {
+  border-color: rgba(46, 95, 115, 0.4);
+  box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.12);
+}
+
+/* Buttons */
+.btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn.primary { background: $c-brand; color: #fff; }
+
+.btn.primary:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.fb-btn {
+  width: auto !important;
+  min-width: 120px;
+  height: 38px;
+  padding: 6px 14px !important;
+  font-size: 12px;
+  border-radius: 12px;
+  font-weight: 900;
+}
+
+/* =========================================================
+   COGS Summary Panel
+   ========================================================= */
 .panel {
   background: #fff;
   border: 1px solid #e7edf5;
@@ -72,83 +142,39 @@ $c-brand: #2E5F73;
 
 .panel.wide { padding: 16px 16px 12px; }
 
-.panel-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 4px;
-}
-
-.panel-sub {
-  font-size: 12px;
-  color: #72839b;
-  margin-top: 2px;
-}
-
-/* Left fields */
-.field { display: block; margin-top: 12px; }
-.lbl { font-size: 12px; color: #607086; margin-bottom: 6px; }
-
-.inp {
-  width: 100%;
-  border: 1px solid #e3eaf3;
-  border-radius: 12px;
-  padding: 10px 12px;
-  outline: none;
-  background: #fbfdff;
-}
-
-.inp:focus {
-  border-color: rgba(46, 95, 115, 0.4);
-  box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.12);
-}
-
-.btn {
-  width: 100%;
-  margin-top: 14px;
-  border: 0;
-  border-radius: 12px;
-  padding: 11px 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.btn.primary {
-  background: $c-brand;
-  color: #fff;
-}
-
-.btn.primary:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.mini-box {
-  margin-top: 14px;
-  border: 1px solid #e7edf5;
-  border-radius: 14px;
-  background: #fbfdff;
-  padding: 12px;
-}
-
-.mini-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 6px 0;
-  color: #1f2937;
-}
-
-.mini-l { color: #607086; font-size: 13px; }
-.mini-r { font-weight: 800; }
-.mini-r.strong { color: $c-brand; }
-
-/* Right head */
 .panel-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+
+  flex-wrap: wrap; /* ✅ prevents overflow */
+}
+
+.panel-left { min-width: 0; }
+
+.panel-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 4px;
+
+  white-space: nowrap;         /* ✅ no wrap */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.panel-sub {
+  font-size: 12px;
+  color: #72839b;
+  margin-top: 2px;
+
+  white-space: nowrap;         /* ✅ no wrap */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .panel-tools {
@@ -156,8 +182,12 @@ $c-brand: #2E5F73;
   flex-direction: column;
   gap: 10px;
   align-items: flex-end;
+
+  max-width: 100%;
+  width: 420px; /* ✅ stops pushing page */
 }
 
+/* Search */
 .search {
   display: flex;
   align-items: center;
@@ -166,7 +196,8 @@ $c-brand: #2E5F73;
   border-radius: 999px;
   padding: 10px 12px;
   background: #fff;
-  min-width: 260px;
+  width: 100%;
+  min-width: 240px;
 }
 
 .icon { font-size: 13px; opacity: 0.7; }
@@ -185,6 +216,7 @@ $c-brand: #2E5F73;
   padding: 4px;
   display: inline-flex;
   gap: 4px;
+  width: fit-content;
 }
 
 .tab {
@@ -204,16 +236,26 @@ $c-brand: #2E5F73;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
 }
 
-/* Table */
-.table-wrap { margin-top: 8px; }
+/* =========================================================
+   TABLE (✅ only table scrolls horizontally)
+   ========================================================= */
+.table-wrap {
+  margin-top: 8px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;     /* ✅ horizontal scroll inside card */
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
 
 .cogs-table {
   width: 100%;
+  min-width: 1200px;    /* ✅ forces scroll instead of expanding page */
   border-collapse: separate;
   border-spacing: 0;
-  overflow: hidden;
   border-radius: 14px;
   border: 1px solid #e7edf5;
+  overflow: hidden;
 }
 
 .cogs-table thead th {
@@ -224,7 +266,7 @@ $c-brand: #2E5F73;
   text-align: left;
   padding: 12px 12px;
   border-bottom: 1px solid #e7edf5;
-  white-space: nowrap;
+  white-space: nowrap; /* ✅ no wrap in headers */
 }
 
 .cogs-table tbody td {
@@ -232,15 +274,15 @@ $c-brand: #2E5F73;
   border-bottom: 1px solid #eef3f8;
   font-size: 13px;
   color: #0f172a;
+  white-space: nowrap; /* ✅ prevents odd wraps */
 }
 
-.cogs-table tbody tr:hover td {
-  background: #fbfdff;
-}
+.cogs-table tbody tr:hover td { background: #fbfdff; }
 
 .num { text-align: right; }
 .strong { font-weight: 900; }
-.item .name { font-weight: 900; }
+
+.item .name { font-weight: 900; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
 .muted { font-size: 12px; color: #7b8aa1; margin-top: 2px; }
 
 .empty {
@@ -249,6 +291,7 @@ $c-brand: #2E5F73;
   padding: 18px !important;
 }
 
+/* placeholders */
 .placeholder {
   border: 1px dashed #d7e1ee;
   border-radius: 14px;
@@ -271,36 +314,11 @@ $c-brand: #2E5F73;
 .eq2 { margin-top: 8px; color: #475569; }
 .eq3 { margin-top: 8px; color: $c-brand; font-size: 18px; }
 
-.tip {
-  margin-top: 10px;
-  font-size: 12px;
-  color: #7b8aa1;
-}
-/* ✅ IMPORTANT: no inner scroll anywhere inside page */
-.cogs-page,
-.main-grid,
-.panel,
-.panel.wide,
-.table-wrap {
-  overflow: visible !important;
-}
-
-/* if you added max-height earlier, remove it */
-.table-wrap {
-  max-height: none !important;
-  height: auto !important;
-}
 /* =========================================================
-   REMOVE INNER SCROLL (make it like GRN page)
-   Vuexy usually scrolls inside .content-wrapper / .content-body.
-   We force them to be auto-height and overflow visible.
+   ✅ Remove inner scroll (Vuexy wrappers) ONLY this page
    ========================================================= */
+:host { display: block; }
 
-:host {
-  display: block;
-}
-
-/* 🔥 Kill inner scroll on Vuexy wrappers ONLY for this page */
 :host ::ng-deep .content-wrapper,
 :host ::ng-deep .content-body,
 :host ::ng-deep .app-content,
@@ -311,7 +329,6 @@ $c-brand: #2E5F73;
   overflow: visible !important;
 }
 
-/* If Vuexy uses a perfect-scrollbar / ps container */
 :host ::ng-deep .ps,
 :host ::ng-deep .ps-content,
 :host ::ng-deep .ps-container,
@@ -322,70 +339,20 @@ $c-brand: #2E5F73;
   overflow: visible !important;
 }
 
-/* Make sure ngx-datatable / tables don't create their own scroll */
-:host ::ng-deep .datatable-body,
-:host ::ng-deep .datatable-scroll,
-:host ::ng-deep .ngx-datatable,
-:host ::ng-deep .ngx-datatable .datatable-body {
-  height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
+/* Responsive */
+@media (max-width: 1200px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+
+  .fb-fields { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
+
+  .fb-btn { width: 100% !important; }
+
+  .panel-tools { width: 100%; }
 }
 
-/* Your page containers */
-.cogs-page,
-.main-grid,
-.panel,
-.panel.wide,
-.table-wrap {
-  overflow: visible !important;
-  height: auto !important;
-  max-height: none !important;
-}
+@media (max-width: 640px) {
+  .kpi-row { grid-template-columns: 1fr; }
+  .fb-fields { grid-template-columns: 1fr; }
 
-/* Compact Period Inputs panel */
-.panel-left {
-  padding: 12px;                 // ✅ was 16px
-}
-
-.panel-left .panel-title {
-  font-size: 15px;               // ✅ smaller title
-  margin-bottom: 2px;
-}
-
-.panel-left .field {
-  margin-top: 10px;              // ✅ was 12px
-}
-
-.panel-left .lbl {
-  font-size: 11px;               // ✅ was 12px
-  margin-bottom: 5px;
-}
-
-.panel-left .inp {
-  padding: 8px 10px;             // ✅ was 10px 12px
-  border-radius: 10px;           // ✅ was 12px
-  font-size: 13px;
-  height: 38px;                  // ✅ compact height
-}
-
-.panel-left .btn {
-  margin-top: 12px;              // ✅ was 14px
-  padding: 10px 12px;            // ✅ was 11px 12px
-  border-radius: 10px;
-  font-size: 13px;
-}
-
-.panel-left .mini-box {
-  margin-top: 12px;              // ✅ was 14px
-  padding: 10px;                 // ✅ was 12px
-  border-radius: 12px;
-}
-
-.panel-left .mini-row {
-  padding: 5px 0;                // ✅ was 6px
-}
-
-.panel-left .mini-l {
-  font-size: 12px;               // ✅ was 13px
+  .panel-tools { align-items: stretch; }
 }

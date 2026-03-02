@@ -6,7 +6,7 @@ import { CreatePurchaseRequestComponent } from './Purchase-Request/create-purcha
 import { PurchaseRequestListComponent } from './Purchase-Request/create-purchase-request/purchase-request-list/purchase-request-list.component';
 import { NgxDatatableModule } from '@swimlane/ngx-datatable';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModule, NgbPopoverModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 import { PurchaseGoodreceiptComponent } from './purchase-goodreceipt/purchase-goodreceipt.component';
@@ -125,6 +125,7 @@ const routes = [
     ReactiveFormsModule,
     SweetAlert2Module.forRoot(),
      NgSelectModule,
+     NgbPopoverModule
   ]
 })
 export class PurchaseModule { }

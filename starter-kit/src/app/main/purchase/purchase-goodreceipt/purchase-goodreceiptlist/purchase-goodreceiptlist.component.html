@@ -102,14 +102,31 @@
             </ng-template>
           </ngx-datatable-column>
 
-          <ngx-datatable-column name="Supplier Name" prop="name" [width]="200">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span class="truncate-20"
-                    [title]="row.name">
-                {{ row.name?.slice(0, 20) }}{{ row.name?.length > 20 ? '...' : '' }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
+         <ngx-datatable-column name="Supplier Name" prop="name" [width]="200">
+  <ng-template ngx-datatable-cell-template let-row="row">
+
+    <!-- Popover Content Template -->
+    <ng-template #popContent>
+      <div class="pp-body">
+        {{ row.name }}
+      </div>
+    </ng-template>
+
+    <span
+      class="truncate-20 pp-trigger"
+      [title]="row.name"
+      [ngbPopover]="popContent"
+      popoverTitle="Supplier Name"
+      triggers="mouseenter:mouseleave"
+      container="body"
+      placement="top"
+      popoverClass="custom-popover"
+    >
+      {{ row.name?.slice(0, 20) }}{{ row.name?.length > 20 ? '...' : '' }}
+    </span>
+
+  </ng-template>
+</ngx-datatable-column>
 
           <!-- Status -->
           <ngx-datatable-column name="Status" [width]="140" [sortable]="false">

@@ -149,7 +149,7 @@ loadInvoices(): void {
           // ✅ GRN info
           grnNos: x.grnNos ?? '',
           grnCount: Number(x.grnCount ?? 0),
-
+grnInvoiceNos:x.grnInvoiceNos,
           // ✅ List status (IMPORTANT)
           listStatusCode: Number(x.listStatusCode ?? 0),
           listStatusLabel: x.listStatusLabel ?? '',

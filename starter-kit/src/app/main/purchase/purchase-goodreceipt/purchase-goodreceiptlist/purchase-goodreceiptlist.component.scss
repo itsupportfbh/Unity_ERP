@@ -355,3 +355,27 @@ i.fas.fa-pen {
   .grnM__dialog { width: 96vw; height: 78vh; }
   .tbl__t { min-width: 1200px; }
 }
+
+
+.custom-popover.popover {
+  max-width: 220px;              /* 👈 width reduce */
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+}
+
+.custom-popover .popover-header {
+  padding: 8px 10px;             /* 👈 header height reduce */
+  font-size: 14px;               /* 👈 title size reduce */
+  font-weight: 700;
+}
+
+.custom-popover .popover-body {
+  padding: 10px;                 /* 👈 body padding reduce */
+  font-size: 13px;               /* 👈 text size reduce */
+  line-height: 1.25;
+}
+
+.custom-popover.popover { max-width: 180px; }
+.custom-popover .popover-header { padding: 6px 8px; font-size: 13px; }
+.custom-popover .popover-body   { padding: 8px;     font-size: 12px; }

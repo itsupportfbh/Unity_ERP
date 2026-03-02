@@ -463,65 +463,83 @@
     </div>
   </div>
 
-  <!-- ===== Totals Card ===== -->
-  <div class="qtTotals">
-    <div class="qtTotals__spacer"></div>
+<!-- ===== SUMMARY / TOTALS ===== -->
+<div class="qtTotals">
+  <div class="qtTotals__spacer"></div>
 
-    <div class="qtTotals__card">
-      <div class="qtTotalsHead">
-        <div class="t">
-          <span class="ic"><i class="fas fa-receipt"></i></span>
-          <span>Summary</span>
-        </div>
-        <span class="qtCurrencyPill">
-          <span class="k">Currency</span>
-          <span class="v">{{ header.currency || '-' }}</span>
+  <div class="qtTotals__card">
+    <!-- Header -->
+    <div class="qtTotalsHead">
+      <div class="t">
+        <span class="ic"><i class="fas fa-receipt"></i></span>
+        <span>Summary</span>
+      </div>
+
+      <span class="qtCurrencyPill">
+        <span class="k">Currency</span>
+        <span class="v">{{ header.currency || '-' }}</span>
+      </span>
+    </div>
+
+    <!-- Subtotal -->
+    <div class="qtSumRow">
+      <span>Subtotal</span>
+      <strong>{{ header.subtotal | currency:header.currency }}</strong>
+    </div>
+
+    <!-- Discount -->
+    <div class="qtSumRow qtSumRow--discount">
+      <span>Discount</span>
+
+      <div class="qtDiscountBox">
+        <input
+          type="number"
+          class="form-control qtInput qtInput--sm qtNum"
+          [(ngModel)]="header.discountInput"
+          name="docDiscountInput"
+          (ngModelChange)="onDiscountChange()" />
+
+        <select
+          class="form-control qtInput qtInput--sm qtDiscType"
+          [(ngModel)]="header.discountType"
+          name="docDiscountType"
+          (change)="onDiscountTypeChange($event.target.value)">
+          <option value="VALUE">Amt</option>
+          <option value="PERCENT">%</option>
+        </select>
+
+        <!-- ✅ Discount Amount display -->
+        <span class="qtDiscAmt">
+          ({{ header.docDiscount | currency:header.currency }})
         </span>
       </div>
+    </div>
 
-      <div class="qtSumRow">
-        <span>Subtotal</span>
-        <strong>{{ header.subtotal | currency:header.currency }}</strong>
+    <!-- ✅ Net Total -->
+    <div class="qtSumRow">
+      <span>Net Total</span>
+      <strong>{{ header.netTotal | currency:header.currency }}</strong>
+    </div>
+
+    <!-- Tax -->
+    <div class="qtSumRow">
+      <span>Tax</span>
+      <strong>{{ header.taxAmount | currency:header.currency }}</strong>
+    </div>
+
+    <div class="qtDivider"></div>
+
+    <!-- Grand Total -->
+    <div class="qtGrand">
+      <div class="lhs">
+        <span class="k">Grand Total</span>
+        <small class="h">Net Total + Tax</small>
       </div>
 
-      <div class="qtSumRow qtSumRow--discount">
-        <span>Discount</span>
-
-        <div class="qtDiscountBox">
-          <input
-            type="number"
-            class="form-control qtInput qtInput--sm qtNum"
-            [(ngModel)]="header.discountInput"
-            name="docDiscountInput"
-            (ngModelChange)="onDiscountChange()" />
-
-          <select
-            class="form-control qtInput qtInput--sm qtDiscType"
-            [(ngModel)]="header.discountType"
-            name="docDiscountType"
-            (change)="onDiscountTypeChange($event.target.value)">
-            <option value="VALUE">Amt</option>
-            <option value="PERCENT">%</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="qtSumRow">
-        <span>Tax</span>
-        <strong>{{ header.taxAmount | currency:header.currency }}</strong>
-      </div>
-
-      <div class="qtDivider"></div>
-
-      <div class="qtGrand">
-        <div class="lhs">
-          <span class="k">Grand Total</span>
-          <small class="h">Subtotal - Discount + Tax</small>
-        </div>
-        <h3 class="v">{{ header.grandTotal | currency:header.currency }}</h3>
-      </div>
+      <h3 class="v">{{ header.grandTotal | currency:header.currency }}</h3>
     </div>
   </div>
+</div>
 
 </div>
 

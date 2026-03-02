@@ -245,29 +245,37 @@
         </div>
 
         <div class="p-2 space-y-3 text-[13px]">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <p class="text-gray-500 text-[11px] font-medium">Requester</p>
-              <p class="text-gray-900 font-semibold truncate">{{ prHeader.requester || '-' }}</p>
-            </div>
-            <div>
-              <p class="text-gray-500 text-[11px] font-medium">Department</p>
-              <p class="text-gray-900 font-semibold truncate">{{ searchText || '-' }}</p>
-            </div>
-            <div>
-              <p class="text-gray-500 text-[11px] font-medium">Delivery Date</p>
-              <p class="text-gray-900 font-semibold">{{ prHeader.neededBy | date:'dd-MM-yyyy' || '-' }}</p>
-            </div>
-            <div>
-              <p class="text-gray-500 text-[11px] font-medium">Multi Location</p>
-              <p class="text-gray-900 font-semibold">{{ prHeader.multiLoc ? 'Yes' : 'No' }}</p>
-            </div>
-            <div class="md:col-span-2">
-              <p class="text-gray-500 text-[11px] font-medium">Description</p>
-              <p class="text-gray-900 leading-snug">{{ prHeader.description || '-' }}</p>
-            </div>
-          </div>
+         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
 
+  <div>
+    <p class="text-gray-500 text-[11px] font-medium">Requester</p>
+    <p class="text-gray-900 font-semibold truncate">
+      {{ prHeader.requester || '-' }}
+    </p>
+  </div>
+
+  <div>
+    <p class="text-gray-500 text-[11px] font-medium">Department</p>
+    <p class="text-gray-900 font-semibold truncate">
+      {{ searchText || '-' }}
+    </p>
+  </div>
+ <div>
+    <p class="text-gray-500 text-[11px] font-medium">Description</p>
+    <p class="text-gray-900 leading-snug truncate">
+      {{ prHeader.description || '-' }}
+    </p>
+  </div>
+  <div>
+    <p class="text-gray-500 text-[11px] font-medium">Delivery Date</p>
+    <p class="text-gray-900 font-semibold">
+      {{ prHeader.neededBy ? (prHeader.neededBy | date:'dd-MM-yyyy') : '-' }}
+    </p>
+  </div>
+
+ 
+
+</div>
    <div class="pr-review-tiles">
   <div class="pr-review-tiles-head">
     <h4>Line Items</h4>

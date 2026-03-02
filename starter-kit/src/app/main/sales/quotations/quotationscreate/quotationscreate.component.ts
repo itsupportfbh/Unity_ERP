@@ -83,6 +83,7 @@ type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
   discountManual: boolean;
 
   lineSourceId: LineSourceId;
+   netTotal: number;
 };
 
 @Component({
@@ -130,7 +131,8 @@ export class QuotationscreateComponent implements OnInit {
     docDiscount: 0,
     discountManual: false,
 
-    lineSourceId: 1
+    lineSourceId: 1,
+     netTotal: 0, 
   };
 
   minDate = '';
@@ -653,6 +655,7 @@ export class QuotationscreateComponent implements OnInit {
   // ✅ Edit Load
   // =========================
   private loadForEdit(id: number) {
+    debugger
     this.qt.getById(id).subscribe({
       next: (res: any) => {
         const dto = res?.data ?? res ?? null;
@@ -671,7 +674,7 @@ export class QuotationscreateComponent implements OnInit {
           deliveryTo: String(dto.deliveryTo ?? dto.DeliveryTo ?? ''),
           rounding: Number(dto.rounding ?? dto.Rounding ?? 0),
           subtotal: 0,
-          taxAmount: 0,
+          taxAmount: dto.taxAmount,
           grandTotal: 0,
           needsHodApproval: !!(dto.needsHodApproval ?? dto.NeedsHodApproval ?? false),
           discountType: (dto.discountType ?? this.header.discountType) as any,
@@ -1070,47 +1073,63 @@ export class QuotationscreateComponent implements OnInit {
   }
 
   computeTotals() {
-    let baseSubtotal = 0;
-    let lineDiscTotal = 0;
-    let tax = 0;
-    let hod = false;
+  let baseSubtotal = 0;
+  let lineDiscTotal = 0;
+  let hod = false;
 
-    for (const l of this.lines) {
-      if (l.isSetHeader) continue;
+  // ✅ keep computing line nets for UI / line totals (no change)
+  for (const l of this.lines) {
+    if (l.isSetHeader) continue;
 
-      const { base, discount } = this.computeLine(l);
-      baseSubtotal += base;
-      lineDiscTotal += discount;
-      tax += l.lineTax || 0;
+    const { base, discount } = this.computeLine(l);
+    baseSubtotal += base;
+    lineDiscTotal += discount;
 
-      if ((+l.discountPct || 0) > 10) hod = true;
-    }
-
-    this.header.subtotal = this.round2(baseSubtotal);
-    this.header.taxAmount = this.round2(tax);
-
-    let discountAmt: number;
-
-    if (this.header.discountManual) {
-      const input = +this.header.discountInput || 0;
-      if (this.header.discountType === 'PERCENT') {
-        discountAmt = this.header.subtotal * (Math.min(Math.max(input, 0), 100) / 100);
-      } else {
-        discountAmt = input;
-      }
-    } else {
-      discountAmt = lineDiscTotal;
-    }
-
-    discountAmt = Math.min(Math.max(discountAmt, 0), this.header.subtotal);
-    this.header.docDiscount = this.round2(discountAmt);
-
-    const rounding = this.header.rounding || 0;
-    const netAfterDiscount = this.header.subtotal - this.header.docDiscount;
-    this.header.grandTotal = this.round2(netAfterDiscount + this.header.taxAmount + rounding);
-
-    this.header.needsHodApproval = hod;
+    if ((+l.discountPct || 0) > 10) hod = true;
   }
+
+  this.header.subtotal = this.round2(baseSubtotal);
+
+  // -------------------------
+  // Document Discount Amount
+  // -------------------------
+  let discountAmt: number;
+
+  if (this.header.discountManual) {
+    const input = +this.header.discountInput || 0;
+
+    if (this.header.discountType === 'PERCENT') {
+      const pct = Math.min(Math.max(input, 0), 100);
+      discountAmt = this.header.subtotal * (pct / 100);
+    } else {
+      discountAmt = input;
+    }
+  } else {
+    discountAmt = lineDiscTotal;
+  }
+
+  discountAmt = Math.min(Math.max(discountAmt, 0), this.header.subtotal);
+  this.header.docDiscount = this.round2(discountAmt);
+
+  // ✅ NEW: Net Total
+  const netAfterDiscount = this.header.subtotal - this.header.docDiscount;
+  this.header.netTotal = this.round2(netAfterDiscount);
+
+  // -------------------------
+  // ✅ NEW: Tax on Net Total
+  // -------------------------
+  const gstPct = +this.header.taxPct || 0;
+  const docTax = gstPct > 0 ? (netAfterDiscount * gstPct) / 100 : 0;
+  this.header.taxAmount = this.round2(docTax);
+
+  // -------------------------
+  // Grand Total
+  // -------------------------
+  const rounding = +this.header.rounding || 0;
+  this.header.grandTotal = this.round2(this.header.netTotal + this.header.taxAmount + rounding);
+
+  this.header.needsHodApproval = hod;
+}
 
   private validateBeforeSave(): boolean {
     for (const l of this.lines) {

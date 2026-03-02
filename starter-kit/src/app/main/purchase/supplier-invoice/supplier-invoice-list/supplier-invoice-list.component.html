@@ -110,7 +110,13 @@
             </ng-template>
           </ngx-datatable-column>
 
-          <ngx-datatable-column name="Invoice No" prop="invoiceNo" [width]="140"></ngx-datatable-column>
+          <ngx-datatable-column name="Invoice No(Auto)" prop="invoiceNo" [width]="200"></ngx-datatable-column>
+           <ngx-datatable-column name="Supplier Invoice No" prop="grnInvoiceNos" [width]="200"></ngx-datatable-column>
+          <ngx-datatable-column name="GRN" prop="grnNos" [width]="220">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <span class="pin-truncate" title="{{ row.grnNos }}">{{ row.grnNos || '-' }}</span>
+            </ng-template>   
+          </ngx-datatable-column>
 
           <ngx-datatable-column name="Invoice Date" prop="invoiceDate" [width]="140">
             <ng-template let-row="row" ngx-datatable-cell-template>
@@ -130,11 +136,7 @@
             </ng-template>
           </ngx-datatable-column>
 
-          <ngx-datatable-column name="GRN" prop="grnNos" [width]="220">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="pin-truncate" title="{{ row.grnNos }}">{{ row.grnNos || '-' }}</span>
-            </ng-template>
-          </ngx-datatable-column>
+          
 
           <!-- ✅ STATUS (Always visible, never blank) -->
           <ngx-datatable-column name="Status" [width]="320" [minWidth]="320" [canAutoResize]="false">

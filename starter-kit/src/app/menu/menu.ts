@@ -167,7 +167,7 @@ export const menu: any[] = [
       { id: 'AccountPayable', title: 'Accounts Payable', type: 'item', icon: 'circle', url: '/financial/AccountPayable', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
       { id: 'tax-gst', title: 'Tax & Gst', type: 'item', icon: 'circle', url: '/financial/tax-gst', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
       { id: 'Period-close', title: 'Period-close', type: 'item', icon: 'circle', url: '/financial/Period-close', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
-      { id: 'invoice-email', title: 'Invoice Email', type: 'item', icon: 'circle', url: '/financial/Invoice-email', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
+      // { id: 'invoice-email', title: 'Invoice Email', type: 'item', icon: 'circle', url: '/financial/Invoice-email', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
       { id: 'report', title: 'Trail Balance', type: 'item', icon: 'circle', url: '/financial/report', teams: ['Finance Team'], approvalRoles: ['Super Admin'] },
       { id: 'finance-report', title: 'Reports', type: 'item', icon: 'circle', url: '/financial/finance-report', teams: ['Finance Team'], approvalRoles: ['Super Admin'] }
     ]

@@ -1,152 +1,169 @@
-<div class="mrq-list-page mrq-compact">
-  <!-- ===== Top Bar: Title left + Buttons right ===== -->
-  <div class="mrq-topbar">
-    <div class="mrq-topbar-left">
-      <h4 class="mrq-title">Material Requisition List</h4>
-      <!-- <div class="mrq-subtitle">Material Requisition list.</div> -->
-    </div>
+<div class="content-body">
+  <section class="users-list-wrapper">
 
-    <div class="mrq-topbar-right">
-      <!-- ✅ MR List button removed -->
+    <!-- ===== Main Card ===== -->
+    <div class="card mrq-card">
 
-      <button class="mrq-top-btn" type="button" (click)="goStockOverview()">
-        Stock Overview List
-      </button>
+      <!-- ===== Header Row (Item Master Style) ===== -->
+      <div class="row mrq-head-row">
 
-      <button class="mrq-top-btn" type="button" (click)="goStockTransfer()">
-        Stock Transfer List
-      </button>
+        <!-- Left: Title + Show entries -->
+        <div class="col-md-6 col-12">
+          <h4 class="card-text mrq-head-title">Material Requisition List</h4>
 
-      <button class="mrq-btn-primary" (click)="goToCreateForm()">
-        <span class="mrq-btn-ic"><i class="fas fa-plus"></i></span>
-        <span>New Request</span>
-      </button>
-    </div>
-  </div>
+          <div class="d-flex justify-content-between align-items-center mrq-show-wrap">
+            <label class="d-flex align-items-center mrq-show-label mb-0">
+              Show
+              <select class="form-control mrq-select mx-2" [(ngModel)]="pageSize">
+                <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
+              </select>
+              entries
+            </label>
+          </div>
+        </div>
 
-  <!-- ===== Main Card ===== -->
-  <div class="mrq-card">
-    <!-- Filters -->
-    <div class="mrq-filters">
-      <div class="mrq-show">
-        <span>Show</span>
-        <select class="form-control mrq-select" [(ngModel)]="pageSize">
-          <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
-        </select>
-        <span>entries</span>
+        <!-- Right: Search + Buttons -->
+        <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+          <div class="mrq-right-stack">
+
+            <!-- 1) Search (top-right) -->
+            <div class="mrq-right-search">
+              <label class="d-flex align-items-center mrq-search-label mb-0">
+                Search:
+                <input
+                  [(ngModel)]="searchValue"
+                  type="search"
+                  class="form-control mrq-search-input ml-2"
+                  (input)="applyFilter()"
+                  placeholder="Req No / Requester / Warehouse" />
+              </label>
+            </div>
+
+            <!-- 2) Buttons row (right) -->
+            <div class="mrq-right-btnrow">
+              <button class="btn mrq-btn-outline" type="button" (click)="goStockOverview()">
+                Stock Overview List
+              </button>
+
+              <button class="btn mrq-btn-outline" type="button" (click)="goStockTransfer()">
+                Stock Transfer List
+              </button>
+               <button class="btn mrq-btn-primary" type="button" (click)="goToCreateForm()">
+                <i class="fas fa-plus-circle mr-50"></i>
+                <span>New Request</span>
+              </button>
+            </div>
+
+           
+
+          </div>
+        </div>
       </div>
 
-      <div class="mrq-search">
-        <span class="mrq-search-label">Search:</span>
-        <input
-          [(ngModel)]="searchValue"
-          type="search"
-          class="form-control mrq-search-input"
-          (input)="applyFilter()"
-          placeholder="Req No / Requester / Warehouse" />
-      </div>
-    </div>
+      <!-- Loading / Error -->
+      <div *ngIf="loading" class="px-3 pb-2 small text-muted">Loading…</div>
+      <div *ngIf="errorMsg" class="alert alert-danger mx-3 my-2">{{ errorMsg }}</div>
 
-    <!-- Loading / Error -->
-    <div *ngIf="loading" class="mrq-loading">Loading…</div>
-    <div *ngIf="errorMsg" class="alert alert-danger mx-2 my-2">{{ errorMsg }}</div>
+      <!-- Table -->
+      <div class="mrq-table-shell1">
+        <ngx-datatable
+          class="bootstrap core-bootstrap item-table mrq-table"
+          [rows]="filteredRows"
+          [rowHeight]="56"
+          [headerHeight]="48"
+          [footerHeight]="48"
+          [limit]="pageSize"
+          [columnMode]="'force'"
+          [scrollbarH]="false"
+          [reorderable]="true"
+          [rowIdentity]="rowIdentity"
+          [trackByProp]="'gridKey'">
 
-    <!-- Table -->
-    <div class="mrq-table-shell">
-      <ngx-datatable
-        class="bootstrap core-bootstrap item-table"
-        [rows]="filteredRows"
-        [rowHeight]="56"
-        [headerHeight]="48"
-        [footerHeight]="48"
-        [limit]="pageSize"
-        [columnMode]="'force'"
-        [scrollbarH]="false"
-        [reorderable]="true"
-        [rowIdentity]="rowIdentity"
-        [trackByProp]="'gridKey'">
+          <!-- REQ NO -->
+          <ngx-datatable-column name="REQ NO" [width]="260">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div class="mrq-cell-flex">
+                <button
+                  type="button"
+                  class="mrq-icon-btn"
+                  title="View"
+                  (click)="openViewModal(row, viewModal)">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <span class="mrq-reqno">{{ row.reqNo || '-' }}</span>
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
 
-        <!-- REQ NO -->
-        <ngx-datatable-column name="REQ NO" [width]="260">
-          <ng-template let-row="row" ngx-datatable-cell-template>
-            <div class="mrq-cell-flex">
+          <!-- OUTLET -->
+          <ngx-datatable-column name="Warehouse" [width]="220">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.outletName ?? '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- REQUESTER -->
+          <ngx-datatable-column name="REQUESTER" prop="requesterName" [width]="190"></ngx-datatable-column>
+
+          <!-- TOTAL QTY -->
+          <ngx-datatable-column name="TOTAL QTY" [width]="185">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.totalQty ?? 0 }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- REQ DATE -->
+          <ngx-datatable-column name="REQ DATE" [width]="175">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              {{ row.reqDate ? (row.reqDate | date:'yyyy-MM-dd') : '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- STATUS -->
+          <ngx-datatable-column name="STATUS" [width]="220">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <span class="mrq-status-pill" [ngClass]="{
+                'is-pending': row.status === 1,
+                'is-pending-partial': row.status === 2,
+                'is-delivered-partial': row.status === 3,
+                'is-pending-full': row.status === 4,
+                'is-delivered': row.status === 5
+              }">
+                {{ getStatusLabel(row.status) }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- ACTION -->
+          <ngx-datatable-column name="ACTION" [width]="140" [sortable]="false" [canAutoResize]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
               <button
                 type="button"
                 class="mrq-icon-btn"
-                title="View"
-                (click)="openViewModal(row, viewModal)">
-                <i class="fas fa-eye"></i>
+                title="Edit"
+                (click)="row.status === 1 && editReq(row)"
+                [disabled]="row.status !== 1"
+                [ngClass]="{ 'is-disabled': row.status !== 1 }">
+                <i class="fas fa-pen"></i>
               </button>
+            </ng-template>
+          </ngx-datatable-column>
 
-              <span class="mrq-reqno">{{ row.reqNo || '-' }}</span>
-            </div>
-          </ng-template>
-        </ngx-datatable-column>
+        </ngx-datatable>
+      </div>
 
-        <!-- OUTLET -->
-        <ngx-datatable-column name="Warehouse" [width]="220">
-          <ng-template let-row="row" ngx-datatable-cell-template>
-            {{ row.outletName ?? '-' }}
-          </ng-template>
-        </ngx-datatable-column>
-
-        <!-- REQUESTER -->
-        <ngx-datatable-column name="REQUESTER" prop="requesterName" [width]="190"></ngx-datatable-column>
-       <!-- TOTAL QTY -->
-        <ngx-datatable-column name="TOTAL QTY" [width]="185">
-          <ng-template let-row="row" ngx-datatable-cell-template>
-            {{ row.totalQty ?? 0 }}
-          </ng-template>
-        </ngx-datatable-column>
-        <!-- REQ DATE -->
-        <ngx-datatable-column name="REQ DATE" [width]="175">
-          <ng-template let-row="row" ngx-datatable-cell-template>
-            {{ row.reqDate ? (row.reqDate | date:'yyyy-MM-dd') : '-' }}
-          </ng-template>
-        </ngx-datatable-column>
-
- 
-
-        <!-- STATUS -->
-    <ngx-datatable-column name="STATUS" [width]="220">
-          <ng-template let-row="row" ngx-datatable-cell-template>
-            <span class="mrq-status-pill" [ngClass]="{
-              'is-pending': row.status === 1,
-  'is-pending-partial': row.status === 2,
-  'is-delivered-partial': row.status === 3,
-  'is-pending-full': row.status === 4,
-  'is-delivered': row.status === 5
-            }">
-              {{ getStatusLabel(row.status) }}
-            </span>
-          </ng-template>
-        </ngx-datatable-column>
-        <!-- ACTION -->
-       <ngx-datatable-column name="ACTION" [width]="140" [sortable]="false" [canAutoResize]="false">
-  <ng-template ngx-datatable-cell-template let-row="row">
-    <button
-      type="button"
-      class="mrq-icon-btn"
-      title="Edit"
-      (click)="row.status === 1 && editReq(row)"
-      [disabled]="row.status !== 1"
-      [ngClass]="{ 'is-disabled': row.status !== 1 }">
-      <i class="fas fa-pen"></i>
-    </button>
-  </ng-template>
-</ngx-datatable-column>
-
-      </ngx-datatable>
+     
     </div>
 
-    <div class="mrq-total">{{ filteredRows?.length || 0 }} total</div>
-  </div>
+  </section>
 </div>
 
-<!-- View Items Modal -->
-<!-- View Items Modal -->
+<!-- =========================
+     View Items Modal
+========================== -->
 <ng-template #viewModal let-close="close" let-dismiss="dismiss">
   <div class="mrq-modal">
+
     <!-- Header -->
     <div class="mrq-modal-head">
       <div class="mrq-modal-titlewrap">
@@ -173,18 +190,16 @@
       </div>
 
       <div class="mrq-modal-actions">
-        <!-- Status badge -->
         <span class="mrq-status-badge" [ngClass]="{
-           'is-pending': selectedReq?.status === 1,
-  'is-pending-partial': selectedReq?.status === 2,
-  'is-delivered-partial': selectedReq?.status === 3,
-  'is-pending-full': selectedReq?.status === 4,
-  'is-delivered': selectedReq?.status === 5
+          'is-pending': selectedReq?.status === 1,
+          'is-pending-partial': selectedReq?.status === 2,
+          'is-delivered-partial': selectedReq?.status === 3,
+          'is-pending-full': selectedReq?.status === 4,
+          'is-delivered': selectedReq?.status === 5
         }">
           {{ getStatusLabel(selectedReq?.status) }}
         </span>
 
-        <!-- top close -->
         <button type="button" class="mrq-xbtn" aria-label="Close" (click)="dismiss('x')">
           <i class="fas fa-times"></i>
         </button>
@@ -217,7 +232,7 @@
             </thead>
 
             <tbody>
-              <tr *ngFor="let l of selectedReq?.lines; let i = index">
+              <tr *ngFor="let l of selectedReq?.lines">
                 <td class="cell-code">{{ l.itemCode || '-' }}</td>
                 <td class="cell-name">{{ l.itemName || '-' }}</td>
                 <td class="cell-uom">{{ l.uomName || '-' }}</td>
@@ -230,17 +245,17 @@
             </tbody>
           </table>
         </div>
+
       </div>
     </div>
 
     <!-- Footer -->
     <div class="mrq-modal-foot">
-      <button class="mrq-btn-outline" (click)="close('ok')">
-        <i class="fas fa-times"></i>
+      <button class="btn mrq-btn-outline" (click)="close('ok')">
+        <i class="fas fa-times mr-50"></i>
         <span>Close</span>
       </button>
     </div>
+
   </div>
 </ng-template>
-
-

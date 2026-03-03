@@ -1,34 +1,401 @@
-<div class="content-wrapper container-xxl p-0">
-  <div class="content-body">
-    <!-- content-header component -->
-    <!-- <app-content-header [contentHeader]="contentHeader"></app-content-header> -->
+<div class="dashA">
 
-    <!-- Basic Alerts start -->
-    <section id="home-page">
-      
-      <!-- <div class="row">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header">
-              <h4 class="card-title">Kick start your project 🚀</h4>
-            </div>
-            <div class="card-body pb-1">
-              <p class="card-text">All the best for your new project.</p>
-              <p class="card-text">
-                Please make sure to read our
-                <a
-                  href="https://pixinvent.com/demo/vuexy-angular-admin-dashboard-template/documentation/"
-                  target="_blank"
-                  >Template Documentation</a
-                >
-                to understand where to go from here and how to use our template.
-              </p>
+  <!-- Title row -->
+  <div class="dashA__top">
+    <div class="dashA__title">
+      <div class="h1">ERP Dashboard</div>
+      <div class="sub">ERP Dashboard – Analytics Style (Angular Prototype)</div>
+    </div>
+
+    <div class="dashA__meta">
+      <span class="pill"><i class="fa fa-calendar"></i> Today: {{ today | date:'yyyy-MM-dd' }}</span>
+      <span class="pill"><i class="fa fa-user-shield"></i> Role: {{ roleName }}</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="dashA__filters card">
+    <div class="filtersGrid">
+      <div class="fItem">
+        <label>Company</label>
+        <ng-select class="ngSel"
+          [items]="companies"
+          bindLabel="name"
+          bindValue="id"
+          [(ngModel)]="filters.companyId">
+        </ng-select>
+      </div>
+
+      <div class="fItem">
+        <label>From</label>
+        <input class="i" type="date" [(ngModel)]="filters.from" />
+      </div>
+
+      <div class="fItem">
+        <label>To</label>
+        <input class="i" type="date" [(ngModel)]="filters.to" />
+      </div>
+
+      <div class="fItem">
+        <label>Search tiles</label>
+        <div class="searchWrap">
+          <i class="fa fa-search"></i>
+          <input class="i i--search" type="text"
+                 placeholder="Sales invoice, GRN, AR..."
+                 [(ngModel)]="filters.q" />
+        </div>
+      </div>
+
+      <div class="fActions">
+        <button class="btn btnDark" (click)="refresh()">
+          <i class="fa fa-rotate"></i> Refresh
+        </button>
+        <button class="btn btnLight" (click)="clear()">
+          <i class="fa fa-eraser"></i> Clear
+        </button>
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip"><i class="fa fa-building"></i> Company: {{ selectedCompanyName }}</span>
+      <span class="chip"><i class="fa fa-arrows-left-right"></i> Range: {{ filters.from }} → {{ filters.to }}</span>
+      <span class="chip chip--ok"><i class="fa fa-link"></i> Clickable widgets</span>
+    </div>
+  </div>
+
+  <!-- Analytics layout -->
+  <div class="grid12">
+
+    <!-- KPI strip -->
+    <div class="kpiRow">
+      <button class="kpi"
+              *ngFor="let k of kpisTop"
+              type="button"
+              (click)="open(k.route, k.filter)">
+        <div class="kpi__icon" [class]="k.iconClass">
+          <i class="fa" [class]="k.fa"></i>
+        </div>
+
+        <div class="kpi__body">
+          <div class="kpi__t">{{ k.label }}</div>
+          <div class="kpi__v">{{ k.value }}</div>
+          <div class="kpi__s">
+            <span [class.ok]="k.delta>=0" [class.bad]="k.delta<0">
+              <i class="fa" [class.fa-arrow-up]="k.delta>=0" [class.fa-arrow-down]="k.delta<0"></i>
+              {{ k.deltaAbs }}%
+            </span>
+            <!-- <span class="muted">vs last week</span> -->
+          </div>
+        </div>
+
+        <div class="kpi__right">
+          <svg class="spark" viewBox="0 0 120 36" preserveAspectRatio="none">
+            <polyline [attr.points]="k.spark" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          </svg>
+        </div>
+      </button>
+    </div>
+
+    <!-- Sales Trend -->
+    <div class="card span-7">
+      <div class="card__hdr">
+        <div>
+          <div class="ct">Sales Trend</div>
+          <div class="cs">Daily posted Sales Invoices (range)</div>
+        </div>
+        <button class="iconBtn" (click)="open('/sales/invoices', { status: 'Posted' })" type="button">
+          <i class="fa fa-arrow-up-right-from-square"></i>
+        </button>
+      </div>
+
+      <div class="salesSummaryRow">
+        <div class="sumBox">
+          <div class="sumK">Sales</div>
+          <div class="sumV">{{ money(salesSummary.total) }}</div>
+        </div>
+        <div class="sumBox">
+          <div class="sumK">Orders</div>
+          <div class="sumV">{{ money(salesSummary.avg) }}</div>
+        </div>
+        <div class="sumBox">
+          <div class="sumK">Invoices</div>
+          <div class="sumV">{{ salesSummary.count }}</div>
+        </div>
+      </div>
+
+      <div class="chartBox">
+        <svg class="svgChart" viewBox="0 0 520 220" preserveAspectRatio="none">
+          <g class="grid">
+            <line *ngFor="let y of [40,80,120,160,200]" x1="0" [attr.y1]="y" x2="520" [attr.y2]="y"></line>
+          </g>
+          <polyline class="line" [attr.points]="salesTrendPoints"></polyline>
+          <polyline class="area" [attr.points]="salesTrendArea"></polyline>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Right – Sales Overview -->
+    <div class="card span-5">
+      <div class="card__hdr">
+        <div>
+          <div class="ct">Sales Overview</div>
+          <div class="cs">Orders • Deliveries • Invoices • Customers</div>
+        </div>
+        <button class="iconBtn" (click)="open('/sales/orders', {})" type="button">
+          <i class="fa fa-arrow-up-right-from-square"></i>
+        </button>
+      </div>
+
+      <div class="bars">
+        <div class="barItem" *ngFor="let b of salesBars">
+          <div class="barTop">
+            <div class="barLbl">{{ b.label }}</div>
+            <div class="barVal">{{ b.value }}</div>
+          </div>
+          <div class="barTrack">
+            <div class="barFill" [style.width.%]="b.pct"></div>
+          </div>
+          <div class="barHint">{{ b.hint }}</div>
+        </div>
+      </div>
+
+      <div class="mini2 mt10">
+        <button class="mini" (click)="open('/sales/orders', { status:'Open' })" type="button">
+          <div class="t">Sales Orders</div>
+          <div class="v">{{ quick.so }}</div>
+          <div class="s">Open in range</div>
+        </button>
+        <button class="mini" (click)="open('/sales/delivery-orders', {})" type="button">
+          <div class="t">Delivery Orders</div>
+          <div class="v">{{ quick.do }}</div>
+          <div class="s">Created</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Purchase Flow -->
+    <div class="card span-7">
+      <div class="card__hdr">
+        <div>
+          <div class="ct">Purchase Flow</div>
+          <div class="cs">PR → PO → GRN → PIN</div>
+        </div>
+        <button class="iconBtn" (click)="open('/purchase/purchase-orders', {})" type="button">
+          <i class="fa fa-arrow-up-right-from-square"></i>
+        </button>
+      </div>
+
+      <div class="bars bars--2col">
+        <div class="barItem" *ngFor="let b of purchaseBars">
+          <div class="barTop">
+            <div class="barLbl">{{ b.label }}</div>
+            <div class="barVal">{{ b.value }}</div>
+          </div>
+          <div class="barTrack"><div class="barFill" [style.width.%]="b.pct"></div></div>
+          <div class="barHint">{{ b.hint }}</div>
+        </div>
+      </div>
+
+      <div class="btnRow">
+        <button class="chipBtn" (click)="open('/purchase/requests', {})" type="button">Open PR</button>
+        <button class="chipBtn" (click)="open('/purchase/grn', {})" type="button">Open GRN</button>
+        <button class="chipBtn" (click)="open('/purchase/supplier-invoices', {})" type="button">Open PIN</button>
+      </div>
+    </div>
+
+    <!-- AR/AP -->
+    <div class="card span-5">
+      <div class="card__hdr">
+        <div>
+          <div class="ct">Accounts Receivable / Payable</div>
+          <div class="cs">Gauges + Aging</div>
+        </div>
+        <button class="iconBtn" (click)="open('/finance/ar-aging', {})" type="button">
+          <i class="fa fa-arrow-up-right-from-square"></i>
+        </button>
+      </div>
+
+      <div class="twoG">
+        <div class="gWrap">
+          <div class="gTitle">Receivables</div>
+          <div class="gauge">
+            <svg viewBox="0 0 120 120">
+              <circle class="gBg" cx="60" cy="60" r="48"></circle>
+              <circle class="gVal" cx="60" cy="60" r="48" [attr.stroke-dasharray]="arGaugeDash"></circle>
+            </svg>
+            <div class="gTxt">
+              <div class="gPct">{{ arGaugePct }}%</div>
+              <div class="gLbl">Collected</div>
             </div>
           </div>
         </div>
-      </div> -->
-    </section>
-    
-    <!-- Basic Alerts end -->
+
+        <div class="gWrap">
+          <div class="gTitle">Payables</div>
+          <div class="gauge">
+            <svg viewBox="0 0 120 120">
+              <circle class="gBg" cx="60" cy="60" r="48"></circle>
+              <circle class="gVal gVal--ap" cx="60" cy="60" r="48" [attr.stroke-dasharray]="apGaugeDash"></circle>
+            </svg>
+            <div class="gTxt">
+              <div class="gPct">{{ apGaugePct }}%</div>
+              <div class="gLbl">Paid</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="aging2">
+        <div class="ageBox">
+          <div class="ageH">AR Aging</div>
+          <div class="ageRow" *ngFor="let a of arAging">
+            <div class="ageK">{{ a.bucket }}</div>
+            <div class="ageV">{{ money(a.amount) }}</div>
+          </div>
+        </div>
+
+        <div class="ageBox">
+          <div class="ageH">AP Aging</div>
+          <div class="ageRow" *ngFor="let a of apAging">
+            <div class="ageK">{{ a.bucket }}</div>
+            <div class="ageV">{{ money(a.amount) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btnRow">
+        <button class="chipBtn" (click)="open('/finance/ar-invoices', { status:'Open' })" type="button">Open AR Invoices</button>
+        <button class="chipBtn" (click)="open('/finance/ap-aging', {})" type="button">Open AP Aging</button>
+      </div>
+    </div>
+
+    <!-- Inventory -->
+    <div class="card span-7">
+      <div class="card__hdr">
+        <div>
+          <div class="ct">Inventory</div>
+          <div class="cs">Top items • SKU • Below Min</div>
+        </div>
+        <button class="iconBtn" (click)="open('/inventory/item-master', {})" type="button">
+          <i class="fa fa-arrow-up-right-from-square"></i>
+        </button>
+      </div>
+
+      <div class="mini3">
+        <button class="mini" (click)="open('/inventory/item-master', { createdInRange:true })" type="button">
+          <div class="t">New items</div>
+          <div class="v">{{ inv.newItems }}</div>
+          <div class="s">Created in range</div>
+        </button>
+        <button class="mini" (click)="open('/inventory/stock', {})" type="button">
+          <div class="t">Available SKU</div>
+          <div class="v">{{ inv.skuCount }}</div>
+          <div class="s">On-hand across WH</div>
+        </button>
+        <button class="mini" (click)="open('/inventory/reorder', { belowMin:true })" type="button">
+          <div class="t">Below Min</div>
+          <div class="v">{{ inv.belowMin }}</div>
+          <div class="s">Reorder required</div>
+        </button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="tbl">
+        <div class="tbl__hdr">
+          <div>SKU</div><div>Item</div><div class="r">Qty</div><div></div>
+        </div>
+        <button class="tbl__row tbl__row--4"
+                *ngFor="let t of inv.topItems"
+                (click)="open('/inventory/stock', { sku: t.sku })"
+                type="button">
+          <div class="mono">{{ t.sku }}</div>
+          <div class="txt">{{ t.name }}</div>
+          <div class="mono r">{{ t.qty }}</div>
+          <div class="go"><i class="fa fa-chevron-right"></i></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Production + Timeline -->
+    <div class="card span-5">
+      <div class="card__hdr">
+        <div>
+          <div class="ct">Production & Activity</div>
+          <div class="cs">Planning + Alerts + Timeline</div>
+        </div>
+        <button class="iconBtn" (click)="open('/production/planning', {})" type="button">
+          <i class="fa fa-arrow-up-right-from-square"></i>
+        </button>
+      </div>
+
+      <div class="mini2">
+        <button class="mini" (click)="open('/production/planning', { status:'Open' })" type="button">
+          <div class="t">Planning Orders</div>
+          <div class="v">{{ prod.openOrders }}</div>
+          <div class="s">Next: {{ prod.nextDate | date:'yyyy-MM-dd' }}</div>
+        </button>
+        <button class="mini" (click)="open('/production/recipe-cost', { alerts:true })" type="button">
+          <div class="t">Recipe Cost Alerts</div>
+          <div class="v">{{ prod.costAlerts }}</div>
+          <div class="s">Missing cost / variance</div>
+        </button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="timeline">
+        <div class="tRow" *ngFor="let t of timeline">
+          <div class="dot" [class.dot--warn]="t.type==='warn'" [class.dot--ok]="t.type==='ok'"></div>
+          <div class="tBody">
+            <div class="tTitle">{{ t.title }}</div>
+            <div class="tSub">{{ t.sub }}</div>
+          </div>
+          <div class="tTime">{{ t.when }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exceptions -->
+    <div class="card span-12">
+      <div class="card__hdr">
+        <div>
+          <div class="ct">Exceptions</div>
+          <div class="cs">GST missing • 3-way match • negative stock</div>
+        </div>
+        <button class="iconBtn" (click)="open('/finance/exceptions', {})" type="button">
+          <i class="fa fa-arrow-up-right-from-square"></i>
+        </button>
+      </div>
+
+      <div class="tbl">
+        <div class="tbl__hdr tbl__hdr--5">
+          <div>Type</div><div>Doc</div><div>Party</div><div class="r">Impact</div><div></div>
+        </div>
+
+        <button class="tbl__row tbl__row--5"
+                *ngFor="let e of exceptions"
+                (click)="open(e.route, e.filter)"
+                type="button">
+          <div>
+            <span class="badge" [class.warn]="e.sev==='WARN'" [class.bad]="e.sev==='HIGH'">
+              {{ e.type }}
+            </span>
+          </div>
+          <div class="mono">{{ e.doc }}</div>
+          <div class="txt">{{ e.party }}</div>
+          <div class="mono r">{{ e.impact }}</div>
+          <div class="go"><i class="fa fa-chevron-right"></i></div>
+        </button>
+      </div>
+
+      <div class="btnRow">
+        <button class="chipBtn" (click)="open('/finance/gst', { pending:true })" type="button">GST Pending</button>
+        <button class="chipBtn" (click)="open('/purchase/3way-match', { pending:true })" type="button">3-Way Pending</button>
+        <button class="chipBtn" (click)="open('/inventory/stock', { negative:true })" type="button">Negative Stock</button>
+      </div>
+    </div>
+
   </div>
 </div>

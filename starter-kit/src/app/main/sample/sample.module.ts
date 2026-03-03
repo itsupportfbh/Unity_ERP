@@ -8,6 +8,8 @@ import { ContentHeaderModule } from 'app/layout/components/content-header/conten
 
 import { SampleComponent } from './sample.component';
 import { HomeComponent } from './home.component';
+import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 const routes = [
   {
@@ -24,7 +26,8 @@ const routes = [
 
 @NgModule({
   declarations: [SampleComponent, HomeComponent],
-  imports: [RouterModule.forChild(routes), ContentHeaderModule, TranslateModule, CoreCommonModule],
+  imports: [RouterModule.forChild(routes), ContentHeaderModule, TranslateModule, CoreCommonModule,FormsModule,
+    NgSelectModule],
   exports: [SampleComponent, HomeComponent]
 })
 export class SampleModule {}

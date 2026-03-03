@@ -26,7 +26,7 @@ type LineTaxMode = 'Standard-Rated' | 'Zero-Rated' | 'Exempt';
 type Country = { id: number; countryName: string; gstPercentage: number };
 type Customer = { id: number; name: string; countryId: number };
 type CurrencyRow = { id: number; name: string };
-type PaymentTermsRow = { id: number; name: string };
+type PaymentTermsRow = { id: number; name: string; description: string };
 type DiscountType = 'VALUE' | 'PERCENT';
 type LineSourceId = 1 | 2 | 3;
 type ItemSetHeaderRow = { id: number; setName: string; description?: string };
@@ -69,6 +69,7 @@ type UiLine = Omit<QuotationLine, 'uom' | 'uomId'> & {
 
 type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
   deliveryDate: string | null;
+   validityDate: string|null;
   remarks?: string;
   deliveryTo?: string;
 
@@ -133,6 +134,7 @@ export class QuotationscreateComponent implements OnInit {
 
     lineSourceId: 1,
      netTotal: 0, 
+      validityDate: null,
   };
 
   minDate = '';
@@ -149,7 +151,7 @@ export class QuotationscreateComponent implements OnInit {
   paymentTermsSrv: PaymentTermsRow[] = [];
   paymentTermsSearch = '';
   paymentTermsDdOpen = false;
-  filteredPaymentTerms: PaymentTermsRow[] = [];
+ filteredPaymentTerms : PaymentTermsRow[] = [];
 
   customerSearch = '';
   customerDdOpen = false;
@@ -170,7 +172,7 @@ export class QuotationscreateComponent implements OnInit {
   filteredItemSets: ItemSetHeaderRow[] = [];
   selectedItemSets: ItemSetHeaderRow[] = [];
   pendingItemSet: ItemSetHeaderRow | null = null;
-
+private lastAutoRemarks: string | null = null;
   // ✅ Mapping for EDIT hydration: itemId -> {itemSetId, setName}
   private itemIdToSet = new Map<number, { itemSetId: number; setName: string }>();
 
@@ -498,7 +500,8 @@ export class QuotationscreateComponent implements OnInit {
       const data = res?.data ?? res ?? [];
       this.paymentTermsSrv = data.map((r: any) => ({
         id: Number(r.id ?? r.Id),
-        name: String(r.paymentTermsName ?? r.PaymentTermsName ?? '').trim()
+        name: String(r.paymentTermsName ?? r.PaymentTermsName ?? '').trim(),
+        description: r.description
       })) as PaymentTermsRow[];
     });
 
@@ -670,6 +673,7 @@ export class QuotationscreateComponent implements OnInit {
           fxRate: Number(dto.fxRate ?? dto.FxRate ?? 1),
           paymentTermsId: Number(dto.paymentTermsId ?? dto.PaymentTermsId ?? 0),
           deliveryDate: this.toDateInputValue(dto.deliveryDate ?? dto.DeliveryDate),
+          validityDate:this.toDateInputValue(dto.validityDate ?? dto.validityDate),
           remarks: String(dto.remarks ?? dto.Remarks ?? ''),
           deliveryTo: String(dto.deliveryTo ?? dto.DeliveryTo ?? ''),
           rounding: Number(dto.rounding ?? dto.Rounding ?? 0),
@@ -885,12 +889,37 @@ export class QuotationscreateComponent implements OnInit {
     this.paymentTermsDdOpen = true;
   }
 
-  selectPaymentTerms(p: PaymentTermsRow) {
-    this.paymentTermsSearch = p.name;
-    this.paymentTermsDdOpen = false;
-    this.header.paymentTermsId = p.id;
-    this.header.paymentTerms = p.name;
+selectPaymentTerms(p: PaymentTermsRow) {
+  this.paymentTermsSearch = p.name;
+  this.paymentTermsDdOpen = false;
+
+  this.header.paymentTermsId = p.id;
+  this.header.paymentTerms = p.name;
+
+  // ✅ Auto-fill remarks with description
+  const desc = (p.description || '').trim();
+  if (!desc) return;
+
+  const current = (this.header.remarks || '').trim();
+
+  // Case 1: remarks empty → set directly
+  if (!current) {
+    this.header.remarks = desc;
+    this.lastAutoRemarks = desc;
+    return;
   }
+
+  // Case 2: remarks was previously auto-filled → replace with new desc
+  if (this.lastAutoRemarks && current === this.lastAutoRemarks.trim()) {
+    this.header.remarks = desc;
+    this.lastAutoRemarks = desc;
+    return;
+  }
+
+  // Case 3: user already typed something → append (optional)
+  this.header.remarks = `${this.header.remarks}\n${desc}`;
+  this.lastAutoRemarks = desc; // keep last auto text
+}
 
   // =========================
   // ItemSet Multi-select
@@ -1162,7 +1191,7 @@ export class QuotationscreateComponent implements OnInit {
       remarks: (this.header.remarks || '').trim(),
       deliveryTo: (this.header.deliveryTo || '').trim(),
       deliveryDate: this.header.deliveryDate,
-      validityDate: this.header.deliveryDate,
+      validityDate: this.header.validityDate ?? this.header.deliveryDate,
       lineSourceId: this.header.lineSourceId,
       itemSetIds: (this.selectedItemSets || []).map(x => x.id),
       lines: this.lines

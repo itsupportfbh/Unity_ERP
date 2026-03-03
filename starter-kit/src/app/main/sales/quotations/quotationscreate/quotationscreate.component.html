@@ -22,10 +22,10 @@
       </div>
 
       <div class="qtTopRight">
-        <span class="qtPill">
+        <!-- <span class="qtPill">
           <span class="k">Status</span>
           <span class="v">{{ statusLabel(header.status) }}</span>
-        </span>
+        </span> -->
 
         <span class="qtHint" *ngIf="header.needsHodApproval">
           <i class="fas fa-circle-info"></i>
@@ -175,7 +175,14 @@
             readonly />
         </div>
 
-        <div class="qtField"></div>
+        <div class="qtField">
+  <label class="qtLabel">Validity Date</label>
+  <input
+    type="date"
+    class="form-control qtInput"
+    [(ngModel)]="header.validityDate"
+    name="validityDate" />
+</div>
       </div>
 
       <!-- Row 3: Item Set Multi -->
@@ -417,7 +424,7 @@
 
               <!-- Tax Mode -->
               <td>
-                <select class="form-control qtInput qtInput--sm"
+                <select class="form-control qtInput qtInput--sm qtNum text-center"
                         [(ngModel)]="l.taxMode"
                         (ngModelChange)="onLineChanged(i)">
                   <option *ngFor="let m of taxModesForCurrentGst" [ngValue]="m">{{ m }}</option>

@@ -1,34 +1,43 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { UserlistComponent } from './userlist/userlist.component';
-import { UserformComponent } from './userform/userform.component';
 import { RouterModule, Routes } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
 import { NgSelectModule } from '@ng-select/ng-select';
 import { NgxDatatableModule } from '@swimlane/ngx-datatable';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
+import { UserlistComponent } from './userlist/userlist.component';
+import { UserformComponent } from './userform/userform.component';
+import { UserAccessWizardComponent } from './user-access-wizard/user-access-wizard.component';
+import { RolesPermissionsComponent } from './roles-permissions/roles-permissions.component';
+
 const routes: Routes = [
   { path: '', component: UserlistComponent },
   { path: 'new', component: UserformComponent },
-  { path: ':id/edit', component: UserformComponent }
+  { path: ':id/edit', component: UserformComponent },
+
+  // ✅ Wizard
+  { path: 'access', component: UserAccessWizardComponent }
 ];
 
 @NgModule({
   declarations: [
     UserlistComponent,
-    UserformComponent
+    UserformComponent,
+    UserAccessWizardComponent,
+    RolesPermissionsComponent
   ],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
-    FormsModule,
-    ReactiveFormsModule,
+
+    FormsModule,            // ✅ needed for [(ngModel)] in RolesPermissions
+    ReactiveFormsModule,    // ✅ your user form uses reactive forms
+
     NgSelectModule,
     NgxDatatableModule,
-        FormsModule,
-        NgbModule,
-        ReactiveFormsModule,
+    NgbModule
   ]
 })
 export class UserModule { }

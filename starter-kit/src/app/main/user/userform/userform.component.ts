@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, Output, EventEmitter } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -10,6 +10,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { UserService } from '../user.service';
 import Swal from 'sweetalert2';
 import { LocationService } from 'app/main/master/location/location.service';
+import { UserContextEvent } from '../user-access-wizard/user-access-wizard.component';
 
 /* ========= PASSWORD VALIDATOR ========= */
 const PASSWORD_REGEX =
@@ -25,19 +26,24 @@ function passwordStrong(control: AbstractControl): ValidationErrors | null {
   selector: 'app-userform',
   templateUrl: './userform.component.html',
   styleUrls: ['./userform.component.scss'],
-  encapsulation:ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None
 })
 export class UserformComponent implements OnInit {
+
+  @Output() nextToPermissions = new EventEmitter<UserContextEvent>();
+  @Output() userContextChanged = new EventEmitter<UserContextEvent>();
+
   form!: FormGroup;
   id = 0;
   isEdit = false;
   canEditPassword = false;
 
-  roles: any[] = [];
+  roles: any[] = [];          // approval levels [{id,name}]
+  departments: any[] = [];    // [{id,name}]
+  locations: any[] = [];
 
   isSaving = false;
-departments: any[] = [];
-  locations: any;
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
@@ -51,14 +57,17 @@ departments: any[] = [];
       username: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       password: [''],
-      departmentId: [null, Validators.required], 
+      departmentId: [null, Validators.required],
       locationId: [ null, Validators.required],
       approvalLevelIds: [[]]
     });
-this.getAllLocations();
+
+    this.getAllLocations();
+    this.getDepartment();
 
     this.svc.getApprovalLevels().subscribe((res: any) => {
       this.roles = res?.data || [];
+      this.emitContext();
     });
 
     this.route.paramMap.subscribe(pm => {
@@ -66,14 +75,14 @@ this.getAllLocations();
       this.isEdit = !!this.id;
       this.canEditPassword = !this.isEdit;
 
-     this.form.reset({
-  username: '',
-  email: '',
-  password: '',
-  departmentId: null,
-  approvalLevelIds: []
-});
-
+      this.form.reset({
+        username: '',
+        email: '',
+        password: '',
+        departmentId: null,
+        locationId: null,
+        approvalLevelIds: []
+      });
 
       const pwd = this.form.get('password');
 
@@ -91,16 +100,94 @@ this.getAllLocations();
           this.form.patchValue({
             username: u.username,
             email: u.email,
-           departmentId: u.departmentId ?? null,
-           locationId: u.locationId,
-           approvalLevelIds: u.approvalLevelIds || []
+            departmentId: u.departmentId ?? null,
+            locationId: u.locationId ?? null,
+            approvalLevelIds: u.approvalLevelIds || []
           });
+          this.emitContext();
         });
       }
     });
-    this.getDepartment();
+
+    // auto emit when department/roles change
+    this.form.get('departmentId')?.valueChanges.subscribe(() => this.emitContext());
+    this.form.get('approvalLevelIds')?.valueChanges.subscribe(() => this.emitContext());
   }
 
+  /* ========= DepartmentName -> TeamName mapping =========
+     IMPORTANT: ungaloda Department master la name eppadi iruko adhu base panna mapping. */
+  private getTeamFromDepartmentName(deptName: string): string {
+    const n = (deptName || '').toLowerCase();
+
+    if (n.includes('sales')) return 'Sales Team';
+    if (n.includes('purchase')) return 'Purchase Team';
+    if (n.includes('finance')) return 'Finance Team';
+    if (n.includes('admin')) return 'Admin';
+
+    // if already "Sales Team" etc.
+    return deptName || '';
+  }
+
+  private getDepartmentNameById(id: number | null): string {
+    if (!id) return '';
+    const d = (this.departments || []).find(x => +x.id === +id);
+    return d?.name || '';
+  }
+
+  private selectedRoleNamesFromIds(ids: number[]): string[] {
+    const set = new Set((ids || []).map(x => +x));
+    return (this.roles || [])
+      .filter(r => set.has(+r.id))
+      .map(r => (r.name || '').toString().trim())
+      .filter(x => !!x);
+  }
+
+  emitContext() {
+    const deptId = this.form.get('departmentId')?.value ?? null;
+    const deptName = this.getDepartmentNameById(deptId);
+    const teamName = this.getTeamFromDepartmentName(deptName);
+
+    const roleIds: number[] = (this.form.get('approvalLevelIds')?.value || []) as number[];
+    const roleNames = this.selectedRoleNamesFromIds(roleIds);
+
+    const payload: UserContextEvent = {
+      departmentId: deptId,
+      departmentName: deptName,
+      approvalLevelIds: roleIds,
+      selectedRoleNames: roleNames,
+      teamName
+    };
+
+    this.userContextChanged.emit(payload);
+  }
+
+  next() {
+    const deptId = this.form.get('departmentId')?.value ?? null;
+    const roleIds: number[] = (this.form.get('approvalLevelIds')?.value || []) as number[];
+
+    if (!deptId || roleIds.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Select Department & Roles',
+        text: 'Please select Department (Team) and Roles (Approval Levels) to configure permissions.'
+      });
+      return;
+    }
+
+    const deptName = this.getDepartmentNameById(deptId);
+    const teamName = this.getTeamFromDepartmentName(deptName);
+    const roleNames = this.selectedRoleNamesFromIds(roleIds);
+
+    this.nextToPermissions.emit({
+      departmentId: deptId,
+      departmentName: deptName,
+      approvalLevelIds: roleIds,
+      selectedRoleNames: roleNames,
+      teamName
+    });
+  }
+
+  // ---------------- existing methods (same as your code) ----------------
   togglePasswordEdit() {
     this.canEditPassword = !this.canEditPassword;
     const pwd = this.form.get('password');
@@ -116,95 +203,85 @@ this.getAllLocations();
     pwd?.updateValueAndValidity();
   }
 
- private getApiErrorMessage(err: any): string {
-  const e = err?.error;
+  private getApiErrorMessage(err: any): string {
+    const e = err?.error;
+    if (typeof e?.message === 'string' && e.message.trim()) return e.message;
 
-  // 1) direct message
-  if (typeof e?.message === 'string' && e.message.trim()) return e.message;
+    const errors = e?.errors;
+    if (errors && typeof errors === 'object') {
+      const msgs: string[] = [];
+      Object.keys(errors).forEach(k => {
+        const arr = errors[k];
+        if (Array.isArray(arr)) {
+          arr.forEach(m => {
+            if (typeof m === 'string' && m.trim()) msgs.push(m);
+          });
+        }
+      });
+      if (msgs.length) return msgs.join('\n');
+    }
 
-  // 2) ASP.NET validation: { errors: { Password: ["..."], Email: ["..."] } }
-  const errors = e?.errors;
-  if (errors && typeof errors === 'object') {
-    const msgs: string[] = [];
+    if (typeof e === 'string' && e.trim()) return e;
+    if (typeof err?.message === 'string' && err.message.trim()) return err.message;
 
-    Object.keys(errors).forEach(k => {
-      const arr = errors[k];
-      if (Array.isArray(arr)) {
-        arr.forEach(m => {
-          if (typeof m === 'string' && m.trim()) msgs.push(m);
-        });
-      }
+    return 'Something went wrong.';
+  }
+
+  save() {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
+
+    const payload: any = {
+      username: this.form.value.username,
+      email: this.form.value.email,
+      departmentId: this.form.value.departmentId,
+      approvalLevelIds: this.form.value.approvalLevelIds || [],
+      locationId: this.form.value.locationId
+    };
+
+    if (!this.isEdit || this.canEditPassword) {
+      payload.password = this.form.value.password;
+    }
+
+    this.isSaving = true;
+
+    Swal.fire({
+      title: this.isEdit ? 'Updating…' : 'Creating…',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
     });
 
-    if (msgs.length) return msgs.join('\n');
+    const req = this.isEdit
+      ? this.svc.update(this.id, payload)
+      : this.svc.insert(payload);
+
+    req.subscribe({
+      next: () => {
+        Swal.fire({
+          title: 'Success',
+          text: this.isEdit ? 'User updated successfully.' : 'User created successfully.',
+          icon: 'success',
+          timer: 1200,
+          showConfirmButton: false
+        }).then(() => {
+          this.router.navigate(['/admin/users']);
+        });
+      },
+      error: (err) => {
+        this.isSaving = false;
+        Swal.fire({
+          title: 'Failed',
+          text: this.getApiErrorMessage(err),
+          icon: 'error'
+        });
+      },
+      complete: () => {
+        this.isSaving = false;
+      }
+    });
   }
-
-  // 3) string body
-  if (typeof e === 'string' && e.trim()) return e;
-
-  // 4) fallback
-  if (typeof err?.message === 'string' && err.message.trim()) return err.message;
-
-  return 'Something went wrong.';
-}
-
- save() {
-  this.form.markAllAsTouched();
-  if (this.form.invalid) return;
-
-  const payload: any = {
-    username: this.form.value.username,
-    email: this.form.value.email,
-     departmentId: this.form.value.departmentId,
-    approvalLevelIds: this.form.value.approvalLevelIds || [],
-    locationId: this.form.value.locationId
-  };
-
-  if (!this.isEdit || this.canEditPassword) {
-    payload.password = this.form.value.password;
-  }
-
-  this.isSaving = true;
-
-  Swal.fire({
-    title: this.isEdit ? 'Updating…' : 'Creating…',
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading()
-  });
-
-  const req = this.isEdit
-    ? this.svc.update(this.id, payload)
-    : this.svc.insert(payload);
-
-  req.subscribe({
-    next: () => {
-      Swal.fire({
-        title: 'Success',
-        text: this.isEdit ? 'User updated successfully.' : 'User created successfully.',
-        icon: 'success',
-        timer: 1200,
-        showConfirmButton: false
-      }).then(() => {
-        this.router.navigate(['/admin/users']);
-      });
-    },
-    error: (err) => {
-      this.isSaving = false;
-      Swal.fire({
-        title: 'Failed',
-        text: this.getApiErrorMessage(err),
-        icon: 'error'
-      });
-    },
-    complete: () => {
-      this.isSaving = false;
-    }
-  });
-}
-
 
   cancel() {
-    // Optional confirm if form dirty
     if (this.form.dirty) {
       Swal.fire({
         title: 'Discard changes?',
@@ -218,19 +295,19 @@ this.getAllLocations();
       });
       return;
     }
-
     this.router.navigate(['/admin/users']);
   }
+
   getDepartment(){
     this.svc.getDepartments().subscribe((res: any) => {
-  this.departments = res?.data || [];
-});
+      this.departments = res?.data || [];
+      this.emitContext();
+    });
   }
-    getAllLocations(): void {
+
+  getAllLocations(): void {
     this._locationserice.getLocationDetails().subscribe((response: any) => {
       this.locations = response?.data ?? [];
-     
-      
     });
   }
 }

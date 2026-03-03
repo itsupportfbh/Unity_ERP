@@ -19,7 +19,7 @@
                 class="permTabBtnX"
                 [class.active]="activeModuleId===m.id"
                 (click)="setModule(m.id)">
-          {{m.title}}
+          {{ m.title }}
         </button>
       </div>
     </div>
@@ -28,7 +28,7 @@
       No modules allowed for selected Department + Roles.
     </div>
 
-    <!-- ✅ Grid Table -->
+    <!-- Grid Table -->
     <div class="permTableWrapX" *ngIf="modules.length">
       <table class="permTableX">
         <thead>
@@ -65,7 +65,7 @@
       </table>
     </div>
 
-    <!-- ✅ Legend (modules/tabs முடிந்ததும் bottom) -->
+    <!-- Legend -->
     <div class="permLegendX" *ngIf="modules.length">
       Legend:
       <span>V=View</span>, <span>C=Create</span>, <span>E=Edit</span>, <span>D=Delete</span>,

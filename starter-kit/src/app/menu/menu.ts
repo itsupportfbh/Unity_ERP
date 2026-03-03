@@ -24,6 +24,7 @@ export const menu: any[] = [
   { id: 'bin', title: 'Bin', type: 'item', icon: 'circle', url: '/master/bin', approvalRoles: ['Admin', 'Super Admin'] },
   { id: 'catagory', title: 'Catagory', type: 'item', icon: 'circle', url: '/master/catagory', approvalRoles: ['Admin', 'Super Admin'] },
   { id: 'cities', title: 'Cities', type: 'item', icon: 'circle', url: '/master/cities', approvalRoles: ['Admin', 'Super Admin'] },
+  { id: 'company', title: 'Company', type: 'item', icon: 'circle', url: '/master/company', approvalRoles: ['Admin', 'Super Admin'] },
   { id: 'costingmethod', title: 'Costing Method', type: 'item', icon: 'circle', url: '/master/coastingmethod', approvalRoles: ['Admin', 'Super Admin'] },
   { id: 'countries', title: 'Countries', type: 'item', icon: 'circle', url: '/master/countries', approvalRoles: ['Admin', 'Super Admin'] },
   { id: 'currency', title: 'Currency', type: 'item', icon: 'circle', url: '/master/currency', approvalRoles: ['Admin', 'Super Admin'] },
@@ -46,7 +47,7 @@ export const menu: any[] = [
   { id: 'uom', title: 'UOM', type: 'item', icon: 'circle', url: '/master/uom', approvalRoles: ['Admin', 'Super Admin'] },
   { id: 'vehicle', title: 'Vehicle', type: 'item', icon: 'circle', url: '/master/vehicle', approvalRoles: ['Admin', 'Super Admin'] },
   { id: 'warehouse', title: 'Warehouse', type: 'item', icon: 'circle', url: '/master/warehouse', approvalRoles: ['Admin', 'Super Admin'] },
-   { id: 'company', title: 'Company', type: 'item', icon: 'circle', url: '/master/company', approvalRoles: ['Admin', 'Super Admin'] },
+  //  { id: 'company', title: 'Company', type: 'item', icon: 'circle', url: '/master/company', approvalRoles: ['Admin', 'Super Admin'] },
 ]
   },
  {

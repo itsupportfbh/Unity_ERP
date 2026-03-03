@@ -1,0 +1,77 @@
+<div class="card shadow-sm permCardX">
+
+  <div class="card-header permHdrX d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-0 permTitleX">Roles & Permissions</h4>
+      <small class="permSubX">
+        Department: <b>{{departmentName || '-'}}</b> | Team: <b>{{teamName || '-'}}</b>
+      </small>
+    </div>
+  </div>
+
+  <div class="card-body permBodyX">
+
+    <!-- Module Tabs -->
+    <div class="permTabsWrapX" *ngIf="modules.length">
+      <div class="permTabsX">
+        <button *ngFor="let m of modules"
+                type="button"
+                class="permTabBtnX"
+                [class.active]="activeModuleId===m.id"
+                (click)="setModule(m.id)">
+          {{m.title}}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="!modules.length" class="permEmptyX">
+      No modules allowed for selected Department + Roles.
+    </div>
+
+    <!-- ✅ Grid Table -->
+    <div class="permTableWrapX" *ngIf="modules.length">
+      <table class="permTableX">
+        <thead>
+          <tr>
+            <th class="permThFnX">FUNCTION</th>
+
+            <th *ngFor="let c of permCols" class="permThColX">
+              <div class="permHeadStackX">
+                <div class="permCodePillX">{{c}}</div>
+                <button type="button" class="permAllPillX" (click)="toggleAllCol(c)">
+                  {{ allColState(c) ? 'All ✓' : 'All' }}
+                </button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let r of visibleRows">
+            <td class="permFnCellX">{{r.functionTitle}}</td>
+
+            <td *ngFor="let c of permCols" class="permTdX">
+              <input type="checkbox"
+                     class="permChkX"
+                     [checked]="r.flags[c]"
+                     (change)="toggleCell(r.id, c)" />
+            </td>
+          </tr>
+
+          <tr *ngIf="visibleRows.length===0">
+            <td colspan="100" class="permNoRowX">No functions configured.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ✅ Legend (modules/tabs முடிந்ததும் bottom) -->
+    <div class="permLegendX" *ngIf="modules.length">
+      Legend:
+      <span>V=View</span>, <span>C=Create</span>, <span>E=Edit</span>, <span>D=Delete</span>,
+      <span>S=Submit</span>, <span>A=Approve</span>, <span>R=Reject</span>, <span>X=Cancel</span>,
+      <span>P=Print</span>, <span>M=Export</span>
+    </div>
+
+  </div>
+</div>

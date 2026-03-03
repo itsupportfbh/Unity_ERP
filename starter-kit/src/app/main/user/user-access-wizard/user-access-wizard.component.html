@@ -1,0 +1,50 @@
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-0" style="color:#2E5F73;font-weight:700;">User Access Setup</h4>
+      <small class="text-muted">Administration → Users → Roles & Permission Settings</small>
+    </div>
+
+    <button class="btn btn-outline-secondary btn-sm" (click)="goBack()">
+      <i class="fas fa-arrow-left me-50"></i> Back
+    </button>
+  </div>
+
+  <div class="card-body pb-2">
+    <div class="uwTabsX">
+      <button class="uwTabBtnX" [class.active]="activeTab==='users'" (click)="activeTab='users'">
+        Users
+      </button>
+
+      <button class="uwTabBtnX"
+              [class.active]="activeTab==='perm'"
+              (click)="activeTab='perm'"
+              [disabled]="!canOpenPermissions">
+        Roles & Permissions
+      </button>
+    </div>
+
+    <div *ngIf="activeTab==='perm' && !canOpenPermissions" class="text-danger small mt-1">
+      Select Department and Roles then click <b>Next</b>.
+    </div>
+  </div>
+
+  <div class="card-body pt-0">
+    <!-- USERS TAB -->
+    <div *ngIf="activeTab==='users'">
+      <app-userform
+        (nextToPermissions)="handleNext($event)"
+        (userContextChanged)="handleContext($event)">
+      </app-userform>
+    </div>
+
+    <!-- PERMISSIONS TAB -->
+    <div *ngIf="activeTab==='perm'">
+      <app-roles-permissions
+        [teamName]="teamName"
+        [selectedRoleNames]="selectedRoleNames"
+        [departmentName]="departmentName">
+      </app-roles-permissions>
+    </div>
+  </div>
+</div>

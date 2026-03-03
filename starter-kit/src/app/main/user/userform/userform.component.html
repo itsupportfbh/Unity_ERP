@@ -88,6 +88,7 @@
   bindLabel="name"
   bindValue="id"
   formControlName="departmentId"
+  (change)="emitContext()"
   placeholder="Select Department">
 </ng-select>
 
@@ -109,7 +110,9 @@
         [multiple]="true"
         [closeOnSelect]="false"
         placeholder="Select roles"
-        formControlName="approvalLevelIds">
+        
+        formControlName="approvalLevelIds"
+        (change)="emitContext()">
       </ng-select>
     </div>
   <div class="col-md-4 mt-1">
@@ -134,12 +137,19 @@
   </div>
 
   <div class="card-footer text-end">
-    <button class="btn btn-outline-secondary me-1" (click)="cancel()">Cancel</button>
-    <button class="btn btn-brand"
-            style="background:#2E5F73;color:#fff;"
-            (click)="save()"
-            [disabled]="form.invalid">
-      Save
-    </button>
-  </div>
+  <button class="btn btn-outline-secondary me-1" (click)="cancel()">Cancel</button>
+
+  <button class="btn btn-outline-primary me-1"
+          style="border-radius:12px;font-weight:800;"
+          (click)="next()">
+    Next
+  </button>
+
+  <button class="btn btn-brand"
+          style="background:#2E5F73;color:#fff;"
+          (click)="save()"
+          [disabled]="form.invalid">
+    Save
+  </button>
+</div>
 </div>

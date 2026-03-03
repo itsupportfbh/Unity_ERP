@@ -1,0 +1,203 @@
+/* =========================
+   Roles & Permissions - FIT ALL COLS (NO SCROLL)
+========================= */
+
+.permCardX{
+  border: 1px solid #e6edf5;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06) !important;
+}
+
+.permHdrX{
+  padding: 12px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.permTitleX{
+  color:#2E5F73;
+  font-weight: 900;
+  letter-spacing: .2px;
+}
+
+.permSubX{
+  color:#6b7280;
+  font-size: 12px;
+}
+
+.permBodyX{
+  padding: 12px 14px 10px;
+  overflow: hidden; /* ✅ no scroll, no overflow */
+  background:#fff;
+}
+
+/* Tabs */
+.permTabsWrapX{
+  padding: 0;                 /* ✅ remove extra space */
+  border: 0;
+  background: transparent;
+  margin-bottom: 10px;
+}
+
+.permTabsX{
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.permTabBtnX{
+  background: #fff;
+  border: 1.5px solid #cfd8e3;   /* ✅ outline */
+  color: #667085;               /* ✅ grey text */
+  font-weight: 800;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 8px;           /* ✅ cancel button radius */
+  line-height: 1;
+  box-shadow: none;
+  min-width: 120px;             /* optional */
+  text-align: center;
+  transition: .15s ease;
+}
+.permTabBtnX:hover{
+  border-color: #9fb4c5;
+  color: #475467;
+  background: #fff;
+}
+
+.permTabBtnX.active{
+   background:#2E5F73;
+  border-color:#2E5F73;
+  color:#fff;
+}
+
+/* Wrapper */
+.permTableWrapX{
+  border: 1px solid #dfe8f2;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* ✅ Table */
+.permTableX{
+  width: 100%;
+  table-layout: fixed;          /* ✅ must */
+  border-collapse: collapse;    /* ✅ grid lines */
+}
+
+/* Header */
+.permTableX thead th{
+  background: #f1f7fd;
+  color:#0f172a;
+  border: 1px solid #dfe8f2;
+  padding: 6px 6px;             /* ✅ tighter */
+  vertical-align: middle;
+}
+
+/* ✅ Function col - make smaller to free space */
+.permThFnX{
+  width: 250px;                 /* ✅ reduce (was 340) */
+  text-align: left;
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: .2px;
+}
+
+/* ✅ Permission cols - compact to fit all */
+.permThColX{
+  width: 48px;                  /* ✅ key change */
+  text-align: center;
+  padding: 6px 2px !important;
+}
+
+/* Header stack */
+.permHeadStackX{
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ✅ Code pill smaller */
+.permCodePillX{
+  min-width: 28px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  font-weight: 1000;
+  font-size: 11px;
+  color:#0f172a;
+  border: 1px solid #cfe0ee;
+  background: #eaf3fb;
+  line-height: 1;
+}
+
+/* ✅ All pill smaller */
+.permAllPillX{
+  border: 1px solid #cfe0ee;
+  background: #eaf3fb;
+  color:#244a5a;
+  font-weight: 1000;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  line-height: 1.1;
+}
+
+/* Body cells */
+.permTableX tbody td{
+  border: 1px solid #e6edf5;
+  padding: 7px 8px;             /* ✅ reduce row height */
+  background: #fff;
+}
+
+/* ✅ Function row text smaller */
+.permFnCellX{
+  font-size: 12px;
+  font-weight: 800;
+  color:#0f172a;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+/* Permission td */
+.permTdX{
+  text-align: center;
+  padding: 6px 0 !important;
+}
+
+/* ✅ Checkbox smaller to fit */
+.permChkX{
+  width: 16px;
+  height: 16px;
+  margin: 0 auto;
+  display: block;
+  accent-color: #2E5F73;
+}
+
+/* Hover */
+.permTableX tbody tr:hover td{ background: #fbfdff; }
+
+/* Legend bottom */
+.permLegendX{
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px dashed #dbe7f2;
+  border-radius: 12px;
+  background: #fbfdff;
+  color:#64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+.permLegendX span{ color:#334155; font-weight: 900; }
+
+/* ✅ Safety: prevent parent overflow clipping issues */
+.permBodyX, .permTableWrapX{ max-width: 100%; }
+
+/* Optional: ultra-small screens */
+@media (max-width: 1100px){
+  .permThFnX{ width: 220px; }
+  .permThColX{ width: 44px; }
+  .permFnCellX{ font-size: 11.5px; }
+}

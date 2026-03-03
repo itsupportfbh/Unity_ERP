@@ -88,7 +88,7 @@ export const menu: any[] = [
       title: 'Users',
       type: 'item',
       icon: 'circle',
-      url: '/admin/users',
+      url: '/admin/users/access',
       approvalRoles: ['Super Admin']
     }
   ]

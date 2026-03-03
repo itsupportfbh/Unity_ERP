@@ -1,0 +1,514 @@
+<div class="content-wrapper container-xxl p-0">
+  <div class="content-body">
+
+    <div class="card shadow-sm cmp-card">
+
+      <!-- HEADER -->
+      <div class="cmp-hdr">
+        <div class="cmp-hdr__left">
+          <div class="cmp-hdr__title">Company</div>
+          <div class="cmp-hdr__sub">Master → Company Setup</div>
+        </div>
+
+        <div class="cmp-hdr__right">
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cancel()">
+            <i class="fas fa-arrow-left me-50"></i> Back
+          </button>
+        </div>
+      </div>
+
+      <!-- TABS (AR style pill tabs) -->
+      <div class="cmp-tabs-shell">
+        <ul class="nav nav-tabs cmp-tabs" role="tablist">
+          <li class="nav-item" (click)="setTab('general')">
+            <a class="nav-link" [class.active]="activeTab==='general'" href="javascript:void(0);">
+              <i class="fas fa-building me-50"></i> General
+            </a>
+          </li>
+
+          <li class="nav-item" (click)="setTab('financeTax')">
+            <a class="nav-link" [class.active]="activeTab==='financeTax'" href="javascript:void(0);">
+              <i class="fas fa-coins me-50"></i> Finance &amp; Tax
+            </a>
+          </li>
+
+          <li class="nav-item" (click)="setTab('defaults')">
+            <a class="nav-link" [class.active]="activeTab==='defaults'" href="javascript:void(0);">
+              <i class="fas fa-sliders-h me-50"></i> Defaults
+            </a>
+          </li>
+
+          <li class="nav-item" (click)="setTab('numberSeries')">
+            <a class="nav-link" [class.active]="activeTab==='numberSeries'" href="javascript:void(0);">
+              <i class="fas fa-hashtag me-50"></i> Number Series
+            </a>
+          </li>
+
+          <li class="nav-item" (click)="setTab('integrations')">
+            <a class="nav-link" [class.active]="activeTab==='integrations'" href="javascript:void(0);">
+              <i class="fas fa-plug me-50"></i> Integrations
+            </a>
+          </li>
+
+          <li class="nav-item" (click)="setTab('audit')">
+            <a class="nav-link" [class.active]="activeTab==='audit'" href="javascript:void(0);">
+              <i class="fas fa-shield-alt me-50"></i> Audit
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- BODY -->
+      <div class="card-body cmp-body">
+
+        <!-- ========================= GENERAL ========================= -->
+        <div *ngIf="activeTab==='general'" class="cmp-panel">
+          <!-- LOGO -->
+          <div class="cmp-logo-card">
+            <div class="cmp-logo-left">
+              <div class="cmp-logo-title">Company Logo</div>
+              <div class="cmp-logo-sub">Used in invoice / report headers</div>
+            </div>
+
+            <div class="cmp-logo-right">
+              <div class="cmp-logo-preview" [class.empty]="!logoPreview">
+                <img *ngIf="logoPreview" [src]="logoPreview" alt="logo" />
+                <div *ngIf="!logoPreview" class="cmp-logo-empty">No Logo</div>
+              </div>
+
+              <div class="cmp-logo-actions">
+                <label class="btn btn-outline-primary btn-sm mb-0">
+                  <i class="fas fa-upload me-50"></i> Upload
+                  <input type="file" accept="image/*" hidden (change)="onLogoPicked($event)" />
+                </label>
+
+                <button class="btn btn-outline-secondary btn-sm" type="button"
+                        (click)="removeLogo()" [disabled]="!logoPreview">
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <form [formGroup]="generalForm" class="cmp-form">
+            <div class="cmp-section">
+              <div class="cmp-section__title">Company Details</div>
+              <div class="cmp-section__sub">Basic identity and contact</div>
+
+              <div class="row g-2 mt-1">
+                <div class="col-md-4">
+                  <label class="form-label">Company Code</label>
+                  <input class="form-control" formControlName="code" />
+                </div>
+
+                <div class="col-md-8">
+                  <label class="form-label">Company Name</label>
+                  <input class="form-control" formControlName="name" />
+                </div>
+
+                <div class="col-md-12">
+                  <label class="form-label">Legal Name</label>
+                  <input class="form-control" formControlName="legalName" />
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Registration No</label>
+                  <input class="form-control" formControlName="registrationNo" />
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Status</label>
+                  <select class="form-select" formControlName="status">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Phone</label>
+                  <input class="form-control" formControlName="phone" />
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Email</label>
+                  <input class="form-control" formControlName="email" />
+                </div>
+
+                <div class="col-md-12">
+                  <label class="form-label">Website</label>
+                  <input class="form-control" formControlName="website" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact Person -->
+            <div class="cmp-section mt-2">
+              <div class="cmp-section__title">Primary Contact</div>
+              <div class="cmp-section__sub">Main person for communication</div>
+
+              <div class="row g-2 mt-1">
+                <div class="col-md-4">
+                  <label class="form-label">Contact Person</label>
+                  <input class="form-control" formControlName="contactPerson" />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Contact Mobile No</label>
+                  <input class="form-control" formControlName="contactMobileNo" inputmode="tel" />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Contact Email</label>
+                  <input class="form-control" formControlName="contactEmail" inputmode="email" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Address -->
+            <div class="cmp-section mt-2">
+              <div class="cmp-section__title">Registered Address</div>
+              <div class="cmp-section__sub">Used for invoices / legal documents</div>
+
+              <div class="row g-2 mt-1">
+                <div class="col-md-12">
+                  <label class="form-label">Address Line 1</label>
+                  <input class="form-control" formControlName="address1" />
+                </div>
+
+                <div class="col-md-12">
+                  <label class="form-label">Address Line 2</label>
+                  <input class="form-control" formControlName="address2" />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">City</label>
+                  <input class="form-control" formControlName="city" />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">State</label>
+                  <input class="form-control" formControlName="state" />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Postal</label>
+                  <input class="form-control" formControlName="postal" />
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- ========================= FINANCE & TAX ========================= -->
+        <div *ngIf="activeTab==='financeTax'" class="cmp-panel">
+          <form [formGroup]="financeForm" class="cmp-form">
+            <div class="cmp-section">
+              <div class="cmp-section__title">Finance &amp; Tax</div>
+              <div class="cmp-section__sub">Base currency, GST defaults</div>
+
+              <div class="row g-2 mt-1">
+                <div class="col-md-4">
+                  <label class="form-label">Base Currency</label>
+                  <select class="form-select" formControlName="baseCurrency">
+                    <option value="SGD">SGD</option>
+                    <option value="INR">INR</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Country/Region</label>
+                  <select class="form-select" formControlName="country">
+                    <option value="Singapore">Singapore</option>
+                    <option value="India">India</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Tax Mode</label>
+                  <select class="form-select" formControlName="taxMode">
+                    <option value="Exclusive">Exclusive</option>
+                    <option value="Inclusive">Inclusive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="cmp-subcard mt-2">
+                <div class="cmp-subcard__title">Tax Registration</div>
+                <div class="cmp-subcard__sub">Input GST / Output GST mapping defaults</div>
+
+                <div class="row g-2 mt-1">
+                  <div class="col-md-6">
+                    <label class="form-label">GST/VAT No</label>
+                    <input class="form-control" formControlName="gstNo" placeholder="GST-XXXXXXX" />
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Filing Frequency</label>
+                    <select class="form-select" formControlName="filingFrequency">
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Default Output Tax Code</label>
+                    <input class="form-control" formControlName="defaultOutputTaxCode" />
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Default Input Tax Code</label>
+                    <input class="form-control" formControlName="defaultInputTaxCode" />
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Decimal Places</label>
+                    <select class="form-select" formControlName="decimalPlaces">
+                      <option [ngValue]="2">2</option>
+                      <option [ngValue]="3">3</option>
+                      <option [ngValue]="4">4</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Rounding Rule</label>
+                    <select class="form-select" formControlName="roundingRule">
+                      <option value="Round half up">Round half up</option>
+                      <option value="Round down">Round down</option>
+                      <option value="Round up">Round up</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </form>
+        </div>
+
+        <!-- ========================= DEFAULTS ========================= -->
+        <div *ngIf="activeTab==='defaults'" class="cmp-panel">
+          <form [formGroup]="defaultsForm" class="cmp-form">
+            <div class="cmp-section">
+              <div class="cmp-section__title">Defaults</div>
+              <div class="cmp-section__sub">Auto-fill for transactions</div>
+
+              <div class="row g-2 mt-1">
+                <div class="col-md-4">
+                  <label class="form-label">Default Branch</label>
+                  <input class="form-control" formControlName="defaultBranch" />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Default Warehouse</label>
+                  <input class="form-control" formControlName="defaultWarehouse" />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Default Bin/Location</label>
+                  <input class="form-control" formControlName="defaultBin" />
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Default Language</label>
+                  <select class="form-select" formControlName="defaultLanguage">
+                    <option value="EN">EN</option>
+                    <option value="TA">TA</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Time Zone</label>
+                  <select class="form-select" formControlName="timeZone">
+                    <option value="Asia/Singapore">Asia/Singapore</option>
+                    <option value="Asia/Kolkata">Asia/Kolkata</option>
+                  </select>
+                </div>
+              </div>
+
+             
+            </div>
+          </form>
+        </div>
+
+        <!-- ========================= NUMBER SERIES ========================= -->
+        <div *ngIf="activeTab==='numberSeries'" class="cmp-panel">
+          <div class="cmp-section">
+            <div class="cmp-section__title d-flex align-items-center justify-content-between">
+              <span>Number Series</span>
+
+              <button type="button" class="btn btn-outline-primary btn-sm" (click)="addNumberRow()">
+                <i class="fas fa-plus me-50"></i> Add Row
+              </button>
+            </div>
+            <div class="cmp-section__sub">DocType-wise numbering per company</div>
+
+            <div class="table-responsive mt-1">
+              <table class="table cmp-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Document</th>
+                    <th style="width: 220px;">Prefix</th>
+                    <th style="width: 160px;">Next No</th>
+                    <th style="width: 90px;">Reset</th>
+                    <th style="width: 60px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of numberSeries; let i=index">
+                    <td>
+                      <input class="form-control" [(ngModel)]="r.document" name="doc{{i}}" />
+                    </td>
+                    <td>
+                      <input class="form-control" [(ngModel)]="r.prefix" name="pre{{i}}" />
+                    </td>
+                    <td>
+                      <input class="form-control" type="number" [(ngModel)]="r.nextNo" name="next{{i}}" />
+                    </td>
+                    <td class="text-center">
+                      <input type="checkbox" [(ngModel)]="r.reset" name="reset{{i}}" />
+                    </td>
+                    <td class="text-center">
+                      <button class="btn btn-link text-danger p-0" type="button" (click)="removeNumberRow(i)">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </td>
+                  </tr>
+
+                  <tr *ngIf="numberSeries.length===0">
+                    <td colspan="5" class="text-center text-muted py-2">No rows</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================= INTEGRATIONS ========================= -->
+        <div *ngIf="activeTab==='integrations'" class="cmp-panel">
+          <form [formGroup]="integrationForm" class="cmp-form">
+            <div class="cmp-section">
+              <div class="cmp-section__title">Integrations</div>
+              <div class="cmp-section__sub">Enable / disable connectors</div>
+
+              <div class="cmp-toggle-card mt-1" [class.on]="integrationForm.value.whatsapp">
+                <div>
+                  <div class="cmp-toggle-card__t">WhatsApp</div>
+                  <div class="cmp-toggle-card__s">Send invoice / reminders via WhatsApp</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" formControlName="whatsapp">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="cmp-toggle-card mt-1" [class.on]="integrationForm.value.smtp">
+                <div>
+                  <div class="cmp-toggle-card__t">Email (SMTP)</div>
+                  <div class="cmp-toggle-card__s">Email PDF invoices / statements</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" formControlName="smtp">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="cmp-toggle-card mt-1">
+                <div>
+                  <div class="cmp-toggle-card__t">OCR</div>
+                  <div class="cmp-toggle-card__s">Scan supplier invoice → auto lines</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" formControlName="ocr">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+           
+
+            </div>
+          </form>
+        </div>
+
+        <!-- ========================= AUDIT ========================= -->
+        <div *ngIf="activeTab==='audit'" class="cmp-panel">
+          <div class="cmp-section">
+            <div class="cmp-section__title">Audit</div>
+            <div class="cmp-section__sub">Track updates</div>
+
+            <div class="row g-2 mt-1">
+              <div class="col-md-6">
+                <div class="cmp-info">
+                  <div class="cmp-info__k">Last Updated By</div>
+                  <div class="cmp-info__v">{{ lastUpdatedBy || '—' }}</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="cmp-info">
+                  <div class="cmp-info__k">Last Updated At</div>
+                  <div class="cmp-info__v">{{ lastUpdatedAt || '—' }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cmp-subcard mt-2">
+              <div class="cmp-subcard__title">Audit Trail</div>
+              <div class="cmp-subcard__sub">Show change logs per field</div>
+
+              <div class="table-responsive mt-1">
+                <table class="table cmp-table mb-0">
+                  <thead>
+                    <tr>
+                      <th style="width: 180px;">Date</th>
+                      <th style="width: 220px;">User</th>
+                      <th>Change</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let a of auditTrail">
+                      <td>{{ a.date }}</td>
+                      <td><b>{{ a.user }}</b></td>
+                      <td>{{ a.change }}</td>
+                    </tr>
+
+                    <tr *ngIf="auditTrail.length===0">
+                      <td colspan="3" class="text-center text-muted py-2">No logs</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM FIXED ACTIONS -->
+      <div class="cmp-bottom-actions">
+        <button type="button"
+                class="btn btn-outline-secondary cmp-btn-prev"
+                (click)="goPrev()"
+                [disabled]="isFirstTab()">
+          <i class="fas fa-arrow-left me-50"></i> Previous
+        </button>
+
+        <!-- Next for normal tabs -->
+        <button *ngIf="!isLastTab()"
+                type="button"
+                class="btn btn-primary cmp-btn-next"
+                (click)="goNext()">
+          Next <i class="fas fa-arrow-right ms-50"></i>
+        </button>
+
+        <!-- Save on last tab (Audit) -->
+        <button *ngIf="isLastTab()"
+                type="button"
+                class="btn btn-primary cmp-btn-next"
+                (click)="save()">
+          <i class="fas fa-save me-50"></i> Save
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

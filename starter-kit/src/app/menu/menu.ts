@@ -46,6 +46,7 @@ export const menu: any[] = [
   { id: 'uom', title: 'UOM', type: 'item', icon: 'circle', url: '/master/uom', approvalRoles: ['Admin', 'Super Admin'] },
   { id: 'vehicle', title: 'Vehicle', type: 'item', icon: 'circle', url: '/master/vehicle', approvalRoles: ['Admin', 'Super Admin'] },
   { id: 'warehouse', title: 'Warehouse', type: 'item', icon: 'circle', url: '/master/warehouse', approvalRoles: ['Admin', 'Super Admin'] },
+   { id: 'company', title: 'Company', type: 'item', icon: 'circle', url: '/master/company', approvalRoles: ['Admin', 'Super Admin'] },
 ]
   },
  {

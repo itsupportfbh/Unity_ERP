@@ -46,6 +46,8 @@ import { BankComponent } from './bank/create-bank/bank.component';
 import { ListBankComponent } from './bank/list-bank/list-bank.component';
 import { ItemsetComponent } from './itemset/itemset.component';
 import { ItemTypeComponent } from './item-type/item-type.component';
+import { CompanyListComponent } from './company/company-list/company-list.component';
+import { CompanyCreateComponent } from './company/company-create/company-create.component';
 
 const routes: Routes = [
   { path: 'approval-level', component: ApprovalLevelComponent },
@@ -76,20 +78,20 @@ const routes: Routes = [
   { path: 'stockIssue', component: StockIssueComponent },
   { path: 'bin', component: BinComponent },
   { path: 'itemSet', component: ItemsetComponent },
-   { path: 'itemType', component: ItemTypeComponent },
-    { path: 'driver', component: DriverComponent },
-    { path: 'vehicle', component: VehicleComponent },
-    { path: 'bank', component: BankComponent },
-     { path: 'bank-list', component: ListBankComponent },
-      { path: 'bank/edit/:id', component: BankComponent },
-
+  { path: 'itemType', component: ItemTypeComponent },
+  { path: 'driver', component: DriverComponent },
+  { path: 'vehicle', component: VehicleComponent },
+  { path: 'bank', component: BankComponent },
+  { path: 'bank-list', component: ListBankComponent },
+  { path: 'bank/edit/:id', component: BankComponent },
+  { path: 'company', component: CompanyCreateComponent },
 ];
 
 @NgModule({
   declarations: [ApprovalLevelComponent, CountriesComponent, CitiesComponent, UomComponent, IncotermsComponent, FlagissueComponent, PaymentTermsComponent, CurrencyComponent,
     StatesComponent, ServiceComponent, CustomerGroupsComponent, SupplierGroupsComponent, LocationComponent, CreateLocationComponent,
     RegionsComponent, DeductionsComponent, IncomeComponent, DepartmentComponent, ItemsComponent, CreateitemsidebarComponent, WarehouseListComponent, WarehouseCreateComponent, RecurringComponent, TaxcodeComponent, CatagoryComponent, CoastingMethodComponent, StrategyComponent,
-    StockIssueComponent, BinComponent, DriverComponent,VehicleComponent, BankComponent, ListBankComponent, ItemsetComponent, ItemTypeComponent
+    StockIssueComponent, BinComponent, DriverComponent,VehicleComponent, BankComponent, ListBankComponent, ItemsetComponent, ItemTypeComponent, CompanyListComponent, CompanyCreateComponent
   ],
   imports: [
     CommonModule,

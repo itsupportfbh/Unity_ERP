@@ -125,6 +125,8 @@ interface BomInlineRow {
   supplierName: string | null;
   existingCost: number;
   unitCost: number | null;
+  percentage: number | null;
+  sellingPrice: number | null;
 }
 interface BomTotals {
   rollup: number;
@@ -147,6 +149,7 @@ type Snap = SnapEmpty | SnapArray | SnapObject;
 })
 export class CreateItemMasterComponent implements OnInit {
   /* Steps */
+  private bomCalcLock = false;
   costingName = '';
   taxName = '';
 
@@ -481,7 +484,9 @@ export class CreateItemMasterComponent implements OnInit {
       supplierId: r.supplierId,
       supplierName: r.supplierName,
       existingCost: Number(r.existingCost || 0),
-      unitCost: Number(((r.unitCost ?? r.existingCost) || 0))
+      unitCost: Number(((r.unitCost ?? r.existingCost) || 0)),
+      percentage: Number(r.percentage ?? 0),
+  sellingPrice: Number(r.sellingPrice ?? 0)
     }));
 
     const pricesPayload = (this.prices ?? [])
@@ -936,40 +941,71 @@ export class CreateItemMasterComponent implements OnInit {
     }
   }
 
-  private populateFromSnapshot(snap: BomSnapshot) {
-    const latest = Array.isArray(snap?.latest) ? snap.latest : [];
-    const history = Array.isArray(snap?.history) ? snap.history : [];
+private populateFromSnapshot(snap: BomSnapshot) {
+  const latest = Array.isArray(snap?.latest) ? snap.latest : [];
+  const history = Array.isArray(snap?.history) ? snap.history : [];
 
-    this.bomHistoryBySupplier.clear();
-    for (const h of history) {
-      const sid = Number((h as any).supplierId ?? 0);
-      if (!sid) continue;
-      const point: BomHistoryPoint = {
-        supplierId: sid,
-        supplierName: (h as any).supplierName ?? '',
-        existingCost: Number((h as any).existingCost ?? 0),
-        unitCost: Number((h as any).unitCost ?? (h as any).existingCost ?? 0),
-        createdDate: (h as any).createdDate,
-        rn: (h as any).rn
-      };
-      const arr = this.bomHistoryBySupplier.get(sid) ?? [];
-      arr.push(point);
-      this.bomHistoryBySupplier.set(sid, arr);
-    }
+  // ---------------------------
+  // 1) Build history map
+  // ---------------------------
+  this.bomHistoryBySupplier.clear();
 
-    if (latest.length) {
-      this.bomRows = latest.map((r: any) => ({
-        supplierId: Number(r.supplierId ?? 0) || null,
-        supplierName: r.supplierName || '—',
-        existingCost: Number(r.existingCost ?? 0),
-        unitCost: Number(r.unitCost ?? r.existingCost ?? 0)
-      }));
-      this.recomputeBomTotalsInline();
-    } else {
-      this.syncBomFromPrices();
-    }
+  for (const h of history) {
+    const sid = Number((h as any).supplierId ?? 0);
+    if (!sid) continue;
+
+    const point: BomHistoryPoint = {
+      supplierId: sid,
+      supplierName: (h as any).supplierName ?? '',
+      existingCost: Number((h as any).existingCost ?? 0),
+      unitCost: Number((h as any).unitCost ?? (h as any).existingCost ?? 0),
+      createdDate: (h as any).createdDate,
+      rn: (h as any).rn
+    };
+
+    const arr = this.bomHistoryBySupplier.get(sid) ?? [];
+    arr.push(point);
+    this.bomHistoryBySupplier.set(sid, arr);
   }
 
+  // ---------------------------
+  // 2) Build latest rows
+  // ---------------------------
+  if (latest.length) {
+    this.bomRows = latest.map((r: any) => {
+      const existingCost = Number(r.existingCost ?? 0);
+      const unitCost = Number(r.unitCost ?? r.existingCost ?? 0);
+
+      const pct = (r.percentage != null) ? Number(r.percentage) : 0;
+
+      // sellingPrice: if API has -> use, else compute from base
+      const sell = (r.sellingPrice != null)
+        ? Number(r.sellingPrice)
+        : this.round2(existingCost * (1 + pct / 100));
+
+      return {
+        supplierId: Number(r.supplierId ?? 0) || null,
+        supplierName: r.supplierName || '—',
+        existingCost,
+        unitCost,
+        percentage: pct,
+        sellingPrice: sell
+      } as BomInlineRow;
+    });
+
+    // ✅ IMPORTANT: ensure existingCost is not 0 (fallback to latest history chip or unitCost)
+    this.bomRows = (this.bomRows || []).map(r => {
+      const base = this.getBomBaseCost(r);   // uses existingCost -> unitCost -> history chip
+      return { ...r, existingCost: base };
+    });
+
+    // ✅ recompute totals
+    this.recomputeBomTotalsInline();
+  } else {
+    // fallback
+    this.syncBomFromPrices();
+  }
+}
   private populateHistoryFromFlatRows(rows: ItemBomRow[]) {
     this.bomHistoryBySupplier.clear();
     const toPoint = (r: ItemBomRow): BomHistoryPoint => ({
@@ -989,47 +1025,76 @@ export class CreateItemMasterComponent implements OnInit {
     }
   }
 
-  private deriveLatestFromFlatRows(rows: ItemBomRow[]) {
-    const bySup = new Map<number, ItemBomRow>();
-    for (const r of rows) {
-      const sid = Number(r.supplierId || 0);
-      const prev = bySup.get(sid);
-      if (!prev || new Date(r.createdDate) > new Date(prev.createdDate)) bySup.set(sid, r);
-    }
+private deriveLatestFromFlatRows(rows: ItemBomRow[]) {
+  const bySup = new Map<number, ItemBomRow>();
+  for (const r of rows) {
+    const sid = Number(r.supplierId || 0);
+    const prev = bySup.get(sid);
+    if (!prev || new Date(r.createdDate) > new Date(prev.createdDate)) bySup.set(sid, r);
+  }
 
-    this.bomRows = Array.from(bySup.values()).map(r => ({
+  this.bomRows = Array.from(bySup.values()).map(r => {
+    const existingCost = Number(r.existingCost ?? 0);
+    const unitCost = Number(r.unitCost ?? r.existingCost ?? 0);
+
+    // flat row maybe not having pct/selling => derive
+    const pct = (r as any).percentage != null ? Number((r as any).percentage) : 0;
+    const sell = (r as any).sellingPrice != null
+      ? Number((r as any).sellingPrice)
+      : this.round2(existingCost * (1 + pct / 100));
+
+    return {
       supplierId: r.supplierId,
       supplierName: this.supplierList.find(s => String(s.id) === String(r.supplierId))?.name ?? '—',
-      existingCost: Number(r.existingCost ?? 0),
-      unitCost: Number(r.unitCost ?? r.existingCost ?? 0)
-    }));
-    this.recomputeBomTotalsInline();
+      existingCost,
+      unitCost,
+      percentage: pct,
+      sellingPrice: sell
+    } as BomInlineRow;
+  });
+
+  this.recomputeBomTotalsInline();
+}
+
+syncBomFromPrices(opts: { preserveUnitCost?: boolean } = { preserveUnitCost: true }): void {
+  const preserve = opts.preserveUnitCost !== false;
+  const norm = (s: any) => String(s ?? '').trim().toLowerCase();
+
+  const prevByKey = new Map<string, BomInlineRow>();
+  for (const r of this.bomRows || []) {
+    const key = `${String(r.supplierId ?? '')}::${norm(r.supplierName)}`;
+    prevByKey.set(key, r);
   }
 
-  syncBomFromPrices(opts: { preserveUnitCost?: boolean } = { preserveUnitCost: true }): void {
-    const preserve = opts.preserveUnitCost !== false;
-    const norm = (s: any) => String(s ?? '').trim().toLowerCase();
-    const prevByKey = new Map<string, BomInlineRow>();
-    for (const r of this.bomRows || []) {
-      const key = `${String(r.supplierId ?? '')}::${norm(r.supplierName)}`;
-      prevByKey.set(key, r);
-    }
+  const next: BomInlineRow[] = (this.prices || [])
+    .filter(p => p.price != null)
+    .map(p => {
+      const supplierId = p.SupplierId ?? null;
+      const supplierName = p.supplierName ?? null;
+      const existingCost = Number(p.price || 0);
 
-    const next: BomInlineRow[] = (this.prices || [])
-      .filter(p => p.price != null)
-      .map(p => {
-        const supplierId = p.SupplierId ?? null;
-        const supplierName = p.supplierName ?? null;
-        const existingCost = Number(p.price || 0);
-        const key = `${String(supplierId ?? '')}::${norm(supplierName)}`;
-        const prev = prevByKey.get(key);
-        const unitCost = preserve && prev && prev.unitCost != null ? Number(prev.unitCost) : existingCost;
-        return { supplierId, supplierName, existingCost, unitCost };
-      });
+      const key = `${String(supplierId ?? '')}::${norm(supplierName)}`;
+      const prev = prevByKey.get(key);
 
-    this.bomRows = next;
-    this.recomputeBomTotalsInline();
-  }
+      const unitCost = preserve && prev && prev.unitCost != null ? Number(prev.unitCost) : existingCost;
+
+      // ✅ NEW: keep old values if exist else auto
+      const percentage = prev?.percentage ?? 0;
+      const sellingPrice = prev?.sellingPrice ?? this.round2(existingCost * (1 + Number(percentage || 0) / 100));
+
+      return {
+        supplierId,
+        supplierName,
+        existingCost,
+        unitCost,
+        percentage,
+        sellingPrice
+      } as BomInlineRow;
+    });
+
+  this.bomRows = next;
+  this.recomputeBomTotalsInline();
+}
 
   recomputeBomTotalsInline(): void {
     const roll = (this.bomRows || []).reduce((sum, r) => sum + Number(r.unitCost || 0), 0);
@@ -1266,7 +1331,7 @@ export class CreateItemMasterComponent implements OnInit {
   }
 
   addBomRow(): void {
-    this.bomRows = [...this.bomRows, { supplierId: null, supplierName: null, existingCost: 0, unitCost: null }];
+    this.bomRows = [...this.bomRows, { supplierId: null, supplierName: null, existingCost: 0, unitCost: null,percentage:0,sellingPrice:0}];
     this.recomputeBomTotalsInline();
   }
   removeBomRow(i: number): void {
@@ -1594,4 +1659,59 @@ export class CreateItemMasterComponent implements OnInit {
   }
 
   trackByIdx = (i: number) => i;
+
+ private round2(n: any) {
+  const x = Number(n);
+  if (!isFinite(x)) return 0;
+  return Math.round(x * 100) / 100;
+}
+private round4(n: any) {
+  const x = Number(n);
+  if (!isFinite(x)) return 0;
+  return Math.round(x * 10000) / 10000;
+}
+
+onBomPctChange(i: number) {
+  if (this.bomCalcLock) return;
+  const r = this.bomRows?.[i];
+  if (!r) return;
+
+  const base = this.getBomBaseCost(r);
+  const pct = Number(r.percentage ?? 0);
+
+  this.bomCalcLock = true;
+  try {
+    r.sellingPrice = this.round2(base * (1 + pct / 100));
+    this.recomputeBomTotalsInline();
+  } finally {
+    this.bomCalcLock = false;
+  }
+}
+onBomSellingChange(i: number) {
+  if (this.bomCalcLock) return;
+  const r = this.bomRows?.[i];
+  if (!r) return;
+
+  const base = this.getBomBaseCost(r);
+  const sell = Number(r.sellingPrice ?? 0);
+
+  this.bomCalcLock = true;
+  try {
+    r.percentage = base > 0 ? this.round4(((sell - base) / base) * 100) : 0;
+    this.recomputeBomTotalsInline();
+  } finally {
+    this.bomCalcLock = false;
+  }
+}
+private getBomBaseCost(r: BomInlineRow): number {
+  const ex = Number(r.existingCost ?? 0);
+  if (ex > 0) return ex;
+
+  const uc = Number(r.unitCost ?? 0);
+  if (uc > 0) return uc;
+
+  const hist = this.getLast3CostsForSupplier(r.supplierId);
+  const last = Number(hist?.[0]?.value ?? 0);
+  return last > 0 ? last : 0;
+}
 }

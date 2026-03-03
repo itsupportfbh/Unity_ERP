@@ -449,108 +449,133 @@
       </div>
 
       <!-- STEP 3: BOM (EDIT) -->
-      <div *ngIf="isEdit && step === 3" class="rounded-xl border p-2 prl-card-allow-overflow">
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-2">
-            <h3 class="text-sm font-semibold text-gray-800">Bill of Materials</h3>
-            <span class="text-xs text-gray-500">for</span>
-            <span class="text-sm font-semibold text-[#0e3a4c]">{{ item?.name || '-' }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <!-- optional BOM actions -->
-          </div>
-        </div>
+<div *ngIf="isEdit && step === 3" class="rounded-xl border p-2 prl-card-allow-overflow">
+  <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center gap-2">
+      <h3 class="text-sm font-semibold text-gray-800">Bill of Materials</h3>
+      <span class="text-xs text-gray-500">for</span>
+      <span class="text-sm font-semibold text-[#0e3a4c]">{{ item?.itemName || item?.name || '-' }}</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="px-3 py-2 rounded-lg border" (click)="addBomRow()">
+        <i class="fa fa-plus mr-1"></i> Add
+      </button>
+    </div>
+  </div>
 
-        <div class="rounded-xl border prl-table-overflow">
-          <table class="w-full text-sm">
-            <thead class="bg-[#0e3a4c] text-white">
-              <tr>
-                <th class="px-3 py-2 text-left">#</th>
-                <th class="px-3 py-2 text-left">Supplier</th>
-                <th class="px-3 py-2 text-right">Existing Cost</th>
-                <th class="px-3 py-2 text-right">Unit Cost</th>
-                <th class="px-3 py-2 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let r of bomRows; let i=index; trackBy: trackByIdx" class="border-b">
-                <td class="px-3 py-2">{{ i + 1 }}</td>
-                <td class="px-3 py-2">
-                  <div class="text-sm">{{ r.supplierName || '—' }}</div>
-                </td>
-                <td class="px-3 py-2">
-                  <!-- get the ARRAY; don't take .length here -->
-                  <ng-container *ngIf="(getLast3CostsForSupplier(r.supplierId) || []) as last3">
-                    <div class="flex flex-wrap gap-1 items-center" *ngIf="last3.length; else noHist">
-                      <!-- Chips -->
-                      <ng-container *ngFor="let h of last3; let idx = index">
-                        <span
-                          class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap"
-                          [ngClass]="isCurrentCost(r.unitCost, h.value) ? 'text-white' : 'text-slate-900'" [ngStyle]="isCurrentCost(r.unitCost, h.value)
+  <div class="rounded-xl border prl-table-overflow">
+    <table class="w-full text-sm">
+      <thead class="bg-[#0e3a4c] text-white">
+        <tr>
+          <th class="px-3 py-2 text-left w-[50px]">#</th>
+          <th class="px-3 py-2 text-left">Supplier</th>
+          <th class="px-3 py-2 text-right">Existing Cost</th>
+          <th class="px-3 py-2 text-right w-[160px]">Percentage</th>
+          <th class="px-3 py-2 text-right w-[180px]">Selling Price</th>
+          <th class="px-3 py-2 text-right w-[160px]">Unit Cost</th>
+          <th class="px-3 py-2 text-left w-[120px]">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let r of bomRows; let i=index; trackBy: trackByIdx" class="border-b">
+          <td class="px-3 py-2">{{ i + 1 }}</td>
+
+<td class="px-3 py-2">
+  <div class="text-sm font-medium whitespace-normal break-words">
+    {{ r.supplierName || '—' }}
+  </div>
+</td>
+
+          <!-- Existing cost chips -->
+          <td class="px-3 py-2">
+            <ng-container *ngIf="(getLast3CostsForSupplier(r.supplierId) || []) as last3">
+              <div class="flex flex-wrap gap-1 items-center" *ngIf="last3.length; else noHist">
+                <ng-container *ngFor="let h of last3">
+                  <span
+                    class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap"
+                    [ngClass]="isCurrentCost(r.unitCost, h.value) ? 'text-white' : 'text-slate-900'"
+                    [ngStyle]="isCurrentCost(r.unitCost, h.value)
                       ? {'background':'#2E5F73','border-color':'#2E5F73'}
-                      : {'background':'#f8fafc','border-color':'#cbd5e1'}"
-                          [title]="isCurrentCost(r.unitCost, h.value) ? 'Current price' : 'Previous price'">
+                      : {'background':'#f8fafc','border-color':'#cbd5e1'}">
 
-                          <i *ngIf="isCurrentCost(r.unitCost, h.value)" class="fas fa-star text-[10px] mr-1"
-                            aria-hidden="true"></i>
+                    <i *ngIf="isCurrentCost(r.unitCost, h.value)" class="fas fa-star text-[10px] mr-1"></i>
+                    {{ h.value | number:'1.2-4' }}
+                    <small class="ml-1 text-[10px]"
+                      [ngStyle]="{'color': isCurrentCost(r.unitCost, h.value) ? 'rgba(255,255,255,.9)' : '#64748b'}">
+                      {{ h.when | date:'yy-MM-dd' }}
+                    </small>
+                  </span>
+                </ng-container>
+              </div>
+            </ng-container>
 
-                          {{ h.value | number:'1.2-4' }}
-                          <small class="ml-1 text-[10px]"
-                            [ngStyle]="{'color': isCurrentCost(r.unitCost, h.value) ? 'rgba(255,255,255,.9)' : '#64748b'}">
-                            {{ h.when | date:'yy-MM-dd' }}
-                          </small>
-                        </span>
+            <ng-template #noHist>
+              <span class="text-gray-400 text-xs">No history</span>
+            </ng-template>
+          </td>
 
-                        <!-- Delta badge only next to current (vs previous) -->
-                        <ng-container *ngIf="isCurrentCost(r.unitCost, h.value) && last3.length > 1">
-                          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ml-1"
-                            [ngStyle]="deltaColorStyle(deltaVsPrev(r.supplierId, r.unitCost))"
-                            [title]="deltaVsPrev(r.supplierId, r.unitCost).tooltip">
-                            <i class="fas mr-1 text-[10px]"
-                              [class.fa-arrow-up]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'up'"
-                              [class.fa-arrow-down]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'down'"
-                              [class.fa-minus]="deltaVsPrev(r.supplierId, r.unitCost).dir === 'flat'"></i>
-                            {{ deltaVsPrev(r.supplierId, r.unitCost).abs | number:'1.2-4' }}
-                            <small class="ml-1 text-[10px]">
-                              ({{ deltaVsPrev(r.supplierId, r.unitCost).pct | number:'1.0-2' }}%)
-                            </small>
-                          </span>
-                        </ng-container>
-                      </ng-container>
-                    </div>
-                  </ng-container>
+          <!-- ✅ Percentage -->
+          <td class="px-3 py-2">
+            <input
+              type="number"
+              class="w-full rounded-xl border px-3 py-2 text-sm text-right"
+              [(ngModel)]="r.percentage"
+              name="bom-pct-{{i}}"
+              min="0"
+              step="0.01"
+              (input)="onBomPctChange(i)"
+              placeholder="0" />
+          </td>
 
-                  <ng-template #noHist>
-                    <span class="text-gray-400 text-xs">No history</span>
-                  </ng-template>
-                </td>
+          <!-- ✅ Selling Price -->
+          <td class="px-3 py-2">
+            <input
+              type="number"
+              class="w-full rounded-xl border px-3 py-2 text-sm text-right"
+              [(ngModel)]="r.sellingPrice"
+              name="bom-sell-{{i}}"
+              min="0"
+              step="0.01"
+              (input)="onBomSellingChange(i)"
+              placeholder="0" />
+          </td>
 
+          <!-- ✅ Unit Cost (manual editable) -->
+          <td class="px-3 py-2">
+            <input
+              type="number"
+              class="w-full rounded-xl border px-3 py-2 text-sm text-right"
+              [(ngModel)]="r.unitCost"
+              name="bom-unit-{{i}}"
+              min="0"
+              step="0.0001"
+              (input)="recomputeBomTotalsInline()"
+              placeholder="0" />
+          </td>
 
+          <td class="px-3 py-2">
+            <button class="px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50" (click)="removeBomRow(i)">
+              <i class="fa fa-trash mr-1"></i> Remove
+            </button>
+          </td>
+        </tr>
 
-                <td class="px-3 py-2">
-                  <input type="number" class="w-full rounded-xl border px-3 py-2 text-sm" [(ngModel)]="r.unitCost"
-                    name="bom-unit-{{i}}" min="0" step="0.0001" (input)="recomputeBomTotalsInline()" />
-                </td>
-                <td class="px-3 py-2">
-                  <button class="px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50" (click)="removeBomRow(i)">
-                    <i class="fa fa-trash mr-1"></i> Remove
-                  </button>
-                </td>
-              </tr>
+        <tr *ngIf="!bomRows?.length">
+          <td colspan="7" class="px-3 py-6 text-center text-gray-400">
+            No components. (Use prices to seed.)
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-              <tr *ngIf="!bomRows?.length">
-                <td colspan="5" class="px-3 py-6 text-center text-gray-400">No components. (Use prices to seed.)</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="mt-2 flex items-center justify-between">
-          <div class="text-sm text-gray-700">
-            <b>Rolled-up Cost:</b> {{ bomTotals.rollup | number:'1.2-4' }}
-          </div>
-        </div>
-      </div>
+  <div class="mt-2 flex items-center justify-between">
+    <div class="text-sm text-gray-700">
+      <b>Rolled-up Cost:</b> {{ bomTotals.rollup | number:'1.2-4' }}
+    </div>
+  </div>
+</div>
 
       <!-- STEP 4: AUDIT (EDIT) -->
 

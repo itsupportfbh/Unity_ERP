@@ -439,21 +439,17 @@ $brand2: #0e3a4c;
 
 /* 1) QTY column width increase */
 .col-qty{
-  width: 140px;        /* old: 110px */
-  min-width: 140px;    /* important for scroll table */
+  width: 80px;        /* old: 110px */
+  min-width: 80px;    /* important for scroll table */
 }
 
 /* optional: header alignment */
 .soTable th.col-qty,
-.soTable td.col-qty { text-align: right; }
+.soTable td.col-qty { text-align: left; }
 
 /* 2) QTY input bigger + 5 digits visible */
 .soLineInp--qty{
-  width: 120px;        /* input width */
-  min-width: 120px;
-  text-align: right;
-  padding: 10px 14px;  /* little extra */
-  font-variant-numeric: tabular-nums; /* digits same width -> looks clean */
+  width: 130px; min-width: 130px; text-align:right;
 }
 
 /* If you are using same class for all number inputs and want only QTY bigger,

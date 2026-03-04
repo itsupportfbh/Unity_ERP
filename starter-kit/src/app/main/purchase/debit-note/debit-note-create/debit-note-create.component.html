@@ -1,112 +1,133 @@
 <!-- src/app/main/purchase/debit-note/debit-note-create/debit-note-create.component.html -->
+
 <button
-  class="btn mb-1"
-  style="background-color:#2E5F73; color:white;"
+  type="button"
+  class="btn dnBackBtn mb-1"
   (click)="goToDebitNoteList()">
   Go to Debit Note list
 </button>
 
-<div class="space-y-5 ui-compact pr-typography">
-  <div class="bg-white rounded-2xl shadow p-3 border border-gray-100">
-    <h2 class="text-lg font-semibold text-gray-800 mb-3">
-      Debit Note / Returns
-    </h2>
+<div class="dnWrap">
+  <div class="dnCard">
+    <h2 class="dnTitle">Debit Note / Returns</h2>
 
-    <!-- Header grid -->
-    <div [ngClass]="gridColsClass(4)">
-      <!-- Reference -->
-      <div>
-        <label class="text-xs font-medium text-gray-600">
-          Reference (GRN/PIN)
-        </label>
-        <input
-          class="w-full rounded-xl border px-3 py-2 text-sm"
-          [(ngModel)]="referenceNo"
-          placeholder="GRN-00012" />
+    <!-- HEADER ROW (same row like screenshot) -->
+    <div class="dnHdrGrid">
+
+      <!-- GRN # (wide combobox) -->
+      <div class="dnField dnCol--grn grn-combobox">
+        <label class="dnLabel">GRN #</label>
+
+        <div class="dnCombo">
+          <input
+            type="text"
+            class="dnInput dnInput--withCaret"
+            [value]="grnSearch"
+            (input)="onGrnSearch($event)"
+            (focus)="onGrnFocus()"
+            placeholder="Search"
+            [attr.aria-expanded]="grnOpen"
+          />
+
+          <button
+            type="button"
+            class="dnCaretBtn"
+            (click)="grnOpen = !grnOpen"
+            aria-label="Toggle GRN list">
+            <i class="fas fa-chevron-down"></i>
+          </button>
+        </div>
+
+        <!-- Dropdown -->
+        <div *ngIf="grnOpen" class="dnDropdown">
+          <div class="dnDropHead">Choose GRN</div>
+
+          <button
+            type="button"
+            class="dnDropItem"
+            *ngFor="let g of grnFiltered"
+            (click)="toggleGrn(g)">
+            <span class="xNo">{{ g.grnNo }}</span>
+
+            <span class="xPo" *ngIf="g.poNo">
+              <span class="xSep">•</span> PO: {{ g.poNo }}
+            </span>
+
+            <span class="xRight" *ngIf="isGrnSelected(g.id)">
+              <i class="fas fa-check"></i>
+            </span>
+          </button>
+
+          <div *ngIf="!grnFiltered?.length" class="dnDropEmpty">No results</div>
+        </div>
       </div>
 
-      <!-- Supplier (read-only from PIN for now) -->
-      <div>
-        <label class="text-xs font-medium text-gray-600">Supplier</label>
+      <!-- Supplier -->
+      <div class="dnField dnCol--sup">
+        <label class="dnLabel">Supplier</label>
         <input
-          class="w-full rounded-xl border px-3 py-2 text-sm bg-gray-50"
+          class="dnInput dnInput--readonly"
           [value]="supplierDisplay"
-          readonly />
+          readonly
+        />
       </div>
 
       <!-- Reason -->
-      <div>
-        <label class="text-xs font-medium text-gray-600">Reason</label>
-        <select
-          class="w-full rounded-xl border px-3 py-2 text-sm bg-white"
-          [(ngModel)]="reason">
-          <!-- <option value="Rejected goods">Rejected goods</option> -->
-           <option value="Short supply">Short supply</option>
+      <div class="dnField dnCol--reason">
+        <label class="dnLabel">Reason</label>
+        <select class="dnInput" [(ngModel)]="reason">
+          <option value="">Select</option>
+          <option value="Short supply">Short supply</option>
           <option value="Price difference">Price difference</option>
-           <option value="Other">Other</option>
+          <option value="Other">Other</option>
         </select>
       </div>
 
       <!-- Date -->
-      <div>
-        <label class="text-xs font-medium text-gray-600">Date</label>
-        <input
-          type="date"
-          class="w-full rounded-xl border px-3 py-2 text-sm"
-          [(ngModel)]="noteDate" />
+      <div class="dnField dnCol--date">
+        <label class="dnLabel">Date</label>
+        <input type="date" class="dnInput" [(ngModel)]="noteDate" />
       </div>
+
     </div>
 
-    <!-- Lines table -->
-    <div class="overflow-auto border border-gray-200 rounded-xl mt-4">
-      <table class="min-w-full text-sm">
-        <thead class="text-white" style="background-color:#2E5F73">
+    <!-- Lines table (kept your table) -->
+    <div class="dnTableWrap">
+      <table class="dnTable">
+        <thead>
           <tr>
-            <th class="text-left px-3 py-2 font-medium">Item</th>
-            <!-- 👇 renamed to Variance Qty -->
-            <th class="text-left px-3 py-2 font-medium">Variance Qty</th>
-            <th class="text-left px-3 py-2 font-medium">Price</th>
-            <th class="text-left px-3 py-2 font-medium">Remarks</th>
-            <th class="px-3"></th>
+            <th>Item</th>
+            <th>Variance Qty</th>
+            <th>Price</th>
+            <th>Remarks</th>
+            <th class="tRight"></th>
           </tr>
         </thead>
+
         <tbody>
           <tr *ngIf="retRows.length === 0">
-            <td [attr.colspan]="5"
-                class="px-3 py-6 text-center text-gray-400">
-              No lines yet.
-            </td>
+            <td colspan="5" class="dnEmpty">No lines yet.</td>
           </tr>
 
-          <tr *ngFor="let r of retRows; let i = index; trackBy: trackByIndex"
-              class="border-t">
-            <td class="px-3 py-2">
-              <input
-                class="w-full rounded-xl border px-3 py-2 text-sm"
-                [(ngModel)]="retRows[i].item" />
+          <tr *ngFor="let r of retRows; let i = index; trackBy: trackByIndex">
+            <td>
+              <input class="dnCellInput" [(ngModel)]="retRows[i].item" [name]="'item_' + i" />
             </td>
-            <td class="px-3 py-2">
-              <input
-                type="number"
-                class="w-full rounded-xl border px-3 py-2 text-sm"
-                [(ngModel)]="retRows[i].qty" />
+
+            <td>
+              <input type="number" class="dnCellInput" [(ngModel)]="retRows[i].qty" [name]="'qty_' + i" />
             </td>
-            <td class="px-3 py-2">
-              <input
-                type="number"
-                class="w-full rounded-xl border px-3 py-2 text-sm"
-                [(ngModel)]="retRows[i].price" />
+
+            <td>
+              <input type="number" class="dnCellInput" [(ngModel)]="retRows[i].price" [name]="'price_' + i" />
             </td>
-            <td class="px-3 py-2">
-              <input
-                class="w-full rounded-xl border px-3 py-2 text-sm"
-                [(ngModel)]="retRows[i].remarks" />
+
+            <td>
+              <input class="dnCellInput" [(ngModel)]="retRows[i].remarks" [name]="'remarks_' + i" />
             </td>
-            <td class="px-3 py-2 text-right">
-              <button
-                class="px-3 py-2 rounded-xl text-sm font-medium hover:bg-gray-100 border border-transparent"
-                type="button"
-                (click)="retRemoveRow(i)">
+
+            <td class="tRight">
+              <button type="button" class="dnRemoveBtn" (click)="retRemoveRow(i)">
                 Remove
               </button>
             </td>
@@ -114,41 +135,17 @@
         </tbody>
       </table>
 
-      <div class="p-2 border-t bg-gray-50 flex justify-between items-center">
-        <button
-          class="px-3 py-2 rounded-xl text-sm font-medium text-white"
-          type="button"
-          (click)="retAddRow()"
-          [style.backgroundColor]="'#2E5F73'">
-          + Add line
-        </button>
-
-        <div class="pr-3 text-sm font-semibold">
-          Total: {{ totalAmount | number:'1.2-2' }}
-        </div>
+      <div class="dnTableFoot">
+        <button type="button" class="dnAddBtn" (click)="retAddRow()">+ Add line</button>
+        <div class="dnTotal">Total: {{ totalAmount | number:'1.2-2' }}</div>
       </div>
     </div>
 
     <!-- Footer buttons -->
-    <div class="mt-3 flex gap-2 justify-end">
-      <button
-        class="btn btn-outline-secondary"
-        type="button"
-        (click)="goToDebitNoteList()">
-        Cancel
-      </button>
-      <!-- <button
-        class="btn btn-warning"
-        type="button"
-        (click)="save(false)">
-        Save as Draft
-      </button> -->
-      <button
-        class="btn btn-primary"
-        type="button"
-        (click)="save(true)">
-        Post Debit Note
-      </button>
+    <div class="dnActions">
+      <button class="btn btn-outline-secondary" type="button" (click)="goToDebitNoteList()">Cancel</button>
+      <button class="btn btn-primary" type="button" (click)="save(true)">Post Debit Note</button>
     </div>
+
   </div>
 </div>

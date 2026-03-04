@@ -449,7 +449,7 @@
       </div>
 
       <!-- STEP 3: BOM (EDIT) -->
-<div *ngIf="isEdit && step === 3" class="rounded-xl border p-2 prl-card-allow-overflow">
+<!-- <div *ngIf="isEdit && step === 3" class="rounded-xl border p-2 prl-card-allow-overflow">
   <div class="flex items-center justify-between mb-2">
     <div class="flex items-center gap-2">
       <h3 class="text-sm font-semibold text-gray-800">Bill of Materials</h3>
@@ -487,7 +487,6 @@
   </div>
 </td>
 
-          <!-- Existing cost chips -->
           <td class="px-3 py-2">
             <ng-container *ngIf="(getLast3CostsForSupplier(r.supplierId) || []) as last3">
               <div class="flex flex-wrap gap-1 items-center" *ngIf="last3.length; else noHist">
@@ -515,7 +514,7 @@
             </ng-template>
           </td>
 
-          <!-- ✅ Percentage -->
+
           <td class="px-3 py-2">
             <input
               type="number"
@@ -528,7 +527,7 @@
               placeholder="0" />
           </td>
 
-          <!-- ✅ Selling Price -->
+
           <td class="px-3 py-2">
             <input
               type="number"
@@ -541,7 +540,7 @@
               placeholder="0" />
           </td>
 
-          <!-- ✅ Unit Cost (manual editable) -->
+
           <td class="px-3 py-2">
             <input
               type="number"
@@ -575,7 +574,7 @@
       <b>Rolled-up Cost:</b> {{ bomTotals.rollup | number:'1.2-4' }}
     </div>
   </div>
-</div>
+</div> -->
 
       <!-- STEP 4: AUDIT (EDIT) -->
 
@@ -585,7 +584,7 @@
 
       <ng-container *ngIf="item?.id">
 
-        <div *ngIf="isEdit && step === 4" class="aud2">
+        <div *ngIf="isEdit && step === 3" class="aud2">
 
           <!-- header -->
           <div class="aud2-head">

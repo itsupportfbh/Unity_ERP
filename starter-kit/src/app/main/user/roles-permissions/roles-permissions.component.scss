@@ -1,14 +1,18 @@
 /* =========================
-   Roles & Permissions - FIT ALL COLS (NO SCROLL)
+   Roles & Permissions - FULL SCSS
+   (Image-style pill tabs + fit grid clean)
 ========================= */
 
+/* Card */
 .permCardX{
   border: 1px solid #e6edf5;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06) !important;
+  background:#fff;
 }
 
+/* Header */
 .permHdrX{
   padding: 12px 14px;
   background: #ffffff;
@@ -26,52 +30,114 @@
   font-size: 12px;
 }
 
+/* Body */
 .permBodyX{
   padding: 12px 14px 10px;
-  overflow: hidden; /* ✅ no scroll, no overflow */
   background:#fff;
 }
 
-/* Tabs */
-.permTabsWrapX{
-  padding: 0;                 /* ✅ remove extra space */
-  border: 0;
-  background: transparent;
-  margin-bottom: 10px;
+/* Empty state */
+.permEmptyX{
+  padding: 14px 12px;
+  border: 1px dashed #dbe7f2;
+  border-radius: 12px;
+  background: #fbfdff;
+  color:#64748b;
+  font-size: 13px;
+  font-weight: 800;
 }
 
+/* =========================================================
+   ✅ Module Tabs - EXACT Image Style (using your HTML classes)
+========================================================= */
+
+.permTabsWrapX{
+  margin-bottom: 12px;
+}
+
+/* Rounded bar container (like screenshot) */
 .permTabsX{
   display: flex;
+  align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+
+  padding: 10px 12px;
+  border-radius: 999px;
+
+  background: #f4f8fc;
+  border: 1px solid #e3edf6;
+
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+  max-width: 100%;
+
+  /* keep single row */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+
+  scrollbar-width: none; /* Firefox hide */
 }
+
+/* hide scrollbar (Chrome/Edge) */
+.permTabsX::-webkit-scrollbar{ height: 0; }
+
+/* Pill buttons */
 .permTabBtnX{
-  background: #fff;
-  border: 1.5px solid #cfd8e3;   /* ✅ outline */
-  color: #667085;               /* ✅ grey text */
-  font-weight: 800;
-  font-size: 14px;
-  padding: 10px 18px;
-  border-radius: 8px;           /* ✅ cancel button radius */
-  line-height: 1;
-  box-shadow: none;
-  min-width: 120px;             /* optional */
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 44px;
+  padding: 0 18px;
+
+  border-radius: 999px;
+  border: 1px solid transparent;
+
+  background: transparent;
+  color: #64748b;
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: .1px;
+
+  cursor: pointer;
   transition: .15s ease;
+  flex: 0 0 auto;
+  outline: none;
+
+  /* ✅ prevents text joining look */
+  white-space: nowrap;
+  line-height: 1;
 }
+
+/* Hover */
 .permTabBtnX:hover{
-  border-color: #9fb4c5;
-  color: #475467;
-  background: #fff;
+  background: #ffffff;
+  border-color: #d7e6f3;
+  color: #334155;
 }
 
+/* Active pill */
 .permTabBtnX.active{
-   background:#2E5F73;
-  border-color:#2E5F73;
-  color:#fff;
+  background: #0e3a4c;           /* dark teal like image */
+  border-color: rgba(14,58,76,.25);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(14,58,76,.22);
 }
 
-/* Wrapper */
+/* Optional: tighter on small */
+@media (max-width: 1200px){
+  .permTabBtnX{
+    height: 42px;
+    padding: 0 16px;
+    font-size: 15px;
+  }
+}
+
+/* =========================================================
+   Table Wrapper
+========================================================= */
+
 .permTableWrapX{
   border: 1px solid #dfe8f2;
   border-radius: 14px;
@@ -79,11 +145,10 @@
   background: #fff;
 }
 
-/* ✅ Table */
 .permTableX{
   width: 100%;
-  table-layout: fixed;          /* ✅ must */
-  border-collapse: collapse;    /* ✅ grid lines */
+  table-layout: fixed;
+  border-collapse: collapse;
 }
 
 /* Header */
@@ -91,27 +156,26 @@
   background: #f1f7fd;
   color:#0f172a;
   border: 1px solid #dfe8f2;
-  padding: 6px 6px;             /* ✅ tighter */
+  padding: 6px 6px;
   vertical-align: middle;
 }
 
-/* ✅ Function col - make smaller to free space */
+/* Function column */
 .permThFnX{
-  width: 250px;                 /* ✅ reduce (was 340) */
+  width: 250px;
   text-align: left;
   font-size: 12px;
   font-weight: 1000;
   letter-spacing: .2px;
 }
 
-/* ✅ Permission cols - compact to fit all */
+/* Permission columns */
 .permThColX{
-  width: 48px;                  /* ✅ key change */
+  width: 48px;
   text-align: center;
   padding: 6px 2px !important;
 }
 
-/* Header stack */
 .permHeadStackX{
   display:flex;
   flex-direction: column;
@@ -119,7 +183,6 @@
   gap: 4px;
 }
 
-/* ✅ Code pill smaller */
 .permCodePillX{
   min-width: 28px;
   padding: 3px 6px;
@@ -132,7 +195,6 @@
   line-height: 1;
 }
 
-/* ✅ All pill smaller */
 .permAllPillX{
   border: 1px solid #cfe0ee;
   background: #eaf3fb;
@@ -142,16 +204,19 @@
   padding: 2px 7px;
   border-radius: 999px;
   line-height: 1.1;
+  cursor: pointer;
+}
+.permAllPillX:hover{
+  border-color: rgba(46,95,115,.35);
 }
 
 /* Body cells */
 .permTableX tbody td{
   border: 1px solid #e6edf5;
-  padding: 7px 8px;             /* ✅ reduce row height */
+  padding: 7px 8px;
   background: #fff;
 }
 
-/* ✅ Function row text smaller */
 .permFnCellX{
   font-size: 12px;
   font-weight: 800;
@@ -161,13 +226,11 @@
   line-height: 1.2;
 }
 
-/* Permission td */
 .permTdX{
   text-align: center;
   padding: 6px 0 !important;
 }
 
-/* ✅ Checkbox smaller to fit */
 .permChkX{
   width: 16px;
   height: 16px;
@@ -176,10 +239,19 @@
   accent-color: #2E5F73;
 }
 
-/* Hover */
-.permTableX tbody tr:hover td{ background: #fbfdff; }
+.permTableX tbody tr:hover td{
+  background: #fbfdff;
+}
 
-/* Legend bottom */
+.permNoRowX{
+  text-align: center;
+  padding: 12px 10px !important;
+  color:#64748b;
+  font-weight: 800;
+  background:#fbfdff;
+}
+
+/* Legend */
 .permLegendX{
   margin-top: 10px;
   padding: 8px 10px;
@@ -190,12 +262,15 @@
   font-size: 12px;
   font-weight: 700;
 }
-.permLegendX span{ color:#334155; font-weight: 900; }
+.permLegendX span{
+  color:#334155;
+  font-weight: 900;
+}
 
-/* ✅ Safety: prevent parent overflow clipping issues */
+/* Safety */
 .permBodyX, .permTableWrapX{ max-width: 100%; }
 
-/* Optional: ultra-small screens */
+/* Responsive */
 @media (max-width: 1100px){
   .permThFnX{ width: 220px; }
   .permThColX{ width: 44px; }

@@ -1,13 +1,10 @@
 <div class="content-body">
   <section class="users-list-wrapper">
 
-    <!-- ===== Main Card ===== -->
     <div class="card mrq-card">
 
-      <!-- ===== Header Row (Item Master Style) ===== -->
+      <!-- ===== Header ===== -->
       <div class="row mrq-head-row">
-
-        <!-- Left: Title + Show entries -->
         <div class="col-md-6 col-12">
           <h4 class="card-text mrq-head-title">Material Requisition List</h4>
 
@@ -22,11 +19,9 @@
           </div>
         </div>
 
-        <!-- Right: Search + Buttons -->
         <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
           <div class="mrq-right-stack">
 
-            <!-- 1) Search (top-right) -->
             <div class="mrq-right-search">
               <label class="d-flex align-items-center mrq-search-label mb-0">
                 Search:
@@ -39,7 +34,6 @@
               </label>
             </div>
 
-            <!-- 2) Buttons row (right) -->
             <div class="mrq-right-btnrow">
               <button class="btn mrq-btn-outline" type="button" (click)="goStockOverview()">
                 Stock Overview List
@@ -48,13 +42,12 @@
               <button class="btn mrq-btn-outline" type="button" (click)="goStockTransfer()">
                 Stock Transfer List
               </button>
-               <button class="btn mrq-btn-primary" type="button" (click)="goToCreateForm()">
+
+              <button class="btn mrq-btn-primary" type="button" (click)="goToCreateForm()">
                 <i class="fas fa-plus-circle mr-50"></i>
                 <span>New Request</span>
               </button>
             </div>
-
-           
 
           </div>
         </div>
@@ -64,8 +57,9 @@
       <div *ngIf="loading" class="px-3 pb-2 small text-muted">Loading…</div>
       <div *ngIf="errorMsg" class="alert alert-danger mx-3 my-2">{{ errorMsg }}</div>
 
-      <!-- Table -->
+      <!-- ===== TABLE WRAP (Horizontal Scroll) ===== -->
       <div class="mrq-table-shell1">
+
         <ngx-datatable
           class="bootstrap core-bootstrap item-table mrq-table"
           [rows]="filteredRows"
@@ -73,14 +67,14 @@
           [headerHeight]="48"
           [footerHeight]="48"
           [limit]="pageSize"
-          [columnMode]="'force'"
-          [scrollbarH]="false"
+          [columnMode]="'standard'"
+          [scrollbarH]="true"
           [reorderable]="true"
           [rowIdentity]="rowIdentity"
           [trackByProp]="'gridKey'">
 
           <!-- REQ NO -->
-          <ngx-datatable-column name="REQ NO" [width]="260">
+          <ngx-datatable-column name="REQ NO" [width]="280" [minWidth]="280">
             <ng-template let-row="row" ngx-datatable-cell-template>
               <div class="mrq-cell-flex">
                 <button
@@ -90,37 +84,54 @@
                   (click)="openViewModal(row, viewModal)">
                   <i class="fas fa-eye"></i>
                 </button>
-                <span class="mrq-reqno">{{ row.reqNo || '-' }}</span>
+
+                <span class="mrq-ellipsis one-line mrq-reqno"
+                      [title]="row.reqNo || '-'">
+                  {{ row.reqNo || '-' }}
+                </span>
               </div>
             </ng-template>
           </ngx-datatable-column>
 
-          <!-- OUTLET -->
-          <ngx-datatable-column name="Warehouse" [width]="220">
+          <!-- WAREHOUSE -->
+          <ngx-datatable-column name="WAREHOUSE" [width]="240" [minWidth]="240">
             <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.outletName ?? '-' }}
+              <span class="mrq-ellipsis one-line" [title]="row.outletName ?? '-'">
+                {{ row.outletName ?? '-' }}
+              </span>
             </ng-template>
           </ngx-datatable-column>
 
           <!-- REQUESTER -->
-          <ngx-datatable-column name="REQUESTER" prop="requesterName" [width]="190"></ngx-datatable-column>
-
-          <!-- TOTAL QTY -->
-          <ngx-datatable-column name="TOTAL QTY" [width]="185">
+          <ngx-datatable-column name="REQUESTER" [width]="210" [minWidth]="210">
             <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.totalQty ?? 0 }}
+              <span class="mrq-ellipsis one-line" [title]="row.requesterName ?? '-'">
+                {{ row.requesterName ?? '-' }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- TOTAL QTY (header cut fix) -->
+          <ngx-datatable-column name="TOTAL QTY" [width]="150" [minWidth]="150">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <span class="mrq-num" [title]="(row.totalQty ?? 0) + ''">
+                {{ row.totalQty ?? 0 }}
+              </span>
             </ng-template>
           </ngx-datatable-column>
 
           <!-- REQ DATE -->
-          <ngx-datatable-column name="REQ DATE" [width]="175">
+          <ngx-datatable-column name="REQ DATE" [width]="160" [minWidth]="160">
             <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.reqDate ? (row.reqDate | date:'yyyy-MM-dd') : '-' }}
+              <span class="mrq-ellipsis one-line"
+                    [title]="row.reqDate ? (row.reqDate | date:'yyyy-MM-dd') : '-'">
+                {{ row.reqDate ? (row.reqDate | date:'yyyy-MM-dd') : '-' }}
+              </span>
             </ng-template>
           </ngx-datatable-column>
 
           <!-- STATUS -->
-          <ngx-datatable-column name="STATUS" [width]="220">
+          <ngx-datatable-column name="STATUS" [width]="260" [minWidth]="260">
             <ng-template let-row="row" ngx-datatable-cell-template>
               <span class="mrq-status-pill" [ngClass]="{
                 'is-pending': row.status === 1,
@@ -129,13 +140,15 @@
                 'is-pending-full': row.status === 4,
                 'is-delivered': row.status === 5
               }">
-                {{ getStatusLabel(row.status) }}
+                <span class="mrq-ellipsis one-line" [title]="getStatusLabel(row.status)">
+                  {{ getStatusLabel(row.status) }}
+                </span>
               </span>
             </ng-template>
           </ngx-datatable-column>
 
           <!-- ACTION -->
-          <ngx-datatable-column name="ACTION" [width]="140" [sortable]="false" [canAutoResize]="false">
+          <ngx-datatable-column name="ACTION" [width]="120" [minWidth]="120" [sortable]="false" [canAutoResize]="false">
             <ng-template ngx-datatable-cell-template let-row="row">
               <button
                 type="button"
@@ -150,9 +163,11 @@
           </ngx-datatable-column>
 
         </ngx-datatable>
-      </div>
 
-     
+        <div class="mrq-total px-2 py-1">
+          {{ filteredRows?.length || 0 }} total
+        </div>
+      </div>
     </div>
 
   </section>
@@ -166,30 +181,39 @@
 
     <!-- Header -->
     <div class="mrq-modal-head">
-      <div class="mrq-modal-titlewrap">
+
+      <div class="mrq-modal-titlewrap mrq-grow">
         <div class="mrq-modal-title">
-          {{ selectedReq?.reqNo || 'Material Requisition' }}
+          <span class="mrq-ellipsis one-line" [title]="selectedReq?.reqNo || 'Material Requisition'">
+            {{ selectedReq?.reqNo || 'Material Requisition' }}
+          </span>
         </div>
 
         <div class="mrq-modal-sub">
           <span class="mrq-kv">
             <span class="k">Outlet</span>
-            <span class="v">{{ selectedReq?.outletName ?? '-' }}</span>
+            <span class="v mrq-ellipsis one-line" [title]="selectedReq?.outletName ?? '-'">
+              {{ selectedReq?.outletName ?? '-' }}
+            </span>
           </span>
 
           <span class="mrq-kv">
             <span class="k">Requester</span>
-            <span class="v">{{ selectedReq?.requesterName ?? '-' }}</span>
+            <span class="v mrq-ellipsis one-line" [title]="selectedReq?.requesterName ?? '-'">
+              {{ selectedReq?.requesterName ?? '-' }}
+            </span>
           </span>
 
           <span class="mrq-kv">
             <span class="k">Date</span>
-            <span class="v">{{ selectedReq?.reqDate ? (selectedReq?.reqDate | date:'yyyy-MM-dd') : '-' }}</span>
+            <span class="v">
+              {{ selectedReq?.reqDate ? (selectedReq?.reqDate | date:'yyyy-MM-dd') : '-' }}
+            </span>
           </span>
         </div>
       </div>
 
-      <div class="mrq-modal-actions">
+      <div class="mrq-modal-actions mrq-fixed">
         <span class="mrq-status-badge" [ngClass]="{
           'is-pending': selectedReq?.status === 1,
           'is-pending-partial': selectedReq?.status === 2,
@@ -197,58 +221,81 @@
           'is-pending-full': selectedReq?.status === 4,
           'is-delivered': selectedReq?.status === 5
         }">
-          {{ getStatusLabel(selectedReq?.status) }}
+          <span class="mrq-ellipsis one-line" [title]="getStatusLabel(selectedReq?.status)">
+            {{ getStatusLabel(selectedReq?.status) }}
+          </span>
         </span>
 
         <button type="button" class="mrq-xbtn" aria-label="Close" (click)="dismiss('x')">
           <i class="fas fa-times"></i>
         </button>
       </div>
+
     </div>
 
     <!-- Body -->
-    <div class="mrq-modal-body">
-      <div class="mrq-items-card">
-        <div class="mrq-items-head">
-          <div class="mrq-items-head-left">
-            <i class="fas fa-box-open"></i>
-            <span>Items</span>
-          </div>
+<!-- Body -->
+<!-- Body -->
+<div class="mrq-modal-body">
+  <div class="mrq-items-card">
 
-          <div class="mrq-items-count">
-            {{ selectedReq?.lines?.length || 0 }} item(s)
-          </div>
-        </div>
+    <div class="mrq-items-head">
+      <div class="mrq-items-head-left">
+        <i class="fas fa-box-open"></i>
+        <span>Items</span>
+      </div>
 
-        <div class="mrq-items-table">
-          <table class="table table-sm mb-0">
-            <thead class="mrq-thead">
-              <tr>
-                <th class="col-code">ITEM CODE</th>
-                <th>ITEM NAME</th>
-                <th class="col-uom">UOM</th>
-                <th class="col-qty text-right">QTY</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr *ngFor="let l of selectedReq?.lines">
-                <td class="cell-code">{{ l.itemCode || '-' }}</td>
-                <td class="cell-name">{{ l.itemName || '-' }}</td>
-                <td class="cell-uom">{{ l.uomName || '-' }}</td>
-                <td class="cell-qty text-right">{{ l.qty ?? 0 }}</td>
-              </tr>
-
-              <tr *ngIf="(selectedReq?.lines?.length ?? 0) === 0">
-                <td colspan="4" class="text-center text-muted py-4">No items</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
+      <div class="mrq-items-count">
+        {{ selectedReq?.lines?.length || 0 }} item(s)
       </div>
     </div>
 
+    <!-- TABLE -->
+    <div class="mrq-items-tableWrap">
+      <table class="mrq-items-table">
+        <thead>
+          <tr>
+            <th class="col-code">ITEM CODE</th>
+            <th class="col-name">ITEM NAME</th>
+            <th class="col-uom">UOM</th>
+            <th class="col-qty">QTY</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let l of selectedReq?.lines">
+            <td class="col-code">
+              <span class="cell-ellipsis one-line" [title]="l.itemCode || '-'">
+                {{ l.itemCode || '-' }}
+              </span>
+            </td>
+
+            <td class="col-name">
+              <span class="cell-ellipsis one-line" [title]="l.itemName || '-'">
+                {{ l.itemName || '-' }}
+              </span>
+            </td>
+
+            <td class="col-uom">
+              <span class="cell-ellipsis one-line" [title]="l.uomName || '-'">
+                {{ l.uomName || '-' }}
+              </span>
+            </td>
+
+            <td class="col-qty">
+              {{ l.qty ?? 0 }}
+            </td>
+          </tr>
+
+          <tr *ngIf="(selectedReq?.lines?.length ?? 0) === 0">
+            <td colspan="4" class="mrq-emptyRow">No items</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
     <!-- Footer -->
     <div class="mrq-modal-foot">
       <button class="btn mrq-btn-outline" (click)="close('ok')">

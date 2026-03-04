@@ -103,20 +103,52 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
     });
   }
 
-  private loadBin(): void {
-    this.binService.getAllBin().subscribe((res: any) => {
-      const raw = Array.isArray(res?.data) ? res.data : [];
-      this.binList = raw
-        .filter((x: any) => x.isActive === true)
-        .map((x: any) => ({
-          id: x.id,
-          binName: x.binName ?? x.name ?? `Bin ${x.id}`,
-          code: x.code,
-          isActive: x.isActive
-        }));
-      setTimeout(() => (window as any).feather?.replace?.(), 0);
-    });
+
+  private setSelectedBinsFromWarehouse(): void {
+  const binRaw =
+    this.passData?.binID ??
+    this.passData?.BinID ??
+    this.passData?.binIds;
+
+  if (typeof binRaw === 'string') {
+    this.selectedBinIds = binRaw
+      .split(',')
+      .map((s: string) => Number(s.trim()))
+      .filter((n: number) => Number.isFinite(n));
+  } else if (Array.isArray(binRaw)) {
+    this.selectedBinIds = binRaw.map((x: any) => Number(x)).filter((n: number) => Number.isFinite(n));
+  } else {
+    this.selectedBinIds = [];
   }
+}
+
+private loadBin(): void {
+  this.binService.getAllBin().subscribe((res: any) => {
+    const raw = Array.isArray(res?.data) ? res.data : [];
+    const mustInclude = new Set((this.selectedBinIds ?? []).map(n => Number(n))); // selected IDs
+
+    this.binList = raw
+      // ✅ do NOT filter only active
+      .map((x: any) => {
+        const id = Number(x.id);
+        const isActive = x.isActive === true;
+
+        return {
+          id,
+          binName: x.binName ?? x.name ?? `Bin ${id}`,
+          code: x.code,
+          isActive,
+          // ✅ keep inactive bins but mark disabled if you want
+          disabled: !isActive && !mustInclude.has(id)
+        };
+      })
+      // ✅ optional: remove fully inactive bins except selected ones
+      .filter((b: any) => b.isActive === true || mustInclude.has(b.id));
+
+    // ✅ now force selection refresh (ng-select re-check)
+    this.selectedBinIds = [...(this.selectedBinIds ?? [])];
+  });
+}
    private loadLocation(): void {
     this._locationService.getLocationDetails().subscribe((res: any) => {
       const raw = Array.isArray(res?.data) ? res.data : [];
@@ -155,57 +187,35 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
   }
 
   /** Hydrate UI based on passData (edit) or reset for create */
-  private loadData(): void {
-    if (!this.countryList.length || !this.stateList.length || !this.cityList.length) return;
+private loadData(): void {
+  if (this.passData && this.passData.id) {
+    this.isEdit = true;
 
-    if (this.passData && this.passData.id) {
-      this.isEdit = true;
+    this.name        = this.passData.name ?? null;
+    this.phone       = this.passData.phone ?? null;
+    this.address     = this.passData.address ?? null;
+    this.description = this.passData.description ?? null;
+    this.locationId  = this.passData.locationId ?? null;
 
-      this.name        = this.passData.name ?? null;
-      this.phone       = this.passData.phone ?? null;
-      this.address     = this.passData.address ?? null;
-      this.description = this.passData.description ?? null;
+    // ✅ selected ids set from warehouse response
+    this.setSelectedBinsFromWarehouse();
 
-      // this.countryId = this.passData.countryId ?? null;
-      // this.onCountryChange(this.countryId);
-
-      // this.stateId = this.passData.stateId ?? null;
-      // this.onStateChange(this.stateId);
-
-      // this.cityId = this.passData.cityId ?? null;
-      this.locationId = this.passData.locationId ?? null;
-
-      // --- KEY: hydrate bins from backend ---
-      // Backend sends BinID as CSV (e.g., "1,3,4")
-      if (typeof this.passData?.BinID === 'string') {
-        this.selectedBinIds = this.passData.BinID
-          .split(',')
-          .map((s: string) => Number(s.trim()))
-          .filter((n: number) => Number.isFinite(n));
-      } else if (Array.isArray(this.passData?.binIds)) {
-        // fallback if backend sometimes returns array
-        this.selectedBinIds = [...this.passData.binIds];
-      } else {
-        this.selectedBinIds = [];
-      }
-
-      Promise.resolve().then(() => {
-        this.newWarehouseForm?.resetForm({
-          name: this.name,
-          // countryId: this.countryId,
-          // stateId: this.stateId,
-          // cityId: this.cityId,
-          locationId: this.locationId,
-          phone: this.phone,
-          address: this.address,
-          description: this.description,
-          binIds: this.selectedBinIds
-        });
+    // ✅ reset form
+    Promise.resolve().then(() => {
+      this.newWarehouseForm?.resetForm({
+        name: this.name,
+        locationId: this.locationId,
+        phone: this.phone,
+        address: this.address,
+        description: this.description,
+        binIds: this.selectedBinIds
       });
-    } else {
-      this.enterCreateMode();
-    }
+    });
+
+  } else {
+    this.enterCreateMode();
   }
+}
 
   // ===== Cascading selects =====
   onCountryChange(selectedCountryId: number | null): void {

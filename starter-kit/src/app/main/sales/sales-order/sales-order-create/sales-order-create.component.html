@@ -153,17 +153,18 @@
         <thead>
           <tr>
             <th class="col-item">ITEM / SET</th>
-            <th class="col-flags">ITEM MASTER FLAGS</th>
+            <!-- <th class="col-flags">ITEM MASTER FLAGS</th> -->
             <th class="col-desc">DESCRIPTION</th>
             <th class="col-uom">UOM</th>
-            <th class="col-qty num">QTY</th>
+            <th class="col-qty">QTY</th>
             <th class="col-price num">UNIT PRICE</th>
             <th class="col-disc num">DISCOUNT %</th>
             <th class="col-tax">TAX MODE</th>
-            <th class="col-fulfill">FULFILLMENT</th>
-            <th class="col-supply">SUPPLY METHOD (SO)</th>
+            <!-- <th class="col-fulfill">FULFILLMENT</th> -->
+            <!-- <th class="col-supply">SUPPLY METHOD (SO)</th> -->
             <th class="col-total num">LINE TOTAL</th>
             <th class="col-act text-right">ACTION</th>
+           <th class="col-act text-right"></th>
           </tr>
         </thead>
 
@@ -184,12 +185,12 @@
                 </div>
               </td>
 
-              <td class="text-right soSetAct">
+              <!-- <td class="soSetAct">
                 <button type="button" class="soDangerLink" (click)="removeSet(g)">
                   <i class="fas fa-trash"></i>
                   Remove
                 </button>
-              </td>
+              </td> -->
             </tr>
 
             <!-- ITEMS -->
@@ -200,7 +201,7 @@
               </td>
 
               <!-- FLAGS -->
-              <td class="td-flags">
+              <!-- <td class="td-flags">
                 <div class="flag-line">
                   <span class="k">Sellable</span>
                   <span class="v" [class.yes]="ln.isSellable" [class.no]="ln.isSellable===false">
@@ -213,7 +214,7 @@
                     {{ ln.isConsumable ? 'Yes' : 'No' }}
                   </span>
                 </div>
-              </td>
+              </td> -->
 
               <td>
                 <input class="soLineInp"
@@ -264,7 +265,7 @@
               </td>
 
               <!-- Fulfillment -->
-              <td>
+              <!-- <td>
                 <div class="soBadge"
                      [class.soBadge--sell]="ln.fulfillmentMode===1"
                      [class.soBadge--cons]="ln.fulfillmentMode===2"
@@ -272,10 +273,10 @@
                      [class.soBadge--none]="ln.fulfillmentMode==null">
                   {{ getFulfillmentLabel(ln.fulfillmentMode) }}
                 </div>
-              </td>
+              </td> -->
 
               <!-- SupplyMethod -->
-              <td>
+              <!-- <td>
                 <div class="soSelect">
                   <select class="soLineInp soLineInp--sel"
                           [(ngModel)]="ln.supplyMethod"
@@ -296,7 +297,7 @@
                 <div *ngIf="ln.fulfillmentMode===3 && (ln.supplyMethod===null || ln.supplyMethod===undefined)" class="soWarn">
                   Both item → choose Direct DO / PP
                 </div>
-              </td>
+              </td> -->
 
               <td class="num">
                 <span class="soAmt">{{ (ln.lineTotal || 0) | number:'1.2-2' }}</span>

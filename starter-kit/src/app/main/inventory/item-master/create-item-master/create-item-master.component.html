@@ -55,7 +55,7 @@
         </div>
         <div>
           <div class="imN__sectionTitle">Basic</div>
-          <div class="imN__sectionHint">Code, name, type and fulfillment</div>
+          <div class="imN__sectionHint">Code, name,item type and usage type</div>
         </div>
       </div>
 
@@ -105,7 +105,7 @@
 
         <!-- Fulfillment Mode -->
         <div class="imN__field">
-          <label class="imN__label">Fulfillment Mode <span class="imN__req">*</span></label>
+          <label class="imN__label">Usage Type <span class="imN__req">*</span></label>
 
        <select
   class="imN__control imN__select"
@@ -114,9 +114,9 @@
   name="fulfillmentMode"
   required>
   <option value="" [ngValue]="null" disabled>Select</option>
-  <option [ngValue]="1">Sellable</option>
-  <option [ngValue]="2">Consumable</option>
-  <option [ngValue]="3">Both</option>
+  <option [ngValue]="1">Sales Item</option>
+  <option [ngValue]="2">Internal Use Item</option>
+  <option [ngValue]="3">Sales & Internal Use</option>
 </select>
         </div>
 

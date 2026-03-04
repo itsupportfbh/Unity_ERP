@@ -156,7 +156,7 @@ export class CreateItemMasterComponent implements OnInit {
   itemStocksArr: any[] = [];
   pricesArr: any[] = [];
   private readonly stepsCreate = ['Summary'] as const;
-  private readonly stepsEdit = ['Summary', 'Warehouses', 'Suppliers', 'BOM', 'Audit', 'Review'] as const;
+  private readonly stepsEdit = ['Summary', 'Warehouses', 'Suppliers', 'Audit', 'Review'] as const;
   itemsetList: any;
   ItemTypeList: any;
   get stepsView() { return this.isEdit ? this.stepsEdit : this.stepsCreate; }
@@ -220,8 +220,8 @@ export class CreateItemMasterComponent implements OnInit {
       if (this.isEdit && this.step === this.lastStepIndex) {
         this.buildReviewView();
       }
-      if (this.isEdit && this.step === 3) this.loadBomSnapshotOrFallback(); // BOM
-      if (this.isEdit && this.step === 4) this.loadAudits(); // Audit
+      // if (this.isEdit && this.step === 3) this.loadBomSnapshotOrFallback(); // BOM
+      if (this.isEdit && this.step === 3) this.loadAudits(); // Audit
       this.maybeScrollToReviewBottom();
     }
   }
@@ -481,12 +481,12 @@ export class CreateItemMasterComponent implements OnInit {
     }));
 
     const bomPayload = (this.bomRows || []).map(r => ({
-      supplierId: r.supplierId,
-      supplierName: r.supplierName,
-      existingCost: Number(r.existingCost || 0),
-      unitCost: Number(((r.unitCost ?? r.existingCost) || 0)),
-      percentage: Number(r.percentage ?? 0),
-  sellingPrice: Number(r.sellingPrice ?? 0)
+      supplierId: 1,
+      supplierName: 'test',
+      existingCost: 100,
+      unitCost: 100,
+      percentage: 5,
+  sellingPrice: 105
     }));
 
     const pricesPayload = (this.prices ?? [])

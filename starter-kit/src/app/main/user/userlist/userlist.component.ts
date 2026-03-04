@@ -65,7 +65,7 @@ export class UserlistComponent implements OnInit {
   }
 
   add() {
-    this.router.navigate(['/admin/users/new']);
+    this.router.navigate(['/admin/users/access']);
   }
 
   edit(id: number) {

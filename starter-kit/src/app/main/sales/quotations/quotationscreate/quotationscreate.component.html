@@ -17,7 +17,7 @@
         </div>
         <div class="qtTitle__txt">
           <h2>Quotation (QT)</h2>
-          <div class="qtTitle__sub">Create / Edit quotation with items & item sets</div>
+          <div class="qtTitle__sub">Create / Edit quotation with items & Packages</div>
         </div>
       </div>
 
@@ -132,8 +132,8 @@
             name="lineSourceId"
             (change)="onLineSourceChange()">
             <option [ngValue]="1">Individual Item</option>
-            <option [ngValue]="2">Item Set</option>
-            <option [ngValue]="3">Mixed (Item + Set)</option>
+            <option [ngValue]="2">Package</option>
+            <option [ngValue]="3">Mixed (Item + Package)</option>
           </select>
         </div>
 
@@ -188,14 +188,14 @@
       <!-- Row 3: Item Set Multi -->
       <div class="qtGrid2" *ngIf="header.lineSourceId === 2 || header.lineSourceId === 3">
         <div class="qtField">
-          <label class="qtLabel">Select Item Set (Multi)</label>
+          <label class="qtLabel">Select Packages (Multi)</label>
 
           <div class="qtAddRow">
             <div class="qtControl position-relative flex-grow-1" #itemSetBox>
               <input
                 type="text"
                 class="form-control qtInput qtInput--withIcon"
-                placeholder="Search item set..."
+                placeholder="Search Packages..."
                 [(ngModel)]="itemSetSearch"
                 name="itemSetSearch"
                 autocomplete="off"
@@ -246,7 +246,7 @@
           <div class="qtInfoBox">
             <div class="qtInfoLine">
               <i class="fas fa-lightbulb"></i>
-              <span>Choose set → click <b>Add</b>. Multiple sets can be added.</span>
+              <span>Choose Package → click <b>Add</b>. Multiple Packages can be added.</span>
             </div>
             <div class="qtInfoLine">
               <i class="fas fa-shield-check"></i>
@@ -305,7 +305,7 @@
       <table class="table m-0 align-middle qtTable">
         <thead>
           <tr>
-            <th>Item / Set</th>
+            <th>Item / Package</th>
             <!-- <th style="min-width:240px;">Item Master Flags</th> -->
             <th style="min-width:240px;">Description</th>
             <th style="width:90px;">UOM</th>
@@ -339,12 +339,12 @@
                   <div class="qtSetName">
                     <i class="fas fa-layer-group"></i>
                     <span class="qtSetMain">{{ l.setName }}</span>
-                    <span class="qtSetTag">SET</span>
+                    <span class="qtSetTag">Package</span>
                   </div>
 
                   <button class="qtBtn qtBtn--danger" type="button" (click)="removeItemSet(l.itemSetId!)">
                     <i class="fas fa-trash"></i>
-                    Remove Set
+                    Remove Package
                   </button>
                 </div>
               </td>

@@ -404,7 +404,7 @@ const payload: any = {
                   { isPostInventory: true, isFlagIssue: false, flagIssueId: 0 },
                   () => {
                     Swal.fire('Posted', 'Row posted to inventory & PurchaseAlert updated.', 'success');
-                    this.router.navigate(['/purchase/list-Purchasegoodreceipt']);
+                    this.redirectIfAllDone();
                   }
                 );
               },
@@ -468,10 +468,31 @@ const payload: any = {
         Swal.fire('Flagged', 'Row flagged successfully.', 'warning');
         this.closeFlagIssuesModal();
         this.selectedRowForFlagIndex = null;
+         this.redirectIfAllDone();
       }
     );
   }
 
+  private getPendingCount(): number {
+  const rows = (this.generatedGRN?.grnJson || []);
+  return rows.filter((r: any) => !r?.isPostInventory && !r?.isFlagIssue).length;
+}
+
+private redirectIfAllDone() {
+  const pending = this.getPendingCount();
+  this.postedCount = (this.generatedGRN?.grnJson || []).filter((x: any) => !!x.isPostInventory).length;
+
+  if (pending === 0) {
+    Swal.fire({
+      icon: 'success',
+      title: 'Completed',
+      text: 'All lines are processed',
+      confirmButtonColor: '#0e3a4c'
+    }).then(() => {
+      this.router.navigate(['/purchase/list-Purchasegoodreceipt']);
+    });
+  }
+}
   onPostInventoryRow(row: any, originalIndex: number) {
     this.postOneRowToInventory(row, originalIndex);
   }

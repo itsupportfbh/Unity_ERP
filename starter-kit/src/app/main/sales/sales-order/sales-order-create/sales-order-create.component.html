@@ -17,7 +17,7 @@
         </div>
         <div class="soHdr__txt">
           <div class="soHdr__title">{{ editMode ? 'Edit Sales Order' : 'Sales Order' }}</div>
-          <div class="soHdr__sub">Create / Edit sales order with item sets & grouped lines</div>
+          <div class="soHdr__sub">Create / Edit sales order with item Package & grouped lines</div>
         </div>
       </div>
 
@@ -49,7 +49,7 @@
                  [(ngModel)]="searchTexts['quotationNo']"
                  (input)="!editMode && onInputSearch('quotationNo')"
                  (focus)="!editMode && openDropdown('quotationNo')"
-                 placeholder="Search Quotation No..."
+                 placeholder="Search QuotationNo"
                  [disabled]="editMode" />
 
           <button *ngIf="searchTexts['quotationNo'] && !editMode"
@@ -86,7 +86,7 @@
 
       <!-- Item Set chips -->
       <div *ngIf="showItemSetBox" class="soField md:col-span-2">
-        <label class="lbl">Item Set Name</label>
+        <label class="lbl">Package Name</label>
 
         <div class="soChipBox" title="{{ itemSetNamesText }}">
           <ng-container *ngIf="soHdr.itemSets?.length; else noItemSet">
@@ -152,7 +152,7 @@
       <table class="soTable soTable--grouped">
         <thead>
           <tr>
-            <th class="col-item">ITEM / SET</th>
+            <th class="col-item">ITEM / Package</th>
             <!-- <th class="col-flags">ITEM MASTER FLAGS</th> -->
             <th class="col-desc">DESCRIPTION</th>
             <th class="col-uom">UOM</th>

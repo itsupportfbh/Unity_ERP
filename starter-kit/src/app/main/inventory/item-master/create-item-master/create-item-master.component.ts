@@ -379,7 +379,7 @@ export class CreateItemMasterComponent implements OnInit {
             isActive: h.isActive ?? true,
             createdBy: this.userId,
             updatedBy: this.userId,
-            expiryDate: this.toDateOnly(h.expiryDate),
+            expiryDate: new Date(),
           };
 
           const stockArr: any[] = Array.isArray(stocks)
@@ -1580,8 +1580,7 @@ syncBomFromPrices(opts: { preserveUnitCost?: boolean } = { preserveUnitCost: tru
       this.item.fulfillmentMode = 2; // PP
     } else if (
       name === 'trading item' ||
-      name === 'beverage / drink' ||
-      name === 'service'
+      name === 'beverage / drink'
     ) {
       this.item.fulfillmentMode = 3; // Direct DO
     }

@@ -1,4 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  ElementRef,
+  AfterViewChecked
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
 
@@ -7,6 +13,7 @@ import { VehicleService } from 'app/main/master/vehicle/vehicle.service';
 import { DriverService } from 'app/main/master/driver/driver.service';
 import { SalesOrderService } from '../../sales-order/sales-order.service';
 import { UomService } from 'app/main/master/uom/uom.service';
+import { environment } from 'environments/environment';
 
 /* ---------- local types ---------- */
 
@@ -14,6 +21,11 @@ type SoBrief = { id: number; salesOrderNo: string; customerName?: string };
 type Driver  = { id: number; name: string; mobileNumber: string };
 type Vehicle = { id: number; vehicleNo: string; vehicleType?: string };
 type UomRow  = { id: number; name: string };
+
+type DeliveryModeOption = {
+  id: number;
+  name: string;
+};
 
 type UiSoLine = {
   soLineId: number;
@@ -39,8 +51,13 @@ type DoHeaderDto = {
   driverId: number | null;
   vehicleId: number | null;
   routeName: string | null;
-  deliveryDate: string | null; // ISO
-  isPosted: boolean | number;  // 0/1 or bool
+  deliveryDate: string | null;
+  isPosted: boolean | number;
+  modeOfDeliveryId?: number | null;
+  driverMobileNo?: string | null;
+  receivedPersonName?: string | null;
+  receivedPersonMobileNo?: string | null;
+  receivedSignature?: string | null;
 };
 
 type DoLineDto = {
@@ -79,6 +96,11 @@ type DoUpdateHeaderRequest = {
   vehicleId: number | null;
   routeName: string | null;
   deliveryDate: Date | null;
+  modeOfDeliveryId: number | null;
+  driverMobileNo?: string | null;
+  receivedPersonName?: string | null;
+  receivedPersonMobileNo?: string | null;
+  receivedSignature?: string | null;
 };
 
 @Component({
@@ -86,7 +108,12 @@ type DoUpdateHeaderRequest = {
   templateUrl: './deliveryordercreate.component.html',
   styleUrls: ['./deliveryordercreate.component.scss']
 })
-export class DeliveryordercreateComponent implements OnInit {
+export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
+
+  @ViewChild('signatureCanvas') signatureCanvas!: ElementRef<HTMLCanvasElement>;
+
+  // change this if needed
+  apiBaseUrl = (environment as any)?.apiUrl || '';
 
   // mode
   isEdit = false;
@@ -98,15 +125,23 @@ export class DeliveryordercreateComponent implements OnInit {
   driverList: Driver[] = [];
   vehicleList: Vehicle[] = [];
 
-  // UOM map
+  // UOM
   uoms: UomRow[] = [];
   uomMap = new Map<number, string>();
 
-  // header selections
+  // Mode of delivery
+  deliveryModeList: DeliveryModeOption[] = [
+    { id: 1, name: 'Delivery' },
+    { id: 2, name: 'Self' }
+  ];
+
+  modeOfDeliveryId: number = 1;
+
+  // header
   selectedSoId: number | null = null;
   driverId: number | null = null;
   vehicleId: number | null = null;
-  deliveryDate: Date | null = null; // yyyy-MM-dd
+  deliveryDate: Date | null = null;
   routeText: string | null = null;
 
   // create-mode lines
@@ -117,7 +152,7 @@ export class DeliveryordercreateComponent implements OnInit {
   editLines: DoLineDto[] = [];
   totalEditQty = 0;
 
-  // re-delivery
+  // redelivery
   redeliveryRows: SoRedeliveryRow[] = [];
   totalPending = 0;
   totalDeliverMore = 0;
@@ -127,6 +162,17 @@ export class DeliveryordercreateComponent implements OnInit {
   driverMobileNo: string = '';
   receivedPersonName: string = '';
   receivedPersonMobileNo: string = '';
+
+  // this field stores either base64 OR relative path from backend
+  receivedSignature: string | null = null;
+
+  // signature modal
+  showSignatureModal = false;
+  private ctx!: CanvasRenderingContext2D;
+  private isDrawing = false;
+  private hasCanvasInitialized = false;
+  private lastX = 0;
+  private lastY = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -138,13 +184,44 @@ export class DeliveryordercreateComponent implements OnInit {
     private uomService: UomService
   ) {}
 
-  /* ---------------- Lifecycle ---------------- */
   ngOnInit(): void {
-    debugger
     this.detectMode();
     this.loadUoms();
     this.loadDropdowns();
-    if (this.isEdit && this.doId) this.loadForEdit(this.doId);
+
+    if (this.isEdit && this.doId) {
+      this.loadForEdit(this.doId);
+    }
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.showSignatureModal && this.signatureCanvas && !this.hasCanvasInitialized) {
+      this.initCanvas();
+      this.hasCanvasInitialized = true;
+
+      // only load to canvas if base64 image
+      if (this.receivedSignature && this.receivedSignature.startsWith('data:image')) {
+        this.loadSignatureToCanvas(this.receivedSignature);
+      }
+    }
+  }
+
+  get receivedSignatureUrl(): string | null {
+    if (!this.receivedSignature) return null;
+
+    if (this.receivedSignature.startsWith('data:image')) {
+      return this.receivedSignature;
+    }
+
+    if (this.receivedSignature.startsWith('http://') || this.receivedSignature.startsWith('https://')) {
+      return this.receivedSignature;
+    }
+
+    if (!this.apiBaseUrl) {
+      return this.receivedSignature;
+    }
+
+    return `${this.apiBaseUrl}${this.receivedSignature}`;
   }
 
   private detectMode() {
@@ -153,7 +230,167 @@ export class DeliveryordercreateComponent implements OnInit {
     this.doId = idStr ? +idStr : null;
   }
 
-  /* ---------------- UOMs ---------------- */
+  /* ---------------- Signature ---------------- */
+
+  openSignatureModal(): void {
+    this.showSignatureModal = true;
+    this.hasCanvasInitialized = false;
+  }
+
+  closeSignatureModal(): void {
+    this.showSignatureModal = false;
+  }
+
+  private initCanvas(): void {
+    const canvas = this.signatureCanvas?.nativeElement;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width || 680;
+    canvas.height = rect.height || 260;
+
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    this.ctx = context;
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    this.ctx.strokeStyle = '#1f2937';
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  startSign(event: MouseEvent): void {
+    if (!this.ctx) return;
+    const pos = this.getMousePos(event);
+    this.isDrawing = true;
+    this.lastX = pos.x;
+    this.lastY = pos.y;
+  }
+
+  moveSign(event: MouseEvent): void {
+    if (!this.isDrawing || !this.ctx) return;
+
+    const pos = this.getMousePos(event);
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.lastX, this.lastY);
+    this.ctx.lineTo(pos.x, pos.y);
+    this.ctx.stroke();
+
+    this.lastX = pos.x;
+    this.lastY = pos.y;
+  }
+
+  startSignTouch(event: TouchEvent): void {
+    event.preventDefault();
+    if (!this.ctx) return;
+
+    const pos = this.getTouchPos(event);
+    this.isDrawing = true;
+    this.lastX = pos.x;
+    this.lastY = pos.y;
+  }
+
+  moveSignTouch(event: TouchEvent): void {
+    event.preventDefault();
+    if (!this.isDrawing || !this.ctx) return;
+
+    const pos = this.getTouchPos(event);
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.lastX, this.lastY);
+    this.ctx.lineTo(pos.x, pos.y);
+    this.ctx.stroke();
+
+    this.lastX = pos.x;
+    this.lastY = pos.y;
+  }
+
+  endSign(): void {
+    this.isDrawing = false;
+  }
+
+  clearSignature(): void {
+    const canvas = this.signatureCanvas?.nativeElement;
+    if (!canvas || !this.ctx) return;
+
+    this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  saveSignature(): void {
+    const canvas = this.signatureCanvas?.nativeElement;
+    if (!canvas) return;
+
+    this.receivedSignature = canvas.toDataURL('image/png');
+    this.showSignatureModal = false;
+  }
+
+  removeSignature(): void {
+    this.receivedSignature = null;
+    this.showSignatureModal = false;
+  }
+
+  private loadSignatureToCanvas(dataUrl: string): void {
+    if (!this.ctx || !this.signatureCanvas) return;
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = this.signatureCanvas.nativeElement;
+      this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.fillRect(0, 0, canvas.width, canvas.height);
+      this.ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.src = dataUrl;
+  }
+
+  private getMousePos(event: MouseEvent): { x: number; y: number } {
+    const canvas = this.signatureCanvas.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
+  }
+
+  private getTouchPos(event: TouchEvent): { x: number; y: number } {
+    const canvas = this.signatureCanvas.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    const touch = event.touches[0] || event.changedTouches[0];
+
+    return {
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top
+    };
+  }
+
+  /* ---------------- Mode of delivery ---------------- */
+
+  isSelfMode(): boolean {
+    return Number(this.modeOfDeliveryId) === 2;
+  }
+
+  onModeOfDeliveryChanged(): void {
+    if (this.isSelfMode()) {
+      this.driverId = null;
+      this.vehicleId = null;
+      this.driverMobileNo = '';
+    }
+  }
+
+  canSaveHeader(): boolean {
+    if (!this.selectedSoId) return false;
+    if (!this.modeOfDeliveryId) return false;
+
+    if (this.isSelfMode()) return true;
+
+    return !!this.driverId && !!this.vehicleId;
+  }
+
+  /* ---------------- UOM ---------------- */
+
   private loadUoms() {
     this.uomService.getAllUom().subscribe((res: any) => {
       const arr = res?.data ?? res ?? [];
@@ -161,24 +398,28 @@ export class DeliveryordercreateComponent implements OnInit {
         id: Number(u.id ?? u.Id),
         name: String(u.name ?? u.Name ?? '').trim()
       }));
+
       this.uomMap.clear();
-      for (const u of this.uoms) this.uomMap.set(u.id, u.name);
+      for (const u of this.uoms) {
+        this.uomMap.set(u.id, u.name);
+      }
     });
   }
 
   uomLabel(uom: any): string {
     if (uom == null || uom === '') return '-';
+
     const n = Number(uom);
     if (!isNaN(n) && `${n}`.trim() === `${uom}`.trim()) {
       return this.uomMap.get(n) || `#${n}`;
     }
+
     return String(uom);
   }
 
   /* ---------------- Lookups ---------------- */
-  private loadDropdowns() {
 
-    // SO list (status=2 only)
+  private loadDropdowns() {
     this.soSrv.getSOByStatus(2).subscribe((res: any) => {
       const arr = res?.data ?? res ?? [];
       this.soList = (arr || []).map((r: any) => ({
@@ -187,26 +428,23 @@ export class DeliveryordercreateComponent implements OnInit {
         customerName: String(r.customerName ?? r.CustomerName ?? '')
       }));
 
-      // ✅ FIX: if edit mode selected SO not in list, fetch it and add
       if (this.isEdit && this.selectedSoId) {
         this.ensureSelectedSoInList(this.selectedSoId);
       }
     });
 
-    // Drivers
     this.driverSrv.getAllDriver().subscribe((res: any) => {
       const arr = res?.data ?? res ?? [];
-      this.driverList = arr.map((r: any) => ({
+      this.driverList = (arr || []).map((r: any) => ({
         id: Number(r.id ?? r.Id),
         name: String(r.name ?? r.Name ?? r.driverName ?? ''),
-        mobileNumber: String(r.mobileNumber ?? r.mobileNumber ?? '')
+        mobileNumber: String(r.mobileNumber ?? r.MobileNumber ?? '')
       }));
     });
 
-    // Vehicles
     this.vehicleSrv.getVehicles().subscribe((res: any) => {
       const arr = res?.data ?? res ?? [];
-      this.vehicleList = arr.map((r: any) => ({
+      this.vehicleList = (arr || []).map((r: any) => ({
         id: Number(r.id ?? r.Id),
         vehicleNo: String(r.vehicleNo ?? r.VehicleNo ?? r.vehicleNumber ?? ''),
         vehicleType: r.vehicleType ?? r.VehicleType ?? null
@@ -214,11 +452,6 @@ export class DeliveryordercreateComponent implements OnInit {
     });
   }
 
-  /* ---------------- IMPORTANT FIX ----------------
-     Edit mode-la selected SO list-la illa na,
-     getSOById call pannitu soList-la add pannum,
-     appuram ng-select label show aagum.
-  -------------------------------------------------- */
   private ensureSelectedSoInList(soId: number | null) {
     if (!soId) return;
 
@@ -236,15 +469,13 @@ export class DeliveryordercreateComponent implements OnInit {
       };
 
       this.soList = [so, ...(this.soList || [])];
-
-      // re-assign to trigger ng-select refresh
       this.selectedSoId = so.id;
     });
   }
 
-  /* ---------------- Load for edit ---------------- */
+  /* ---------------- Edit load ---------------- */
+
   private loadForEdit(id: number) {
-    debugger
     this.doSrv.get(id).subscribe((res: any) => {
       const hdr: DoHeaderDto = res?.data?.header ?? res?.header ?? res;
       const lines: DoLineDto[] = res?.data?.lines ?? res?.lines ?? [];
@@ -256,16 +487,19 @@ export class DeliveryordercreateComponent implements OnInit {
       }
 
       this.selectedSoId = hdr.soId != null ? Number(hdr.soId) : null;
-      this.driverId     = hdr.driverId != null ? Number(hdr.driverId) : null;
-      this.vehicleId    = hdr.vehicleId != null ? Number(hdr.vehicleId) : null;
-      this.routeText    = hdr.routeName ?? null;
-      this.deliveryDate = new Date();
-      this.isPosted     = !!(hdr.isPosted as any);
-this.driverMobileNo = this.sanitizePhone((hdr as any).driverMobileNo ?? (hdr as any).DriverMobileNo ?? '');
-this.receivedPersonName = String((hdr as any).receivedPersonName ?? (hdr as any).ReceivedPersonName ?? '');
-this.receivedPersonMobileNo = this.sanitizePhone((hdr as any).receivedPersonMobileNo ?? (hdr as any).ReceivedPersonMobileNo ?? '');
+      this.driverId = hdr.driverId != null ? Number(hdr.driverId) : null;
+      this.vehicleId = hdr.vehicleId != null ? Number(hdr.vehicleId) : null;
+      this.routeText = hdr.routeName ?? null;
+      this.deliveryDate = hdr.deliveryDate ? new Date(hdr.deliveryDate) : new Date();
+      this.isPosted = !!(hdr.isPosted as any);
 
-      // ✅ Ensure SO label show in edit mode
+      this.modeOfDeliveryId = Number((hdr as any).modeOfDeliveryId ?? (hdr as any).ModeOfDeliveryId ?? 1);
+
+      this.driverMobileNo = this.sanitizePhone((hdr as any).driverMobileNo ?? (hdr as any).DriverMobileNo ?? '');
+      this.receivedPersonName = String((hdr as any).receivedPersonName ?? (hdr as any).ReceivedPersonName ?? '');
+      this.receivedPersonMobileNo = this.sanitizePhone((hdr as any).receivedPersonMobileNo ?? (hdr as any).ReceivedPersonMobileNo ?? '');
+      this.receivedSignature = (hdr as any).receivedSignature ?? (hdr as any).ReceivedSignature ?? null;
+
       this.ensureSelectedSoInList(this.selectedSoId);
 
       this.editLines = (lines || []).map(l => ({
@@ -273,6 +507,7 @@ this.receivedPersonMobileNo = this.sanitizePhone((hdr as any).receivedPersonMobi
         qty: Number(l.qty || 0),
         uom: l.uom ?? (l.uomId != null ? (this.uomMap.get(Number(l.uomId)) || String(l.uomId)) : null)
       }));
+
       this.recalcEditTotals();
 
       if (hdr.soId) {
@@ -302,10 +537,15 @@ this.receivedPersonMobileNo = this.sanitizePhone((hdr as any).receivedPersonMobi
           this.computeRedeliveryTotals();
         });
       }
+
+      if (!this.isSelfMode() && this.driverId) {
+        this.onDriverChanged(this.driverId);
+      }
     });
   }
 
-  /* ---------------- Redelivery helpers ---------------- */
+  /* ---------------- Redelivery ---------------- */
+
   computeRedeliveryTotals() {
     this.totalPending = this.redeliveryRows.reduce((s, x) => s + (Number(x.pending) || 0), 0);
     this.totalDeliverMore = this.redeliveryRows.reduce((s, x) => s + (Number(x.deliverMore) || 0), 0);
@@ -313,8 +553,10 @@ this.receivedPersonMobileNo = this.sanitizePhone((hdr as any).receivedPersonMobi
 
   clampDeliverMore(row: SoRedeliveryRow) {
     const v = Number(row.deliverMore || 0);
+
     if (isNaN(v) || v < 0) row.deliverMore = 0;
     if (v > (row.pending || 0)) row.deliverMore = row.pending || 0;
+
     this.computeRedeliveryTotals();
   }
 
@@ -323,15 +565,22 @@ this.receivedPersonMobileNo = this.sanitizePhone((hdr as any).receivedPersonMobi
 
     const picks = this.redeliveryRows.filter(r => (Number(r.deliverMore) || 0) > 0);
     if (!picks.length) {
-      return Swal.fire({ icon: 'info', title: 'Nothing to add', text: 'Enter Deliver More qty first.' });
+      return Swal.fire({
+        icon: 'info',
+        title: 'Nothing to add',
+        text: 'Enter Deliver More qty first.'
+      });
     }
 
     let idx = 0, ok = 0, fail = 0;
 
     const next = () => {
       if (idx >= picks.length) {
-        if (fail === 0) Swal.fire({ icon: 'success', title: 'Lines added', text: `${ok} line(s) added` });
-        else Swal.fire({ icon: 'warning', title: 'Partial', text: `${ok} added, ${fail} failed` });
+        if (fail === 0) {
+          Swal.fire({ icon: 'success', title: 'Lines added', text: `${ok} line(s) added` });
+        } else {
+          Swal.fire({ icon: 'warning', title: 'Partial', text: `${ok} added, ${fail} failed` });
+        }
         this.loadForEdit(this.doId!);
         return;
       }
@@ -359,59 +608,60 @@ this.receivedPersonMobileNo = this.sanitizePhone((hdr as any).receivedPersonMobi
     next();
   }
 
-  /* ---------------- Create mode: SO change -> SO lines ---------------- */
-onSoChanged(soId: number | null) {
-  if (this.isEdit) return;
+  /* ---------------- SO change ---------------- */
 
-  this.soLines = [];
-  this.totalDeliverQty = 0;
+  onSoChanged(soId: number | null) {
+    if (this.isEdit) return;
 
-  // ✅ clear location when cleared
-  if (!soId) {
-    this.routeText = '';
-    return;
+    this.soLines = [];
+    this.totalDeliverQty = 0;
+
+    if (!soId) {
+      this.routeText = '';
+      return;
+    }
+
+    this.soSrv.getSOById(soId).subscribe((res: any) => {
+      const dto = res?.data ?? res ?? {};
+
+      this.routeText = (dto.deliveryTo ?? '').toString();
+
+      const lines = dto.lineItemsList ?? dto.lineItems ?? dto.lines ?? dto.items ?? [];
+
+      this.soLines = (lines || []).map((l: any) => {
+        const ordered = Number(l.quantity ?? l.orderedQty ?? l.qty ?? 0);
+        const delivered = Number(l.deliveredQty ?? l.shippedQty ?? 0);
+        const pending = Math.max(ordered - delivered, 0);
+
+        return {
+          soLineId: Number(l.id ?? l.soLineId ?? 0),
+          itemId: Number(l.itemId ?? 0),
+          itemName: String(l.itemName ?? ''),
+          uom: String(l.uomName ?? l.uom ?? ''),
+          orderedQty: ordered,
+          pendingQty: pending || ordered,
+          deliverQty: pending || ordered,
+          notes: '',
+          warehouseId: l.warehouseId ?? null,
+          binId: l.binId ?? null,
+          supplierId: l.supplierId ?? null,
+          available: l.available ?? null
+        } as UiSoLine;
+      });
+
+      this.recalcTotals();
+    });
   }
 
-  this.soSrv.getSOById(soId).subscribe((res: any) => {
-    const dto = res?.data ?? res ?? {};
-
-    // ✅ LOCATION AUTO FILL (deliveryTo -> routeText)
-    this.routeText = (dto.deliveryTo ?? '').toString();
-
-    const lines = dto.lineItemsList ?? dto.lineItems ?? dto.lines ?? dto.items ?? [];
-
-    this.soLines = (lines || []).map((l: any) => {
-      const ordered = Number(l.quantity ?? l.orderedQty ?? l.qty ?? 0);
-      const delivered = Number(l.deliveredQty ?? l.shippedQty ?? 0);
-      const pending = Math.max(ordered - delivered, 0);
-
-      return {
-        soLineId: Number(l.id ?? l.soLineId ?? 0),
-        itemId: Number(l.itemId ?? 0),
-        itemName: String(l.itemName ?? ''),
-        uom: String(l.uomName ?? l.uom ?? ''),
-        orderedQty: ordered,
-        pendingQty: pending || ordered,
-        deliverQty: pending || ordered,
-        notes: '',
-        warehouseId: l.warehouseId ?? null,
-        binId: l.binId ?? null,
-        supplierId: l.supplierId ?? null,
-        available: l.available ?? null
-      } as UiSoLine;
-    });
-
-    this.recalcTotals();
-  });
-}
-
   /* ---------------- Totals ---------------- */
+
   recalcTotals() {
     for (const l of this.soLines) {
       const v = Number(l.deliverQty ?? 0);
       if (isNaN(v) || v < 0) l.deliverQty = 0;
       if (l.deliverQty > l.pendingQty) l.deliverQty = l.pendingQty;
     }
+
     this.totalDeliverQty = this.soLines.reduce((s, x) => s + (Number(x.deliverQty) || 0), 0);
   }
 
@@ -420,35 +670,44 @@ onSoChanged(soId: number | null) {
   }
 
   trackBySoLineId = (_: number, row: UiSoLine | SoRedeliveryRow) => (row as any).soLineId;
-  trackByLineId   = (_: number, row: { id: number }) => row.id;
+  trackByLineId = (_: number, row: { id: number }) => row.id;
 
-  /* ---------------- Save (Create or Edit) ---------------- */
+  /* ---------------- Save ---------------- */
+
   saveDo() {
     if (!this.selectedSoId) {
       return Swal.fire({ icon: 'warning', title: 'Sales Order required' });
     }
-    if (!this.driverId || !this.vehicleId) {
-      return Swal.fire({ icon: 'warning', title: 'Fill Driver, Vehicle and Delivery Date' });
+
+    if (!this.modeOfDeliveryId) {
+      return Swal.fire({ icon: 'warning', title: 'Mode of Delivery required' });
     }
+
+    if (!this.isSelfMode() && (!this.driverId || !this.vehicleId)) {
+      return Swal.fire({ icon: 'warning', title: 'Fill Driver and Vehicle' });
+    }
+
     if (this.isPosted) return;
 
     if (!this.isEdit) {
       const anyQty = this.soLines.some(l => (Number(l.deliverQty) || 0) > 0);
-      if (!anyQty) return Swal.fire({ icon: 'warning', title: 'Enter at least one deliver quantity' });
+      if (!anyQty) {
+        return Swal.fire({ icon: 'warning', title: 'Enter at least one deliver quantity' });
+      }
 
       const payload = {
         req: 'currentUserId',
         soId: this.selectedSoId,
         packId: null,
-        driverId: this.driverId!,
-        vehicleId: this.vehicleId!,
+        driverId: this.isSelfMode() ? null : this.driverId,
+        vehicleId: this.isSelfMode() ? null : this.vehicleId,
         routeName: (this.routeText || '').trim() || null,
         deliveryDate: new Date(),
-
-        driverMobileNo: this.driverMobileNo || null,
+        modeOfDeliveryId: this.modeOfDeliveryId,
+        driverMobileNo: this.isSelfMode() ? null : (this.driverMobileNo || null),
         receivedPersonName: (this.receivedPersonName || '').trim() || null,
         receivedPersonMobileNo: this.receivedPersonMobileNo || null,
-
+        receivedSignature: this.receivedSignature || null,
         lines: this.soLines
           .filter(l => (Number(l.deliverQty) || 0) > 0)
           .map(l => ({
@@ -464,6 +723,7 @@ onSoChanged(soId: number | null) {
             supplierId: l.supplierId ?? null
           }))
       };
+      console.log('DO payload =>', payload);
 
       this.doSrv.create(payload).subscribe({
         next: (res: any) => {
@@ -476,10 +736,15 @@ onSoChanged(soId: number | null) {
 
     } else {
       const payload: DoUpdateHeaderRequest = {
-        driverId: this.driverId,
-        vehicleId: this.vehicleId,
+        driverId: this.isSelfMode() ? null : this.driverId,
+        vehicleId: this.isSelfMode() ? null : this.vehicleId,
         routeName: (this.routeText || '').trim() || null,
-        deliveryDate: this.deliveryDate
+        deliveryDate: this.deliveryDate,
+        modeOfDeliveryId: this.modeOfDeliveryId,
+        driverMobileNo: this.isSelfMode() ? null : (this.driverMobileNo || null),
+        receivedPersonName: (this.receivedPersonName || '').trim() || null,
+        receivedPersonMobileNo: this.receivedPersonMobileNo || null,
+        receivedSignature: this.receivedSignature || null
       };
 
       this.doSrv.updateHeader(this.doId!, payload).subscribe({
@@ -489,7 +754,8 @@ onSoChanged(soId: number | null) {
     }
   }
 
-  /* ---------------- Remove line (edit mode) ---------------- */
+  /* ---------------- Remove line ---------------- */
+
   removeEditLine(lineId: number) {
     if (!this.isEdit || this.isPosted) return;
 
@@ -510,12 +776,15 @@ onSoChanged(soId: number | null) {
   }
 
   /* ---------------- Utils ---------------- */
+
   resetForm(keepDropdowns = false) {
     if (!keepDropdowns) this.selectedSoId = null;
+
     this.driverId = null;
     this.vehicleId = null;
     this.routeText = null;
     this.deliveryDate = null;
+    this.modeOfDeliveryId = 1;
 
     this.soLines = [];
     this.editLines = [];
@@ -531,16 +800,22 @@ onSoChanged(soId: number | null) {
     this.driverMobileNo = '';
     this.receivedPersonName = '';
     this.receivedPersonMobileNo = '';
+    this.receivedSignature = null;
+
+    this.showSignatureModal = false;
+    this.hasCanvasInitialized = false;
   }
 
   private toDateInput(d: Date | string | null): string | null {
     if (!d) return null;
+
     const date = typeof d === 'string' ? new Date(d) : d;
     if (isNaN(date.getTime())) return null;
 
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
+
     return `${yyyy}-${mm}-${dd}`;
   }
 

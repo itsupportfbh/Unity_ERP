@@ -1,3 +1,4 @@
+// src/app/menu/menu.ts  (or your current path)
 import { CoreMenu } from '@core/types';
 
 export const menu: any[] = [
@@ -27,7 +28,7 @@ export const menu: any[] = [
       { id: 'incoterms', title: 'Incoterms', type: 'item', icon: 'circle', url: '/master/incoterms' },
       { id: 'itemType', title: 'ItemType', type: 'item', icon: 'circle', url: '/master/itemType' },
       { id: 'location', title: 'Outlet', type: 'item', icon: 'circle', url: '/master/location' },
-       { id: 'itemSet', title: 'Package', type: 'item', icon: 'circle', url: '/master/itemSet' },
+      { id: 'itemSet', title: 'Package', type: 'item', icon: 'circle', url: '/master/itemSet' },
       { id: 'paymentTerms', title: 'PaymentTerms', type: 'item', icon: 'circle', url: '/master/paymentTerms' },
       { id: 'recurring', title: 'Recurring', type: 'item', icon: 'circle', url: '/master/recurring' },
       { id: 'service', title: 'Services', type: 'item', icon: 'circle', url: '/master/service' },
@@ -64,7 +65,6 @@ export const menu: any[] = [
       },
       { id: 'bp-supplier', title: 'Supplier', type: 'item', icon: 'circle', url: '/Businesspartners/supplier' },
 
-      // hidden create item (optional)
       { id: 'bp-customer-create', title: 'Customer Create', type: 'item', icon: 'circle', url: '/Businesspartners/Create-customer-master', hidden: true },
 
       { id: 'users', title: 'Users', type: 'item', icon: 'circle', url: '/admin/users', approvalRoles: ['Super Admin'] }
@@ -85,11 +85,7 @@ export const menu: any[] = [
         type: 'item',
         icon: 'circle',
         url: '/Sales/Quotation-list',
-        activeUrls: [
-          '/Sales/Quotation-list',
-          '/Sales/Quotation-create',
-          '/Sales/Edit-quotation' // ✅ Edit-quotation/:id
-        ]
+        activeUrls: ['/Sales/Quotation-list', '/Sales/Quotation-create', '/Sales/Edit-quotation']
       },
       { id: 'qt-create', title: 'Quotation Create', type: 'item', icon: 'circle', url: '/Sales/Quotation-create', hidden: true },
       { id: 'qt-edit', title: 'Quotation Edit', type: 'item', icon: 'circle', url: '/Sales/Edit-quotation', hidden: true },
@@ -100,11 +96,7 @@ export const menu: any[] = [
         type: 'item',
         icon: 'circle',
         url: '/Sales/Sales-Order-list',
-        activeUrls: [
-          '/Sales/Sales-Order-list',
-          '/Sales/Sales-Order-create',
-          '/Sales/Sales-Order-edit' // ✅ Sales-Order-edit/:id
-        ]
+        activeUrls: ['/Sales/Sales-Order-list', '/Sales/Sales-Order-create', '/Sales/Sales-Order-edit']
       },
       { id: 'so-create', title: 'Sales Order Create', type: 'item', icon: 'circle', url: '/Sales/Sales-Order-create', hidden: true },
       { id: 'so-edit', title: 'Sales Order Edit', type: 'item', icon: 'circle', url: '/Sales/Sales-Order-edit', hidden: true },
@@ -115,11 +107,7 @@ export const menu: any[] = [
         type: 'item',
         icon: 'circle',
         url: '/Sales/Picking-packing-list',
-        activeUrls: [
-          '/Sales/Picking-packing-list',
-          '/Sales/Picking-packing-create',
-          '/Sales/Picking-packing-edit' // ✅ Picking-packing-edit/:id
-        ]
+        activeUrls: ['/Sales/Picking-packing-list', '/Sales/Picking-packing-create', '/Sales/Picking-packing-edit']
       },
       { id: 'pp-create', title: 'Picking & Packing Create', type: 'item', icon: 'circle', url: '/Sales/Picking-packing-create', hidden: true },
       { id: 'pp-edit', title: 'Picking & Packing Edit', type: 'item', icon: 'circle', url: '/Sales/Picking-packing-edit', hidden: true },
@@ -130,11 +118,7 @@ export const menu: any[] = [
         type: 'item',
         icon: 'circle',
         url: '/Sales/Delivery-order-list',
-        activeUrls: [
-          '/Sales/Delivery-order-list',
-          '/Sales/Delivery-order-create',
-          '/Sales/Delivery-order-edit' // ✅ Delivery-order-edit/:id
-        ]
+        activeUrls: ['/Sales/Delivery-order-list', '/Sales/Delivery-order-create', '/Sales/Delivery-order-edit']
       },
       { id: 'do-create', title: 'Delivery Order Create', type: 'item', icon: 'circle', url: '/Sales/Delivery-order-create', hidden: true },
       { id: 'do-edit', title: 'Delivery Order Edit', type: 'item', icon: 'circle', url: '/Sales/Delivery-order-edit', hidden: true },
@@ -145,11 +129,7 @@ export const menu: any[] = [
         type: 'item',
         icon: 'circle',
         url: '/Sales/Sales-Invoice-list',
-        activeUrls: [
-          '/Sales/Sales-Invoice-list',
-          '/Sales/sales-Invoice-create',
-          '/Sales/sales-invoice/edit' // ✅ sales-invoice/edit/:id
-        ]
+        activeUrls: ['/Sales/Sales-Invoice-list', '/Sales/sales-Invoice-create', '/Sales/sales-invoice/edit']
       },
       { id: 'si-create', title: 'Sales Invoice Create', type: 'item', icon: 'circle', url: '/Sales/sales-Invoice-create', hidden: true },
       { id: 'si-edit', title: 'Sales Invoice Edit', type: 'item', icon: 'circle', url: '/Sales/sales-invoice/edit', hidden: true },
@@ -160,11 +140,7 @@ export const menu: any[] = [
         type: 'item',
         icon: 'circle',
         url: '/Sales/Return-credit-list',
-        activeUrls: [
-          '/Sales/Return-credit-list',
-          '/Sales/Return-credit-create',
-          '/Sales/Return-credit-edit' // ✅ Return-credit-edit/:id
-        ]
+        activeUrls: ['/Sales/Return-credit-list', '/Sales/Return-credit-create', '/Sales/Return-credit-edit']
       },
       { id: 'cn-create', title: 'Credit Note Create', type: 'item', icon: 'circle', url: '/Sales/Return-credit-create', hidden: true },
       { id: 'cn-edit', title: 'Credit Note Edit', type: 'item', icon: 'circle', url: '/Sales/Return-credit-edit', hidden: true },
@@ -181,82 +157,57 @@ export const menu: any[] = [
     icon: 'file',
     approvalRoles: ['Super Admin'],
     children: [
-      // PR
       {
         id: 'pr-list',
         title: 'Purchase Request',
         type: 'item',
         icon: 'circle',
         url: '/purchase/list-PurchaseRequest',
-        activeUrls: [
-          '/purchase/list-PurchaseRequest',
-          '/purchase/Create-PurchaseRequest',
-          '/purchase/Edit-PurchaseRequest' // ✅ Edit-PurchaseRequest/:id
-        ]
+        activeUrls: ['/purchase/list-PurchaseRequest', '/purchase/Create-PurchaseRequest', '/purchase/Edit-PurchaseRequest']
       },
       { id: 'pr-create', title: 'PR Create', type: 'item', icon: 'circle', url: '/purchase/Create-PurchaseRequest', hidden: true },
       { id: 'pr-edit', title: 'PR Edit', type: 'item', icon: 'circle', url: '/purchase/Edit-PurchaseRequest', hidden: true },
 
-      // PO
       {
         id: 'po-list',
         title: 'Purchase Order',
         type: 'item',
         icon: 'circle',
         url: '/purchase/list-purchaseorder',
-        activeUrls: [
-          '/purchase/list-purchaseorder',
-          '/purchase/create-purchaseorder',
-          '/purchase/edit-purchaseorder' // ✅ edit-purchaseorder/:id
-        ]
+        activeUrls: ['/purchase/list-purchaseorder', '/purchase/create-purchaseorder', '/purchase/edit-purchaseorder']
       },
       { id: 'po-create', title: 'PO Create', type: 'item', icon: 'circle', url: '/purchase/create-purchaseorder', hidden: true },
       { id: 'po-edit', title: 'PO Edit', type: 'item', icon: 'circle', url: '/purchase/edit-purchaseorder', hidden: true },
 
-      // GRN
       {
         id: 'grn-list',
         title: 'Goods Receipt Note',
         type: 'item',
         icon: 'circle',
         url: '/purchase/list-Purchasegoodreceipt',
-        activeUrls: [
-          '/purchase/list-Purchasegoodreceipt',
-          '/purchase/createpurchasegoodreceipt',
-          '/purchase/edit-purchasegoodreceipt' // ✅ edit-purchasegoodreceipt/:id
-        ]
+        activeUrls: ['/purchase/list-Purchasegoodreceipt', '/purchase/createpurchasegoodreceipt', '/purchase/edit-purchasegoodreceipt']
       },
       { id: 'grn-create', title: 'GRN Create', type: 'item', icon: 'circle', url: '/purchase/createpurchasegoodreceipt', hidden: true },
       { id: 'grn-edit', title: 'GRN Edit', type: 'item', icon: 'circle', url: '/purchase/edit-purchasegoodreceipt', hidden: true },
 
-      // PIN
       {
         id: 'pin-list',
         title: 'Supplier Invoice',
         type: 'item',
         icon: 'circle',
         url: '/purchase/list-SupplierInvoice',
-        activeUrls: [
-          '/purchase/list-SupplierInvoice',
-          '/purchase/Create-SupplierInvoice',
-          '/purchase/Edit-SupplierInvoice' // ✅ Edit-SupplierInvoice/:id
-        ]
+        activeUrls: ['/purchase/list-SupplierInvoice', '/purchase/Create-SupplierInvoice', '/purchase/Edit-SupplierInvoice']
       },
       { id: 'pin-create', title: 'PIN Create', type: 'item', icon: 'circle', url: '/purchase/Create-SupplierInvoice', hidden: true },
       { id: 'pin-edit', title: 'PIN Edit', type: 'item', icon: 'circle', url: '/purchase/Edit-SupplierInvoice', hidden: true },
 
-      // Debit Note
       {
         id: 'dn-list',
         title: 'Debit Note(Purchase Return)',
         type: 'item',
         icon: 'circle',
         url: '/purchase/list-debitnote',
-        activeUrls: [
-          '/purchase/list-debitnote',
-          '/purchase/create-debitnote',
-          '/purchase/edit-debitnote' // ✅ edit-debitnote/:id
-        ]
+        activeUrls: ['/purchase/list-debitnote', '/purchase/create-debitnote', '/purchase/edit-debitnote']
       },
       { id: 'dn-create', title: 'Debit Note Create', type: 'item', icon: 'circle', url: '/purchase/create-debitnote', hidden: true },
       { id: 'dn-edit', title: 'Debit Note Edit', type: 'item', icon: 'circle', url: '/purchase/edit-debitnote', hidden: true },
@@ -280,62 +231,78 @@ export const menu: any[] = [
         type: 'item',
         icon: 'circle',
         url: '/Inventory/List-itemmaster',
-        activeUrls: [
-          '/Inventory/List-itemmaster',
-          '/Inventory/Create-itemmaster',
-          '/Inventory/Edit-itemmaster' // ✅ Edit-itemmaster/:id
-        ]
+        activeUrls: ['/Inventory/List-itemmaster', '/Inventory/Create-itemmaster', '/Inventory/Edit-itemmaster']
       },
       { id: 'im-create', title: 'Item Master Create', type: 'item', icon: 'circle', url: '/Inventory/Create-itemmaster', hidden: true },
       { id: 'im-edit', title: 'Item Master Edit', type: 'item', icon: 'circle', url: '/Inventory/Edit-itemmaster', hidden: true },
 
       {
-        id: 'mr-list',
-        title: 'Material-Requisition',
-        type: 'item',
-        icon: 'circle',
-        url: '/Inventory/list-material-requisition',
-        activeUrls: [
-          '/Inventory/list-material-requisition',
-          '/Inventory/create-material-requisition',
-          '/Inventory/edit-material-requisition' // ✅ edit-material-requisition/:id
+        id: 'inv-internal',
+        title: 'Internal',
+        type: 'collapsible',
+        icon: 'corner-down-right',
+        children: [
+        {
+  id: 'mr-list',
+  title: 'Material Request',
+  type: 'item',
+  icon: 'circle',   // ✅ change icon
+  url: '/Inventory/list-material-requisition',
+  classes: 'inv-sub3',
+  activeUrls: [
+    '/Inventory/list-material-requisition',
+    '/Inventory/create-material-requisition',
+    '/Inventory/edit-material-requisition'
+  ]
+},
+          { id: 'mr-create', title: 'Material Request Create', type: 'item', icon: 'circle', url: '/Inventory/create-material-requisition', hidden: true },
+          { id: 'mr-edit', title: 'Material Request Edit', type: 'item', icon: 'circle', url: '/Inventory/edit-material-requisition', hidden: true },
+
+         {
+  id: 'list-stock-transfer-receipt',
+  title: 'Stock Transfer Request',
+  type: 'item',
+  icon: 'circle',   // ✅ change icon
+  url: '/Inventory/list-stock-transfer-receipt',
+  classes: 'inv-sub3',
+  activeUrls: [
+    '/Inventory/list-stock-transfer-receipt',
+    '/Inventory/create-stock-transfer-request',
+    '/Inventory/edit-stock-transfer-request'
+  ]
+},
+          { id: 'strq-create', title: 'Stock Transfer Request Create', type: 'item', icon: 'circle', url: '/Inventory/create-stock-transfer-request', hidden: true },
+          { id: 'strq-edit', title: 'Stock Transfer Request Edit', type: 'item', icon: 'circle', url: '/Inventory/edit-stock-transfer-request', hidden: true }
         ]
       },
-      { id: 'mr-create', title: 'Material-Requisition Create', type: 'item', icon: 'circle', url: '/Inventory/create-material-requisition', hidden: true },
-      { id: 'mr-edit', title: 'Material-Requisition Edit', type: 'item', icon: 'circle', url: '/Inventory/edit-material-requisition', hidden: true },
 
       {
         id: 'stocktake-list',
-        title: 'Stock-Take',
+        title: 'Stock Take',
         type: 'item',
         icon: 'circle',
         url: '/Inventory/list-stocktake',
-        activeUrls: [
-          '/Inventory/list-stocktake',
-          '/Inventory/create-stocktake',
-          '/Inventory/edit-stocktake' // ✅ edit-stocktake/:id
-        ]
+        activeUrls: ['/Inventory/list-stocktake', '/Inventory/create-stocktake', '/Inventory/edit-stocktake']
       },
-      { id: 'stocktake-create', title: 'Stock-Take Create', type: 'item', icon: 'circle', url: '/Inventory/create-stocktake', hidden: true },
-      { id: 'stocktake-edit', title: 'Stock-Take Edit', type: 'item', icon: 'circle', url: '/Inventory/edit-stocktake', hidden: true },
+      { id: 'stocktake-create', title: 'Stock Take Create', type: 'item', icon: 'circle', url: '/Inventory/create-stocktake', hidden: true },
+      { id: 'stocktake-edit', title: 'Stock Take Edit', type: 'item', icon: 'circle', url: '/Inventory/edit-stocktake', hidden: true },
 
       {
         id: 'reorder-list',
-        title: 'Stock-Reorder-Planning',
+        title: 'Stock Reorder Planning',
         type: 'item',
         icon: 'circle',
         url: '/Inventory/list-stockreorderplanning',
         activeUrls: [
           '/Inventory/list-stockreorderplanning',
           '/Inventory/create-stockreorderplanning',
-          '/Inventory/edit-stockreorderplanning' // ✅ edit-stockreorderplanning/:id
+          '/Inventory/edit-stockreorderplanning'
         ]
       },
-      { id: 'reorder-create', title: 'Stock-Reorder-Planning Create', type: 'item', icon: 'circle', url: '/Inventory/create-stockreorderplanning', hidden: true },
-      { id: 'reorder-edit', title: 'Stock-Reorder-Planning Edit', type: 'item', icon: 'circle', url: '/Inventory/edit-stockreorderplanning', hidden: true },
+      { id: 'reorder-create', title: 'Stock Reorder Planning Create', type: 'item', icon: 'circle', url: '/Inventory/create-stockreorderplanning', hidden: true },
+      { id: 'reorder-edit', title: 'Stock Reorder Planning Edit', type: 'item', icon: 'circle', url: '/Inventory/edit-stockreorderplanning', hidden: true },
 
-      { id: 'str-list', title: 'Stock-Transfer-Receipt', type: 'item', icon: 'circle', url: '/Inventory/list-stock-transfer-receipt' },
-      { id: 'stockcogs', title: 'Stock-COGS', type: 'item', icon: 'circle', url: '/Inventory/stockcogs' },
+      { id: 'stockcogs', title: 'Stock COGS', type: 'item', icon: 'circle', url: '/Inventory/stockcogs' },
       { id: 'stock-history', title: 'Stock History', type: 'item', icon: 'circle', url: '/Inventory/stock-history' }
     ]
   },
@@ -419,4 +386,4 @@ export const menu: any[] = [
       { id: 'bp-edit', title: 'Batch Production Edit', type: 'item', icon: 'circle', url: '/Recipe/batchproductionedit', hidden: true }
     ]
   }
-];
+] as CoreMenu[];

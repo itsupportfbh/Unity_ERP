@@ -1,16 +1,31 @@
 <ng-container *ngIf="layout === 'vertical'">
   <ng-container *ngFor="let item of menu">
-    <ng-container [ngTemplateOutlet]="nodeTpl" [ngTemplateOutletContext]="{ node: item, level: 0 }"></ng-container>
+    <ng-container
+      [ngTemplateOutlet]="nodeTpl"
+      [ngTemplateOutletContext]="{ node: item, level: 0 }"
+    ></ng-container>
   </ng-container>
 
   <ng-template #nodeTpl let-node="node" let-level="level">
+
     <!-- ITEM -->
     <li
       *ngIf="node.type === 'item'"
       class="nav-item"
-      [ngClass]="{ active: node.active || node.isActive, disabled: node.disabled === true }"
+      [ngClass]="[
+        node.classes || '',
+        (node.active || node.isActive) ? 'active' : '',
+        (node.disabled === true) ? 'disabled' : '',
+        ('lvl-' + level)
+      ]"
     >
-      <a class="d-flex align-items-center" [routerLink]="[node.url]" routerLinkActive="active">
+      <a
+        class="d-flex align-items-center"
+        [routerLink]="[node.url]"
+        routerLinkActive="active"
+        [ngClass]="node.classes || ''"
+        [style.paddingLeft]="level >= 2 ? '50px' : null"
+      >
         <i class="feather" [ngClass]="'icon-' + (node.icon || 'circle')"></i>
         <span class="menu-title text-truncate">{{ node.title }}</span>
       </a>
@@ -20,21 +35,31 @@
     <li
       *ngIf="node.type === 'collapsible'"
       class="nav-item has-sub"
-      [ngClass]="{ open: node.open || node.isOpen, active: node.active || node.isActive }"
+      [ngClass]="[
+        node.classes || '',
+        (node.open || node.isOpen) ? 'open' : '',
+        (node.active || node.isActive) ? 'active' : '',
+        ('lvl-' + level)
+      ]"
     >
       <!-- parent clickable (toggle only) -->
-      <a class="d-flex align-items-center" href="javascript:void(0)" (click)="toggle(node)">
+      <a
+        class="d-flex align-items-center"
+        href="javascript:void(0)"
+        (click)="toggle(node)"
+        [ngClass]="node.classes || ''"
+      >
         <i class="feather" [ngClass]="'icon-' + (node.icon || 'circle')"></i>
         <span class="menu-title text-truncate">{{ node.title }}</span>
-        <!-- <span class="ms-auto">
-          <i class="feather icon-chevron-right"></i>
-        </span> -->
       </a>
 
       <!-- children -->
       <ul class="menu-content" *ngIf="node.children?.length">
         <ng-container *ngFor="let c of node.children">
-          <ng-container [ngTemplateOutlet]="nodeTpl" [ngTemplateOutletContext]="{ node: c, level: level + 1 }"></ng-container>
+          <ng-container
+            [ngTemplateOutlet]="nodeTpl"
+            [ngTemplateOutletContext]="{ node: c, level: level + 1 }"
+          ></ng-container>
         </ng-container>
       </ul>
     </li>
@@ -43,10 +68,10 @@
     <li *ngIf="node.type === 'section'" class="navigation-header">
       <span>{{ node.title }}</span>
     </li>
+
   </ng-template>
 </ng-container>
 
-<!-- (optional) Horizontal not used -->
 <ng-container *ngIf="layout === 'horizontal'">
   <!-- keep empty or implement later -->
 </ng-container>

@@ -73,13 +73,13 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
         this._coreSidebarService.getSidebarRegistry('menu')?.close();
 
         // scroll to active
-        setTimeout(() => this.directiveRef?.scrollToElement('.navigation .active', -180, 500), 0);
+       // setTimeout(() => this.directiveRef?.scrollToElement('.navigation .active', -180, 500), 0);
       });
 
     // initial scroll once
-    this._router.events
-      .pipe(filter(e => e instanceof NavigationEnd), take(1))
-      .subscribe(() => setTimeout(() => this.directiveRef?.scrollToElement('.navigation .active', -180, 500)));
+    // this._router.events
+    //   .pipe(filter(e => e instanceof NavigationEnd), take(1))
+    //   .subscribe(() => setTimeout(() => this.directiveRef?.scrollToElement('.navigation .active', -180, 500)));
   }
 
   // ✅ keep your auth filtering

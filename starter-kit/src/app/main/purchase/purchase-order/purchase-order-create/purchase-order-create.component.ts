@@ -309,6 +309,7 @@ private applySupplierPricesToAllLines() {
       const pId = Number(q.get('prId'));
       this.fromAlertPrId = Number.isFinite(pId) && pId > 0 ? pId : null;
     });
+    debugger
     this.route.paramMap.subscribe((params: any) => {
       this.purchaseOrderId = parseInt(params.get('id'));
 

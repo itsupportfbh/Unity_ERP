@@ -110,40 +110,46 @@
               <div class="text-right">{{ row.total | number:'1.2-2' }}</div>
             </ng-template>
           </ngx-datatable-column>
-<ngx-datatable-column name="Action" [width]="170">
+          <ngx-datatable-column name="Action" [width]="220">
   <ng-template let-row="row" ngx-datatable-cell-template>
-
-    <!-- Edit/Delete : locked হলে disabled icon -->
-    <ng-container *ngIf="isPeriodLocked; else actionsEnabled">
-      <i class="fas fa-pen text-gray-300 mr-2" title="Period Locked"></i>
-      <i class="fas fa-trash text-gray-300 mr-2" title="Period Locked"></i>
-    </ng-container>
-
-    <!-- Edit/Delete : enabled -->
-    <ng-template #actionsEnabled>
-      <i
-        class="fas fa-pen text-primary mr-2"
-        style="cursor:pointer;"
-        (click)="edit(row.id)"
-        title="Edit">
+    <div class="si-action-icons">
+       <i
+        class="fas fa-envelope si-mail"
+        (click)="openEmailConfirm(row)"
+        title="Email">
       </i>
+      <div class="si-print-wrap" title="Print">
+        <i
+          class="fas fa-print"
+          [ngClass]="row.printCount > 0 ? 'text-success' : 'text-info'"
+          (click)="printInvoice(row)">
+        </i>
 
-      <i
-        class="fas fa-trash text-danger mr-2"
-        style="cursor:pointer;"
-        (click)="delete(row.id)"
-        title="Delete">
-      </i>
-    </ng-template>
+        <span
+          *ngIf="row.printCount > 0"
+          class="si-print-badge">
+          {{ row.printCount }}
+        </span>
+      </div>
+      <ng-container *ngIf="isPeriodLocked; else actionsEnabled">
+        <i class="fas fa-pen text-gray-300" title="Period Locked"></i>
+        <i class="fas fa-trash text-gray-300" title="Period Locked"></i>
+      </ng-container>
 
-    <!-- ✅ Print : ALWAYS enabled -->
-    <i
-      class="fas fa-print text-info"
-      style="cursor:pointer;"
-      (click)="printInvoice(row)"
-      title="Print">
-    </i>
+      <ng-template #actionsEnabled>
+        <i
+          class="fas fa-pen text-primary"
+          (click)="edit(row.id)"
+          title="Edit">
+        </i>
 
+        <i
+          class="fas fa-trash text-danger"
+          (click)="delete(row.id)"
+          title="Delete">
+        </i>
+      </ng-template>
+    </div>
   </ng-template>
 </ngx-datatable-column>
 
@@ -202,6 +208,74 @@
 
     <div class="modal-foot">
       <button (click)="closeLinesModal()" class="btn-primary">Close</button>
+    </div>
+  </div>
+</div>
+<!-- EMAIL CONFIRM MODAL -->
+<div *ngIf="showEmailConfirmModal"
+     (click)="closeEmailConfirmModal()"
+     style="position:fixed; inset:0; background:rgba(0,0,0,.45);
+            z-index:1065; display:flex; align-items:center; justify-content:center;">
+
+  <div (click)="$event.stopPropagation()"
+       style="width:520px; max-width:92vw; background:#fff; border-radius:14px;
+              overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                padding:14px 18px; border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0; font-size:18px; font-weight:800; color:#2E5F73;">
+        Confirm Email
+      </h3>
+
+      <button (click)="closeEmailConfirmModal()"
+              aria-label="Close"
+              style="border:0; background:transparent; font-size:22px; cursor:pointer; color:#6b7280;">
+        ×
+      </button>
+    </div>
+
+    <div style="padding:16px 18px; font-size:14px; color:#111827;">
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div style="width:40px; height:40px; border-radius:999px;
+                    background:rgba(46,95,115,.12); display:flex; align-items:center; justify-content:center;">
+          <i class="fas fa-envelope" style="color:#2E5F73;"></i>
+        </div>
+
+        <div style="flex:1;">
+          <div style="font-weight:700; margin-bottom:6px;">
+            Send Sales Invoice email?
+          </div>
+
+          <div style="color:#4b5563; line-height:1.5;">
+            <div><b>Invoice No:</b> {{ emailConfirmRow?.invoiceNo || '-' }}</div>
+            <div><b>Customer:</b> {{ emailConfirmRow?.customerName || '-' }}</div>
+            <div><b>Source Ref:</b> {{ emailConfirmRow?.sourceRef || '-' }}</div>
+          </div>
+
+          <div *ngIf="emailSending" style="margin-top:10px; color:#6b7280;">
+            Sending email...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px;
+                padding:12px 18px; border-top:1px solid #eef2f7;">
+
+      <button class="btn btn-light"
+              (click)="closeEmailConfirmModal()"
+              [disabled]="emailSending"
+              style="border-radius:10px;">
+        Cancel
+      </button>
+
+      <button class="btn"
+              (click)="confirmSendEmail()"
+              [disabled]="emailSending"
+              style="background:#2E5F73; color:#fff; border-radius:10px; font-weight:800;">
+        <i class="fas fa-paper-plane mr-50"></i> Send
+      </button>
+
     </div>
   </div>
 </div>

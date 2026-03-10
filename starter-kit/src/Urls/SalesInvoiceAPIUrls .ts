@@ -12,4 +12,7 @@ export class SalesInvoiceAPIUrls {
   static readonly AddLine      = '/salesinvoice/AddLine/';      // + {siId}
   static readonly UpdateLine   = '/salesinvoice/UpdateLine/';   // + {lineId}
   static readonly RemoveLine   = '/salesinvoice/RemoveLine/';   // + {lineId}
+
+    static readonly EmailCustomer = '/salesinvoice/';  
+    static readonly MarkPrintcount = '/salesinvoice/mark-printed/'; 
 }

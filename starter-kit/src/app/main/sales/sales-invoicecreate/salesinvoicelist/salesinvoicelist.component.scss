@@ -118,3 +118,70 @@
   .btn-primary { background:#2E5F73; color:#fff; border:0; }
   .btn-outline-danger { background:#fff; border:1px solid #ef4444; color:#ef4444; }
 }
+
+
+.si-action-icons .si-mail{
+  color: #2E5F73;
+}
+.si-action-icons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  i {
+    cursor: pointer;
+    font-size: 14px !important;
+    line-height: 1;
+  }
+}
+
+.si-print-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.si-print-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35);
+}
+
+.print-count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid transparent;
+}
+
+.print-count-pill.printed {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.print-count-pill.not-printed {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #e5e7eb;
+}

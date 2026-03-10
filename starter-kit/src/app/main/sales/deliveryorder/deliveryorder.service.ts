@@ -11,7 +11,7 @@ export type DoCreateRequest = {
   driverId: number;
   vehicleId: number | null;
   routeName: string | null;
-  deliveryDate: string | null;
+  deliveryDate: Date | null;
   lines: Array<{
     soLineId: number | null;
     packLineId: number | null;

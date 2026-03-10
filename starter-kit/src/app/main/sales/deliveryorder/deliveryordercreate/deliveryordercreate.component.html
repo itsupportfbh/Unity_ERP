@@ -44,7 +44,7 @@
       <button class="btn btn-outline-secondary prl-btn-outline" (click)="resetForm()">Clear</button>
       <button class="btn prl-btn-primary"
               (click)="saveDo()"
-              [disabled]="!selectedSoId || !deliveryDate || !driverId || !vehicleId || (isEdit && isPosted)">
+              [disabled]="!selectedSoId || !driverId || !vehicleId || (isEdit && isPosted)">
         {{ isEdit ? 'Update Header' : 'Save DO' }}
       </button>
     </div>
@@ -172,7 +172,7 @@
       </div>
 
       <!-- Delivery Date -->
-      <div class="col-lg-3 col-md-6">
+      <!-- <div class="col-lg-3 col-md-6">
         <label class="form-label prl-label">Delivery Date</label>
         <input type="date"
                class="form-control prl-input"
@@ -180,7 +180,7 @@
                name="deliveryDate"
                [min]="today"
                [disabled]="isPosted">
-      </div>
+      </div> -->
 
     </div>
 

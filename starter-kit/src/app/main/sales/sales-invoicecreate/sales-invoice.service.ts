@@ -144,4 +144,13 @@ export class SalesInvoiceService {
       this.base + SalesInvoiceAPIUrls.RemoveLine + lineId
     );
   }
+   emailCustomerSi(id: number, formData: FormData): Observable<ApiResponse> {
+  return this.http.post<ApiResponse>(
+    this.base + SalesInvoiceAPIUrls.EmailCustomer + id + '/email-customer',
+    formData
+  );
+}
+markPrinted(id: number) {
+  return this.http.post<any>(`${this.base+SalesInvoiceAPIUrls.MarkPrintcount}${id}`, {});
+}
 }

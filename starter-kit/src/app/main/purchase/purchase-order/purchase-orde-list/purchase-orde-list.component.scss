@@ -129,26 +129,35 @@
   opacity: .35;
   cursor: not-allowed;
 }
+
 .action-icons{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:4px;
   white-space:nowrap;
 }
 
 .icon-btn{
   border:0;
   background:transparent;
-  padding:4px 6px;
+  padding:2px;
   cursor:pointer;
   line-height:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  color:#2E5F73;
 }
 
-.icon-btn i{ font-size:16px; }
+.icon-btn i{
+  font-size:14px;
+}
 
 .icon-btn:disabled{
   opacity:.35;
   cursor:not-allowed;
 }
 
-.icon-btn.danger i{ color:#dc3545; }
+.icon-btn.danger i{
+  color:#ea5455;
+}

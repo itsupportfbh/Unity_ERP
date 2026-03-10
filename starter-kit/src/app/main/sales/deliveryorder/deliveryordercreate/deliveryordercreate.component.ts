@@ -78,7 +78,7 @@ type DoUpdateHeaderRequest = {
   driverId: number | null;
   vehicleId: number | null;
   routeName: string | null;
-  deliveryDate: string | null;
+  deliveryDate: Date | null;
 };
 
 @Component({
@@ -106,7 +106,7 @@ export class DeliveryordercreateComponent implements OnInit {
   selectedSoId: number | null = null;
   driverId: number | null = null;
   vehicleId: number | null = null;
-  deliveryDate: string | null = null; // yyyy-MM-dd
+  deliveryDate: Date | null = null; // yyyy-MM-dd
   routeText: string | null = null;
 
   // create-mode lines
@@ -259,7 +259,7 @@ export class DeliveryordercreateComponent implements OnInit {
       this.driverId     = hdr.driverId != null ? Number(hdr.driverId) : null;
       this.vehicleId    = hdr.vehicleId != null ? Number(hdr.vehicleId) : null;
       this.routeText    = hdr.routeName ?? null;
-      this.deliveryDate = this.toDateInput(hdr.deliveryDate);
+      this.deliveryDate = new Date();
       this.isPosted     = !!(hdr.isPosted as any);
 this.driverMobileNo = this.sanitizePhone((hdr as any).driverMobileNo ?? (hdr as any).DriverMobileNo ?? '');
 this.receivedPersonName = String((hdr as any).receivedPersonName ?? (hdr as any).ReceivedPersonName ?? '');
@@ -427,7 +427,7 @@ onSoChanged(soId: number | null) {
     if (!this.selectedSoId) {
       return Swal.fire({ icon: 'warning', title: 'Sales Order required' });
     }
-    if (!this.deliveryDate || !this.driverId || !this.vehicleId) {
+    if (!this.driverId || !this.vehicleId) {
       return Swal.fire({ icon: 'warning', title: 'Fill Driver, Vehicle and Delivery Date' });
     }
     if (this.isPosted) return;
@@ -443,7 +443,7 @@ onSoChanged(soId: number | null) {
         driverId: this.driverId!,
         vehicleId: this.vehicleId!,
         routeName: (this.routeText || '').trim() || null,
-        deliveryDate: this.deliveryDate,
+        deliveryDate: new Date(),
 
         driverMobileNo: this.driverMobileNo || null,
         receivedPersonName: (this.receivedPersonName || '').trim() || null,

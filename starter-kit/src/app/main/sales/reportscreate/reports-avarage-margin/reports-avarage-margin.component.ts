@@ -1,13 +1,19 @@
-import {
-  Component,
-  OnInit,
-  AfterViewInit,
-  ViewEncapsulation
-} from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewEncapsulation } from '@angular/core';
 import feather from 'feather-icons';
 import { CoreSidebarService } from '@core/components/core-sidebar/core-sidebar.service';
 import { ReportsService } from '../reports.service';
 import { FilterApplyPayload } from '../reports-filters/reports-filters.component';
+
+type SortKey =
+  | ''
+  | 'salesInvoiceDate'
+  | 'customerName'
+  | 'netSales'
+  | 'costOfSales'
+  | 'marginAmount'
+  | 'marginPct'
+  | 'location'
+  | 'salesPerson';
 
 @Component({
   selector: 'app-reports-avarage-margin',
@@ -16,7 +22,6 @@ import { FilterApplyPayload } from '../reports-filters/reports-filters.component
   encapsulation: ViewEncapsulation.None
 })
 export class ReportsAvarageMarginComponent implements OnInit, AfterViewInit {
-
   rows: any[] = [];          // shown in table after filter + sort + search
   filteredRows: any[] = [];  // after filter + sort (no search)
   allRows: any[] = [];       // original data from API
@@ -24,24 +29,15 @@ export class ReportsAvarageMarginComponent implements OnInit, AfterViewInit {
   selectedOption = 10;
   searchValue = '';
 
-  // dropdown data
-  customers:   Array<{ id: string; name: string }> = [];
-  branches:    Array<{ id: string; name: string }> = [];
-  salespersons:Array<{ id: string; name: string }> = [];
+  // dropdown data (id==name used for filter component)
+  customers: Array<{ id: string; name: string }> = [];
+  branches: Array<{ id: string; name: string }> = [];
+  salespersons: Array<{ id: string; name: string }> = [];
 
   lastFilters: FilterApplyPayload | null = null;
 
-  // ==== SORT STATE ====
-  // keys must match row property names coming from backend
-  sortBy:
-    | ''
-    | 'salesInvoiceDate'
-    | 'customerName'
-    | 'netSales'
-    | 'marginAmount'
-    | 'marginPct'
-    | 'location' = '';
-
+  // sort
+  sortBy: SortKey = '';
   sortDir: 'asc' | 'desc' = 'asc';
 
   constructor(
@@ -64,18 +60,16 @@ export class ReportsAvarageMarginComponent implements OnInit, AfterViewInit {
   filterUpdate(event: any) {
     const val = (event.target.value || '').toLowerCase();
     this.searchValue = val;
-
-    this.rows = this.filteredRows.filter((r: any) =>
-      Object.values(r).some(v => v != null && String(v).toLowerCase().includes(val))
-    );
-  }
-
-  toggleSidebar(name: string): void {
-    this._sidebarService.getSidebarRegistry(name).toggleOpen();
+    this.applyFiltersSortSearch();
   }
 
   openFilters() {
     this.toggleSidebar('reports-filters-sidebar');
+  }
+
+  private toggleSidebar(name: string): void {
+    const sb = this._sidebarService.getSidebarRegistry(name);
+    if (sb) sb.toggleOpen();
   }
 
   // === called from <app-reports-filters> ===
@@ -93,15 +87,32 @@ export class ReportsAvarageMarginComponent implements OnInit, AfterViewInit {
   loadAverageMarginReport() {
     this._reportsService.GetSalesMarginAsync().subscribe((res: any) => {
       if (res && res.isSuccess) {
-        this.allRows = res.data || [];
+        const data = res.data || [];
+
+        // Normalize numeric values and ensure properties exist
+        this.allRows = data.map((r: any) => ({
+          ...r,
+          // if backend didn't send qty, try to compute later; default 0
+          qty: this.toNum(r.qty),
+          netSales: this.toNum(r.netSales),
+          costOfSales: this.toNum(r.costOfSales),
+          marginAmount: this.toNum(r.marginAmount),
+          marginPct: this.toNum(r.marginPct),
+          // dates: keep as is; template uses date pipe
+          salesInvoiceDate: r.salesInvoiceDate || null
+        }));
 
         this.buildFilterLists();
-        this.applyFiltersSortSearch(); // initial apply (no filters, but sort/search pipeline set up)
+        this.applyFiltersSortSearch();
+        setTimeout(() => feather.replace(), 0);
+      } else {
+        this.allRows = [];
+        this.rows = [];
+        this.filteredRows = [];
       }
     });
   }
 
-  // Build lists for customer / branch / salesperson from loaded data
   private buildFilterLists() {
     const custSet = new Set<string>();
     const branchSet = new Set<string>();
@@ -109,13 +120,13 @@ export class ReportsAvarageMarginComponent implements OnInit, AfterViewInit {
 
     this.allRows.forEach((r: any) => {
       if (r.customerName) custSet.add(r.customerName);
-      if (r.location)     branchSet.add(r.location);
-      if (r.salesPerson)  spSet.add(r.salesPerson);
+      if (r.location) branchSet.add(r.location);
+      if (r.salesPerson) spSet.add(r.salesPerson);
     });
 
-    this.customers   = Array.from(custSet).map(c => ({ id: c, name: c }));
-    this.branches    = Array.from(branchSet).map(b => ({ id: b, name: b }));
-    this.salespersons= Array.from(spSet).map(s => ({ id: s, name: s }));
+    this.customers = Array.from(custSet).map(c => ({ id: c, name: c }));
+    this.branches = Array.from(branchSet).map(b => ({ id: b, name: b }));
+    this.salespersons = Array.from(spSet).map(s => ({ id: s, name: s }));
   }
 
   // ==== SORT HANDLERS ====
@@ -136,10 +147,10 @@ export class ReportsAvarageMarginComponent implements OnInit, AfterViewInit {
     if (this.lastFilters) {
       const f = this.lastFilters;
 
-      // Date range (use SalesInvoiceDate or fallback to CreatedDate)
+      // Date range
       if (f.startDate || f.endDate) {
         const start = f.startDate ? new Date(f.startDate) : null;
-        const end   = f.endDate   ? new Date(f.endDate)   : null;
+        const end = f.endDate ? new Date(f.endDate) : null;
 
         data = data.filter(r => {
           const dtRaw = r.salesInvoiceDate || r.createdDate;
@@ -156,65 +167,103 @@ export class ReportsAvarageMarginComponent implements OnInit, AfterViewInit {
         });
       }
 
-      // customer filter
-      if (f.customerId) {
-        data = data.filter(r => r.customerName === f.customerId);
-      }
+      // customer filter (your filter component sends id as name)
+      if (f.customerId) data = data.filter(r => r.customerName === f.customerId);
 
-      // branch / location filter
-      if (f.branchId) {
-        data = data.filter(r => r.location === f.branchId);
-      }
+      // branch filter
+      if (f.branchId) data = data.filter(r => r.location === f.branchId);
 
       // salesperson filter
-      if (f.salespersonId) {
-        data = data.filter(r => r.salesPerson === f.salespersonId);
-      }
+      if (f.salespersonId) data = data.filter(r => r.salesPerson === f.salespersonId);
     }
 
     // 2) SORT
     data = this.applySort(data);
 
-    // store filtered + sorted set
     this.filteredRows = data;
 
     // 3) SEARCH
     if (this.searchValue) {
       const val = this.searchValue.toLowerCase();
-      this.rows = this.filteredRows.filter((r: any) =>
-        Object.values(r).some(v => v != null && String(v).toLowerCase().includes(val))
-      );
+      this.rows = this.filteredRows.filter((r: any) => {
+        const invoice = (r.salesInvoiceNo || '').toLowerCase();
+        const cust = (r.customerName || '').toLowerCase();
+        const item = (r.itemName || '').toLowerCase();
+        const cat = (r.category || '').toLowerCase();
+        return (
+          invoice.includes(val) ||
+          cust.includes(val) ||
+          item.includes(val) ||
+          cat.includes(val)
+        );
+      });
     } else {
       this.rows = [...this.filteredRows];
     }
   }
 
   private applySort(data: any[]): any[] {
-    if (!this.sortBy) return data; // no sort selected
+    if (!this.sortBy) return data;
 
     const dir = this.sortDir === 'asc' ? 1 : -1;
+    const key = this.sortBy;
 
     return data.sort((a, b) => {
-      const av = a[this.sortBy];
-      const bv = b[this.sortBy];
+      const av = a[key];
+      const bv = b[key];
 
       if (av == null && bv == null) return 0;
-      if (av == null) return 1;   // nulls last
+      if (av == null) return 1;
       if (bv == null) return -1;
 
-      // numeric vs string
-      const aNum = typeof av === 'number' ? av : parseFloat(av);
-      const bNum = typeof bv === 'number' ? bv : parseFloat(bv);
+      // date sort
+      if (key === 'salesInvoiceDate') {
+        const ad = new Date(av).getTime();
+        const bd = new Date(bv).getTime();
+        if (ad === bd) return 0;
+        return ad > bd ? 1 * dir : -1 * dir;
+      }
 
-      if (!isNaN(aNum) && !isNaN(bNum)) {
+      // numeric sort
+      const aNum = this.toNum(av);
+      const bNum = this.toNum(bv);
+      const bothNum = !isNaN(aNum) && !isNaN(bNum);
+
+      if (bothNum) {
         if (aNum === bNum) return 0;
         return aNum > bNum ? 1 * dir : -1 * dir;
       }
 
+      // string sort
       const aStr = String(av).toLowerCase();
       const bStr = String(bv).toLowerCase();
       if (aStr === bStr) return 0;
       return aStr > bStr ? 1 * dir : -1 * dir;
     });
+  }
+
+  // ==== formatting helpers ====
+  toNum(v: any): number {
+    if (v == null || v === '') return 0;
+    const n = typeof v === 'number' ? v : parseFloat(String(v));
+    return isNaN(n) ? 0 : n;
+  }
+
+  formatMoney(v: any): string {
+    const n = this.toNum(v);
+    // keep simple; currency pipe also ok but this is fast and clean
+    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  formatPct(v: any): string {
+    const n = this.toNum(v);
+    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+  }
+
+  getMarginClass(v: any): string {
+    const n = this.toNum(v);
+    if (n < 0) return 'text-danger fw-600';
+    if (n > 0) return 'text-success fw-600';
+    return 'text-muted fw-600';
   }
 }

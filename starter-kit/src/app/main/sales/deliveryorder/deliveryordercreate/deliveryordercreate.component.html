@@ -1,359 +1,493 @@
-<button (click)="goDoList()"
-        class="btn mb-2 position-relative d-flex align-items-center justify-content-center"
-        style="background-color:#2E5F73; color:white; padding-left:2.25rem;">
-  <i class="fas fa-arrow-left position-absolute"
-     style="left:0.75rem; top:50%; transform:translateY(-50%);"
-     aria-hidden="true"></i>
-  <span>Go to DO list</span>
-</button>
+<div class="do-ui-page">
 
-<!-- Card -->
-<div class="card shadow-sm prl-card mt-0">
+  <!-- top toolbar -->
+  <div class="do-ui-toolbar">
+    <button type="button" class="btn do-ui-back-btn" (click)="goDoList()">
+      <i class="fas fa-arrow-left"></i>
+      <span>Go to DO List</span>
+    </button>
 
-  <!-- SINGLE header bar -->
-  <div class="card-header prl-headbar">
-    <!-- LEFT: icon + title + status -->
-    <div class="d-flex align-items-center gap-3 prl-head-left">
-      <span class="prl-head-icon"
-            style="color:#2E5F73 !important; background:rgba(46,95,115,.10);
-                   border:1px solid rgba(46,95,115,.20); width:40px; height:40px;
-                   border-radius:12px; display:grid; place-items:center;">
-        <i class="fas fa-truck" aria-hidden="true" style="color:#2E5F73 !important;"></i>
+    <div class="do-ui-toolbar-right" *ngIf="isEdit">
+      <span class="do-ui-status-pill"
+            [class.posted]="isPosted"
+            [class.draft]="!isPosted">
+        <i class="fas" [ngClass]="isPosted ? 'fa-check-circle' : 'fa-pen'"></i>
+        {{ isPosted ? 'Posted' : 'Draft' }}
       </span>
-
-      <div class="d-flex align-items-center gap-2 flex-wrap">
-        <div class="min-w-0">
-          <h1 class="m-0 prl-heading"
-              style="color:#2E5F73 !important; font-weight:800; line-height:1.2;">
-            {{ isEdit ? 'Edit Delivery Order' : 'Create Delivery Order' }}
-          </h1>
-        </div>
-
-        <!-- STATUS next to title -->
-        <span *ngIf="isEdit"
-              class="badge prl-badge"
-              [class.prl-badge-green]="isPosted"
-              [class.prl-badge-amber]="!isPosted">
-          {{ isPosted ? 'Posted' : 'Draft' }}
-        </span>
-      </div>
-    </div>
-
-    <!-- RIGHT: actions -->
-    <div class="d-flex align-items-center gap-2">
-      <button class="btn btn-outline-secondary prl-btn-outline" (click)="resetForm()">Clear</button>
-      <button class="btn prl-btn-primary"
-              (click)="saveDo()"
-              [disabled]="!selectedSoId || !driverId || !vehicleId || (isEdit && isPosted)">
-        {{ isEdit ? 'Update Header' : 'Save DO' }}
-      </button>
     </div>
   </div>
 
-  <!-- Body -->
-  <div class="card-body pt-2">
+  <!-- main card -->
+  <div class="card do-ui-card">
 
-    <!-- Header form -->
-    <div class="row g-2">
+    <!-- header -->
+    <div class="do-ui-header">
+      <div class="do-ui-header-left">
+        <div class="do-ui-header-icon">
+          <i class="fas fa-truck"></i>
+        </div>
 
-      <!-- Sales Order -->
-      <div class="col-lg-3 col-md-6">
-        <label class="form-label prl-label">Sales Order</label>
-
-        <!-- keep ng-select even in edit mode (disabled) -->
-        <ng-select
-          class="custom-ng-select"
-          [items]="soList"
-          bindLabel="salesOrderNo"
-          bindValue="id"
-          [(ngModel)]="selectedSoId"
-          name="soId"
-          [searchable]="true"
-          [clearable]="true"
-          placeholder="Select SO…"
-          [disabled]="isEdit"
-          (change)="onSoChanged(selectedSoId)">
-
-          <ng-template ng-option-tmp let-item="item">
-            {{ item?.salesOrderNo }} — {{ item?.customerName }}
-          </ng-template>
-
-          <ng-template ng-label-tmp let-item="item">
-            {{ item?.salesOrderNo }} — {{ item?.customerName }}
-          </ng-template>
-        </ng-select>
-      </div>
-
-      <!-- Driver -->
-      <div class="col-lg-3 col-md-6">
-        <label class="form-label prl-label">Driver</label>
-        <ng-select
-          class="custom-ng-select"
-          [items]="driverList"
-          bindLabel="name"
-          bindValue="id"
-          [(ngModel)]="driverId"
-          name="driverId"
-          [searchable]="true"
-          [clearable]="true"
-          placeholder="Select driver…"
-          [disabled]="isPosted"
-          (change)="onDriverChanged(driverId)">
-        </ng-select>
-      </div>
-
-      <!-- Driver Mobile -->
-      <div class="col-lg-3 col-md-6">
-        <label class="form-label prl-label">Driver Mobile No</label>
-        <input type="text"
-               class="form-control prl-input"
-               [(ngModel)]="driverMobileNo"
-               name="driverMobileNo"
-               [disabled]="true" />
-      </div>
-
-      <!-- Item Received Person -->
-      <div class="col-lg-3 col-md-6">
-        <label class="form-label prl-label">Received By</label>
-        <input type="text"
-               class="form-control prl-input"
-               [(ngModel)]="receivedPersonName"
-               name="receivedPersonName"
-               [disabled]="isPosted" />
-      </div>
-
-      <!-- Received Person Mobile -->
-      <div class="col-lg-3 col-md-6">
-        <label class="form-label prl-label">Received Person Mobile No</label>
-        <input type="text"
-               class="form-control prl-input"
-               [(ngModel)]="receivedPersonMobileNo"
-               name="receivedPersonMobileNo"
-               [disabled]="isPosted"
-               maxlength="15"
-               (input)="receivedPersonMobileNo = sanitizePhone(receivedPersonMobileNo)" />
-      </div>
-
-      <!-- Vehicle -->
-      <div class="col-lg-3 col-md-6">
-        <label class="form-label prl-label">Vehicle</label>
-        <ng-select
-          class="custom-ng-select"
-          [items]="vehicleList"
-          bindValue="id"
-          [(ngModel)]="vehicleId"
-          name="vehicleId"
-          [searchable]="true"
-          [clearable]="true"
-          placeholder="Select vehicle…"
-          [disabled]="isPosted">
-
-          <ng-template ng-label-tmp let-item="item">
-            {{ item.vehicleNo }}<span *ngIf="item.vehicleType"> ({{ item.vehicleType }})</span>
-          </ng-template>
-
-          <ng-template ng-option-tmp let-item="item">
-            {{ item.vehicleNo }}<span *ngIf="item.vehicleType"> ({{ item.vehicleType }})</span>
-          </ng-template>
-
-        </ng-select>
-      </div>
-
-      <!-- Location -->
-      <div class="col-lg-3 col-md-6">
-        <label class="form-label prl-label">Delivery To</label>
-        <input type="text"
-               class="form-control prl-input"
-               placeholder="Enter Delivery To…"
-               [(ngModel)]="routeText"
-               name="routeText"
-               [disabled]="isPosted"
-               autocomplete="off"/>
-      </div>
-
-      <!-- Delivery Date -->
-      <!-- <div class="col-lg-3 col-md-6">
-        <label class="form-label prl-label">Delivery Date</label>
-        <input type="date"
-               class="form-control prl-input"
-               [(ngModel)]="deliveryDate"
-               name="deliveryDate"
-               [min]="today"
-               [disabled]="isPosted">
-      </div> -->
-
-    </div>
-
-    <!-- CREATE MODE -->
-    <div class="mt-3" *ngIf="!isEdit">
-      <div class="d-flex align-items-center justify-content-between mb-2">
-        <h6 class="m-0 prl-subtitle">Items (from Sales Order)</h6>
-        <div class="text-muted small" *ngIf="soLines?.length">
-          Total lines: {{ soLines.length }} • Total deliver: <b>{{ totalDeliverQty | number:'1.0-2' }}</b>
+        <div class="do-ui-header-text">
+          <h2 class="do-ui-title">
+            {{ isEdit ? 'Edit Delivery Order' : 'Create Delivery Order' }}
+          </h2>
+          <p class="do-ui-subtitle">
+            Manage delivery details, item lines, and receiver acknowledgement
+          </p>
         </div>
       </div>
 
-      <div class="table-responsive prl-table-wrap">
-        <table class="table align-middle prl-table">
-          <thead class="prl-thead-brand">
-            <tr>
-              <th>Item</th>
-              <th style="width:120px">UOM</th>
-              <th class="text-end" style="width:140px">Ordered</th>
-              <th class="text-end" style="width:140px">Pending</th>
-              <th class="text-end" style="width:160px">Deliver Qty</th>
-              <th style="width:220px">Notes</th>
-            </tr>
-          </thead>
+      <div class="do-ui-header-actions">
+        <button type="button"
+                class="btn do-ui-btn-light"
+                (click)="resetForm()"
+                [disabled]="isPosted">
+          <i class="fas fa-eraser me-1"></i>
+          Clear
+        </button>
 
-          <tbody>
-            <tr *ngFor="let l of soLines; trackBy: trackBySoLineId">
-              <td>{{ l.itemName }}</td>
-              <td>{{ uomLabel(l.uom) }}</td>
-              <td class="text-end">{{ l.orderedQty | number:'1.0-2' }}</td>
-              <td class="text-end">{{ l.pendingQty | number:'1.0-2' }}</td>
-              <td class="text-end">
-                <input type="number"
-                       class="form-control text-end prl-input"
-                       [(ngModel)]="l.deliverQty"
-                       [min]="0"
-                       [max]="l.pendingQty"
-                       disabled
-                       (ngModelChange)="recalcTotals()">
-              </td>
-              <td>
-                <input class="form-control prl-input"
-                       [(ngModel)]="l.notes"
-                       placeholder="(optional)">
-              </td>
-            </tr>
-
-            <tr *ngIf="!selectedSoId">
-              <td colspan="6" class="text-center text-muted py-4">Choose a Sales Order to view items</td>
-            </tr>
-            <tr *ngIf="selectedSoId && !soLines?.length">
-              <td colspan="6" class="text-center text-muted py-4">No lines found for this Sales Order</td>
-            </tr>
-          </tbody>
-
-          <tfoot *ngIf="soLines?.length">
-            <tr class="prl-tfoot">
-              <th colspan="4" class="text-end" >Total Deliver Qty</th>
-              <th class="text-end">{{ totalDeliverQty | number:'1.0-2' }}</th>
-              <th></th>
-            </tr>
-          </tfoot>
-
-        </table>
-      </div>
-    </div>
-
-    <!-- EDIT MODE: existing lines -->
-    <div class="mt-3" *ngIf="isEdit">
-      <div class="d-flex align-items-center justify-content-between mb-2">
-        <h6 class="m-0 prl-subtitle">Existing DO Lines</h6>
-        <div class="text-muted small" *ngIf="editLines?.length">
-          Total qty: <b>{{ totalEditQty | number:'1.0-2' }}</b>
-        </div>
-      </div>
-
-      <div class="table-responsive prl-table-wrap">
-        <table class="table align-middle prl-table">
-          <thead class="prl-thead-brand">
-            <tr>
-              <th>Item</th>
-              <th style="width:120px">UOM</th>
-              <th class="text-end" style="width:120px">Qty</th>
-              <th style="width:260px">Notes</th>
-              <th style="width:120px">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr *ngFor="let l of editLines; trackBy: trackByLineId">
-              <td>{{ l.itemName || ('#' + (l.itemId || '')) }}</td>
-              <td>{{ uomLabel(l.uom ?? l.uomId) }}</td>
-              <td class="text-end">{{ l.qty | number:'1.0-2' }}</td>
-              <td>{{ l.notes || '-' }}</td>
-              <td>
-                <button class="btn btn-outline-danger btn-sm"
-                        (click)="removeEditLine(l.id)"
-                        [disabled]="isPosted">
-                  Remove
-                </button>
-              </td>
-            </tr>
-
-            <tr *ngIf="!editLines?.length">
-              <td colspan="5" class="text-center text-muted py-4">No lines on this DO</td>
-            </tr>
-          </tbody>
-
-          <tfoot *ngIf="editLines?.length">
-            <tr class="prl-tfoot">
-              <th colspan="2" class="text-end">TOTAL</th>
-              <th class="text-end">{{ totalEditQty | number:'1.0-2' }}</th>
-              <th colspan="2"></th>
-            </tr>
-          </tfoot>
-
-        </table>
-      </div>
-    </div>
-
-    <!-- EDIT MODE: Re-Delivery -->
-    <div class="mt-3" *ngIf="isEdit && redeliveryRows?.length">
-      <div class="d-flex align-items-center justify-content-between mb-2">
-        <h6 class="m-0 prl-subtitle">Re-Delivery (from Sales Order)</h6>
-        <button class="btn btn-sm prl-btn-outline-brand"
-                (click)="addSelectedRedeliveries()"
-                [disabled]="totalDeliverMore <= 0">
-          Add to DO
+        <button type="button"
+                class="btn do-ui-btn-primary"
+                (click)="saveDo()"
+                [disabled]="!canSaveHeader() || (isEdit && isPosted)">
+          <i class="fas fa-save me-1"></i>
+          {{ isEdit ? 'Update Header' : 'Save DO' }}
         </button>
       </div>
+    </div>
 
-      <div class="table-responsive prl-table-wrap">
-        <table class="table align-middle prl-table">
-          <thead class="prl-thead-brand">
-            <tr>
-              <th>Item</th>
-              <th style="width:120px">UOM</th>
-              <th class="text-end" style="width:120px">Ordered</th>
-              <th class="text-end" style="width:140px">On This DO</th>
-              <th class="text-end" style="width:120px">Pending</th>
-              <th class="text-end" style="width:160px">Deliver More</th>
-            </tr>
-          </thead>
+    <div class="do-ui-body">
 
-          <tbody>
-            <tr *ngFor="let r of redeliveryRows; trackBy: trackBySoLineId">
-              <td>{{ r.itemName || ('#' + (r.itemId || '')) }}</td>
-              <td>{{ uomLabel(r.uom) }}</td>
-              <td class="text-end">{{ r.ordered | number:'1.0-2' }}</td>
-              <td class="text-end">{{ r.deliveredOnThisDo | number:'1.0-2' }}</td>
-              <td class="text-end">{{ r.pending | number:'1.0-2' }}</td>
-              <td class="text-end">
-                <input type="number"
-                       class="form-control text-end prl-input"
-                       [(ngModel)]="r.deliverMore"
-                       [min]="0"
-                       [max]="r.pending"
-                       (ngModelChange)="clampDeliverMore(r)">
-              </td>
-            </tr>
-          </tbody>
+      <!-- delivery info -->
+      <section class="do-ui-section">
+        <div class="do-ui-section-head">
+          <div>
+            <h5 class="do-ui-section-title">Delivery Information</h5>
+            <p class="do-ui-section-subtitle">Choose the sales order and delivery details</p>
+          </div>
+        </div>
 
-          <tfoot>
-            <tr class="prl-tfoot">
-              <th colspan="4" class="text-end">Totals</th>
-              <th class="text-end">{{ totalPending | number:'1.0-2' }}</th>
-              <th class="text-end">{{ totalDeliverMore | number:'1.0-2' }}</th>
-            </tr>
-          </tfoot>
+        <div class="row g-3">
+          <div class="col-lg-4 col-md-6">
+            <label class="form-label do-ui-label">Sales Order</label>
+            <ng-select
+              class="custom-ng-select do-ui-ng-select"
+              [items]="soList"
+              bindLabel="salesOrderNo"
+              bindValue="id"
+              [(ngModel)]="selectedSoId"
+              name="soId"
+              [searchable]="true"
+              [clearable]="true"
+              placeholder="Select Sales Order"
+              [disabled]="isEdit"
+              (change)="onSoChanged(selectedSoId)">
 
-        </table>
+                 <ng-template ng-option-tmp let-item="item">
+      {{ item?.salesOrderNo }} — {{ item?.isCashSales === true || item?.customerId === 0 ? 'Cash Sales' : (item?.customerName || 'Cash Sales') }}
+    </ng-template>
+ 
+    <ng-template ng-label-tmp let-item="item">
+      {{ item?.salesOrderNo }} — {{ item?.isCashSales === true || item?.customerId === 0 ? 'Cash Sales' : (item?.customerName || 'Cash Sales') }}
+    </ng-template>
+            </ng-select>
+          </div>
+
+          <div class="col-lg-4 col-md-6">
+            <label class="form-label do-ui-label">Mode of Delivery</label>
+            <ng-select
+              class="custom-ng-select do-ui-ng-select"
+              [items]="deliveryModeList"
+              bindLabel="name"
+              bindValue="id"
+              [(ngModel)]="modeOfDeliveryId"
+              name="modeOfDeliveryId"
+              [searchable]="false"
+              [clearable]="false"
+              placeholder="Select Mode"
+              [disabled]="isPosted"
+              (change)="onModeOfDeliveryChanged()">
+            </ng-select>
+          </div>
+
+          <div class="col-lg-4 col-md-6" *ngIf="!isSelfMode()">
+            <label class="form-label do-ui-label">Delivery To</label>
+            <input type="text"
+                   class="form-control do-ui-input"
+                   placeholder="Enter delivery destination"
+                   [(ngModel)]="routeText"
+                   name="routeText"
+                   [disabled]="isPosted"
+                   autocomplete="off" />
+          </div>
+
+          <div class="col-lg-4 col-md-6" *ngIf="!isSelfMode()">
+            <label class="form-label do-ui-label">Driver</label>
+            <ng-select
+              class="custom-ng-select do-ui-ng-select"
+              [items]="driverList"
+              bindLabel="name"
+              bindValue="id"
+              [(ngModel)]="driverId"
+              name="driverId"
+              [searchable]="true"
+              [clearable]="true"
+              placeholder="Select Driver"
+              [disabled]="isPosted"
+              (change)="onDriverChanged(driverId)">
+            </ng-select>
+          </div>
+
+          <div class="col-lg-4 col-md-6" *ngIf="!isSelfMode()">
+            <label class="form-label do-ui-label">Driver Mobile No</label>
+            <input type="text"
+                   class="form-control do-ui-input do-ui-input-readonly"
+                   [(ngModel)]="driverMobileNo"
+                   name="driverMobileNo"
+                   [disabled]="true" />
+          </div>
+
+          <div class="col-lg-4 col-md-6" *ngIf="!isSelfMode()">
+            <label class="form-label do-ui-label">Vehicle</label>
+            <ng-select
+              class="custom-ng-select do-ui-ng-select"
+              [items]="vehicleList"
+              bindValue="id"
+              [(ngModel)]="vehicleId"
+              name="vehicleId"
+              [searchable]="true"
+              [clearable]="true"
+              placeholder="Select Vehicle"
+              [disabled]="isPosted">
+
+              <ng-template ng-label-tmp let-item="item">
+                {{ item.vehicleNo }}<span *ngIf="item.vehicleType"> ({{ item.vehicleType }})</span>
+              </ng-template>
+
+              <ng-template ng-option-tmp let-item="item">
+                <div class="do-ui-option">
+                  <div class="do-ui-option-title">{{ item.vehicleNo }}</div>
+                  <div class="do-ui-option-sub" *ngIf="item.vehicleType">{{ item.vehicleType }}</div>
+                </div>
+              </ng-template>
+            </ng-select>
+          </div>
+        </div>
+      </section>
+
+      <!-- create mode -->
+      <section class="do-ui-section mt-3" *ngIf="!isEdit">
+        <div class="do-ui-section-head do-ui-section-head-row">
+          <div>
+            <h5 class="do-ui-section-title">Items from Sales Order</h5>
+            <p class="do-ui-section-subtitle">Select delivery quantity for each line</p>
+          </div>
+
+          <div class="do-ui-chip" *ngIf="soLines?.length">
+            <span>Lines: <b>{{ soLines.length }}</b></span>
+            <span class="sep">•</span>
+            <span>Total Deliver: <b>{{ totalDeliverQty | number:'1.0-2' }}</b></span>
+          </div>
+        </div>
+
+        <div class="do-ui-table-shell" *ngIf="selectedSoId && soLines?.length; else createEmptyState">
+          <div class="table-responsive do-ui-table-wrap">
+            <table class="table do-ui-table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th style="width:120px">UOM</th>
+                  <th class="text-end" style="width:140px">Ordered</th>
+                  <th class="text-end" style="width:140px">Pending</th>
+                  <th class="text-end" style="width:170px">Deliver Qty</th>
+                  <th style="width:240px">Notes</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let l of soLines; trackBy: trackBySoLineId">
+                  <td>
+                    <div class="do-ui-item-name">{{ l.itemName }}</div>
+                  </td>
+                  <td>{{ uomLabel(l.uom) }}</td>
+                  <td class="text-end">{{ l.orderedQty | number:'1.0-2' }}</td>
+                  <td class="text-end">{{ l.pendingQty | number:'1.0-2' }}</td>
+                  <td>
+                    <input type="number"
+                           class="form-control text-end do-ui-input do-ui-input-sm"
+                           [(ngModel)]="l.deliverQty"
+                           [min]="0"
+                           [max]="l.pendingQty"
+                           [disabled]="isPosted"
+                           (ngModelChange)="recalcTotals()">
+                  </td>
+                  <td>
+                    <input class="form-control do-ui-input do-ui-input-sm"
+                           [(ngModel)]="l.notes"
+                           placeholder="Optional notes"
+                           [disabled]="isPosted">
+                  </td>
+                </tr>
+              </tbody>
+
+              <tfoot>
+                <tr>
+                  <th colspan="4" class="text-end">Total Deliver Qty</th>
+                  <th class="text-end">{{ totalDeliverQty | number:'1.0-2' }}</th>
+                  <th></th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <ng-template #createEmptyState>
+          <div class="do-ui-empty-state">
+            <div class="do-ui-empty-icon">
+              <i class="fas fa-box-open"></i>
+            </div>
+            <div class="do-ui-empty-title">
+              {{ selectedSoId ? 'No lines found for this Sales Order' : 'Choose a Sales Order to view items' }}
+            </div>
+            <div class="do-ui-empty-sub">
+              {{ selectedSoId ? 'The selected sales order does not have any available lines.' : 'After selecting a sales order, the item lines will appear here.' }}
+            </div>
+          </div>
+        </ng-template>
+      </section>
+
+      <!-- edit mode -->
+      <section class="do-ui-section mt-3" *ngIf="isEdit">
+        <div class="do-ui-section-head do-ui-section-head-row">
+          <div>
+            <h5 class="do-ui-section-title">Existing DO Lines</h5>
+            <p class="do-ui-section-subtitle">Current delivery lines already added</p>
+          </div>
+
+          <div class="do-ui-chip" *ngIf="editLines?.length">
+            Total Qty: <b>{{ totalEditQty | number:'1.0-2' }}</b>
+          </div>
+        </div>
+
+        <div class="do-ui-table-shell" *ngIf="editLines?.length; else editEmptyState">
+          <div class="table-responsive do-ui-table-wrap">
+            <table class="table do-ui-table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th style="width:120px">UOM</th>
+                  <th class="text-end" style="width:120px">Qty</th>
+                  <th style="width:260px">Notes</th>
+                  <th style="width:130px">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let l of editLines; trackBy: trackByLineId">
+                  <td>{{ l.itemName || ('#' + (l.itemId || '')) }}</td>
+                  <td>{{ uomLabel(l.uom ?? l.uomId) }}</td>
+                  <td class="text-end">{{ l.qty | number:'1.0-2' }}</td>
+                  <td>{{ l.notes || '-' }}</td>
+                  <td>
+                    <button class="btn btn-outline-danger btn-sm"
+                            (click)="removeEditLine(l.id)"
+                            [disabled]="isPosted">
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+
+              <tfoot>
+                <tr>
+                  <th colspan="2" class="text-end">TOTAL</th>
+                  <th class="text-end">{{ totalEditQty | number:'1.0-2' }}</th>
+                  <th colspan="2"></th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <ng-template #editEmptyState>
+          <div class="do-ui-empty-state do-ui-empty-state-compact">
+            <div class="do-ui-empty-icon">
+              <i class="fas fa-inbox"></i>
+            </div>
+            <div class="do-ui-empty-title">No lines on this DO</div>
+          </div>
+        </ng-template>
+      </section>
+
+      <!-- re-delivery -->
+      <section class="do-ui-section mt-3" *ngIf="isEdit && redeliveryRows?.length">
+        <div class="do-ui-section-head do-ui-section-head-row">
+          <div>
+            <h5 class="do-ui-section-title">Re-Delivery</h5>
+            <p class="do-ui-section-subtitle">Add pending quantities into this delivery order</p>
+          </div>
+
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="do-ui-chip">
+              <span>Pending: <b>{{ totalPending | number:'1.0-2' }}</b></span>
+              <span class="sep">•</span>
+              <span>Deliver More: <b>{{ totalDeliverMore | number:'1.0-2' }}</b></span>
+            </div>
+
+            <button class="btn do-ui-btn-outline"
+                    (click)="addSelectedRedeliveries()"
+                    [disabled]="totalDeliverMore <= 0 || isPosted">
+              Add to DO
+            </button>
+          </div>
+        </div>
+
+        <div class="do-ui-table-shell">
+          <div class="table-responsive do-ui-table-wrap">
+            <table class="table do-ui-table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th style="width:120px">UOM</th>
+                  <th class="text-end" style="width:120px">Ordered</th>
+                  <th class="text-end" style="width:140px">On This DO</th>
+                  <th class="text-end" style="width:120px">Pending</th>
+                  <th class="text-end" style="width:170px">Deliver More</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let r of redeliveryRows; trackBy: trackBySoLineId">
+                  <td>{{ r.itemName || ('#' + (r.itemId || '')) }}</td>
+                  <td>{{ uomLabel(r.uom) }}</td>
+                  <td class="text-end">{{ r.ordered | number:'1.0-2' }}</td>
+                  <td class="text-end">{{ r.deliveredOnThisDo | number:'1.0-2' }}</td>
+                  <td class="text-end">{{ r.pending | number:'1.0-2' }}</td>
+                  <td>
+                    <input type="number"
+                           class="form-control text-end do-ui-input do-ui-input-sm"
+                           [(ngModel)]="r.deliverMore"
+                           [min]="0"
+                           [max]="r.pending"
+                           [disabled]="isPosted"
+                           (ngModelChange)="clampDeliverMore(r)">
+                  </td>
+                </tr>
+              </tbody>
+
+              <tfoot>
+                <tr>
+                  <th colspan="4" class="text-end">Totals</th>
+                  <th class="text-end">{{ totalPending | number:'1.0-2' }}</th>
+                  <th class="text-end">{{ totalDeliverMore | number:'1.0-2' }}</th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- receiver info -->
+      <section class="do-ui-section mt-3">
+        <div class="do-ui-section-head">
+          <div>
+            <h5 class="do-ui-section-title">Receiver Information</h5>
+            <p class="do-ui-section-subtitle">Capture receiver details and acknowledgement signature</p>
+          </div>
+        </div>
+
+        <div class="row g-3 align-items-stretch">
+          <div class="col-lg-4 col-md-6">
+            <label class="form-label do-ui-label">Received By</label>
+            <input type="text"
+                   class="form-control do-ui-input"
+                   [(ngModel)]="receivedPersonName"
+                   name="receivedPersonName"
+                   [disabled]="isPosted" />
+          </div>
+
+          <div class="col-lg-4 col-md-6">
+            <label class="form-label do-ui-label">Received Person Mobile No</label>
+            <input type="text"
+                   class="form-control do-ui-input"
+                   [(ngModel)]="receivedPersonMobileNo"
+                   name="receivedPersonMobileNo"
+                   [disabled]="isPosted"
+                   maxlength="15"
+                   (input)="receivedPersonMobileNo = sanitizePhone(receivedPersonMobileNo)" />
+          </div>
+
+          <div class="col-lg-4 col-md-12">
+            <label class="form-label do-ui-label">Signature by Received By</label>
+
+            <div class="do-ui-sign-trigger"
+                 [class.disabled]="isPosted"
+                 (click)="!isPosted && openSignatureModal()">
+
+              <ng-container *ngIf="receivedSignatureUrl; else emptySignature">
+                <img [src]="receivedSignatureUrl"
+                     alt="Received Signature"
+                     class="do-ui-sign-preview">
+              </ng-container>
+
+              <ng-template #emptySignature>
+                <div class="do-ui-sign-placeholder">
+                  <div class="do-ui-sign-placeholder-icon">
+                    <i class="fas fa-signature"></i>
+                  </div>
+                  <div>
+                    <div class="do-ui-sign-placeholder-title">Click to add signature</div>
+                    <div class="do-ui-sign-placeholder-sub">Open signature pad</div>
+                  </div>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- signature modal -->
+<div class="do-ui-modal-backdrop" *ngIf="showSignatureModal" (click)="closeSignatureModal()"></div>
+
+<div class="do-ui-modal" *ngIf="showSignatureModal">
+  <div class="do-ui-modal-dialog" (click)="$event.stopPropagation()">
+    <div class="do-ui-modal-header">
+      <div>
+        <h5 class="m-0">Received By Signature</h5>
+        <small>Draw the signature below</small>
+      </div>
+
+      <button type="button" class="do-ui-modal-close" (click)="closeSignatureModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="do-ui-modal-body">
+      <div class="do-ui-sign-pad-wrap">
+        <canvas #signatureCanvas
+                class="do-ui-sign-canvas"
+                (mousedown)="startSign($event)"
+                (mousemove)="moveSign($event)"
+                (mouseup)="endSign()"
+                (mouseleave)="endSign()"
+                (touchstart)="startSignTouch($event)"
+                (touchmove)="moveSignTouch($event)"
+                (touchend)="endSign()">
+        </canvas>
       </div>
     </div>
 
+    <div class="do-ui-modal-footer">
+      <button type="button" class="btn do-ui-btn-light" (click)="clearSignature()">
+        Clear
+      </button>
+      <button type="button" class="btn do-ui-btn-primary" (click)="saveSignature()">
+        Save Signature
+      </button>
+    </div>
   </div>
 </div>

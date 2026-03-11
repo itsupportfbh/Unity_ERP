@@ -1266,30 +1266,35 @@ filterItemSets() {
       customerPoNo: (this.header.customerPoNo || '').trim(),
       orderTime: this.header.orderTime,
 
-      lines: this.lines
-        .filter(l => !l.isSetHeader)
-        .map(l => {
-          const taxMode = (l.taxMode || (l.taxCodeId != null ? this.taxCodeIdToTaxMode(l.taxCodeId) : 'Zero-Rated')) as LineTaxMode;
-          const taxCodeId = l.taxCodeId ?? this.taxModeToTaxCodeId(taxMode);
+    lines: this.lines
+  .filter(l => !l.isSetHeader)
+  .map(l => {
+    const taxMode = (l.taxMode || (l.taxCodeId != null ? this.taxCodeIdToTaxMode(l.taxCodeId) : 'Zero-Rated')) as LineTaxMode;
+    const taxCodeId = l.taxCodeId ?? this.taxModeToTaxCodeId(taxMode);
 
-          return {
-            itemId: l.itemId,
-            itemName: l.itemName ?? null,
-            uomId: l.uomId ?? null,
-            qty: +l.qty || 0,
-            unitPrice: +l.unitPrice || 0,
-            discountPct: +l.discountPct || 0,
-            taxMode,
-            taxCodeId,
-            description: (l.description || '').trim(),
-            itemSetId: l.itemSetId ?? null,
-            setName: l.setName ?? null,
-            isFromSet: !!l.isFromSet,
+    this.computeLine(l); // ensure latest values
 
-            // ✅ IMPORTANT FIX
-            supplyMethodId: (l.supplyMethod == null ? null : Number(l.supplyMethod))
-          };
-        })
+    return {
+      itemId: l.itemId,
+      itemName: l.itemName ?? null,
+      uomId: l.uomId ?? null,
+      qty: +l.qty || 0,
+      unitPrice: +l.unitPrice || 0,
+      discountPct: +l.discountPct || 0,
+      taxMode,
+      taxCodeId,
+      description: (l.description || '').trim(),
+      itemSetId: l.itemSetId ?? null,
+      setName: l.setName ?? null,
+      isFromSet: !!l.isFromSet,
+      supplyMethodId: (l.supplyMethod == null ? null : Number(l.supplyMethod)),
+
+      // add these
+      lineNet: +(l.lineNet ?? 0),
+      lineTax: +(l.lineTax ?? 0),
+      lineTotal: +(l.lineTotal ?? 0)
+    };
+  })
     };
 
     if (!dto.number || !dto.number.trim?.()) {

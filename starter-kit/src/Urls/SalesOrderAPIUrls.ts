@@ -10,6 +10,7 @@ export class SalesOrderApiUrls {
   public static readonly GetSOByStatus = "/SalesOrder/GetByStatus/";
   public static readonly Drafts = "/SalesOrder/drafts";
   public static readonly GetOpenSOByCustomer = "/SalesOrder/customer-open/";
+  static readonly forsalesinvoice = '/SalesOrder/for-sales-invoice'; 
 
   // ✅ NEW
   public static readonly Availability = "/SalesOrder/availability";

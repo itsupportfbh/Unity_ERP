@@ -153,4 +153,5 @@ export class SalesInvoiceService {
 markPrinted(id: number) {
   return this.http.post<any>(`${this.base+SalesInvoiceAPIUrls.MarkPrintcount}${id}`, {});
 }
+
 }

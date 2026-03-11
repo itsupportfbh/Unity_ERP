@@ -1179,25 +1179,39 @@ export class QuotationscreateComponent implements OnInit {
     this.header.needsHodApproval = hod;
   }
 
-  private validateBeforeSave(): boolean {
-    for (const l of this.lines) {
-      if (l.isSetHeader) continue;
+ private validateBeforeSave(): boolean {
+  const itemRows = this.lines.filter(l => !l.isSetHeader);
 
-      const q = l.qty == null ? 0 : +l.qty;
-      const p = l.unitPrice == null ? 0 : +l.unitPrice;
+  for (let idx = 0; idx < itemRows.length; idx++) {
+    const l = itemRows[idx];
 
-      if (q <= 0 || p <= 0) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Enter Qty & Unit Price',
-          text: `Please enter Qty & Unit Price for item: ${l.itemName || this.getItemName(l.itemId)}`,
-          confirmButtonColor: '#2E5F73'
-        });
-        return false;
-      }
+    const q = l.qty == null ? 0 : +l.qty;
+    const p = l.unitPrice == null ? 0 : +l.unitPrice;
+    const itemName = l.itemName || this.getItemName(l.itemId) || `Line ${idx + 1}`;
+
+    if (q <= 0 || p <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Enter Qty & Unit Price',
+        text: `Please enter Qty & Unit Price for ${itemName}`,
+        confirmButtonColor: '#2E5F73'
+      });
+      return false;
     }
-    return true;
+
+    if (l.supplyMethod === null || l.supplyMethod === undefined || l.supplyMethod === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Fulfillment is required',
+        text: `Please select Fulfillment (PP / Direct DO) for ${itemName}`,
+        confirmButtonColor: '#2E5F73'
+      });
+      return false;
+    }
   }
+
+  return true;
+}
 
   save() {
     if (!this.validateBeforeSave()) return;

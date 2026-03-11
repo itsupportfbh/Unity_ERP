@@ -427,42 +427,37 @@ export class SalesOrderCreateComponent implements OnInit {
     return `${itemId}|${supplyMethodId}`;
   }
 
-  private fetchAvailabilityForLine(ln: SoLine) {
-    const locId = Number(this.locationId || 0);
-    const itemId = Number(ln.itemId || 0);
-    const sm = Number(ln.supplyMethod || 0);
+private fetchAvailabilityForLine(ln: SoLine) {
+  const locId = Number(this.locationId || 0);
+  const itemId = Number(ln.itemId || 0);
+  const sm = Number(ln.supplyMethod || 0);
 
-    // needs all 3
-    if (!(locId > 0) || !(itemId > 0) || !(sm === 1 || sm === 2)) {
-      ln.availability = undefined;
-      return;
-    }
-
-    const key = this.availabilityKey(itemId, sm);
-    if (this.availabilityCache.has(key)) {
-      ln.availability = this.availabilityCache.get(key)!;
-      return;
-    }
-
-    // ✅ Angular service method you should have:
-    // getAvailability(locationId:number, itemId:number, supplyMethodId:number)
-    this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
-      next: (res: any) => {
-        const rows: ItemAvailabilityDto[] = (res?.data ?? res ?? []) as any;
-
-        // your SQL is DISTINCT ItemId, ItemName, Available
-        const first = rows?.[0];
-        const available = Number(first?.available ?? first?.available  ?? 0) || 0;
-
-        this.availabilityCache.set(key, available);
-        ln.availability = available;
-      },
-      error: (err: any) => {
-        console.error('getAvailability failed', err);
-        ln.availability = undefined;
-      }
-    });
+  if (!(locId > 0) || !(itemId > 0) || !(sm === 1 || sm === 2)) {
+    ln.availability = undefined;
+    return;
   }
+
+  const key = this.availabilityKey(itemId, sm);
+  if (this.availabilityCache.has(key)) {
+    ln.availability = this.availabilityCache.get(key)!;
+    return;
+  }
+
+  this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
+    next: (res: any) => {
+      const rows: ItemAvailabilityDto[] = (res?.data ?? res ?? []) as any;
+      const first = rows?.[0];
+      const available = Number(first?.available ?? 0) || 0;
+
+      this.availabilityCache.set(key, available);
+      ln.availability = available;
+    },
+    error: (err: any) => {
+      console.error('getAvailability failed', err);
+      ln.availability = undefined;
+    }
+  });
+}
 
   private refreshAvailabilityForAllLines() {
     (this.soLines || []).forEach(ln => this.fetchAvailabilityForLine(ln));

@@ -279,74 +279,70 @@
       </div>
 </div>
     <!-- Row 5: Item Set Multi -->
-    <div class="qtGrid2" *ngIf="header.lineSourceId === 2 || header.lineSourceId === 3">
-      <div class="qtField">
-        <label class="qtLabel">Select Packages (Multi)</label>
+  <div class="qtGrid2" *ngIf="header.lineSourceId === 2 || header.lineSourceId === 3">
+  <div class="qtField">
+    <label class="qtLabel">Select Packages (Multi)</label>
 
-        <div class="qtAddRow">
-          <div class="qtControl position-relative flex-grow-1" #itemSetBox>
-            <input
-              type="text"
-              class="form-control qtInput qtInput--withIcon"
-              placeholder="Search Packages..."
-              [(ngModel)]="itemSetSearch"
-              name="itemSetSearch"
-              autocomplete="off"
-              (focus)="openItemSetDropdown()"
-              (input)="filterItemSets()" />
+    <div class="qtAddRow">
+      <div class="qtControl position-relative flex-grow-1" #itemSetBox>
+        <input
+          type="text"
+          class="form-control qtInput qtInput--withIcon"
+          placeholder="Search Packages..."
+          [(ngModel)]="itemSetSearch"
+          name="itemSetSearch"
+          autocomplete="off"
+          (focus)="openItemSetDropdown()"
+          (input)="filterItemSets()" />
 
-            <button type="button" class="qtDropBtn" (click)="toggleItemSetDropdown()">
-              <i class="fas fa-chevron-down"></i>
-            </button>
+        <button type="button" class="qtDropBtn" (click)="toggleItemSetDropdown()">
+          <i class="fas fa-chevron-down"></i>
+        </button>
 
-            <div *ngIf="itemSetDdOpen" class="qtMenu">
-              <div
-                class="qtMi qtMi--split"
-                *ngFor="let s of filteredItemSets; trackBy: trackByItemSetId"
-                (mousedown)="$event.preventDefault()"
-                (click)="selectItemSetCandidate(s)">
-                <span class="truncate">{{ s.setName }}</span>
-                <small class="qtMuted">#{{ s.id }}</small>
-              </div>
-              <div class="qtMi qtMi--muted" *ngIf="!filteredItemSets?.length">No results</div>
-            </div>
+        <div *ngIf="itemSetDdOpen" class="qtMenu">
+          <div
+            class="qtMi qtMi--split"
+            *ngFor="let s of filteredItemSets; trackBy: trackByItemSetId"
+            (mousedown)="$event.preventDefault()"
+            (click)="addItemSetDirect(s)">
+
+            <span class="truncate">{{ s.setName }}</span>
+            <small class="qtMuted" *ngIf="!isItemSetSelected(s.id)">#{{ s.id }}</small>
+            <small class="qtMuted text-success" *ngIf="isItemSetSelected(s.id)">Added</small>
           </div>
 
-          <button
-            type="button"
-            class="qtBtn qtBtn--brand qtBtn--minW"
-            (click)="addSelectedItemSet()"
-            [disabled]="!pendingItemSet">
-            <i class="fas fa-plus"></i>
-            Add
-          </button>
-        </div>
-
-        <div class="qtChipWrap" *ngIf="selectedItemSets.length">
-          <div class="qtChip" *ngFor="let s of selectedItemSets; trackBy: trackByItemSetId">
-            <i class="fas fa-layer-group"></i>
-            <span class="t">{{ s.setName }}</span>
-            <button type="button" class="x" (click)="removeItemSet(s.id)" aria-label="Remove">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="qtField">
-        <label class="qtLabel">Quick Notes</label>
-        <div class="qtInfoBox">
-          <div class="qtInfoLine">
-            <i class="fas fa-lightbulb"></i>
-            <span>Choose Package → click <b>Add</b>. Multiple Packages can be added.</span>
-          </div>
-          <div class="qtInfoLine">
-            <i class="fas fa-shield-check"></i>
-            <span>Item master flags are shown in lines (read-only).</span>
+          <div class="qtMi qtMi--muted" *ngIf="!filteredItemSets?.length">
+            No results
           </div>
         </div>
       </div>
     </div>
+
+    <div class="qtChipWrap" *ngIf="selectedItemSets.length">
+      <div class="qtChip" *ngFor="let s of selectedItemSets; trackBy: trackByItemSetId">
+        <i class="fas fa-layer-group"></i>
+        <span class="t">{{ s.setName }}</span>
+        <button type="button" class="x" (click)="removeItemSet(s.id)" aria-label="Remove">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="qtField">
+    <label class="qtLabel">Quick Notes</label>
+    <div class="qtInfoBox">
+      <div class="qtInfoLine">
+        <i class="fas fa-lightbulb"></i>
+        <span>Click package name to add. Multiple packages can be selected.</span>
+      </div>
+      <div class="qtInfoLine">
+        <i class="fas fa-shield-check"></i>
+        <span>Item master flags are shown in lines (read-only).</span>
+      </div>
+    </div>
+  </div>
+</div>
 
     <!-- Row 6 -->
     <div class="qtGrid2">

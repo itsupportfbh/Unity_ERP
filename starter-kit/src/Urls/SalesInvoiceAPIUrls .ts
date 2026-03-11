@@ -15,4 +15,5 @@ export class SalesInvoiceAPIUrls {
 
     static readonly EmailCustomer = '/salesinvoice/';  
     static readonly MarkPrintcount = '/salesinvoice/mark-printed/'; 
+    
 }

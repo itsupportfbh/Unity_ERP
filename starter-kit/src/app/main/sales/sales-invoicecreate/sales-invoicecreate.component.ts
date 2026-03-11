@@ -124,7 +124,7 @@ export class SalesInvoicecreateComponent implements OnInit, OnDestroy {
         // Load static lookups
         forkJoin({
           taxCodes: this.taxCodeService.getTaxCode(),
-          soList: this.soSrv.getSOByStatus(2),
+          soList: this.soSrv.getForSalesInvoice(),
           doList: this.doSrv.getAll()
         })
           .pipe(takeUntil(this.destroy$))
@@ -1000,8 +1000,24 @@ export class SalesInvoicecreateComponent implements OnInit, OnDestroy {
               Swal.fire({ icon: 'error', title: 'Error', text: (res as any)?.message || 'Failed to create' });
             }
           },
-          error: () =>
-            Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to create invoice.' })
+           error: (err) => {
+          let msg = 'Failed to create invoice.';
+
+          if (typeof err?.error === 'string') {
+            const match = err.error.match(/System\.Exception:\s*(.*?)(?:\r?\n\s*at|\r?\n|$)/);
+            msg = match?.[1]?.trim() || err.error;
+          } else if (err?.error?.message) {
+            msg = err.error.message;
+          } else if (err?.message) {
+            msg = err.message;
+          }
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: msg
+          });
+        }
         });
       return;
     }

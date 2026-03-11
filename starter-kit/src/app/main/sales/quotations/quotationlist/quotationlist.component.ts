@@ -44,6 +44,8 @@ type QuotationRow = {
   // optional meta if your API sends in list
   remarks?: string | null;
   deliveryTo?: string | null;
+  createdUserName:string;
+  modifiedUserName:string;
 };
 
 type QuotationLineRow = {
@@ -182,7 +184,10 @@ export class QuotationlistComponent
 
         // optional if list sends
         remarks: q.remarks ?? q.Remarks ?? null,
-        deliveryTo: q.deliveryTo ?? q.DeliveryTo ?? null
+        deliveryTo: q.deliveryTo ?? q.DeliveryTo ?? null,
+        createdUserName:q.createdUserName,
+        modifiedUserName:q.modifiedUserName
+
       })) as QuotationRow[];
 
       this.rows = [...this.allRows];

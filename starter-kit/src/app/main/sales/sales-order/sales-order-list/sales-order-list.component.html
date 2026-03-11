@@ -63,13 +63,15 @@
 
           <ngx-datatable-column name="SO Number" prop="salesOrderNo" [width]="140"></ngx-datatable-column>
 
-          <ngx-datatable-column name="Customer Name" prop="customerName" [width]="210">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="po-wrap-cell" [title]="row.customerName">
-                {{ row.customerName || '-' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
+         <ngx-datatable-column name="Customer Name" prop="customerName" [width]="210">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <div
+      class="po-wrap-cell"
+      [title]="row.isCashSales || row.customerId === 0 || row.customerId == null ? 'Cash Sales' : (row.customerName || '-')">
+      {{ row.isCashSales || row.customerId === 0 || row.customerId == null ? 'Cash Sales' : (row.customerName || '-') }}
+    </div>
+  </ng-template>
+</ngx-datatable-column>
 
           <ngx-datatable-column name="Requested Date" prop="requestedDate" [width]="150">
             <ng-template let-row="row" ngx-datatable-cell-template>

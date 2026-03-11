@@ -24,7 +24,12 @@ import { ItemsetService } from 'app/main/master/itemset/itemsetservice/itemset.s
 type SimpleItem = { id: number; itemName: string; itemCode?: string; uomId?: number; catagoryName: string };
 type LineTaxMode = 'Standard-Rated' | 'Zero-Rated' | 'Exempt';
 type Country = { id: number; countryName: string; gstPercentage: number };
-type Customer = { id: number; name: string; countryId: number };
+type Customer = {
+  id: number;
+  name: string;
+  countryId: number;
+  isCashSales?: boolean;
+};
 type CurrencyRow = { id: number; name: string };
 type PaymentTermsRow = { id: number; name: string; description: string };
 type DiscountType = 'VALUE' | 'PERCENT';
@@ -69,7 +74,7 @@ type UiLine = Omit<QuotationLine, 'uom' | 'uomId'> & {
 
 type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
   deliveryDate: string | null;
-   validityDate: string|null;
+  validityDate: string | null;
   remarks?: string;
   deliveryTo?: string;
 
@@ -84,7 +89,17 @@ type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
   discountManual: boolean;
 
   lineSourceId: LineSourceId;
-   netTotal: number;
+  netTotal: number;
+
+  // ✅ NEW
+  isCashSales: boolean;
+  cashPersonName?: string;
+  cashEmail?: string;
+  cashContactNo?: string;
+
+  costCentre?: string;
+  customerPoNo?: string;
+  orderTime?: string | null;
 };
 
 @Component({
@@ -103,39 +118,48 @@ export class QuotationscreateComponent implements OnInit {
   @ViewChild('modalItemBox') modalItemBox!: ElementRef<HTMLElement>;
   @ViewChild('itemSearchInput', { static: false }) itemSearchInput!: ElementRef<HTMLInputElement>;
 
-  header: UiQuotationHeader = {
-    status: 1,
-    customerId: null,
-    currencyId: 0,
-    fxRate: 1,
-    paymentTermsId: 0,
-    deliveryDate: null,
+ header: UiQuotationHeader = {
+  status: 1,
+  customerId: null,
+  currencyId: 0,
+  fxRate: 1,
+  paymentTermsId: 0,
+  deliveryDate: null,
 
-    subtotal: 0,
-    taxAmount: 0,
-    rounding: 0,
-    grandTotal: 0,
-    needsHodApproval: false,
+  subtotal: 0,
+  taxAmount: 0,
+  rounding: 0,
+  grandTotal: 0,
+  needsHodApproval: false,
 
-    remarks: '',
-    deliveryTo: '',
+  remarks: '',
+  deliveryTo: '',
 
-    lines: [],
+  lines: [],
 
-    taxPct: 0,
-    countryId: null,
-    currency: '',
-    paymentTerms: '',
+  taxPct: 0,
+  countryId: null,
+  currency: '',
+  paymentTerms: '',
 
-    discountType: 'PERCENT',
-    discountInput: 0,
-    docDiscount: 0,
-    discountManual: false,
+  discountType: 'PERCENT',
+  discountInput: 0,
+  docDiscount: 0,
+  discountManual: false,
 
-    lineSourceId: 1,
-     netTotal: 0, 
-      validityDate: null,
-  };
+  lineSourceId: 1,
+  netTotal: 0,
+  validityDate: null,
+
+  // ✅ NEW
+  isCashSales: false,
+  cashPersonName: '',
+  cashEmail: '',
+  cashContactNo: '',
+  costCentre: '',
+  customerPoNo: '',
+  orderTime: null
+};
 
   minDate = '';
 
@@ -478,14 +502,27 @@ private lastAutoRemarks: string | null = null;
         gstPercentage: Number(c.gstPercentage ?? c.GSTPercentage ?? 0)
       }));
 
-      this.customerService.getAllCustomerMaster().subscribe((cres: any) => {
-        const arr = cres?.data ?? [];
-        this.customers = arr.map((c: any) => ({
-          id: Number(c.id ?? c.Id),
-          name: String(c.customerName ?? c.CustomerName ?? '').trim(),
-          countryId: Number(c.countryId ?? c.CountryId ?? 0)
-        }));
-      });
+   this.customerService.getAllCustomerMaster().subscribe((cres: any) => {
+  const arr = cres?.data ?? [];
+
+  const dbCustomers: Customer[] = arr.map((c: any) => ({
+    id: Number(c.id ?? c.Id),
+    name: String(c.customerName ?? c.CustomerName ?? '').trim(),
+    countryId: Number(c.countryId ?? c.CountryId ?? 0),
+    isCashSales: false
+  }));
+
+  // ✅ Add Cash Sales option on top
+  this.customers = [
+    {
+      id: 0,
+      name: 'Cash Sales',
+      countryId: 0,
+      isCashSales: true
+    },
+    ...dbCustomers
+  ];
+});
     });
 
     this.currencyService.getAllCurrency().subscribe((res: any) => {
@@ -664,32 +701,48 @@ private lastAutoRemarks: string | null = null;
         const dto = res?.data ?? res ?? null;
         if (!dto) return;
 
-        this.header = {
-          ...this.header,
-          id: Number(dto.id ?? dto.Id ?? id),
-          status: Number(dto.status ?? dto.Status ?? 0),
-          customerId: Number(dto.customerId ?? dto.CustomerId ?? null),
-          currencyId: Number(dto.currencyId ?? dto.CurrencyId ?? 0),
-          fxRate: Number(dto.fxRate ?? dto.FxRate ?? 1),
-          paymentTermsId: Number(dto.paymentTermsId ?? dto.PaymentTermsId ?? 0),
-          deliveryDate: this.toDateInputValue(dto.deliveryDate ?? dto.DeliveryDate),
-          validityDate:this.toDateInputValue(dto.validityDate ?? dto.validityDate),
-          remarks: String(dto.remarks ?? dto.Remarks ?? ''),
-          deliveryTo: String(dto.deliveryTo ?? dto.DeliveryTo ?? ''),
-          rounding: Number(dto.rounding ?? dto.Rounding ?? 0),
-          subtotal: 0,
-          taxAmount: dto.taxAmount,
-          grandTotal: 0,
-          needsHodApproval: !!(dto.needsHodApproval ?? dto.NeedsHodApproval ?? false),
-          discountType: (dto.discountType ?? this.header.discountType) as any,
-          discountInput: Number(dto.discountInput ?? this.header.discountInput ?? 0),
-          discountManual: true,
-          lineSourceId: (Number(dto.lineSourceId ?? dto.LineSource ?? 1) as any),
-          taxPct: Number(dto.taxPct ?? dto.gstPct ?? dto.GstPct ?? 0) || 0
-        };
+    this.header = {
+  ...this.header,
+  id: Number(dto.id ?? dto.Id ?? id),
+  status: Number(dto.status ?? dto.Status ?? 0),
+  customerId: Number(dto.customerId ?? dto.CustomerId ?? null),
+  currencyId: Number(dto.currencyId ?? dto.CurrencyId ?? 0),
+  fxRate: Number(dto.fxRate ?? dto.FxRate ?? 1),
+  paymentTermsId: Number(dto.paymentTermsId ?? dto.PaymentTermsId ?? 0),
+  deliveryDate: this.toDateInputValue(dto.deliveryDate ?? dto.DeliveryDate),
+  validityDate: this.toDateInputValue(dto.validityDate ?? dto.ValidityDate),
+  remarks: String(dto.remarks ?? dto.Remarks ?? ''),
+  deliveryTo: String(dto.deliveryTo ?? dto.DeliveryTo ?? ''),
+  rounding: Number(dto.rounding ?? dto.Rounding ?? 0),
+  subtotal: 0,
+  taxAmount: dto.taxAmount,
+  grandTotal: 0,
+  needsHodApproval: !!(dto.needsHodApproval ?? dto.NeedsHodApproval ?? false),
+  discountType: (dto.discountType ?? this.header.discountType) as any,
+  discountInput: Number(dto.discountInput ?? this.header.discountInput ?? 0),
+  discountManual: true,
+  lineSourceId: (Number(dto.lineSourceId ?? dto.LineSource ?? 1) as any),
+  taxPct: Number(dto.taxPct ?? dto.gstPct ?? dto.GstPct ?? 0) || 0,
+  orderTime: dto.orderTime,
+  // ✅ NEW
+  isCashSales: !!(dto.isCashSales ?? dto.IsCashSales ?? false),
+  cashPersonName: String(dto.cashPersonName ?? dto.CashPersonName ?? ''),
+  cashEmail: String(dto.cashEmail ?? dto.CashEmail ?? ''),
+  cashContactNo: String(dto.cashContactNo ?? dto.CashContactNo ?? ''),
+  costCentre: String(dto.costCentre ?? dto.CostCentre ?? ''),
+  customerPoNo: String(dto.customerPoNo ?? dto.CustomerPoNo ?? '')
+};
 
-        const custName = dto.customerName ?? dto.CustomerName;
-        if (custName) this.customerSearch = String(custName);
+       const custId = Number(dto.customerId ?? dto.CustomerId ?? 0);
+const custName = dto.customerName ?? dto.CustomerName ?? '';
+
+if (custId === 0 || !String(custName).trim()) {
+  this.customerSearch = 'Cash Sales';
+  this.header.isCashSales = true;
+} else {
+  this.customerSearch = String(custName);
+  this.header.isCashSales = false;
+}
 
         const curName = dto.currencyName ?? dto.CurrencyName;
         if (curName) { this.currencySearch = String(curName); this.header.currency = String(curName); }
@@ -823,41 +876,72 @@ private lastAutoRemarks: string | null = null;
     this.customerDdOpen = true;
   }
 
-  selectCustomer(c: Customer) {
-    this.customerSearch = c.name;
-    this.customerDdOpen = false;
-    this.onCustomerChange(c.id);
-  }
+ selectCustomer(c: Customer) {
+  this.customerSearch = c.name;
+  this.customerDdOpen = false;
+  this.onCustomerChange(c.id, c);
+}
 
-  onCustomerChange(custId: number | null) {
-    this.header.customerId = custId;
-    const cust = this.customers.find(x => x.id === custId) || null;
-    this.header.countryId = cust?.countryId ?? null;
+  onCustomerChange(custId: number | null, selectedCustomer?: Customer) {
+  this.header.customerId = custId;
 
-    const country = this.countries.find(c => c.id === (cust?.countryId ?? -1)) || null;
-    this.activeCustomerCountry = country;
-    this.header.taxPct = country?.gstPercentage ?? 0;
+  const cust = selectedCustomer || this.customers.find(x => x.id === custId) || null;
 
-    const gst = +this.header.taxPct || 0;
-    if (gst !== 9) {
-      this.lines.forEach(l => {
-        if (!l.isSetHeader && (l.taxMode === 'Standard-Rated' || l.taxMode === 'Exempt')) {
-          l.taxMode = 'Zero-Rated';
-          l.taxCodeId = this.taxModeToTaxCodeId('Zero-Rated');
-          this.computeLine(l);
-        }
-      });
-    }
+  // ✅ Cash Sales selected
+  if (cust?.isCashSales) {
+    this.header.isCashSales = true;
+    this.header.countryId = null;
+    this.activeCustomerCountry = null;
 
-    if (this.showModal) {
-      if ((+this.header.taxPct || 0) !== 9 && this.modal.taxMode !== 'Zero-Rated') {
-        this.modal.taxMode = 'Zero-Rated';
+    // usually cash sales can be zero-rated until user/customer logic decides
+    this.header.taxPct = 0;
+
+    this.lines.forEach(l => {
+      if (!l.isSetHeader) {
+        l.taxMode = 'Zero-Rated';
+        l.taxCodeId = this.taxModeToTaxCodeId('Zero-Rated');
+        this.computeLine(l);
       }
-      this.previewLineTotals();
-    }
+    });
 
     this.computeTotals();
+    return;
   }
+
+  // ✅ Normal customer selected
+  this.header.isCashSales = false;
+
+  // clear cash sales fields when normal customer selected
+  this.header.cashPersonName = '';
+  this.header.cashEmail = '';
+  this.header.cashContactNo = '';
+
+  this.header.countryId = cust?.countryId ?? null;
+
+  const country = this.countries.find(c => c.id === (cust?.countryId ?? -1)) || null;
+  this.activeCustomerCountry = country;
+  this.header.taxPct = country?.gstPercentage ?? 0;
+
+  const gst = +this.header.taxPct || 0;
+  if (gst !== 9) {
+    this.lines.forEach(l => {
+      if (!l.isSetHeader && (l.taxMode === 'Standard-Rated' || l.taxMode === 'Exempt')) {
+        l.taxMode = 'Zero-Rated';
+        l.taxCodeId = this.taxModeToTaxCodeId('Zero-Rated');
+        this.computeLine(l);
+      }
+    });
+  }
+
+  if (this.showModal) {
+    if ((+this.header.taxPct || 0) !== 9 && this.modal.taxMode !== 'Zero-Rated') {
+      this.modal.taxMode = 'Zero-Rated';
+    }
+    this.previewLineTotals();
+  }
+
+  this.computeTotals();
+}
 
   openCurrencyDropdown() {
     this.currencyDdOpen = true;
@@ -1186,40 +1270,46 @@ selectPaymentTerms(p: PaymentTermsRow) {
   save() {
     if (!this.validateBeforeSave()) return;
 
-    const dto: any = {
-      ...this.header,
-      remarks: (this.header.remarks || '').trim(),
-      deliveryTo: (this.header.deliveryTo || '').trim(),
-      deliveryDate: this.header.deliveryDate,
-      validityDate: this.header.validityDate ?? this.header.deliveryDate,
-      lineSourceId: this.header.lineSourceId,
-      itemSetIds: (this.selectedItemSets || []).map(x => x.id),
-      lines: this.lines
-        .filter(l => !l.isSetHeader)
-        .map(l => {
-          const taxMode = (l.taxMode || (l.taxCodeId != null ? this.taxCodeIdToTaxMode(l.taxCodeId) : 'Zero-Rated')) as LineTaxMode;
-          const taxCodeId = l.taxCodeId ?? this.taxModeToTaxCodeId(taxMode);
+  const dto: any = {
+  ...this.header,
+  remarks: (this.header.remarks || '').trim(),
+  deliveryTo: (this.header.deliveryTo || '').trim(),
+  deliveryDate: this.header.deliveryDate,
+  validityDate: this.header.validityDate ?? this.header.deliveryDate,
+  lineSourceId: this.header.lineSourceId,
+  itemSetIds: (this.selectedItemSets || []).map(x => x.id),
 
-          return {
-            ...l,
-            itemId: l.itemId,
-            uomId: l.uomId ?? null,
-            qty: +l.qty || 0,
-            unitPrice: +l.unitPrice || 0,
-            discountPct: +l.discountPct || 0,
-            taxMode,
-            taxCodeId,
-            description: (l.description || '').trim(),
-            itemSetId: l.itemSetId ?? null,
-            setName: l.setName ?? null,
-            isFromSet: !!l.isFromSet,
+  // ✅ NEW
+  isCashSales: !!this.header.isCashSales,
+  cashPersonName: (this.header.cashPersonName || '').trim(),
+  cashEmail: (this.header.cashEmail || '').trim(),
+  cashContactNo: (this.header.cashContactNo || '').trim(),
+  costCentre: (this.header.costCentre || '').trim(),
+  customerPoNo: (this.header.customerPoNo || '').trim(),
+orderTime: this.header.orderTime,
+  lines: this.lines
+    .filter(l => !l.isSetHeader)
+    .map(l => {
+      const taxMode = (l.taxMode || (l.taxCodeId != null ? this.taxCodeIdToTaxMode(l.taxCodeId) : 'Zero-Rated')) as LineTaxMode;
+      const taxCodeId = l.taxCodeId ?? this.taxModeToTaxCodeId(taxMode);
 
-            // ✅ FIX: don't force 0; keep null or 1/2
-            supplyMethod: (l.supplyMethod == null ? null : Number(l.supplyMethod))
-          };
-        })
-    };
-
+      return {
+        ...l,
+        itemId: l.itemId,
+        uomId: l.uomId ?? null,
+        qty: +l.qty || 0,
+        unitPrice: +l.unitPrice || 0,
+        discountPct: +l.discountPct || 0,
+        taxMode,
+        taxCodeId,
+        description: (l.description || '').trim(),
+        itemSetId: l.itemSetId ?? null,
+        setName: l.setName ?? null,
+        isFromSet: !!l.isFromSet,
+        supplyMethod: (l.supplyMethod == null ? null : Number(l.supplyMethod))
+      };
+    })
+};
     if (!dto.number || !dto.number.trim?.()) {
       dto.number = `QT-${new Date().toISOString().replace(/\D/g, '').slice(0, 14)}`;
     }

@@ -571,7 +571,10 @@ export class SalesOrderCreateComponent implements OnInit {
         this.soHdr.quotationNo = head.quotationNo;
         this.soHdr.customerId = head.customerId;
         this.searchTexts['quotationNo'] = head.number || head.quotationNo?.toString() || '';
-        this.searchTexts['customer'] = head.customerName || '';
+       this.searchTexts['customer'] =
+  head.customerId === 0 || head.customerId == null
+    ? 'Cash Sales'
+    : (head.customerName || '');
 
         this.soHdr.requestedDate = this.toInputDate(head.requestedDate);
         this.soHdr.deliveryDate = this.toInputDate(head.deliveryDate);
@@ -657,7 +660,10 @@ export class SalesOrderCreateComponent implements OnInit {
     if (field === 'quotationNo') {
       this.soHdr.quotationNo = item.id;
       this.searchTexts['quotationNo'] = item.number ?? '';
-      this.searchTexts['customer'] = item.customerName ?? '';
+     this.searchTexts['customer'] =
+  item.customerId === 0 || item.customerId == null
+    ? 'Cash Sales'
+    : (item.customerName || '');
 
       const match = (this.customers ?? []).find((c: any) =>
         (c.customerName ?? c.name ?? '').toLowerCase() === (item.customerName ?? '').toLowerCase()
@@ -743,7 +749,10 @@ export class SalesOrderCreateComponent implements OnInit {
 
     if (field === 'customer') {
       this.soHdr.customerId = item.id;
-      this.searchTexts['customer'] = item.customerName ?? item.name ?? '';
+      this.searchTexts['customer'] =
+  item.customerId === 0 || item.customerId == null
+    ? 'Cash Sales'
+    : (item.customerName || '');
       this.dropdownOpen['customer'] = false;
     }
   }

@@ -964,18 +964,41 @@ export class QuotationscreateComponent implements OnInit {
     if (this.itemSetDdOpen) this.filterItemSets();
   }
 
-  openItemSetDropdown() {
-    this.itemSetDdOpen = true;
-    this.filteredItemSets = (this.itemSets || []).slice(0, 60);
+openItemSetDropdown() {
+  this.itemSetDdOpen = true;
+  this.filteredItemSets = (this.itemSets || [])
+    .filter(s => !this.selectedItemSets.some(x => x.id === s.id))
+    .slice(0, 60);
+}
+addItemSetDirect(s: ItemSetHeaderRow) {
+  if (this.selectedItemSets.some(x => x.id === s.id)) {
+    return;
   }
 
-  filterItemSets() {
-    const q = (this.itemSetSearch || '').trim().toLowerCase();
-    this.filteredItemSets = !q
-      ? (this.itemSets || []).slice(0, 60)
-      : (this.itemSets || []).filter(s => (s.setName || '').toLowerCase().includes(q)).slice(0, 60);
+  this.selectedItemSets.push(s);
+  this.loadItemSetItemsAndAppend(s.id, s.setName);
+
+  this.itemSetSearch = '';
+  this.filterItemSets();
+
+  setTimeout(() => {
     this.itemSetDdOpen = true;
-  }
+  }, 0);
+}
+isItemSetSelected(id: number): boolean {
+  return this.selectedItemSets.some(x => x.id === id);
+}
+
+filterItemSets() {
+  const q = (this.itemSetSearch || '').trim().toLowerCase();
+
+  this.filteredItemSets = (this.itemSets || [])
+    .filter(s => !this.selectedItemSets.some(x => x.id === s.id))
+    .filter(s => !q || (s.setName || '').toLowerCase().includes(q))
+    .slice(0, 60);
+
+  this.itemSetDdOpen = true;
+}
 
   selectItemSetCandidate(s: ItemSetHeaderRow) {
     this.pendingItemSet = s;

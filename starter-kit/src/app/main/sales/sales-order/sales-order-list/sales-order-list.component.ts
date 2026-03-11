@@ -550,7 +550,7 @@ private mapProcToText(s: number): string {
     const companyEmail = 'info@unityworks.com';
 
     const soNo = this.escapeHtml(h?.salesOrderNo || '-');
-    const customer = this.escapeHtml(h?.customerName || '-');
+    const customer = this.escapeHtml(h?.customerName || 'Cash Sales');
     const reqDate = this.escapeHtml(this.datePipe.transform(h?.requestedDate as any, 'dd-MM-yyyy') || this.fmtDate(h?.requestedDate));
     const delDate = this.escapeHtml(this.datePipe.transform(h?.deliveryDate as any, 'dd-MM-yyyy') || this.fmtDate(h?.deliveryDate));
     const deliveryTo = this.escapeHtml(

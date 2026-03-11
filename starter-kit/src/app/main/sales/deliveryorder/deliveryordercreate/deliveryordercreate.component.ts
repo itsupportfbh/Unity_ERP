@@ -17,7 +17,14 @@ import { environment } from 'environments/environment';
 
 /* ---------- local types ---------- */
 
-type SoBrief = { id: number; salesOrderNo: string; customerName?: string };
+type SoBrief = {
+  id: number;
+  salesOrderNo: string;
+  customerName?: string;
+  customerId?: number | null;
+  isCashSales?: boolean;
+};
+
 type Driver  = { id: number; name: string; mobileNumber: string };
 type Vehicle = { id: number; vehicleNo: string; vehicleType?: string };
 type UomRow  = { id: number; name: string };
@@ -52,6 +59,7 @@ type DoHeaderDto = {
   vehicleId: number | null;
   routeName: string | null;
   deliveryDate: string | null;
+  deliveryTime?: string | null;
   isPosted: boolean | number;
   modeOfDeliveryId?: number | null;
   driverMobileNo?: string | null;
@@ -96,6 +104,7 @@ type DoUpdateHeaderRequest = {
   vehicleId: number | null;
   routeName: string | null;
   deliveryDate: Date | null;
+  deliveryTime: string | null;
   modeOfDeliveryId: number | null;
   driverMobileNo?: string | null;
   receivedPersonName?: string | null;
@@ -112,7 +121,6 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
 
   @ViewChild('signatureCanvas') signatureCanvas!: ElementRef<HTMLCanvasElement>;
 
-  // change this if needed
   apiBaseUrl = (environment as any)?.apiUrl || '';
 
   // mode
@@ -142,6 +150,7 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
   driverId: number | null = null;
   vehicleId: number | null = null;
   deliveryDate: Date | null = null;
+  deliveryTime: string | null = null;
   routeText: string | null = null;
 
   // create-mode lines
@@ -199,7 +208,6 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
       this.initCanvas();
       this.hasCanvasInitialized = true;
 
-      // only load to canvas if base64 image
       if (this.receivedSignature && this.receivedSignature.startsWith('data:image')) {
         this.loadSignatureToCanvas(this.receivedSignature);
       }
@@ -425,7 +433,9 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
       this.soList = (arr || []).map((r: any) => ({
         id: Number(r.id ?? r.Id),
         salesOrderNo: String(r.salesOrderNo ?? r.SalesOrderNo ?? r.soNumber ?? ''),
-        customerName: String(r.customerName ?? r.CustomerName ?? '')
+        customerName: String(r.customerName ?? r.CustomerName ?? ''),
+        customerId: r.customerId != null ? Number(r.customerId ?? r.CustomerId) : null,
+        isCashSales: !!(r.isCashSales ?? r.IsCashSales)
       }));
 
       if (this.isEdit && this.selectedSoId) {
@@ -465,7 +475,9 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
       const so: SoBrief = {
         id: Number(dto.id ?? dto.Id),
         salesOrderNo: String(dto.salesOrderNo ?? dto.SalesOrderNo ?? dto.soNumber ?? ''),
-        customerName: String(dto.customerName ?? dto.CustomerName ?? '')
+        customerName: String(dto.customerName ?? dto.CustomerName ?? ''),
+        customerId: dto.customerId != null ? Number(dto.customerId ?? dto.CustomerId) : null,
+        isCashSales: !!(dto.isCashSales ?? dto.IsCashSales)
       };
 
       this.soList = [so, ...(this.soList || [])];
@@ -491,6 +503,9 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
       this.vehicleId = hdr.vehicleId != null ? Number(hdr.vehicleId) : null;
       this.routeText = hdr.routeName ?? null;
       this.deliveryDate = hdr.deliveryDate ? new Date(hdr.deliveryDate) : new Date();
+      this.deliveryTime = this.normalizeTimeValue(
+        (hdr as any).deliveryTime ?? (hdr as any).DeliveryTime ?? null
+      );
       this.isPosted = !!(hdr.isPosted as any);
 
       this.modeOfDeliveryId = Number((hdr as any).modeOfDeliveryId ?? (hdr as any).ModeOfDeliveryId ?? 1);
@@ -703,6 +718,7 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
         vehicleId: this.isSelfMode() ? null : this.vehicleId,
         routeName: (this.routeText || '').trim() || null,
         deliveryDate: new Date(),
+        deliveryTime: this.deliveryTime || null,
         modeOfDeliveryId: this.modeOfDeliveryId,
         driverMobileNo: this.isSelfMode() ? null : (this.driverMobileNo || null),
         receivedPersonName: (this.receivedPersonName || '').trim() || null,
@@ -740,6 +756,7 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
         vehicleId: this.isSelfMode() ? null : this.vehicleId,
         routeName: (this.routeText || '').trim() || null,
         deliveryDate: this.deliveryDate,
+        deliveryTime: this.deliveryTime || null,
         modeOfDeliveryId: this.modeOfDeliveryId,
         driverMobileNo: this.isSelfMode() ? null : (this.driverMobileNo || null),
         receivedPersonName: (this.receivedPersonName || '').trim() || null,
@@ -784,6 +801,7 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
     this.vehicleId = null;
     this.routeText = null;
     this.deliveryDate = null;
+    this.deliveryTime = null;
     this.modeOfDeliveryId = 1;
 
     this.soLines = [];
@@ -817,6 +835,23 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
     const dd = String(date.getDate()).padStart(2, '0');
 
     return `${yyyy}-${mm}-${dd}`;
+  }
+
+  private normalizeTimeValue(val: any): string | null {
+    if (val == null || val === '') return null;
+
+    const s = String(val).trim();
+
+    if (!s) return null;
+
+    if (s.includes(':')) {
+      const parts = s.split(':');
+      const hh = (parts[0] || '00').padStart(2, '0');
+      const mm = (parts[1] || '00').padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+
+    return s.length >= 5 ? s.substring(0, 5) : s;
   }
 
   goDoList() {

@@ -83,13 +83,13 @@
               [disabled]="isEdit"
               (change)="onSoChanged(selectedSoId)">
 
-                 <ng-template ng-option-tmp let-item="item">
-      {{ item?.salesOrderNo }} — {{ item?.isCashSales === true || item?.customerId === 0 ? 'Cash Sales' : (item?.customerName || 'Cash Sales') }}
-    </ng-template>
- 
-    <ng-template ng-label-tmp let-item="item">
-      {{ item?.salesOrderNo }} — {{ item?.isCashSales === true || item?.customerId === 0 ? 'Cash Sales' : (item?.customerName || 'Cash Sales') }}
-    </ng-template>
+              <ng-template ng-option-tmp let-item="item">
+                {{ item?.salesOrderNo }} — {{ item?.isCashSales === true || item?.customerId === 0 ? 'Cash Sales' : (item?.customerName || 'Cash Sales') }}
+              </ng-template>
+
+              <ng-template ng-label-tmp let-item="item">
+                {{ item?.salesOrderNo }} — {{ item?.isCashSales === true || item?.customerId === 0 ? 'Cash Sales' : (item?.customerName || 'Cash Sales') }}
+              </ng-template>
             </ng-select>
           </div>
 
@@ -108,6 +108,15 @@
               [disabled]="isPosted"
               (change)="onModeOfDeliveryChanged()">
             </ng-select>
+          </div>
+
+          <div class="col-lg-4 col-md-6">
+            <label class="form-label do-ui-label">Delivery Time</label>
+            <input type="time"
+                   class="form-control do-ui-input"
+                   [(ngModel)]="deliveryTime"
+                   name="deliveryTime"
+                   [disabled]="isPosted" />
           </div>
 
           <div class="col-lg-4 col-md-6" *ngIf="!isSelfMode()">

@@ -91,7 +91,6 @@ type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
   lineSourceId: LineSourceId;
   netTotal: number;
 
-  // ✅ NEW
   isCashSales: boolean;
   cashPersonName?: string;
   cashEmail?: string;
@@ -118,48 +117,47 @@ export class QuotationscreateComponent implements OnInit {
   @ViewChild('modalItemBox') modalItemBox!: ElementRef<HTMLElement>;
   @ViewChild('itemSearchInput', { static: false }) itemSearchInput!: ElementRef<HTMLInputElement>;
 
- header: UiQuotationHeader = {
-  status: 1,
-  customerId: null,
-  currencyId: 0,
-  fxRate: 1,
-  paymentTermsId: 0,
-  deliveryDate: null,
+  header: UiQuotationHeader = {
+    status: 1,
+    customerId: null,
+    currencyId: 0,
+    fxRate: 1,
+    paymentTermsId: 0,
+    deliveryDate: null,
 
-  subtotal: 0,
-  taxAmount: 0,
-  rounding: 0,
-  grandTotal: 0,
-  needsHodApproval: false,
+    subtotal: 0,
+    taxAmount: 0,
+    rounding: 0,
+    grandTotal: 0,
+    needsHodApproval: false,
 
-  remarks: '',
-  deliveryTo: '',
+    remarks: '',
+    deliveryTo: '',
 
-  lines: [],
+    lines: [],
 
-  taxPct: 0,
-  countryId: null,
-  currency: '',
-  paymentTerms: '',
+    taxPct: 0,
+    countryId: null,
+    currency: '',
+    paymentTerms: '',
 
-  discountType: 'PERCENT',
-  discountInput: 0,
-  docDiscount: 0,
-  discountManual: false,
+    discountType: 'PERCENT',
+    discountInput: 0,
+    docDiscount: 0,
+    discountManual: false,
 
-  lineSourceId: 1,
-  netTotal: 0,
-  validityDate: null,
+    lineSourceId: 1,
+    netTotal: 0,
+    validityDate: null,
 
-  // ✅ NEW
-  isCashSales: false,
-  cashPersonName: '',
-  cashEmail: '',
-  cashContactNo: '',
-  costCentre: '',
-  customerPoNo: '',
-  orderTime: null
-};
+    isCashSales: false,
+    cashPersonName: '',
+    cashEmail: '',
+    cashContactNo: '',
+    costCentre: '',
+    customerPoNo: '',
+    orderTime: null
+  };
 
   minDate = '';
 
@@ -175,7 +173,7 @@ export class QuotationscreateComponent implements OnInit {
   paymentTermsSrv: PaymentTermsRow[] = [];
   paymentTermsSearch = '';
   paymentTermsDdOpen = false;
- filteredPaymentTerms : PaymentTermsRow[] = [];
+  filteredPaymentTerms: PaymentTermsRow[] = [];
 
   customerSearch = '';
   customerDdOpen = false;
@@ -187,7 +185,6 @@ export class QuotationscreateComponent implements OnInit {
   private loadedItemSetIds = new Set<number>();
   private uomNameToId = new Map<string, number>();
 
-  // ✅ IMPORTANT: lines always contains BOTH header rows + item rows (like your HTML expects)
   lines: UiLine[] = [];
 
   itemSets: ItemSetHeaderRow[] = [];
@@ -196,10 +193,9 @@ export class QuotationscreateComponent implements OnInit {
   filteredItemSets: ItemSetHeaderRow[] = [];
   selectedItemSets: ItemSetHeaderRow[] = [];
   pendingItemSet: ItemSetHeaderRow | null = null;
-private lastAutoRemarks: string | null = null;
-  // ✅ Mapping for EDIT hydration: itemId -> {itemSetId, setName}
-  private itemIdToSet = new Map<number, { itemSetId: number; setName: string }>();
+  private lastAutoRemarks: string | null = null;
 
+  private itemIdToSet = new Map<number, { itemSetId: number; setName: string }>();
   private editId: number | null = null;
 
   showModal = false;
@@ -245,9 +241,6 @@ private lastAutoRemarks: string | null = null;
     private itemSetService: ItemsetService
   ) {}
 
-  // =========================
-  // Helpers
-  // =========================
   private normalizeUomName(v: any): string {
     return String(v ?? '').trim().toLowerCase();
   }
@@ -298,7 +291,6 @@ private lastAutoRemarks: string | null = null;
     if (changed) this.computeTotals();
   }
 
-  // ✅ mapping both ways
   private taxCodeIdToTaxMode(id?: number | null): LineTaxMode {
     switch (Number(id)) {
       case 1: return 'Standard-Rated';
@@ -341,14 +333,24 @@ private lastAutoRemarks: string | null = null;
     return v === 2 ? 'DIRECT DO' : v === 1 ? 'PP' : 'SELECT';
   }
 
-  // =========================
-  // ✅ Apply auto supply method
-  // =========================
+  private getRawSupplyMethod(src: any): number | null {
+    const raw =
+      src?.supplyMethodId ??
+      src?.SupplyMethodId ??
+      src?.supplyMethod ??
+      src?.SupplyMethod ??
+      null;
+
+    if (raw === null || raw === undefined || raw === '') return null;
+
+    const n = Number(raw);
+    return Number.isNaN(n) ? null : n;
+  }
+
   private applyAutoSupplyMethodIfEmpty(l: UiLine) {
     if (l.isSetHeader) return;
 
-    // ✅ If already selected, keep (also normalize to number)
-    if (l.supplyMethod !== null && l.supplyMethod !== undefined) {
+    if (l.supplyMethod !== null && l.supplyMethod !== undefined && l.supplyMethod !== ('' as any)) {
       l.supplyMethod = Number(l.supplyMethod);
       l.supplyMethodText = this.supplyMethodLabel(l.supplyMethod);
       return;
@@ -357,27 +359,22 @@ private lastAutoRemarks: string | null = null;
     const isSellable = !!l.isSellable;
     const isConsumable = !!l.isConsumable;
 
-    // ✅ FIXED RULES (matches dropdown):
-    // Sellable only  -> Direct DO (2)
-    // Consumable only-> PP (1)
-    // Both/Select    -> null (user decide)
-    if (isSellable && !isConsumable) l.supplyMethod = 2;      // ✅ was 0 (wrong)
-    else if (!isSellable && isConsumable) l.supplyMethod = 1; // ✅ PP
-    else l.supplyMethod = null;                               // ✅ was PP before; now Select
+    if (isSellable && !isConsumable) l.supplyMethod = 2;
+    else if (!isSellable && isConsumable) l.supplyMethod = 1;
+    else l.supplyMethod = null;
 
     l.supplyMethodText = this.supplyMethodLabel(l.supplyMethod);
   }
 
   onSupplyMethodChanged(l: UiLine, i: number) {
-    // ✅ normalize to number to match [ngValue] numeric
-    l.supplyMethod = (l.supplyMethod == null) ? null : Number(l.supplyMethod);
+    l.supplyMethod = (l.supplyMethod == null || l.supplyMethod === ('' as any))
+      ? null
+      : Number(l.supplyMethod);
+
     l.supplyMethodText = this.supplyMethodLabel(l.supplyMethod);
     this.onLineChanged(i);
   }
 
-  // =========================
-  // ✅ Bulk flags
-  // =========================
   private loadFlagsForLines(lines: UiLine[]) {
     const ids = Array.from(new Set(
       (lines || []).filter(x => !x.isSetHeader && (x.itemId || 0) > 0).map(x => Number(x.itemId))
@@ -400,8 +397,9 @@ private lastAutoRemarks: string | null = null;
           l.allowManualFulfillment = !!f.allowManualFulfillment;
           if ((f as any).fulfillmentText) l.fulfillmentText = (f as any).fulfillmentText;
 
-          // ✅ normalize supplyMethod first (avoid string mismatch)
-          l.supplyMethod = (l.supplyMethod == null) ? null : Number(l.supplyMethod);
+          l.supplyMethod = (l.supplyMethod == null || l.supplyMethod === ('' as any))
+            ? null
+            : Number(l.supplyMethod);
 
           this.applyAutoSupplyMethodIfEmpty(l);
         }
@@ -409,9 +407,6 @@ private lastAutoRemarks: string | null = null;
     });
   }
 
-  // =========================
-  // Init
-  // =========================
   ngOnInit(): void {
     this.setMinDate();
     this.loadLookups();
@@ -445,9 +440,6 @@ private lastAutoRemarks: string | null = null;
     return `${yyyy}-${mm}-${dd}`;
   }
 
-  // =========================
-  // Close dropdowns when click outside
-  // =========================
   @HostListener('document:click', ['$event'])
   onDocClick(ev: MouseEvent) {
     const t = ev.target as Node;
@@ -469,9 +461,6 @@ private lastAutoRemarks: string | null = null;
     if (this.showModal) this.closeModal();
   }
 
-  // =========================
-  // Lookups
-  // =========================
   loadLookups() {
     this.chartOfAccountService.getAllChartOfAccount().subscribe(() => {
       this.itemsService.getAllItem().subscribe((ires: any) => {
@@ -502,27 +491,26 @@ private lastAutoRemarks: string | null = null;
         gstPercentage: Number(c.gstPercentage ?? c.GSTPercentage ?? 0)
       }));
 
-   this.customerService.getAllCustomerMaster().subscribe((cres: any) => {
-  const arr = cres?.data ?? [];
+      this.customerService.getAllCustomerMaster().subscribe((cres: any) => {
+        const arr = cres?.data ?? [];
 
-  const dbCustomers: Customer[] = arr.map((c: any) => ({
-    id: Number(c.id ?? c.Id),
-    name: String(c.customerName ?? c.CustomerName ?? '').trim(),
-    countryId: Number(c.countryId ?? c.CountryId ?? 0),
-    isCashSales: false
-  }));
+        const dbCustomers: Customer[] = arr.map((c: any) => ({
+          id: Number(c.id ?? c.Id),
+          name: String(c.customerName ?? c.CustomerName ?? '').trim(),
+          countryId: Number(c.countryId ?? c.CountryId ?? 0),
+          isCashSales: false
+        }));
 
-  // ✅ Add Cash Sales option on top
-  this.customers = [
-    {
-      id: 0,
-      name: 'Cash Sales',
-      countryId: 0,
-      isCashSales: true
-    },
-    ...dbCustomers
-  ];
-});
+        this.customers = [
+          {
+            id: 0,
+            name: 'Cash Sales',
+            countryId: 0,
+            isCashSales: true
+          },
+          ...dbCustomers
+        ];
+      });
     });
 
     this.currencyService.getAllCurrency().subscribe((res: any) => {
@@ -552,22 +540,17 @@ private lastAutoRemarks: string | null = null;
     });
   }
 
-  // ===========================================================
-  // ✅ MAIN FIX: Edit load-க்கு set mapping build + headers rebuild
-  // ===========================================================
   private hydrateSetInfoForEditThenRebuildRows(): void {
     const sets = (this.selectedItemSets || [])
       .map(s => ({ id: Number(s.id), setName: String(s.setName || '').trim() }))
       .filter(s => s.id > 0);
 
-    // If no sets, just ensure totals
     if (!sets.length) {
       this.computeTotals();
       this.loadFlagsForLines(this.lines.filter(x => !x.isSetHeader));
       return;
     }
 
-    // call all itemset details
     const calls = sets.map(s => this.itemSetService.getByIdItemSet(s.id));
 
     forkJoin(calls).subscribe({
@@ -579,7 +562,6 @@ private lastAutoRemarks: string | null = null;
           const setName = sets[idx].setName || String(res?.data?.setName || `Set #${setId}`);
 
           const dto = res?.data ?? null;
-          // ✅ Your API key variations supported
           const rows: any[] = dto?.items ?? dto?.itemSetItems ?? dto?.lines ?? dto?.data ?? [];
           for (const r of rows) {
             const itemId = Number(r.itemId ?? r.ItemId ?? 0);
@@ -590,7 +572,6 @@ private lastAutoRemarks: string | null = null;
           }
         });
 
-        // attach mapping to ALL item rows
         for (const l of this.lines) {
           if (l.isSetHeader) continue;
           const m = this.itemIdToSet.get(Number(l.itemId));
@@ -601,16 +582,12 @@ private lastAutoRemarks: string | null = null;
           }
         }
 
-        // rebuild full lines array with proper set headers
         this.rebuildLinesWithSetHeaders();
-
-        // now totals + flags
         this.backfillMissingUoms();
         this.computeTotals();
         this.loadFlagsForLines(this.lines.filter(x => !x.isSetHeader));
       },
       error: () => {
-        // fallback: still compute
         this.computeTotals();
         this.loadFlagsForLines(this.lines.filter(x => !x.isSetHeader));
       }
@@ -618,23 +595,17 @@ private lastAutoRemarks: string | null = null;
   }
 
   private rebuildLinesWithSetHeaders(): void {
-    // Separate item lines
     const items = this.lines.filter(x => !x.isSetHeader);
-
-    // build new list
     const rebuilt: UiLine[] = [];
     const added = new Set<number>();
 
-    // keep order same as selectedItemSets (3rd image style)
     const setOrder = (this.selectedItemSets || []).map(s => Number(s.id));
 
-    // 1) add sets in order
     for (const sid of setOrder) {
       const setName = this.selectedItemSets.find(x => x.id === sid)?.setName || `Set #${sid}`;
       const group = items.filter(x => x.isFromSet && Number(x.itemSetId) === sid);
       if (!group.length) continue;
 
-      // header row
       rebuilt.push({
         itemId: 0,
         uomId: null,
@@ -651,17 +622,13 @@ private lastAutoRemarks: string | null = null;
         supplyMethodText: 'SELECT'
       } as any);
 
-      // item rows
       for (const g of group) rebuilt.push(g);
-
       added.add(sid);
     }
 
-    // 2) add remaining non-set items
     const nonSet = items.filter(x => !x.isFromSet || !x.itemSetId);
     for (const l of nonSet) rebuilt.push(l);
 
-    // 3) if any set lines exist but not in selectedItemSets, still show
     const extraSetIds = Array.from(new Set(items.filter(x => x.isFromSet && x.itemSetId).map(x => Number(x.itemSetId))));
     for (const sid of extraSetIds) {
       if (added.has(sid)) continue;
@@ -691,66 +658,67 @@ private lastAutoRemarks: string | null = null;
     this.lines = rebuilt;
   }
 
-  // =========================
-  // ✅ Edit Load
-  // =========================
   private loadForEdit(id: number) {
-    debugger
     this.qt.getById(id).subscribe({
       next: (res: any) => {
         const dto = res?.data ?? res ?? null;
         if (!dto) return;
 
-    this.header = {
-  ...this.header,
-  id: Number(dto.id ?? dto.Id ?? id),
-  status: Number(dto.status ?? dto.Status ?? 0),
-  customerId: Number(dto.customerId ?? dto.CustomerId ?? null),
-  currencyId: Number(dto.currencyId ?? dto.CurrencyId ?? 0),
-  fxRate: Number(dto.fxRate ?? dto.FxRate ?? 1),
-  paymentTermsId: Number(dto.paymentTermsId ?? dto.PaymentTermsId ?? 0),
-  deliveryDate: this.toDateInputValue(dto.deliveryDate ?? dto.DeliveryDate),
-  validityDate: this.toDateInputValue(dto.validityDate ?? dto.ValidityDate),
-  remarks: String(dto.remarks ?? dto.Remarks ?? ''),
-  deliveryTo: String(dto.deliveryTo ?? dto.DeliveryTo ?? ''),
-  rounding: Number(dto.rounding ?? dto.Rounding ?? 0),
-  subtotal: 0,
-  taxAmount: dto.taxAmount,
-  grandTotal: 0,
-  needsHodApproval: !!(dto.needsHodApproval ?? dto.NeedsHodApproval ?? false),
-  discountType: (dto.discountType ?? this.header.discountType) as any,
-  discountInput: Number(dto.discountInput ?? this.header.discountInput ?? 0),
-  discountManual: true,
-  lineSourceId: (Number(dto.lineSourceId ?? dto.LineSource ?? 1) as any),
-  taxPct: Number(dto.taxPct ?? dto.gstPct ?? dto.GstPct ?? 0) || 0,
-  orderTime: dto.orderTime,
-  // ✅ NEW
-  isCashSales: !!(dto.isCashSales ?? dto.IsCashSales ?? false),
-  cashPersonName: String(dto.cashPersonName ?? dto.CashPersonName ?? ''),
-  cashEmail: String(dto.cashEmail ?? dto.CashEmail ?? ''),
-  cashContactNo: String(dto.cashContactNo ?? dto.CashContactNo ?? ''),
-  costCentre: String(dto.costCentre ?? dto.CostCentre ?? ''),
-  customerPoNo: String(dto.customerPoNo ?? dto.CustomerPoNo ?? '')
-};
+        this.header = {
+          ...this.header,
+          id: Number(dto.id ?? dto.Id ?? id),
+          status: Number(dto.status ?? dto.Status ?? 0),
+          customerId: Number(dto.customerId ?? dto.CustomerId ?? null),
+          currencyId: Number(dto.currencyId ?? dto.CurrencyId ?? 0),
+          fxRate: Number(dto.fxRate ?? dto.FxRate ?? 1),
+          paymentTermsId: Number(dto.paymentTermsId ?? dto.PaymentTermsId ?? 0),
+          deliveryDate: this.toDateInputValue(dto.deliveryDate ?? dto.DeliveryDate),
+          validityDate: this.toDateInputValue(dto.validityDate ?? dto.ValidityDate),
+          remarks: String(dto.remarks ?? dto.Remarks ?? ''),
+          deliveryTo: String(dto.deliveryTo ?? dto.DeliveryTo ?? ''),
+          rounding: Number(dto.rounding ?? dto.Rounding ?? 0),
+          subtotal: 0,
+          taxAmount: dto.taxAmount,
+          grandTotal: 0,
+          needsHodApproval: !!(dto.needsHodApproval ?? dto.NeedsHodApproval ?? false),
+          discountType: (dto.discountType ?? this.header.discountType) as any,
+          discountInput: Number(dto.discountInput ?? this.header.discountInput ?? 0),
+          discountManual: true,
+          lineSourceId: (Number(dto.lineSourceId ?? dto.LineSource ?? 1) as any),
+          taxPct: Number(dto.taxPct ?? dto.gstPct ?? dto.GstPct ?? 0) || 0,
+          orderTime: dto.orderTime ?? dto.OrderTime ?? null,
 
-       const custId = Number(dto.customerId ?? dto.CustomerId ?? 0);
-const custName = dto.customerName ?? dto.CustomerName ?? '';
+          isCashSales: !!(dto.isCashSales ?? dto.IsCashSales ?? false),
+          cashPersonName: String(dto.cashPersonName ?? dto.CashPersonName ?? ''),
+          cashEmail: String(dto.cashEmail ?? dto.CashEmail ?? ''),
+          cashContactNo: String(dto.cashContactNo ?? dto.CashContactNo ?? ''),
+          costCentre: String(dto.costCentre ?? dto.CostCentre ?? ''),
+          customerPoNo: String(dto.customerPoNo ?? dto.CustomerPoNo ?? '')
+        };
 
-if (custId === 0 || !String(custName).trim()) {
-  this.customerSearch = 'Cash Sales';
-  this.header.isCashSales = true;
-} else {
-  this.customerSearch = String(custName);
-  this.header.isCashSales = false;
-}
+        const custId = Number(dto.customerId ?? dto.CustomerId ?? 0);
+        const custName = dto.customerName ?? dto.CustomerName ?? '';
+
+        if (custId === 0 || !String(custName).trim()) {
+          this.customerSearch = 'Cash Sales';
+          this.header.isCashSales = true;
+        } else {
+          this.customerSearch = String(custName);
+          this.header.isCashSales = false;
+        }
 
         const curName = dto.currencyName ?? dto.CurrencyName;
-        if (curName) { this.currencySearch = String(curName); this.header.currency = String(curName); }
+        if (curName) {
+          this.currencySearch = String(curName);
+          this.header.currency = String(curName);
+        }
 
         const payName = dto.paymentTermsName ?? dto.PaymentTermsName;
-        if (payName) { this.paymentTermsSearch = String(payName); this.header.paymentTerms = String(payName); }
+        if (payName) {
+          this.paymentTermsSearch = String(payName);
+          this.header.paymentTerms = String(payName);
+        }
 
-        // ✅ selected itemSets (setName is available here)
         const apiItemSets = dto.itemSets ?? dto.ItemSets ?? [];
         this.selectedItemSets = (apiItemSets || [])
           .map((x: any) => ({
@@ -762,7 +730,6 @@ if (custId === 0 || !String(custName).trim()) {
         this.loadedItemSetIds.clear();
         this.selectedItemSets.forEach(s => this.loadedItemSetIds.add(s.id));
 
-        // ✅ Load lines as item rows ONLY first (NO header rows here)
         const apiLines = dto.lines ?? dto.Lines ?? [];
         const rawLines: UiLine[] = [];
 
@@ -773,6 +740,8 @@ if (custId === 0 || !String(custName).trim()) {
           const taxCodeId = Number(l.taxCodeId ?? l.TaxCodeId ?? null);
           const taxModeRaw = (l.taxMode ?? l.TaxMode ?? null) as any;
           const taxMode: LineTaxMode = (taxModeRaw ? taxModeRaw : this.taxCodeIdToTaxMode(taxCodeId)) as LineTaxMode;
+
+          const rawSupplyMethod = this.getRawSupplyMethod(l);
 
           const ui: UiLine = {
             itemId,
@@ -785,15 +754,13 @@ if (custId === 0 || !String(custName).trim()) {
             taxMode,
             taxCodeId: (!Number.isNaN(taxCodeId) && taxCodeId > 0) ? taxCodeId : this.taxModeToTaxCodeId(taxMode),
 
-            // IMPORTANT: API lines doesn't have set info -> hydrate later
             isFromSet: false,
             itemSetId: null,
             setName: '',
-
             isSetHeader: false,
 
-            supplyMethod: (l.supplyMethod ?? l.SupplyMethod) != null ? Number(l.supplyMethod ?? l.SupplyMethod) : null,
-            supplyMethodText: this.supplyMethodLabel((l.supplyMethod ?? l.SupplyMethod) != null ? Number(l.supplyMethod ?? l.SupplyMethod) : null),
+            supplyMethod: rawSupplyMethod,
+            supplyMethodText: this.supplyMethodLabel(rawSupplyMethod),
 
             isSellable: false,
             isConsumable: false,
@@ -806,17 +773,12 @@ if (custId === 0 || !String(custName).trim()) {
         }
 
         this.lines = rawLines;
-
-        // ✅ NOW: hydrate set info + rebuild set header rows (THIS FIXES YOUR ISSUE)
         this.hydrateSetInfoForEditThenRebuildRows();
       },
       error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Unable to load quotation for edit' })
     });
   }
 
-  // =========================
-  // Line source change
-  // =========================
   onLineSourceChange() {
     if (this.showModal) this.closeModal();
 
@@ -835,9 +797,6 @@ if (custId === 0 || !String(custName).trim()) {
     this.computeTotals();
   }
 
-  // =========================
-  // Line changed
-  // =========================
   onLineChanged(i: number) {
     const l = this.lines[i];
     if (!l || l.isSetHeader) return;
@@ -856,13 +815,16 @@ if (custId === 0 || !String(custName).trim()) {
     }
     l.taxCodeId = this.taxModeToTaxCodeId(l.taxMode);
 
+    l.supplyMethod = (l.supplyMethod == null || l.supplyMethod === ('' as any))
+      ? null
+      : Number(l.supplyMethod);
+
+    l.supplyMethodText = this.supplyMethodLabel(l.supplyMethod);
+
     this.computeLine(l);
     this.computeTotals();
   }
 
-  // =========================
-  // Customer/Currency/Payment dropdowns
-  // =========================
   openCustomerDropdown() {
     this.customerDdOpen = true;
     this.filteredCustomers = (this.customers || []).slice(0, 50);
@@ -876,72 +838,66 @@ if (custId === 0 || !String(custName).trim()) {
     this.customerDdOpen = true;
   }
 
- selectCustomer(c: Customer) {
-  this.customerSearch = c.name;
-  this.customerDdOpen = false;
-  this.onCustomerChange(c.id, c);
-}
+  selectCustomer(c: Customer) {
+    this.customerSearch = c.name;
+    this.customerDdOpen = false;
+    this.onCustomerChange(c.id, c);
+  }
 
   onCustomerChange(custId: number | null, selectedCustomer?: Customer) {
-  this.header.customerId = custId;
+    this.header.customerId = custId;
 
-  const cust = selectedCustomer || this.customers.find(x => x.id === custId) || null;
+    const cust = selectedCustomer || this.customers.find(x => x.id === custId) || null;
 
-  // ✅ Cash Sales selected
-  if (cust?.isCashSales) {
-    this.header.isCashSales = true;
-    this.header.countryId = null;
-    this.activeCustomerCountry = null;
+    if (cust?.isCashSales) {
+      this.header.isCashSales = true;
+      this.header.countryId = null;
+      this.activeCustomerCountry = null;
+      this.header.taxPct = 0;
 
-    // usually cash sales can be zero-rated until user/customer logic decides
-    this.header.taxPct = 0;
+      this.lines.forEach(l => {
+        if (!l.isSetHeader) {
+          l.taxMode = 'Zero-Rated';
+          l.taxCodeId = this.taxModeToTaxCodeId('Zero-Rated');
+          this.computeLine(l);
+        }
+      });
 
-    this.lines.forEach(l => {
-      if (!l.isSetHeader) {
-        l.taxMode = 'Zero-Rated';
-        l.taxCodeId = this.taxModeToTaxCodeId('Zero-Rated');
-        this.computeLine(l);
+      this.computeTotals();
+      return;
+    }
+
+    this.header.isCashSales = false;
+    this.header.cashPersonName = '';
+    this.header.cashEmail = '';
+    this.header.cashContactNo = '';
+
+    this.header.countryId = cust?.countryId ?? null;
+
+    const country = this.countries.find(c => c.id === (cust?.countryId ?? -1)) || null;
+    this.activeCustomerCountry = country;
+    this.header.taxPct = country?.gstPercentage ?? 0;
+
+    const gst = +this.header.taxPct || 0;
+    if (gst !== 9) {
+      this.lines.forEach(l => {
+        if (!l.isSetHeader && (l.taxMode === 'Standard-Rated' || l.taxMode === 'Exempt')) {
+          l.taxMode = 'Zero-Rated';
+          l.taxCodeId = this.taxModeToTaxCodeId('Zero-Rated');
+          this.computeLine(l);
+        }
+      });
+    }
+
+    if (this.showModal) {
+      if ((+this.header.taxPct || 0) !== 9 && this.modal.taxMode !== 'Zero-Rated') {
+        this.modal.taxMode = 'Zero-Rated';
       }
-    });
+      this.previewLineTotals();
+    }
 
     this.computeTotals();
-    return;
   }
-
-  // ✅ Normal customer selected
-  this.header.isCashSales = false;
-
-  // clear cash sales fields when normal customer selected
-  this.header.cashPersonName = '';
-  this.header.cashEmail = '';
-  this.header.cashContactNo = '';
-
-  this.header.countryId = cust?.countryId ?? null;
-
-  const country = this.countries.find(c => c.id === (cust?.countryId ?? -1)) || null;
-  this.activeCustomerCountry = country;
-  this.header.taxPct = country?.gstPercentage ?? 0;
-
-  const gst = +this.header.taxPct || 0;
-  if (gst !== 9) {
-    this.lines.forEach(l => {
-      if (!l.isSetHeader && (l.taxMode === 'Standard-Rated' || l.taxMode === 'Exempt')) {
-        l.taxMode = 'Zero-Rated';
-        l.taxCodeId = this.taxModeToTaxCodeId('Zero-Rated');
-        this.computeLine(l);
-      }
-    });
-  }
-
-  if (this.showModal) {
-    if ((+this.header.taxPct || 0) !== 9 && this.modal.taxMode !== 'Zero-Rated') {
-      this.modal.taxMode = 'Zero-Rated';
-    }
-    this.previewLineTotals();
-  }
-
-  this.computeTotals();
-}
 
   openCurrencyDropdown() {
     this.currencyDdOpen = true;
@@ -973,41 +929,34 @@ if (custId === 0 || !String(custName).trim()) {
     this.paymentTermsDdOpen = true;
   }
 
-selectPaymentTerms(p: PaymentTermsRow) {
-  this.paymentTermsSearch = p.name;
-  this.paymentTermsDdOpen = false;
+  selectPaymentTerms(p: PaymentTermsRow) {
+    this.paymentTermsSearch = p.name;
+    this.paymentTermsDdOpen = false;
 
-  this.header.paymentTermsId = p.id;
-  this.header.paymentTerms = p.name;
+    this.header.paymentTermsId = p.id;
+    this.header.paymentTerms = p.name;
 
-  // ✅ Auto-fill remarks with description
-  const desc = (p.description || '').trim();
-  if (!desc) return;
+    const desc = (p.description || '').trim();
+    if (!desc) return;
 
-  const current = (this.header.remarks || '').trim();
+    const current = (this.header.remarks || '').trim();
 
-  // Case 1: remarks empty → set directly
-  if (!current) {
-    this.header.remarks = desc;
+    if (!current) {
+      this.header.remarks = desc;
+      this.lastAutoRemarks = desc;
+      return;
+    }
+
+    if (this.lastAutoRemarks && current === this.lastAutoRemarks.trim()) {
+      this.header.remarks = desc;
+      this.lastAutoRemarks = desc;
+      return;
+    }
+
+    this.header.remarks = `${this.header.remarks}\n${desc}`;
     this.lastAutoRemarks = desc;
-    return;
   }
 
-  // Case 2: remarks was previously auto-filled → replace with new desc
-  if (this.lastAutoRemarks && current === this.lastAutoRemarks.trim()) {
-    this.header.remarks = desc;
-    this.lastAutoRemarks = desc;
-    return;
-  }
-
-  // Case 3: user already typed something → append (optional)
-  this.header.remarks = `${this.header.remarks}\n${desc}`;
-  this.lastAutoRemarks = desc; // keep last auto text
-}
-
-  // =========================
-  // ItemSet Multi-select
-  // =========================
   trackByItemSetId = (_: number, s: ItemSetHeaderRow) => s.id;
 
   toggleItemSetDropdown() {
@@ -1070,7 +1019,6 @@ selectPaymentTerms(p: PaymentTermsRow) {
 
         this.lines = this.lines.filter(x => x.itemSetId !== itemSetId);
 
-        // header
         this.lines.push({
           itemId: 0,
           uomId: null,
@@ -1095,6 +1043,7 @@ selectPaymentTerms(p: PaymentTermsRow) {
           if (!itemId) continue;
 
           const uomId = this.resolveUomIdFromItemSetRow(it, itemId);
+          const rawSupplyMethod = this.getRawSupplyMethod(it);
 
           const line: UiLine = {
             itemId,
@@ -1112,8 +1061,8 @@ selectPaymentTerms(p: PaymentTermsRow) {
             isSetHeader: false,
             uomName: it.uomName ?? it.UomName ?? null,
 
-            supplyMethod: (it.supplyMethod ?? it.SupplyMethod) != null ? Number(it.supplyMethod ?? it.SupplyMethod) : null,
-            supplyMethodText: this.supplyMethodLabel((it.supplyMethod ?? it.SupplyMethod) != null ? Number(it.supplyMethod ?? it.SupplyMethod) : null),
+            supplyMethod: rawSupplyMethod,
+            supplyMethodText: this.supplyMethodLabel(rawSupplyMethod),
 
             isSellable: false,
             isConsumable: false,
@@ -1131,9 +1080,6 @@ selectPaymentTerms(p: PaymentTermsRow) {
     });
   }
 
-  // =========================
-  // Discount + Totals
-  // =========================
   onDiscountChange() {
     this.header.discountManual = true;
     this.computeTotals();
@@ -1186,63 +1132,52 @@ selectPaymentTerms(p: PaymentTermsRow) {
   }
 
   computeTotals() {
-  let baseSubtotal = 0;
-  let lineDiscTotal = 0;
-  let hod = false;
+    let baseSubtotal = 0;
+    let lineDiscTotal = 0;
+    let hod = false;
 
-  // ✅ keep computing line nets for UI / line totals (no change)
-  for (const l of this.lines) {
-    if (l.isSetHeader) continue;
+    for (const l of this.lines) {
+      if (l.isSetHeader) continue;
 
-    const { base, discount } = this.computeLine(l);
-    baseSubtotal += base;
-    lineDiscTotal += discount;
+      const { base, discount } = this.computeLine(l);
+      baseSubtotal += base;
+      lineDiscTotal += discount;
 
-    if ((+l.discountPct || 0) > 10) hod = true;
-  }
-
-  this.header.subtotal = this.round2(baseSubtotal);
-
-  // -------------------------
-  // Document Discount Amount
-  // -------------------------
-  let discountAmt: number;
-
-  if (this.header.discountManual) {
-    const input = +this.header.discountInput || 0;
-
-    if (this.header.discountType === 'PERCENT') {
-      const pct = Math.min(Math.max(input, 0), 100);
-      discountAmt = this.header.subtotal * (pct / 100);
-    } else {
-      discountAmt = input;
+      if ((+l.discountPct || 0) > 10) hod = true;
     }
-  } else {
-    discountAmt = lineDiscTotal;
+
+    this.header.subtotal = this.round2(baseSubtotal);
+
+    let discountAmt: number;
+
+    if (this.header.discountManual) {
+      const input = +this.header.discountInput || 0;
+
+      if (this.header.discountType === 'PERCENT') {
+        const pct = Math.min(Math.max(input, 0), 100);
+        discountAmt = this.header.subtotal * (pct / 100);
+      } else {
+        discountAmt = input;
+      }
+    } else {
+      discountAmt = lineDiscTotal;
+    }
+
+    discountAmt = Math.min(Math.max(discountAmt, 0), this.header.subtotal);
+    this.header.docDiscount = this.round2(discountAmt);
+
+    const netAfterDiscount = this.header.subtotal - this.header.docDiscount;
+    this.header.netTotal = this.round2(netAfterDiscount);
+
+    const gstPct = +this.header.taxPct || 0;
+    const docTax = gstPct > 0 ? (netAfterDiscount * gstPct) / 100 : 0;
+    this.header.taxAmount = this.round2(docTax);
+
+    const rounding = +this.header.rounding || 0;
+    this.header.grandTotal = this.round2(this.header.netTotal + this.header.taxAmount + rounding);
+
+    this.header.needsHodApproval = hod;
   }
-
-  discountAmt = Math.min(Math.max(discountAmt, 0), this.header.subtotal);
-  this.header.docDiscount = this.round2(discountAmt);
-
-  // ✅ NEW: Net Total
-  const netAfterDiscount = this.header.subtotal - this.header.docDiscount;
-  this.header.netTotal = this.round2(netAfterDiscount);
-
-  // -------------------------
-  // ✅ NEW: Tax on Net Total
-  // -------------------------
-  const gstPct = +this.header.taxPct || 0;
-  const docTax = gstPct > 0 ? (netAfterDiscount * gstPct) / 100 : 0;
-  this.header.taxAmount = this.round2(docTax);
-
-  // -------------------------
-  // Grand Total
-  // -------------------------
-  const rounding = +this.header.rounding || 0;
-  this.header.grandTotal = this.round2(this.header.netTotal + this.header.taxAmount + rounding);
-
-  this.header.needsHodApproval = hod;
-}
 
   private validateBeforeSave(): boolean {
     for (const l of this.lines) {
@@ -1264,52 +1199,62 @@ selectPaymentTerms(p: PaymentTermsRow) {
     return true;
   }
 
-  // =========================
-  // Save
-  // =========================
   save() {
     if (!this.validateBeforeSave()) return;
 
-  const dto: any = {
-  ...this.header,
-  remarks: (this.header.remarks || '').trim(),
-  deliveryTo: (this.header.deliveryTo || '').trim(),
-  deliveryDate: this.header.deliveryDate,
-  validityDate: this.header.validityDate ?? this.header.deliveryDate,
-  lineSourceId: this.header.lineSourceId,
-  itemSetIds: (this.selectedItemSets || []).map(x => x.id),
+    for (const l of this.lines) {
+      if (l.isSetHeader) continue;
 
-  // ✅ NEW
-  isCashSales: !!this.header.isCashSales,
-  cashPersonName: (this.header.cashPersonName || '').trim(),
-  cashEmail: (this.header.cashEmail || '').trim(),
-  cashContactNo: (this.header.cashContactNo || '').trim(),
-  costCentre: (this.header.costCentre || '').trim(),
-  customerPoNo: (this.header.customerPoNo || '').trim(),
-orderTime: this.header.orderTime,
-  lines: this.lines
-    .filter(l => !l.isSetHeader)
-    .map(l => {
-      const taxMode = (l.taxMode || (l.taxCodeId != null ? this.taxCodeIdToTaxMode(l.taxCodeId) : 'Zero-Rated')) as LineTaxMode;
-      const taxCodeId = l.taxCodeId ?? this.taxModeToTaxCodeId(taxMode);
+      l.supplyMethod = (l.supplyMethod == null || l.supplyMethod === ('' as any))
+        ? null
+        : Number(l.supplyMethod);
 
-      return {
-        ...l,
-        itemId: l.itemId,
-        uomId: l.uomId ?? null,
-        qty: +l.qty || 0,
-        unitPrice: +l.unitPrice || 0,
-        discountPct: +l.discountPct || 0,
-        taxMode,
-        taxCodeId,
-        description: (l.description || '').trim(),
-        itemSetId: l.itemSetId ?? null,
-        setName: l.setName ?? null,
-        isFromSet: !!l.isFromSet,
-        supplyMethod: (l.supplyMethod == null ? null : Number(l.supplyMethod))
-      };
-    })
-};
+      this.applyAutoSupplyMethodIfEmpty(l);
+    }
+
+    const dto: any = {
+      ...this.header,
+      remarks: (this.header.remarks || '').trim(),
+      deliveryTo: (this.header.deliveryTo || '').trim(),
+      deliveryDate: this.header.deliveryDate,
+      validityDate: this.header.validityDate ?? this.header.deliveryDate,
+      lineSourceId: this.header.lineSourceId,
+      itemSetIds: (this.selectedItemSets || []).map(x => x.id),
+
+      isCashSales: !!this.header.isCashSales,
+      cashPersonName: (this.header.cashPersonName || '').trim(),
+      cashEmail: (this.header.cashEmail || '').trim(),
+      cashContactNo: (this.header.cashContactNo || '').trim(),
+      costCentre: (this.header.costCentre || '').trim(),
+      customerPoNo: (this.header.customerPoNo || '').trim(),
+      orderTime: this.header.orderTime,
+
+      lines: this.lines
+        .filter(l => !l.isSetHeader)
+        .map(l => {
+          const taxMode = (l.taxMode || (l.taxCodeId != null ? this.taxCodeIdToTaxMode(l.taxCodeId) : 'Zero-Rated')) as LineTaxMode;
+          const taxCodeId = l.taxCodeId ?? this.taxModeToTaxCodeId(taxMode);
+
+          return {
+            itemId: l.itemId,
+            itemName: l.itemName ?? null,
+            uomId: l.uomId ?? null,
+            qty: +l.qty || 0,
+            unitPrice: +l.unitPrice || 0,
+            discountPct: +l.discountPct || 0,
+            taxMode,
+            taxCodeId,
+            description: (l.description || '').trim(),
+            itemSetId: l.itemSetId ?? null,
+            setName: l.setName ?? null,
+            isFromSet: !!l.isFromSet,
+
+            // ✅ IMPORTANT FIX
+            supplyMethodId: (l.supplyMethod == null ? null : Number(l.supplyMethod))
+          };
+        })
+    };
+
     if (!dto.number || !dto.number.trim?.()) {
       dto.number = `QT-${new Date().toISOString().replace(/\D/g, '').slice(0, 14)}`;
     }
@@ -1319,18 +1264,36 @@ orderTime: this.header.orderTime,
     if (id > 0) {
       this.qt.update(id, { ...dto, id }).subscribe({
         next: () => {
-          Swal.fire({ icon: 'success', title: 'Updated', text: 'Quotation Updated Successfully', confirmButtonColor: '#2E5F73' })
-            .then(() => this.router.navigate(['/Sales/Quotation-list']));
+          Swal.fire({
+            icon: 'success',
+            title: 'Updated',
+            text: 'Quotation Updated Successfully',
+            confirmButtonColor: '#2E5F73'
+          }).then(() => this.router.navigate(['/Sales/Quotation-list']));
         },
-        error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Update failed', confirmButtonColor: '#d33' })
+        error: () => Swal.fire({
+          icon: 'error',
+          title: 'Failed',
+          text: 'Update failed',
+          confirmButtonColor: '#d33'
+        })
       });
     } else {
       this.qt.create(dto).subscribe({
         next: () => {
-          Swal.fire({ icon: 'success', title: 'Saved', text: 'Quotation Created Successfully', confirmButtonColor: '#2E5F73' })
-            .then(() => this.router.navigate(['/Sales/Quotation-list']));
+          Swal.fire({
+            icon: 'success',
+            title: 'Saved',
+            text: 'Quotation Created Successfully',
+            confirmButtonColor: '#2E5F73'
+          }).then(() => this.router.navigate(['/Sales/Quotation-list']));
         },
-        error: () => Swal.fire({ icon: 'error', title: 'Failed', text: 'Create failed', confirmButtonColor: '#d33' })
+        error: () => Swal.fire({
+          icon: 'error',
+          title: 'Failed',
+          text: 'Create failed',
+          confirmButtonColor: '#d33'
+        })
       });
     }
   }
@@ -1339,9 +1302,6 @@ orderTime: this.header.orderTime,
     this.router.navigate(['/Sales/Quotation-list']);
   }
 
-  // =========================
-  // Modal
-  // =========================
   trackByItemId = (_: number, it: SimpleItem) => it.id;
 
   openAdd() {

@@ -127,6 +127,14 @@
                [ngModelOptions]="{ standalone: true }"
                readonly />
       </div>
+      <div class="soField">
+  <label class="lbl">Order Time</label>
+  <input
+    type="time"
+    class="form-control qtInput"
+    [(ngModel)]="soHdr.orderTime"
+    name="orderTime" />
+</div>
 
       <!-- Delivery To -->
       <div class="soField md:col-span-2">

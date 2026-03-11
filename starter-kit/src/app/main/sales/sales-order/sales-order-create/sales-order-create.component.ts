@@ -128,7 +128,8 @@ export class SalesOrderCreateComponent implements OnInit {
     subTotal: 0,
     grandTotal: 0,
     status: 2,
-    statusText: 'Pending'
+    statusText: 'Pending',
+     orderTime: null
   };
 
   customers: any[] = [];
@@ -570,6 +571,7 @@ export class SalesOrderCreateComponent implements OnInit {
         this.soHdr.id = head.id;
         this.soHdr.quotationNo = head.quotationNo;
         this.soHdr.customerId = head.customerId;
+        this.soHdr.orderTime = head.orderTime;
         this.searchTexts['quotationNo'] = head.number || head.quotationNo?.toString() || '';
        this.searchTexts['customer'] =
   head.customerId === 0 || head.customerId == null
@@ -675,6 +677,7 @@ export class SalesOrderCreateComponent implements OnInit {
         const lines = (head?.lines ?? []) as any[];
 
         this.soHdr.deliveryDate = this.toInputDate(head?.deliveryDate ?? head?.DeliveryDate);
+        this.soHdr.orderTime=(head.orderTime)
         this.soHdr.deliveryTo = (head?.deliveryTo ?? head?.DeliveryTo ?? '');
         this.soHdr.remarks = (head?.remarks ?? head?.Remarks ?? '');
 
@@ -1015,6 +1018,7 @@ export class SalesOrderCreateComponent implements OnInit {
       deliveryDate: this.soHdr.deliveryDate,
 
       deliveryTo: (this.soHdr.deliveryTo || '').toString(),
+      orderTime:this.soHdr.orderTime,
       remarks: (this.soHdr.remarks || '').toString(),
 
       lineSourceId: Number(this.soHdr.lineSourceId || 1),

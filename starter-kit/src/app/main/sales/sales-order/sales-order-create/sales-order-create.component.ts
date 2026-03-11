@@ -85,6 +85,7 @@ type SoLine = {
 
   // ✅ NEW: availability for this line based on LocationId + ItemId + SupplyMethodId
   availability?: number;
+    shortageQty?: number;
 };
 
 type ItemSetRef = { id: number; name: string };
@@ -623,7 +624,8 @@ private fetchAvailabilityForLine(ln: SoLine) {
             isConsumable: !!(l.isConsumable ?? l.IsConsumable),
 
             warehouses: [],
-            availability: undefined
+            availability: undefined,
+             shortageQty: Number(l.shortageQty ?? l.ShortageQty ?? 0)
           };
 
           this.applyFlagsFromFulfillmentMode(ln);
@@ -719,7 +721,8 @@ private fetchAvailabilityForLine(ln: SoLine) {
             isConsumable: !!(l.isConsumable ?? l.IsConsumable),
 
             warehouses: Array.isArray(l.warehouses) ? l.warehouses : [],
-            availability: undefined
+            availability: undefined,
+              shortageQty: Number(l.shortageQty ?? l.ShortageQty ?? 0)
           };
 
           this.applyFlagsFromFulfillmentMode(ln);
@@ -942,7 +945,8 @@ private fetchAvailabilityForLine(ln: SoLine) {
       lineTotal: 0,
       lineDiscount: 0,
       warehouses: [],
-      availability: undefined
+      availability: undefined,
+      shortageQty: 0
     };
 
     this.soLines.push(newLine);

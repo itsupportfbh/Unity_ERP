@@ -138,6 +138,7 @@ goToCreate(): void {
 
 closeShortageGrnModal() {
   this.showShortageGrnModal = false;
+  this.shortageGrnSearch = '';
 }
 
 loadShortageGrnAlerts() {
@@ -406,7 +407,6 @@ isFirstRowOfPlan(index: number): boolean {
 }
 
 markPlanAsPending(planId: number): void {
-  debugger
   if (!planId) return;
 
   Swal.fire({
@@ -419,25 +419,52 @@ markPlanAsPending(planId: number): void {
   }).then(r => {
     if (!r.isConfirmed) return;
 
-    this.srv.updatePlanStatus(planId, 1).subscribe({
+    this.srv.updatePlanStatus(planId, {
+      status: 1,
+      updatedBy: (localStorage.getItem('username') || '').trim() || 'admin'
+    }).subscribe({
       next: () => {
-        // ✅ update main list status immediately (no reload)
-        const upd = (arr: any[]) => (arr || []).forEach(x => {
-          if (Number(x.id) === Number(planId)) x.status = 1;
-        });
-        upd(this.rows);
-        upd(this.allRows);
+        // 1) main grid update
+        this.rows = (this.rows || []).map(x =>
+          Number(x.id) === Number(planId)
+            ? { ...x, status: 1 }
+            : x
+        );
 
-        // ✅ remove alerts for that plan from popup list (instant disappear)
-        this.shortageGrnList = (this.shortageGrnList || [])
-          .filter(x => Number(x.productionPlanId) !== Number(planId));
+        this.allRows = (this.allRows || []).map(x =>
+          Number(x.id) === Number(planId)
+            ? { ...x, status: 1 }
+            : x
+        );
 
-        // ✅ update bell count
+        // 2) shortage alert list la irundhu remove
+        this.shortageGrnList = (this.shortageGrnList || []).filter(
+          x => Number(x.productionPlanId) !== Number(planId)
+        );
+
+        // 3) bell count update
         this.shortageGrnCount = this.shortageGrnList.length;
 
-        Swal.fire('Updated', `Plan ${planId} moved to Pending`, 'success');
+        // 4) selected plan reset
+        if (this.selectedPlanId === planId) {
+          this.selectedPlanId = null;
+        }
+
+        // 5) modal auto close
+        this.closeShortageGrnModal();
+
+        // 6) success message
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'Production Plan status updated successfully',
+          timer: 1500,
+          showConfirmButton: false
+        });
       },
-      error: (e) => Swal.fire('Error', e?.error?.message || 'Update failed', 'error')
+      error: (e) => {
+        Swal.fire('Error', e?.error?.message || 'Failed to update status', 'error');
+      }
     });
   });
 }

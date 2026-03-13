@@ -284,7 +284,7 @@ export class ProductionPlanningComponent implements OnInit {
   // -----------------------------
   // ✅ Save (Create or Update)
   // -----------------------------
- savePlan(): void {
+savePlan(): void {
   // if shortage exists, do not allow status=1 save
   if (this.shortageCountVal > 0) {
     Swal.fire({
@@ -303,46 +303,112 @@ export class ProductionPlanningComponent implements OnInit {
   // -----------------------------
   // PR
   // -----------------------------
-  createPR(): void {
+createPR(): void {
   if (this.shortageCountVal <= 0) {
     Swal.fire('No Shortage', 'No shortage items found.', 'info');
     return;
   }
 
+  if (!this.selectedSoId) {
+    Swal.fire('Select Sales Order', 'Please select Sales Order first.', 'warning');
+    return;
+  }
+
+  if (!this.warehouseId) {
+    Swal.fire('Select Warehouse', 'Please select Production Warehouse.', 'warning');
+    return;
+  }
+
   Swal.fire({
     icon: 'question',
-    title: 'Create PR & Save Plan?',
-    text: 'This will create PR and save Production Plan status as Awaiting Material.',
+    title: 'Create PR?',
+    text: 'This will save the Production Plan if needed and create PR for shortage items.',
     showCancelButton: true,
     confirmButtonText: 'Yes, Create',
     cancelButtonText: 'Cancel'
   }).then(r => {
     if (!r.isConfirmed) return;
 
-    const payload = {
-      salesOrderId: this.selectedSoId,
-      warehouseId: this.warehouseId,
-      outletId: this.outletId,
-      userId: Number(localStorage.getItem('id') || 0),
-      userName: (localStorage.getItem('username') || '').trim(),
-      deliveryDate: null,
-      note: `Auto from Production Planning SO:${this.selectedSoId}`
+    const doCreatePr = (planId: number) => {
+      const payload = {
+        productionPlanId: planId,
+        salesOrderId: this.selectedSoId!,
+        warehouseId: this.warehouseId!,
+        outletId: this.outletId,
+        userId: Number(localStorage.getItem('id') || 0),
+        userName: (localStorage.getItem('username') || '').trim(),
+        deliveryDate: null,
+        note: `Auto from Production Planning SO:${this.selectedSoId}`
+      };
+
+      this.api.createPrFromRecipeShortage(payload).subscribe({
+        next: (res) => {
+          if (res?.prId > 0) {
+            this.disableCreateButton = true;
+
+            // ✅ only update status, do not call full updatePlan()
+            this.api.updatePlanStatus(planId, {
+              status: 0,
+              updatedBy: (localStorage.getItem('username') || '').trim() || 'admin'
+            }).subscribe({
+              next: () => {
+                Swal.fire('Success', 'PR created from recipe shortage', 'success')
+                  .then(() => this.router.navigate(['/Recipe/productionplanninglist']));
+              },
+              error: (e) => {
+                Swal.fire(
+                  'Warning',
+                  e?.error?.message || 'PR created, but plan status update failed',
+                  'warning'
+                );
+              }
+            });
+          } else {
+            this.disableCreateButton = false;
+            Swal.fire('Info', res?.message || 'No shortage items', 'info');
+          }
+        },
+        error: (err) => {
+          Swal.fire('Error', err?.error?.message || 'Failed to create PR', 'error');
+        }
+      });
     };
 
-    this.api.createPrFromRecipeShortage(payload).subscribe({
-      next: (res) => {
-        if (res?.prId > 0) {
-          this.disableCreateButton = true;
+    // already saved plan -> directly create PR
+    if (this.currentPlanId && this.currentPlanId > 0) {
+      doCreatePr(this.currentPlanId);
+      return;
+    }
 
-          // ✅ Save plan as Pending PR (0)
-          this.savePlanWithStatus(0);
-        } else {
-          this.disableCreateButton = false;
-          Swal.fire('Info', res?.message || 'No shortage items', 'info');
+    // first time -> save plan first, then create PR
+    const userName = (localStorage.getItem('username') || '').trim() || 'admin';
+
+    this.api.savePlan({
+      salesOrderId: this.selectedSoId,
+      outletId: this.outletId,
+      warehouseId: this.warehouseId,
+      createdBy: userName,
+      status: 0
+    } as any).subscribe({
+      next: (res: any) => {
+        const pid = Number(res?.productionPlanId || res?.id || 0);
+
+        if (!pid || pid <= 0) {
+          Swal.fire('Error', 'Production Plan save failed', 'error');
+          return;
         }
+
+        this.currentPlanId = pid;
+        this.isEditMode = true;
+
+        doCreatePr(pid);
       },
-      error: (err) => {
-        Swal.fire('Error', err?.error?.message || 'Failed', 'error');
+      error: (e) => {
+        Swal.fire(
+          'Error',
+          e?.error?.message || 'Failed to save plan before PR creation',
+          'error'
+        );
       }
     });
   });

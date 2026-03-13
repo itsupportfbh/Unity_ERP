@@ -97,6 +97,16 @@ export interface ProductionPlanPrintDto {
   ingredients: PlanPrintIngredientDto[];
 }
 
+export interface CreatePrFromRecipeShortageRequest {
+  productionPlanId: number;
+  salesOrderId: number;
+  warehouseId: number;
+  outletId: number;
+  userId: number;
+  userName: string;
+  deliveryDate?: string | null;
+  note?: string | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ProductionPlanService {
@@ -123,17 +133,9 @@ getSalesOrders(includeSoId?: number): Observable<SoHeaderDto[]> {
   savePlan(payload: { salesOrderId: number; outletId?: number; warehouseId?: number; createdBy?: string }) {
     return this.http.post(`${this.url}/ProductionPlan/save`, payload);
   }
-  createPrFromRecipeShortage(payload: {
-  salesOrderId: number;
-  warehouseId: number;
-  outletId: number;
-  userId: number;
-  userName: string;
-  deliveryDate?: string | null;
-  note?: string | null;
-}) {
+  createPrFromRecipeShortage(payload: CreatePrFromRecipeShortageRequest) {
   return this.http.post<any>(
-    `${this.url}/PurchaseRequest/create-from-recipe-shortage`,
+     `${this.url}/PurchaseRequest/create-from-recipe-shortage`,
     payload
   );
 }
@@ -160,12 +162,11 @@ deletePlan(planId: number) {
       `${this.url}/ProductionPlan/${id}/print`
     );
   }
-  updatePlanStatus(planId: number, status: number) {
-  const payload = {
-    status,
-    updatedBy: (localStorage.getItem('username') || 'admin')
-  };
-  return this.http.put<any>(`${this.url}/productionplan/${planId}/status`, payload);
+updatePlanStatus(id: number, payload: { status: number; updatedBy: string }) {
+  return this.http.put<any>(
+    `${this.url}/ProductionPlan/${id}/status`,
+    payload
+  );
 }
 }
 

@@ -362,15 +362,7 @@
         <span>Quotation Lines</span>
       </div>
 
-      <button
-        class="qtBtn qtBtn--brand"
-        type="button"
-        [class.isDisabled]="!(header.lineSourceId === 1 || header.lineSourceId === 3)"
-        (click)="openAdd()"
-        [disabled]="!(header.lineSourceId === 1 || header.lineSourceId === 3)">
-        <i class="fas fa-plus"></i>
-        Add line
-      </button>
+   
     </div>
 
     <div class="qtTableWrap">
@@ -537,7 +529,18 @@
           </ng-container>
         </tbody>
       </table>
+      
     </div>
+       <button
+        class="qtBtn qtBtn--brand mt-1"
+
+        type="button"
+        [class.isDisabled]="!(header.lineSourceId === 1 || header.lineSourceId === 3)"
+        (click)="openAdd()"
+        [disabled]="!(header.lineSourceId === 1 || header.lineSourceId === 3)">
+        <i class="fas fa-plus"></i>
+        Add line
+      </button>
   </div>
 
 <!-- ===== SUMMARY / TOTALS ===== -->

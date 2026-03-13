@@ -174,7 +174,7 @@ export class QuotationscreateComponent implements OnInit {
   paymentTermsSearch = '';
   paymentTermsDdOpen = false;
   filteredPaymentTerms: PaymentTermsRow[] = [];
-
+timeOptions: { label: string; value: string }[] = [];
   customerSearch = '';
   customerDdOpen = false;
   filteredCustomers: Customer[] = [];
@@ -410,7 +410,8 @@ export class QuotationscreateComponent implements OnInit {
   ngOnInit(): void {
     this.setMinDate();
     this.loadLookups();
-
+//  this.generate15MinTimeOptions();
+//   this.header.orderTime = this.getRoundedCurrentTime();
     const idStr = this.route.snapshot.paramMap.get('id');
     this.editId = idStr ? +idStr : null;
 
@@ -419,6 +420,44 @@ export class QuotationscreateComponent implements OnInit {
     }
   }
 
+//   generate15MinTimeOptions(): void {
+//   const options: { label: string; value: string }[] = [];
+
+//   for (let hour = 0; hour < 24; hour++) {
+//     for (let minute = 0; minute < 60; minute += 15) {
+//       const hh = String(hour).padStart(2, '0');
+//       const mm = String(minute).padStart(2, '0');
+
+//       options.push({
+//         value: `${hh}:${mm}`,
+//         label: `${hh}:${mm}`
+//       });
+//     }
+//   }
+
+//   this.timeOptions = options;
+// }
+// getRoundedCurrentTime(): string {
+//   const now = new Date();
+//   let hours = now.getHours();
+//   let minutes = now.getMinutes();
+
+//   minutes = Math.ceil(minutes / 15) * 15;
+
+//   if (minutes === 60) {
+//     minutes = 0;
+//     hours += 1;
+//   }
+
+//   if (hours === 24) {
+//     hours = 0;
+//   }
+
+//   const hh = String(hours).padStart(2, '0');
+//   const mm = String(minutes).padStart(2, '0');
+
+//   return `${hh}:${mm}`;
+// }
   setMinDate() {
     const d = new Date();
     const yyyy = d.getFullYear();

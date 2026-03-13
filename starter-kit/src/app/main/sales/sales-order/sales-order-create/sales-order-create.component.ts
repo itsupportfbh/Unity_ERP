@@ -199,10 +199,9 @@ export class SalesOrderCreateComponent implements OnInit {
 
   get sourceLineText(): string {
     const v = Number(this.soHdr?.lineSourceId ?? 1);
-    if (v === 1) return 'Individual Item';
-    if (v === 2) return 'Item Set';
-    if (v === 3) return 'Mixed (Item + Set)';
-    return 'Individual Item';
+    if (v === 1) return 'Custom Selection';
+    if (v === 3) return 'Bundle Packages';
+    return 'Custom Selection';
   }
 
   get itemSetNamesText(): string {

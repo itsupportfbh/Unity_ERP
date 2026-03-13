@@ -140,7 +140,7 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
   // Mode of delivery
   deliveryModeList: DeliveryModeOption[] = [
     { id: 1, name: 'Delivery' },
-    { id: 2, name: 'Self' }
+    { id: 2, name: 'Self Collected' }
   ];
 
   modeOfDeliveryId: number = 1;

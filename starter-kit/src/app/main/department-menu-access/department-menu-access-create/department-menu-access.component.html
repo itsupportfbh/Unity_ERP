@@ -1,0 +1,146 @@
+<div class="content-wrapper p-0 dma-form-page">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card dma-form-card">
+
+        <!-- Header -->
+        <div class="dma-form-header">
+          <div class="dma-head-left">
+            <div class="dma-head-icon">
+              <i class="fas fa-th-large"></i>
+            </div>
+
+            <div>
+              <h2 class="dma-form-title mb-0">
+                {{ isEdit ? 'Edit Department Menu Access' : 'Create Department Menu Access' }}
+              </h2>
+              <div class="dma-form-subtitle">
+                Configure visible modules for the selected department
+              </div>
+            </div>
+          </div>
+
+          <button class="btn dma-back-btn" type="button" (click)="back()">
+            <i class="fas fa-arrow-left me-50"></i>
+            Back
+          </button>
+        </div>
+
+        <!-- Top Filters / Summary -->
+        <div class="dma-top-box">
+          <div class="row g-3 align-items-end">
+            <div class="col-lg-8 col-md-7 col-12">
+              <label class="form-label dma-label">Department</label>
+              <div class="dma-select-wrap">
+                <i class="fas fa-building dma-field-icon"></i>
+                <select
+                  class="form-control dma-select"
+                  [(ngModel)]="selectedDepartmentId"
+                  (change)="onDepartmentChange()"
+                  [disabled]="isEdit"
+                >
+                  <option [ngValue]="null">-- Select Department --</option>
+                  <option *ngFor="let d of departments" [ngValue]="d.id">
+                    {{ d.departmentName }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="col-lg-4 col-md-5 col-12">
+              <div class="dma-count-box">
+                <div class="dma-count-text">
+                  <span class="small-label">Selected Modules</span>
+                  <div class="small-sub">Current active module count</div>
+                </div>
+                <div class="dma-count-value">
+                  {{ getSelectedCount() }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loading" class="dma-state-box">
+          <div class="dma-state-icon">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+          <div class="dma-state-title">Loading modules...</div>
+          <div class="dma-state-text">Please wait while department access is being prepared.</div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loading && !selectedDepartmentId" class="dma-state-box">
+          <div class="dma-state-icon">
+            <i class="fas fa-sitemap"></i>
+          </div>
+          <div class="dma-state-title">Select a department</div>
+          <div class="dma-state-text">
+            Choose a department to configure visible modules and child menus.
+          </div>
+        </div>
+
+        <!-- Modules -->
+        <div *ngIf="!loading && selectedDepartmentId" class="dma-module-panel">
+          <div class="dma-panel-head">
+            <div>
+              <div class="dma-panel-title">Available Modules</div>
+              <div class="dma-panel-subtitle">Enable only the modules required for this department</div>
+            </div>
+
+            <div class="dma-panel-badge">
+              {{ getSelectedCount() }} Selected
+            </div>
+          </div>
+
+          <div class="dma-module-grid">
+            <div
+              class="dma-module-card"
+              *ngFor="let module of getTopModules()"
+              [class.active]="isChecked(module.id)"
+              (click)="toggleModuleCard(module)"
+            >
+              <div class="dma-module-left">
+                <label class="dma-check-row" (click)="$event.stopPropagation()">
+                  <input
+                    type="checkbox"
+                    [checked]="isChecked(module.id)"
+                    (change)="toggleTopModule(module, $any($event.target).checked)"
+                  />
+                  <span>{{ module.title }}</span>
+                </label>
+
+                <div class="dma-module-desc">
+                  Top-level module access for {{ module.title }}
+                </div>
+              </div>
+
+             <div class="dma-module-icon">
+  <i [class]="getModuleIcon(module.id)"></i>
+</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="dma-footer">
+          <button type="button" class="btn dma-cancel-btn" (click)="back()">
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="btn dma-save-btn"
+            [disabled]="saving || !selectedDepartmentId"
+            (click)="save()"
+          >
+            <i class="fas fa-save me-50"></i>
+            {{ saving ? 'Saving...' : 'Save Access' }}
+          </button>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>

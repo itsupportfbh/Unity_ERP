@@ -27,6 +27,7 @@ import { MobileLinkInterceptor} from './main/purchase/mobile-receiving/mr-token.
 import { RecipemastercreateComponent } from './main/Recipe/recipemastercreate/recipemastercreate.component';
 
 
+
 const appRoutes: Routes = [
   {
     path: 'pages',
@@ -80,6 +81,12 @@ const appRoutes: Routes = [
     loadChildren: () => import('./main/user/user.module').then(m => m.UserModule),
    
   },
+  {
+  path: 'department-menu-access',
+  loadChildren: () =>
+    import('./main/department-menu-access/department-menu-access.module')
+      .then(m => m.DepartmentMenuAccessModule)
+},
   {
     path: '',
     redirectTo: 'pages/authentication/login-v2',

@@ -1,0 +1,296 @@
+.dma-page {
+  padding: 1rem;
+
+  .dma-card {
+    border: 0;
+    border-radius: 20px;
+    padding: 1.25rem;
+    background: #f8fafb;
+    box-shadow: 0 8px 24px rgba(15, 58, 76, 0.08);
+  }
+
+  .dma-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.2rem 0 0.8rem 0;
+  }
+
+  .dma-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .dma-header-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #e7f0f3, #dce9ee);
+    color: #2e5f73;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    box-shadow: inset 0 0 0 1px rgba(46, 95, 115, 0.08);
+  }
+
+  .dma-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #2e5f73;
+    line-height: 1.2;
+  }
+
+  .dma-subtitle {
+    margin-top: 0.2rem;
+    color: #8c98a4;
+    font-size: 0.92rem;
+    font-weight: 400;
+  }
+
+  .dma-create-btn {
+    height: 42px;
+    border: 0;
+    border-radius: 12px;
+    padding: 0 1.1rem;
+    background: linear-gradient(135deg, #2e5f73, #244b5a);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    box-shadow: 0 6px 16px rgba(46, 95, 115, 0.22);
+    transition: all 0.2s ease;
+
+    &:hover,
+    &:focus {
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(46, 95, 115, 0.28);
+    }
+  }
+
+  .dma-state-box {
+    background: #fff;
+    border: 1px dashed #d7e3e8;
+    border-radius: 16px;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #7f8c97;
+    font-size: 0.95rem;
+    gap: 0.45rem;
+  }
+
+  .dma-empty-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #eef4f6;
+    color: #2e5f73;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+  }
+
+  .dma-empty-title {
+    font-weight: 700;
+    color: #55626e;
+    font-size: 1rem;
+  }
+
+  .dma-empty-text {
+    color: #96a2ad;
+    font-size: 0.88rem;
+  }
+
+  .dma-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .dma-item {
+    background: #ffffff;
+    border: 1px solid #e7eef2;
+    border-radius: 18px;
+    padding: 1rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(30, 50, 70, 0.04);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(30, 50, 70, 0.08);
+      border-color: #d5e3e9;
+    }
+  }
+
+  .dma-item-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dma-item-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #2e5f73, #3e7388);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    box-shadow: 0 8px 16px rgba(46, 95, 115, 0.2);
+  }
+
+  .dma-item-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dma-item-top {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.2rem;
+  }
+
+  .dma-item-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #4f5670;
+    line-height: 1.2;
+  }
+
+  .dma-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #edf6f8;
+    color: #2e5f73;
+    border: 1px solid #d7e8ee;
+  }
+
+  .dma-item-sub {
+    font-size: 0.88rem;
+    color: #97a3ad;
+    margin-bottom: 0.55rem;
+  }
+
+  .dma-menu-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .dma-chip {
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    background: #f3f7f9;
+    border: 1px solid #e1eaef;
+    color: #5e6c77;
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .dma-chip.more {
+    background: #fff4e8;
+    border-color: #ffe0b8;
+    color: #d68a27;
+  }
+
+  .dma-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-shrink: 0;
+  }
+
+  .dma-icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+
+    &.edit {
+      border: 1px solid rgba(46, 95, 115, 0.35);
+      color: #2e5f73;
+
+      &:hover {
+        background: #eef6f8;
+        color: #21495a;
+      }
+    }
+
+    &.delete {
+      border: 1px solid rgba(255, 107, 107, 0.35);
+      color: #ff6b6b;
+
+      &:hover {
+        background: #fff1f1;
+        color: #e25757;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dma-card {
+      padding: 1rem;
+      border-radius: 16px;
+    }
+
+    .dma-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .dma-create-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .dma-title {
+      font-size: 1.35rem;
+    }
+
+    .dma-item {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .dma-item-actions {
+      justify-content: flex-end;
+      width: 100%;
+    }
+
+    .dma-item-title {
+      font-size: 1rem;
+    }
+  }
+}

@@ -1,0 +1,430 @@
+.dma-form-page {
+  padding: 1rem;
+
+  .dma-form-card {
+    border: 0;
+    border-radius: 20px;
+    padding: 1.25rem;
+    background: #f8fafb;
+    box-shadow: 0 10px 28px rgba(15, 58, 76, 0.08);
+  }
+
+  .dma-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .dma-head-left {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .dma-head-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #e7f0f3, #dce9ee);
+    color: #2e5f73;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: inset 0 0 0 1px rgba(46, 95, 115, 0.08);
+  }
+
+  .dma-form-title {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #2e5f73;
+    line-height: 1.2;
+  }
+
+  .dma-form-subtitle {
+    color: #8c98a4;
+    margin-top: 0.2rem;
+    font-size: 0.9rem;
+  }
+
+  .dma-back-btn {
+    height: 42px;
+    border: 1px solid #d9e4e9;
+    background: #fff;
+    color: #425360;
+    border-radius: 12px;
+    padding: 0 1rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #f5f9fb;
+      border-color: #c9d9e0;
+      color: #244c5c;
+    }
+  }
+
+  .dma-top-box {
+    background: #fff;
+    border: 1px solid #e7eef2;
+    border-radius: 18px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 14px rgba(30, 50, 70, 0.04);
+  }
+
+  .dma-label {
+    font-weight: 700;
+    color: #435360;
+    margin-bottom: 0.5rem;
+    font-size: 0.92rem;
+  }
+
+  .dma-select-wrap {
+    position: relative;
+  }
+
+  .dma-field-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8ea0ab;
+    font-size: 0.9rem;
+    z-index: 2;
+  }
+
+  .dma-select {
+    height: 46px;
+    border-radius: 12px;
+    border: 1px solid #d8e2e8;
+    font-size: 0.95rem;
+    padding-left: 2.35rem;
+    background: #fcfeff;
+    box-shadow: none;
+
+    &:focus {
+      border-color: #2e5f73;
+      box-shadow: 0 0 0 0.15rem rgba(46, 95, 115, 0.08);
+    }
+
+    &:disabled {
+      background: #f3f6f8;
+      cursor: not-allowed;
+    }
+  }
+
+  .dma-count-box {
+    height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #2e5f73, #3f7388);
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    box-shadow: 0 8px 18px rgba(46, 95, 115, 0.18);
+  }
+
+  .dma-count-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+
+  .small-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    opacity: 0.95;
+  }
+
+  .small-sub {
+    font-size: 0.72rem;
+    opacity: 0.78;
+    margin-top: 0.2rem;
+  }
+
+  .dma-count-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .dma-state-box {
+    background: #fff;
+    border: 1px dashed #d8e3e8;
+    border-radius: 18px;
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #81909d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+  }
+
+  .dma-state-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: #eef4f7;
+    color: #2e5f73;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .dma-state-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #4b5965;
+    margin-bottom: 0.3rem;
+  }
+
+  .dma-state-text {
+    color: #94a1ac;
+    font-size: 0.88rem;
+    max-width: 420px;
+  }
+
+  .dma-module-panel {
+    background: #fff;
+    border: 1px solid #e7eef2;
+    border-radius: 18px;
+    padding: 1rem;
+    box-shadow: 0 4px 14px rgba(30, 50, 70, 0.04);
+  }
+
+  .dma-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .dma-panel-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #173847;
+    line-height: 1.2;
+  }
+
+  .dma-panel-subtitle {
+    color: #8b98a3;
+    font-size: 0.85rem;
+    margin-top: 0.2rem;
+  }
+
+  .dma-panel-badge {
+    padding: 0.42rem 0.8rem;
+    border-radius: 999px;
+    background: #edf6f8;
+    border: 1px solid #d7e8ee;
+    color: #2e5f73;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .dma-module-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+
+  .dma-module-card {
+    border: 1px solid #e5edf1;
+    border-radius: 16px;
+    padding: 0.95rem 1rem;
+    background: #fbfdfe;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 84px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(20, 40, 60, 0.03);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(31, 45, 61, 0.07);
+      border-color: #c7d8df;
+    }
+
+    &.active {
+      border-color: #2e5f73;
+      background: linear-gradient(
+        180deg,
+        rgba(46, 95, 115, 0.08),
+        rgba(46, 95, 115, 0.03)
+      );
+      box-shadow: 0 10px 20px rgba(46, 95, 115, 0.08);
+    }
+
+    &.active .dma-module-icon {
+      background: #2e5f73;
+      color: #fff;
+    }
+
+    &.active .dma-check-row span {
+      color: #244c5c;
+    }
+  }
+
+  .dma-module-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dma-check-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    width: 100%;
+    cursor: pointer;
+
+    input[type='checkbox'] {
+      width: 17px;
+      height: 17px;
+      accent-color: #2e5f73;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    span {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #42515d;
+      letter-spacing: 0.1px;
+      line-height: 1.2;
+    }
+  }
+
+  .dma-module-desc {
+    font-size: 0.8rem;
+    color: #95a1ab;
+    margin-left: 1.95rem;
+    margin-top: 0.35rem;
+    line-height: 1.25;
+  }
+
+  .dma-module-right {
+    margin-left: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .dma-module-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #eef4f7;
+    color: #2e5f73;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+  }
+
+  .dma-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.2rem;
+  }
+
+  .dma-cancel-btn {
+    min-width: 120px;
+    border-radius: 12px;
+    border: 1px solid #d9e2e8;
+    background: #fff;
+    color: #435360;
+    font-weight: 700;
+    padding: 0.72rem 1rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #f7fafb;
+      color: #244c5c;
+      border-color: #c7d6de;
+    }
+  }
+
+  .dma-save-btn {
+    min-width: 160px;
+    border-radius: 12px;
+    border: 0;
+    background: linear-gradient(135deg, #2e5f73, #244c5c);
+    color: #fff;
+    font-weight: 700;
+    padding: 0.72rem 1rem;
+    box-shadow: 0 8px 18px rgba(46, 95, 115, 0.18);
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: linear-gradient(135deg, #244c5c, #1d4150);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  @media (max-width: 991px) {
+    .dma-module-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 767px) {
+    padding: 0.75rem;
+
+    .dma-form-card {
+      padding: 1rem;
+      border-radius: 16px;
+    }
+
+    .dma-form-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .dma-back-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .dma-form-title {
+      font-size: 1.3rem;
+    }
+
+    .dma-footer {
+      flex-direction: column;
+    }
+
+    .dma-cancel-btn,
+    .dma-save-btn {
+      width: 100%;
+    }
+
+    .dma-count-box {
+      height: auto;
+      min-height: 46px;
+    }
+  }
+}

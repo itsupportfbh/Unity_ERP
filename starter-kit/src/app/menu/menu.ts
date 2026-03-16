@@ -10,7 +10,7 @@ export const menu: any[] = [
     title: 'Master',
     type: 'collapsible',
     icon: 'settings',
-    approvalRoles: ['Admin', 'Super Admin'],
+    // approvalRoles: ['Admin', 'Super Admin'],
     children: [
       { id: 'approval-level', title: 'Approval Level', type: 'item', icon: 'circle', url: '/master/approval-level' },
       { id: 'bank', title: 'Bank', type: 'item', icon: 'circle', url: '/master/bank-list' },
@@ -49,7 +49,6 @@ export const menu: any[] = [
     title: 'Business Partners',
     type: 'collapsible',
     icon: 'user',
-    approvalRoles: ['Admin', 'Super Admin'],
     children: [
       {
         id: 'bp-customer',
@@ -67,7 +66,7 @@ export const menu: any[] = [
 
       { id: 'bp-customer-create', title: 'Customer Create', type: 'item', icon: 'circle', url: '/Businesspartners/Create-customer-master', hidden: true },
 
-      { id: 'users', title: 'Users', type: 'item', icon: 'circle', url: '/admin/users', approvalRoles: ['Super Admin'] }
+      { id: 'users', title: 'Users', type: 'item', icon: 'circle', url: '/admin/users' }
     ]
   },
 
@@ -77,7 +76,7 @@ export const menu: any[] = [
     title: 'Sales',
     type: 'collapsible',
     icon: 'shopping-cart',
-    approvalRoles: ['Super Admin'],
+    // approvalRoles: ['Super Admin'],
     children: [
       {
         id: 'qt-list',
@@ -102,15 +101,15 @@ export const menu: any[] = [
       { id: 'so-edit', title: 'Sales Order Edit', type: 'item', icon: 'circle', url: '/Sales/Sales-Order-edit', hidden: true },
 
       {
-        id: 'pp-list',
+        id: 'sales-pp-list',
         title: 'Picking & Packing',
         type: 'item',
         icon: 'circle',
         url: '/Sales/Picking-packing-list',
         activeUrls: ['/Sales/Picking-packing-list', '/Sales/Picking-packing-create', '/Sales/Picking-packing-edit']
       },
-      { id: 'pp-create', title: 'Picking & Packing Create', type: 'item', icon: 'circle', url: '/Sales/Picking-packing-create', hidden: true },
-      { id: 'pp-edit', title: 'Picking & Packing Edit', type: 'item', icon: 'circle', url: '/Sales/Picking-packing-edit', hidden: true },
+      { id: 'sales-pp-create', title: 'Picking & Packing Create', type: 'item', icon: 'circle', url: '/Sales/Picking-packing-create', hidden: true },
+      { id: 'sales-pp-edit', title: 'Picking & Packing Edit', type: 'item', icon: 'circle', url: '/Sales/Picking-packing-edit', hidden: true },
 
       {
         id: 'do-list2',
@@ -155,7 +154,7 @@ export const menu: any[] = [
     title: 'Purchase',
     type: 'collapsible',
     icon: 'file',
-    approvalRoles: ['Super Admin'],
+    // approvalRoles: ['Super Admin'],
     children: [
       {
         id: 'pr-list',
@@ -223,7 +222,7 @@ export const menu: any[] = [
     title: 'Inventory',
     type: 'collapsible',
     icon: 'file',
-    approvalRoles: ['Super Admin'],
+    // approvalRoles: ['Super Admin'],
     children: [
       {
         id: 'im-list',
@@ -313,7 +312,7 @@ export const menu: any[] = [
     title: 'Financial',
     type: 'collapsible',
     icon: 'dollar-sign',
-    approvalRoles: ['Super Admin'],
+    // approvalRoles: ['Super Admin'],
     children: [
       { id: 'ledger', title: 'General Ledger', type: 'item', icon: 'circle', url: '/financial/ledger' },
       { id: 'coa', title: 'Chart of Account', type: 'item', icon: 'circle', url: '/financial/ChartOfAccount' },
@@ -350,7 +349,7 @@ export const menu: any[] = [
     title: 'Recipe',
     type: 'collapsible',
     icon: 'shopping-cart',
-    approvalRoles: ['Super Admin'],
+    // approvalRoles: ['Super Admin'],
     children: [
       {
         id: 'recipe-list',
@@ -385,5 +384,13 @@ export const menu: any[] = [
       { id: 'bp-create', title: 'Batch Production Create', type: 'item', icon: 'circle', url: '/Recipe/batchproductioncreate', hidden: true },
       { id: 'bp-edit', title: 'Batch Production Edit', type: 'item', icon: 'circle', url: '/Recipe/batchproductionedit', hidden: true }
     ]
-  }
+  },
+{
+  id: 'department-menu-access',
+  title: 'Department Menu Access',
+  type: 'item',
+  icon: 'circle',
+  url: '/department-menu-access',
+  approvalRoles: ['Admin', 'Super Admin']
+}
 ] as CoreMenu[];

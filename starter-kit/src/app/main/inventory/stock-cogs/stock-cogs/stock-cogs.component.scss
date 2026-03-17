@@ -259,8 +259,8 @@ $c-brand: #2E5F73;
 }
 
 .cogs-table thead th {
-  background: #f8fafc;
-  color: #52667f;
+  background: $c-brand;
+  color: #fff;
   font-weight: 900;
   font-size: 12px;
   text-align: left;

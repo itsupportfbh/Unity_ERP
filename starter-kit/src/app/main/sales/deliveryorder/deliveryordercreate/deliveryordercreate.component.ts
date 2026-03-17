@@ -638,6 +638,7 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
 
     this.soSrv.getSOById(soId).subscribe((res: any) => {
       const dto = res?.data ?? res ?? {};
+      this.deliveryDate = res.data.deliveryDate
 
       this.routeText = (dto.deliveryTo ?? '').toString();
 
@@ -717,7 +718,7 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
         driverId: this.isSelfMode() ? null : this.driverId,
         vehicleId: this.isSelfMode() ? null : this.vehicleId,
         routeName: (this.routeText || '').trim() || null,
-        deliveryDate: new Date(),
+        deliveryDate: this.deliveryDate,
         deliveryTime: this.deliveryTime || null,
         modeOfDeliveryId: this.modeOfDeliveryId,
         driverMobileNo: this.isSelfMode() ? null : (this.driverMobileNo || null),

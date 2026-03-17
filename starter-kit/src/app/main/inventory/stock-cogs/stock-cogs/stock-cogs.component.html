@@ -5,25 +5,25 @@
   <div class="kpi-row">
     <div class="kpi-card">
       <div class="kpi-title">Opening Stock</div>
-      <div class="kpi-value">₹{{ money(report?.summary?.openingStock ?? 0) }}</div>
+      <div class="kpi-value">{{ money(report?.summary?.openingStock ?? 0) }}</div>
       <div class="kpi-sub">From latest stocktake before period</div>
     </div>
 
     <div class="kpi-card">
       <div class="kpi-title">Purchases</div>
-      <div class="kpi-value">₹{{ money(report?.summary?.purchases ?? 0) }}</div>
+      <div class="kpi-value">{{ money(report?.summary?.purchases ?? 0) }}</div>
       <div class="kpi-sub">GRN within selected dates</div>
     </div>
 
     <div class="kpi-card">
       <div class="kpi-title">Closing Stock</div>
-      <div class="kpi-value">₹{{ money(report?.summary?.closingStock ?? 0) }}</div>
+      <div class="kpi-value">{{ money(report?.summary?.closingStock ?? 0) }}</div>
       <div class="kpi-sub">Latest stocktake up to period end</div>
     </div>
 
     <div class="kpi-card kpi-strong">
       <div class="kpi-title">COGS</div>
-      <div class="kpi-value">₹{{ money(report?.summary?.cogs ?? 0) }}</div>
+      <div class="kpi-value">{{ money(report?.summary?.cogs ?? 0) }}</div>
       <div class="kpi-pill">OK</div>
     </div>
   </div>
@@ -47,9 +47,15 @@
       </label>
 
       <label class="fb-field">
-        <div class="lbl">WarehouseId</div>
-        <input class="inp" type="number" [(ngModel)]="warehouseId" placeholder="e.g. 1" />
-      </label>
+      <div class="lbl">Warehouse</div>
+
+      <select class="inp" [(ngModel)]="warehouseId">
+        <option [ngValue]="null">-- Select Warehouse --</option>
+        <option *ngFor="let w of warehouseList" [ngValue]="w.id">
+          {{ w.name }}
+        </option>
+      </select>
+    </label>
 
       <button class="btn primary fb-btn" (click)="load()" [disabled]="loading">
         {{ loading ? 'Loading...' : 'Load COGS' }}
@@ -73,9 +79,17 @@
 
         <div class="tabs">
           <button class="tab" [class.active]="activeTab==='table'" (click)="setTab('table')">Table</button>
-          <button class="tab" [class.active]="activeTab==='chart'" (click)="setTab('chart')">Chart</button>
+          <!-- <button class="tab" [class.active]="activeTab==='chart'" (click)="setTab('chart')">Chart</button> -->
           <button class="tab" [class.active]="activeTab==='formula'" (click)="setTab('formula')">Formula</button>
         </div>
+        <div class="export-actions">
+        <button class="btn primary" type="button" (click)="exportToPdf()" [disabled]="!rows?.length">
+          PDF
+        </button>
+        <button class="btn primary" type="button" (click)="exportToExcel()" [disabled]="!rows?.length">
+          Excel
+        </button>
+      </div>
       </div>
     </div>
 
@@ -111,18 +125,18 @@
             </td>
 
             <td class="num">{{ r.openingQty }}</td>
-            <td class="num">₹{{ money(unitPrice(r.openingValue, r.openingQty)) }}</td>
-            <td class="num">₹{{ money(r.openingValue) }}</td>
+            <td class="num">{{ money(unitPrice(r.openingValue, r.openingQty)) }}</td>
+            <td class="num">{{ money(r.openingValue) }}</td>
 
             <td class="num">{{ r.purchaseQty }}</td>
-            <td class="num">₹{{ money(unitPrice(r.purchaseValue, r.purchaseQty)) }}</td>
-            <td class="num">₹{{ money(r.purchaseValue) }}</td>
+            <td class="num">{{ money(unitPrice(r.purchaseValue, r.purchaseQty)) }}</td>
+            <td class="num">{{ money(r.purchaseValue) }}</td>
 
             <td class="num">{{ r.closingQty }}</td>
-            <td class="num">₹{{ money(unitPrice(r.closingValue, r.closingQty)) }}</td>
-            <td class="num">₹{{ money(r.closingValue) }}</td>
+            <td class="num">{{ money(unitPrice(r.closingValue, r.closingQty)) }}</td>
+            <td class="num">{{ money(r.closingValue) }}</td>
 
-            <td class="num strong">₹{{ money(r.cogsValue) }}</td>
+            <td class="num strong">{{ money(r.cogsValue) }}</td>
           </tr>
 
           <tr *ngIf="!(rows?.length)">
@@ -145,11 +159,11 @@
         <div class="eq">COGS = (Opening Stock + Purchases) − Closing Stock</div>
 
         <div class="eq2">
-          = (₹{{ money(report?.summary?.openingStock ?? 0) }} + ₹{{ money(report?.summary?.purchases ?? 0) }})
-          − ₹{{ money(report?.summary?.closingStock ?? 0) }}
+          = ({{ money(report?.summary?.openingStock ?? 0) }} + {{ money(report?.summary?.purchases ?? 0) }})
+          − {{ money(report?.summary?.closingStock ?? 0) }}
         </div>
 
-        <div class="eq3 strong">= ₹{{ money(report?.summary?.cogs ?? 0) }}</div>
+        <div class="eq3 strong">= {{ money(report?.summary?.cogs ?? 0) }}</div>
       </div>
     </div>
   </div>

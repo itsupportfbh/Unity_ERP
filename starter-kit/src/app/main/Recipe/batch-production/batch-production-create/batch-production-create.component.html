@@ -24,33 +24,42 @@
 
   <!-- Filters -->
   <div class="bp2-bar">
-    <div class="bp2-field">
-      <label class="bp2-label">Select Plan</label>
+  <div class="bp2-field bp2-plan-field">
+    <label class="bp2-label">Select Plan</label>
 
-      <select class="bp2-select"
-              [(ngModel)]="selectedPlanId"
-              (change)="onPlanChange()">
-        <option [ngValue]="null">-- Select Plan --</option>
+    <select class="bp2-select"
+            [(ngModel)]="selectedPlanId"
+            (change)="onPlanChange()">
+      <option [ngValue]="null">-- Select Plan --</option>
       <option *ngFor="let p of plans" [ngValue]="p.id">
         {{ p.label }}
       </option>
-      </select>
+    </select>
 
-      <div class="bp2-loading" *ngIf="isLoading">Loading…</div>
+    <div class="bp2-loading" *ngIf="isLoading">Loading…</div>
+  </div>
+
+  <div class="bp2-kpis">
+    <div class="bp2-kpi">
+      <div class="k-lbl">Recipes</div>
+      <div class="k-val">{{ lines.length || 0 }}</div>
     </div>
 
-    <div class="bp2-kpis">
-      <div class="bp2-kpi">
-        <div class="k-lbl">Recipes</div>
-        <div class="k-val">{{ lines.length || 0 }}</div>
-      </div>
-
-      <div class="bp2-kpi warn">
-        <div class="k-lbl">Variance Items</div>
-        <div class="k-val">{{ varianceCount }}</div>
-      </div>
+    <div class="bp2-kpi warn">
+      <div class="k-lbl">Variance Items</div>
+      <div class="k-val">{{ varianceCount }}</div>
     </div>
   </div>
+
+  <div class="bp2-field bp2-date-field">
+    <label class="bp2-label">Posted Date</label>
+    <input
+      type="date"
+      class="bp2-date-input"
+      [(ngModel)]="postedDate"
+      [min]="minPostedDate"  />
+  </div>
+</div>
 
   <!-- Table -->
   <div class="bp2-tablewrap">

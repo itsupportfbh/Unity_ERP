@@ -61,15 +61,18 @@
 .bp2-btn.success{ background: #16a34a; color:#fff; border-color:#16a34a; }
 
 .bp2-bar{
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
+  display: flex;
+  align-items: flex-end;
   gap: 12px;
   padding: 14px 8px;
 }
 
 .bp2-field{
-  min-width: 360px;
+  min-width: auto;
+}
+.bp2-plan-field{
+  width: 430px;
+  flex: 0 0 430px;
 }
 
 .bp2-label{
@@ -94,9 +97,10 @@
 }
 
 .bp2-kpis{
-  display:flex;
+  display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: stretch;
 }
 
 .bp2-kpi{
@@ -169,7 +173,7 @@
   font-weight: 900;
 }
 
-.bp2-input{
+.bp2-table .bp2-input{
   width: 120px;
   text-align: right;
   border: 1px solid var(--line);
@@ -294,3 +298,14 @@
 }
 .bp2-pill.good{ background:#e9f7ee; color:#1b7a3a; }
 .bp2-pill.bad{ background:#fdecec; color:#b42318; }
+
+.bp2-date-input{
+  width: 220px;
+  height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 12px;
+  outline: none;
+  background: #fff;
+  font-weight: 600;
+}

@@ -52,6 +52,7 @@ type IngredientRowDto = {
 };
 
 
+
 @Component({
   selector: 'app-batch-production-create',
   templateUrl: './batch-production-create.component.html',
@@ -81,7 +82,8 @@ export class BatchProductionCreateComponent implements OnInit {
   ingredientTitle = '';
   ingredientRows: IngredientRowDto[] = [];
   ingredientLoading = false;
-
+  postedDate: string = '';
+  minPostedDate: string = '';
 
 
   constructor(
@@ -92,6 +94,8 @@ export class BatchProductionCreateComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.postedDate = this.getTodayLocalDate();
+    this.minPostedDate = this.getTodayLocalDate();
     const id = Number(this.route.snapshot.paramMap.get('id') || 0);
     this.batchId = id > 0 ? id : null;
 
@@ -109,6 +113,25 @@ export class BatchProductionCreateComponent implements OnInit {
     return (this.lines || []).filter(x => Math.abs((x.actualQty ?? 0) - (x.plannedQty ?? 0)) > 0).length;
   }
 
+  private getTodayLocalDate(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+private formatDateForInput(value: any): string {
+  if (!value) return this.getTodayLocalDate();
+
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return this.getTodayLocalDate();
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
   // =============================
   // 1) Load plans (with lines)
   // =============================
@@ -222,6 +245,9 @@ loadPlans(): void {
 
       // warehouse is already stored in batch header
       this.selectedWarehouseId = Number(header?.warehouseId ?? header?.WarehouseId ?? 0) || null;
+      this.postedDate = this.formatDateForInput(
+        header?.postedDate ?? header?.PostedDate
+      );
        this.loadPlans();
       // optional display
       this.selectedPlanNo = header?.batchNo || header?.BatchNo || null;
@@ -300,6 +326,7 @@ postToInventory(): void {
       warehouseId: this.selectedWarehouseId,
       batchNo: null,
       status: 'Posted',
+      postedDate: this.postedDate,
       user,
       lines: this.lines.map(x => ({
         recipeId: x.recipeId,

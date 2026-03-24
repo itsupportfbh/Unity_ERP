@@ -160,7 +160,7 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
       localStorage.setItem('locationId', String(data.locationId || 0));
       localStorage.setItem('departmentId', String(data.departmentId || 0));
       localStorage.setItem('orgGuid', data.orgGuid ?? '');
-      localStorage.setItem('menuIds', JSON.stringify(res.menuIds || []));
+    localStorage.setItem('menuIds', JSON.stringify(data.allowedMenuIds || []));
       localStorage.setItem('databaseName', data.databaseName ?? '');
       localStorage.setItem('isMasterOwner', String(!!data.isMasterOwner));
       localStorage.setItem('isTenantUser', String(!!data.isTenantUser));

@@ -336,3 +336,62 @@
 }
 .switch input:checked + .slider{ background:#22c55e; }
 .switch input:checked + .slider:before{ transform: translateX(20px); }
+.password-wrap {
+  position: relative;
+}
+
+.password-input {
+  padding-right: 2.75rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #6c757d;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.password-toggle:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.password-toggle:hover {
+  color: #2E5F73;
+}
+.text-muted {
+  font-size: 0.75rem;
+}
+.password-help {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  color: #8a8f98;
+}
+.password-input:disabled,
+.password-input[disabled],
+.password-input.form-control:disabled {
+  background: #e2e8f0 !important;
+  border: 1px solid #94a3b8 !important;
+  color: #475569 !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+.password-input:disabled::placeholder {
+  color: #64748b !important;
+}
+
+.password-toggle:disabled {
+  color: #64748b !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}

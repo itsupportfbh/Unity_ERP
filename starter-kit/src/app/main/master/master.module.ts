@@ -85,6 +85,8 @@ const routes: Routes = [
   { path: 'bank-list', component: ListBankComponent },
   { path: 'bank/edit/:id', component: BankComponent },
   { path: 'company', component: CompanyCreateComponent },
+  { path: 'companyList', component: CompanyListComponent },
+   { path: 'company/:id/edit', component: CompanyCreateComponent }
 ];
 
 @NgModule({

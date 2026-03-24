@@ -1,7 +1,7 @@
-// src/app/menu/menu.ts  (or your current path)
+
 import { CoreMenu } from '@core/types';
 
-export const menu: any[] = [
+export const ALL_MENU: CoreMenu[] = [
   { id: 'home', title: 'Dashboard', type: 'item', icon: 'home', url: '/home' },
 
   // ================= MASTER =================
@@ -393,4 +393,4 @@ export const menu: any[] = [
   url: '/department-menu-access',
   approvalRoles: ['Admin', 'Super Admin']
 }
-] as CoreMenu[];
+]; export const menu: CoreMenu[] = ALL_MENU;;

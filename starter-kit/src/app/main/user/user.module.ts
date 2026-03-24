@@ -14,11 +14,14 @@ import { RolesPermissionsComponent } from './roles-permissions/roles-permissions
 
 const routes: Routes = [
   { path: '', component: UserlistComponent },
+
+  // old single form routes
   { path: 'new', component: UserformComponent },
   { path: ':id/edit', component: UserformComponent },
 
-  // ✅ Wizard
-  { path: 'access', component: UserAccessWizardComponent }
+  // wizard routes
+  { path: 'access', component: UserAccessWizardComponent },
+  { path: 'access/:id', component: UserAccessWizardComponent }
 ];
 
 @NgModule({

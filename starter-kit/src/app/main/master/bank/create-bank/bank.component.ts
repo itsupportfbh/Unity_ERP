@@ -5,6 +5,7 @@ import { CountriesService } from '../../countries/countries.service';
 import { BankService } from '../bank-service/bank.service';
 import Swal from 'sweetalert2';
 import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-bank',
@@ -12,7 +13,6 @@ import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartof
   styleUrls: ['./bank.component.scss']
 })
 export class BankComponent implements OnInit {
-
   bank: any = {
     bankName: '',
     accountName: '',
@@ -27,7 +27,7 @@ export class BankComponent implements OnInit {
     contactEmail: '',
     contactPhone: '',
     address: '',
-   budgetLineId: null,
+    budgetLineId: null
   };
 
   accountTypes: any[] = [
@@ -39,27 +39,31 @@ export class BankComponent implements OnInit {
 
   currencies: any[] = [];
   countries: any[] = [];
+  parentHeadList: Array<{ value: number; label: string }> = [];
 
   isSaving = false;
   isEdit = false;
   bankId: number | null = null;
-  userId: string;
- parentHeadList: Array<{ value: number; label: string }> = [];
-  budgetLine: number | null = null;
+  userId: number = 0;
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  functionId = 'bank';
+
   constructor(
     private _currencyService: CurrencyService,
     private _countryService: CountriesService,
     private _bankService: BankService,
     private route: ActivatedRoute,
     private router: Router,
-     private coaService: ChartofaccountService,
-  ) {this.userId = localStorage.getItem('id')}
+    private coaService: ChartofaccountService,
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
-  // ------------------------------------
-  // INIT
-  // ------------------------------------
   ngOnInit(): void {
-    this.loadAccountHeads();
     const idParam = this.route.snapshot.paramMap.get('id');
 
     if (idParam) {
@@ -67,6 +71,75 @@ export class BankComponent implements OnInit {
       this.isEdit = true;
     }
 
+    this.loadPermission();
+  }
+
+  // =========================
+  // PERMISSION
+  // =========================
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+
+        if (this.canView()) {
+          this.loadInitialData();
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
+  canShowSaveButton(): boolean {
+    return this.isEdit ? this.canEdit() : this.canCreate();
+  }
+
+  // =========================
+  // INITIAL LOAD
+  // =========================
+  loadInitialData(): void {
+    this.loadAccountHeads();
     this.loadCurrency();
     this.loadCountry();
 
@@ -75,54 +148,104 @@ export class BankComponent implements OnInit {
     }
   }
 
-  // ------------------------------------
-  // LOAD MASTERS
-  // ------------------------------------
+  // =========================
+  // LOAD MASTER DATA
+  // =========================
   loadCurrency(): void {
-    this._currencyService.getAllCurrency().subscribe((res: any) => {
-      this.currencies = res?.data || [];
+    this._currencyService.getAllCurrency().subscribe({
+      next: (res: any) => {
+        this.currencies = res?.data || [];
+      },
+      error: (err) => {
+        console.error('Currency load error:', err);
+        this.currencies = [];
+      }
     });
   }
 
   loadCountry(): void {
-    this._countryService.getCountry().subscribe((res: any) => {
-      this.countries = res?.data || [];
+    this._countryService.getCountry().subscribe({
+      next: (res: any) => {
+        this.countries = res?.data || [];
+      },
+      error: (err) => {
+        console.error('Country load error:', err);
+        this.countries = [];
+      }
     });
   }
 
-  // ------------------------------------
-  // LOAD BANK FOR EDIT
-  // ------------------------------------
+  loadAccountHeads(): void {
+    this.coaService.getAllChartOfAccount().subscribe({
+      next: (res: any) => {
+        const data = (res?.data || []).filter((x: any) => x.isActive === true);
+        this.parentHeadList = data.map((head: any) => ({
+          value: Number(head.id),
+          label: this.buildFullPath(head, data)
+        }));
+      },
+      error: (err) => {
+        console.error('Chart of account load error:', err);
+        this.parentHeadList = [];
+      }
+    });
+  }
+
+  private buildFullPath(item: any, all: any[]): string {
+    let path = item.headName;
+    let current = all.find((x: any) => x.headCode === item.parentHead);
+
+    while (current) {
+      path = `${current.headName} >> ${path}`;
+      current = all.find((x: any) => x.headCode === current.parentHead);
+    }
+
+    return path;
+  }
+
+  // =========================
+  // LOAD BANK BY ID
+  // =========================
   loadBankById(id: number): void {
-    debugger
-    this._bankService.getByIdBank(id).subscribe((res: any) => {
-      const d = res?.data;
-      if (!d) return;
+    this._bankService.getByIdBank(id).subscribe({
+      next: (res: any) => {
+        const d = res?.data;
+        if (!d) return;
 
-      this.bankId = d.id;
+        this.bankId = d.id;
 
-      this.bank = {
-        bankName: d.bankName || '',
-        accountName: d.accountHolderName || '',
-        accountNumber: d.accountNo || '',
-        accountTypeId: d.accountType || null,
-        branch: d.branch || '',
-        ifscSwift: d.ifsc || '',
-        routingNumber: d.routing || '',
-        currencyId: d.currencyId || null,
-        countryId: d.countryId || null,
-        primaryContact: d.primaryContact || '',
-        contactEmail: d.email || '',
-        contactPhone: d.contactNo || '',
-        address: d.address || '',
-        budgetLineId : d.budgetLineId ?? null
-      };
+        this.bank = {
+          bankName: d.bankName || '',
+          accountName: d.accountHolderName || '',
+          accountNumber: d.accountNo || '',
+          accountTypeId: d.accountType || null,
+          branch: d.branch || '',
+          ifscSwift: d.ifsc || '',
+          routingNumber: d.routing || '',
+          currencyId: d.currencyId || null,
+          countryId: d.countryId || null,
+          primaryContact: d.primaryContact || '',
+          contactEmail: d.email || '',
+          contactPhone: d.contactNo || '',
+          address: d.address || '',
+          budgetLineId: d.budgetLineId ?? null
+        };
+      },
+      error: (err) => {
+        console.error('Load bank error:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load bank details.',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
-  // ------------------------------------
-  // RESET FORM
-  // ------------------------------------
+  // =========================
+  // RESET
+  // =========================
   onReset(): void {
     this.bank = {
       bankName: '',
@@ -137,7 +260,8 @@ export class BankComponent implements OnInit {
       primaryContact: '',
       contactEmail: '',
       contactPhone: '',
-      address: ''
+      address: '',
+      budgetLineId: null
     };
 
     if (this.isEdit && this.bankId) {
@@ -145,97 +269,126 @@ export class BankComponent implements OnInit {
     }
   }
 
-  // ------------------------------------
-  // SAVE / UPDATE BANK
-  // ------------------------------------
-onSave(): void {
-  // basic required check
-  if (!this.bank.bankName ||
+  // =========================
+  // SAVE / UPDATE
+  // =========================
+  onSave(): void {
+    if (this.isEdit && !this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (!this.isEdit && !this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (
+      !this.bank.bankName ||
       !this.bank.accountName ||
       !this.bank.accountNumber ||
       !this.bank.accountTypeId ||
       !this.bank.currencyId ||
       !this.bank.countryId ||
-      !this.bank.contactEmail) {
-
-    Swal.fire('Warning', 'Please fill all required fields', 'warning');
-    return;
-  }
-
-  // base payload
-  const payload: any = {
-    bankName: this.bank.bankName,
-    accountHolderName: this.bank.accountName,
-    accountNo: this.bank.accountNumber,
-
-    accountType: this.bank.accountTypeId,
-    branch: this.bank.branch,
-    ifsc: this.bank.ifscSwift,
-    routing: this.bank.routingNumber,
-
-    currencyId: this.bank.currencyId,
-    countryId: this.bank.countryId,
-
-    primaryContact: this.bank.primaryContact,
-    email: this.bank.contactEmail,
-    contactNo: this.bank.contactPhone,
-    address: this.bank.address,
-    budgetLineId: this.bank.budgetLineId,
-    isActive: true,
-    CreatedBy:this.userId,
-    UpdatedBy:this.userId
-  };
-
-  this.isSaving = true;
-
-  if (this.isEdit && this.bankId) {
-    // 👉 IMPORTANT: send id in edit mode
-    payload.id = this.bankId;
-
-    this._bankService.updateBank(this.bankId, payload).subscribe({
-      next: (res: any) => {
-        this.isSaving = false;
-        Swal.fire('Success', res?.message || 'Bank updated successfully', 'success');
-        this.router.navigate(['/master/bank-list']);
-      },
-      error: (err) => {
-        this.isSaving = false;
-        console.error('Error updating bank', err);
-        Swal.fire('Error', 'Error updating bank', 'error');
-      }
-    });
-  } else {
-    this._bankService.createBank(payload).subscribe({
-      next: (res: any) => {
-        this.isSaving = false;
-        Swal.fire('Success', res?.message || 'Bank created successfully', 'success');
-        this.onReset();
-        this.router.navigate(['/master/bank-list']);
-      },
-      error: (err) => {
-        this.isSaving = false;
-        console.error('Error creating bank', err);
-        Swal.fire('Error', 'Error creating bank', 'error');
-      }
-    });
-  }
-}
-  loadAccountHeads(): void {
-    this.coaService.getAllChartOfAccount().subscribe((res: any) => {
-      const data = (res?.data || []).filter((x: any) => x.isActive === true);
-      this.parentHeadList = data.map((head: any) => ({
-        value: Number(head.id),
-        label: this.buildFullPath(head, data)
-      }));
-    });
-  }
-  private buildFullPath(item: any, all: any[]): string {
-    let path = item.headName;
-    let current = all.find((x: any) => x.headCode === item.parentHead);
-    while (current) {
-      path = `${current.headName} >> ${path}`;
-      current = all.find((x: any) => x.headCode === current.parentHead);
+      !this.bank.contactEmail ||
+      !this.bank.budgetLineId
+    ) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: 'Please fill all required fields',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
     }
-    return path;
+
+    const payload: any = {
+      bankName: this.bank.bankName,
+      accountHolderName: this.bank.accountName,
+      accountNo: this.bank.accountNumber,
+      accountType: this.bank.accountTypeId,
+      branch: this.bank.branch,
+      ifsc: this.bank.ifscSwift,
+      routing: this.bank.routingNumber,
+      currencyId: this.bank.currencyId,
+      countryId: this.bank.countryId,
+      primaryContact: this.bank.primaryContact,
+      email: this.bank.contactEmail,
+      contactNo: this.bank.contactPhone,
+      address: this.bank.address,
+      budgetLineId: this.bank.budgetLineId,
+      isActive: true,
+      createdBy: this.userId,
+      updatedBy: this.userId
+    };
+
+    this.isSaving = true;
+
+    if (this.isEdit && this.bankId) {
+      payload.id = this.bankId;
+
+      this._bankService.updateBank(this.bankId, payload).subscribe({
+        next: (res: any) => {
+          this.isSaving = false;
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: res?.message || 'Bank updated successfully',
+            confirmButtonColor: '#2E5F73'
+          });
+
+          this.router.navigate(['/master/bank-list']);
+        },
+        error: (err) => {
+          this.isSaving = false;
+          console.error('Error updating bank', err);
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err?.error?.message || 'Error updating bank',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    } else {
+      this._bankService.createBank(payload).subscribe({
+        next: (res: any) => {
+          this.isSaving = false;
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: res?.message || 'Bank created successfully',
+            confirmButtonColor: '#2E5F73'
+          });
+
+          this.onReset();
+          this.router.navigate(['/master/bank-list']);
+        },
+        error: (err) => {
+          this.isSaving = false;
+          console.error('Error creating bank', err);
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err?.error?.message || 'Error creating bank',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    }
   }
 }

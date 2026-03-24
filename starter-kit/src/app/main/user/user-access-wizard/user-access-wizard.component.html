@@ -1,50 +1,120 @@
-<div class="card shadow-sm">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <div>
-      <h4 class="mb-0" style="color:#2E5F73;font-weight:700;">User Access Setup</h4>
-      <small class="text-muted">Administration → Users → Roles & Permission Settings</small>
+<div class="uwz-page">
+  <div class="uwz-stepper">
+    <div class="uwz-step" [class.active]="activeTab === 'users' || activeTab === 'perm' || activeTab === 'review'">
+      <div class="uwz-step-no">1</div>
+      <div class="uwz-step-info">
+        <div class="uwz-step-title">Account Details</div>
+        <div class="uwz-step-sub">User basic information</div>
+      </div>
     </div>
 
-    <button class="btn btn-outline-secondary btn-sm" (click)="goBack()">
-      <i class="fas fa-arrow-left me-50"></i> Back
-    </button>
+    <div class="uwz-step-line" [class.active]="activeTab === 'perm' || activeTab === 'review'"></div>
+
+    <div class="uwz-step" [class.active]="activeTab === 'perm' || activeTab === 'review'">
+      <div class="uwz-step-no">2</div>
+      <div class="uwz-step-info">
+        <div class="uwz-step-title">Roles & Permissions</div>
+        <div class="uwz-step-sub">Access setup</div>
+      </div>
+    </div>
+
+    <div class="uwz-step-line" [class.active]="activeTab === 'review'"></div>
+
+    <div class="uwz-step" [class.active]="activeTab === 'review'">
+      <div class="uwz-step-no">3</div>
+      <div class="uwz-step-info">
+        <div class="uwz-step-title">Review & Submit</div>
+        <div class="uwz-step-sub">Final confirmation</div>
+      </div>
+    </div>
   </div>
 
-  <div class="card-body pb-2">
-    <div class="uwTabsX">
-      <button class="uwTabBtnX" [class.active]="activeTab==='users'" (click)="activeTab='users'">
-        Users
-      </button>
-
-      <button class="uwTabBtnX"
-              [class.active]="activeTab==='perm'"
-              (click)="activeTab='perm'"
-              [disabled]="!canOpenPermissions">
-        Roles & Permissions
-      </button>
-    </div>
-
-    <div *ngIf="activeTab==='perm' && !canOpenPermissions" class="text-danger small mt-1">
-      Select Department and Roles then click <b>Next</b>.
-    </div>
-  </div>
-
-  <div class="card-body pt-0">
-    <!-- USERS TAB -->
-    <div *ngIf="activeTab==='users'">
+  <div class="uwz-body">
+    <div [hidden]="activeTab !== 'users'" class="uwz-panel">
       <app-userform
         (nextToPermissions)="handleNext($event)"
         (userContextChanged)="handleContext($event)">
       </app-userform>
     </div>
 
-    <!-- PERMISSIONS TAB -->
-    <div *ngIf="activeTab==='perm'">
+    <div [hidden]="activeTab !== 'perm'" class="uwz-panel">
       <app-roles-permissions
+        [departmentId]="departmentId"
+        [userId]="userFormComp?.id || null"
         [teamName]="teamName"
         [selectedRoleNames]="selectedRoleNames"
-        [departmentName]="departmentName">
+        [departmentName]="departmentName"
+        (previousStep)="onPermissionPrevious()"
+        (nextStep)="onPermissionNext()">
       </app-roles-permissions>
+    </div>
+
+    <div [hidden]="activeTab !== 'review'" class="uwz-panel">
+      <div class="uwz-head">
+        <div>
+          <div class="uwz-title">Review & Submit</div>
+          <div class="uwz-subtitle">
+            Verify the account details and permission modules before submitting.
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <div class="uwz-card">
+            <div class="uwz-card-title">Account Details</div>
+
+            <div class="uwz-review-grid">
+              <div class="uwz-label">Username</div>
+              <div class="uwz-value">{{ reviewUserData?.username || '-' }}</div>
+
+              <div class="uwz-label">Email</div>
+              <div class="uwz-value">{{ reviewUserData?.email || '-' }}</div>
+
+              <div class="uwz-label">Department</div>
+              <div class="uwz-value">{{ reviewUserData?.department || '-' }}</div>
+
+              <div class="uwz-label">Location</div>
+              <div class="uwz-value">{{ reviewUserData?.location || '-' }}</div>
+
+              <div class="uwz-label">Team</div>
+              <div class="uwz-value">{{ reviewUserData?.team || '-' }}</div>
+
+              <div class="uwz-label">Roles</div>
+              <div class="uwz-value">{{ reviewUserData?.roles || '-' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="uwz-card">
+            <div class="uwz-card-title">Permission Modules</div>
+
+            <div *ngIf="reviewPermissionData.length; else emptyPerms">
+              <div class="uwz-module-row" *ngFor="let p of reviewPermissionData">
+                <div class="uwz-module-left">
+                  <div class="uwz-module-name">{{ p.moduleTitle }}</div>
+                </div>
+                <div class="uwz-module-badge">{{ p.count }} functions</div>
+              </div>
+            </div>
+
+            <ng-template #emptyPerms>
+              <div class="uwz-empty-lite">No permission rows found.</div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <div class="uwz-footer">
+        <button type="button" class="uwz-btn uwz-btn-light" (click)="goPermissions()">
+          <span>◀</span> Previous
+        </button>
+
+        <button type="button" class="uwz-btn uwz-btn-primary" (click)="submitAll()">
+          Submit
+        </button>
+      </div>
     </div>
   </div>
 </div>

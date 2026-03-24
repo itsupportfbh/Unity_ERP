@@ -1,45 +1,56 @@
-<div class="card shadow-sm permCardX">
-
-  <div class="card-header permHdrX d-flex justify-content-between align-items-center">
+<div class="rpx-wrap">
+  <div class="rpx-head">
     <div>
-      <h4 class="mb-0 permTitleX">Roles & Permissions</h4>
-      <small class="permSubX">
-        Department: <b>{{departmentName || '-'}}</b> | Team: <b>{{teamName || '-'}}</b>
-      </small>
+      <div class="rpx-title">Roles & Permissions</div>
+      <div class="rpx-subtitle">
+        Configure visible functions and permission flags for the selected department
+      </div>
     </div>
   </div>
 
-  <div class="card-body permBodyX">
+  <div class="rpx-card">
+    <!-- Loading -->
+    <div class="rpx-empty" *ngIf="loadingMenus">
+      <i class="fas fa-spinner fa-spin me-50"></i>
+      Loading department menu access...
+    </div>
 
-    <!-- Module Tabs -->
-    <div class="permTabsWrapX" *ngIf="modules.length">
-      <div class="permTabsX">
-        <button *ngFor="let m of modules"
-                type="button"
-                class="permTabBtnX"
-                [class.active]="activeModuleId===m.id"
-                (click)="setModule(m.id)">
+    <!-- No modules -->
+    <div class="rpx-empty" *ngIf="!loadingMenus && modules.length === 0">
+      No modules available for this department.
+    </div>
+
+    <!-- Tabs -->
+    <div class="rpx-tabs-wrap" *ngIf="!loadingMenus && modules.length > 0">
+      <div class="rpx-tabs">
+        <button
+          type="button"
+          class="rpx-tab"
+          *ngFor="let m of modules"
+          [class.active]="activeModuleId === m.id"
+          (click)="setModule(m.id)">
           {{ m.title }}
         </button>
       </div>
     </div>
 
-    <div *ngIf="!modules.length" class="permEmptyX">
-      No modules allowed for selected Department + Roles.
-    </div>
-
-    <!-- Grid Table -->
-    <div class="permTableWrapX" *ngIf="modules.length">
-      <table class="permTableX">
+    <!-- Grid -->
+    <div class="rpx-grid-wrap" *ngIf="!loadingMenus && modules.length > 0">
+      <table class="rpx-grid">
         <thead>
           <tr>
-            <th class="permThFnX">FUNCTION</th>
+            <th class="rpx-col-function">
+              <div class="rpx-th-title">Function Name</div>
+            </th>
 
-            <th *ngFor="let c of permCols" class="permThColX">
-              <div class="permHeadStackX">
-                <div class="permCodePillX">{{c}}</div>
-                <button type="button" class="permAllPillX" (click)="toggleAllCol(c)">
-                  {{ allColState(c) ? 'All ✓' : 'All' }}
+            <th class="rpx-col-perm" *ngFor="let col of permCols">
+              <div class="rpx-th-stack">
+                <span class="rpx-code">{{ col }}</span>
+                <button
+                  type="button"
+                  class="rpx-all-btn"
+                  (click)="toggleAllCol(col)">
+                  All
                 </button>
               </div>
             </th>
@@ -47,31 +58,62 @@
         </thead>
 
         <tbody>
-          <tr *ngFor="let r of visibleRows">
-            <td class="permFnCellX">{{r.functionTitle}}</td>
-
-            <td *ngFor="let c of permCols" class="permTdX">
-              <input type="checkbox"
-                     class="permChkX"
-                     [checked]="r.flags[c]"
-                     (change)="toggleCell(r.id, c)" />
+          <tr *ngIf="visibleRows.length === 0">
+            <td class="rpx-no-row" [attr.colspan]="permCols.length + 1">
+              No functions available under this module.
             </td>
           </tr>
 
-          <tr *ngIf="visibleRows.length===0">
-            <td colspan="100" class="permNoRowX">No functions configured.</td>
+          <tr *ngFor="let row of visibleRows">
+            <td class="rpx-fn-cell">
+              <div class="rpx-fn-title">{{ row.functionTitle }}</div>
+              <!-- <div class="rpx-fn-sub" *ngIf="row.functionId">{{ row.functionId }}</div> -->
+            </td>
+
+            <td class="rpx-td" *ngFor="let col of permCols">
+              <label class="rpx-check-wrap">
+                <input
+                  type="checkbox"
+                  [checked]="row.flags[col]"
+                  (change)="toggleCell(row.id, col)" />
+                <span></span>
+              </label>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <!-- Legend -->
-    <div class="permLegendX" *ngIf="modules.length">
-      Legend:
-      <span>V=View</span>, <span>C=Create</span>, <span>E=Edit</span>, <span>D=Delete</span>,
-      <span>S=Submit</span>, <span>A=Approve</span>, <span>R=Reject</span>, <span>X=Cancel</span>,
-      <span>P=Print</span>, <span>M=Export</span>
+    <div class="rpx-legend" *ngIf="!loadingMenus && modules.length > 0">
+      <span><b>V</b> - View</span>
+      <span><b>C</b> - Create</span>
+      <span><b>E</b> - Edit</span>
+      <span><b>D</b> - Delete</span>
+      <span><b>A</b> - Approve</span>
+      <span><b>R</b> - Reject</span>
+      <span><b>X</b> - Export</span>
+      <span><b>P</b> - Print</span>
+      <span><b>M</b> - Post / Finalize</span>
     </div>
 
+    <!-- Footer -->
+    <div class="rpx-footer">
+      <button type="button" class="rpx-btn rpx-btn-outline" (click)="goPrevious()">
+        <i class="fas fa-arrow-left"></i>
+        Previous
+      </button>
+
+      <div class="rpx-footer-right">
+        <button type="button" class="rpx-btn rpx-btn-light" (click)="reset()">
+          Reset
+        </button>
+
+        <button type="button" class="rpx-btn rpx-btn-primary" (click)="goNext()">
+          Next
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
   </div>
 </div>

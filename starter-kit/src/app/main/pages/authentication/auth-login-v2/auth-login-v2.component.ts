@@ -63,11 +63,11 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
 
     // ✅ default empty form
-    this.loginForm = this._formBuilder.group({
-      username: ['', Validators.required],
-      password: ['', Validators.required],
-      rememberMe: [false]
-    });
+   this.loginForm = this._formBuilder.group({
+  email: ['', [Validators.required, Validators.email]],
+  password: ['', Validators.required],
+  rememberMe: [false]
+});
 
     this.returnUrl = this._route.snapshot.queryParams['returnUrl'] || '/home';
 
@@ -92,7 +92,7 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
       try {
         const saved = JSON.parse(raw);
         this.loginForm.patchValue({
-          username: saved?.username || '',
+          email: saved?.email || '',
           password: saved?.password || '',
           rememberMe: !!saved?.rememberMe
         });
@@ -106,69 +106,95 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
     this.passwordTextType = !this.passwordTextType;
   }
 
-  onSubmit(): void {
-    debugger
-    this.submitted = true;
-    this.error = '';
+ onSubmit(): void {
+  this.submitted = true;
+  this.error = '';
 
-    if (this.loginForm.invalid) return;
+  if (this.loginForm.invalid) return;
 
-    this.loading = true;
+  this.loading = true;
 
-    const remember = !!this.loginForm.value.rememberMe;
+  const remember = !!this.loginForm.value.rememberMe;
 
-    // ✅ login payload only username/password
-    const payload = {
-      username: this.loginForm.value.username,
-      password: this.loginForm.value.password
-    };
+  const payload = {
+    email: this.loginForm.value.email,
+    password: this.loginForm.value.password
+  };
 
-    this.authService.userLogin(payload).subscribe({
-      next: (res: any) => {
-        const username = res.username ?? payload.username;
-        const password = payload.password;
-
-        // ✅ Remember Me: store username + password
-        if (remember) {
-          localStorage.setItem(
-            this.REMEMBER_KEY,
-            JSON.stringify({ username, password, rememberMe: true })
-          );
-        } else {
-          localStorage.removeItem(this.REMEMBER_KEY);
-        }
-
-        // ✅ existing stores
-        localStorage.setItem('username', username);
-        localStorage.setItem('token', res.token ?? '');
-        localStorage.setItem('id', String(res.userId ?? ''));
-        localStorage.setItem('email', res.email ?? '');
-
-        localStorage.setItem('approvalRoles', JSON.stringify(res.approvalLevelNames || []));
-        localStorage.setItem('teams', JSON.stringify(res.teams || []));
-        localStorage.setItem('locationId', res.locationId ?? '');
-
+  this.authService.userLogin(payload).subscribe({
+    next: (res: any) => {
+      if (!res?.success || !res?.data) {
         this.loading = false;
-        this._router.navigate([this.returnUrl]);
-      },
-      error: (err: any) => {
-        this.loading = false;
-
-        let errorMessage = 'Something went wrong!';
-        if (err?.error?.message) errorMessage = err.error.message;
-        else if (typeof err?.error === 'string') errorMessage = err.error;
-        else if (err?.status) errorMessage = `Error ${err.status}: ${err.statusText}`;
-
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: errorMessage,
+          text: res?.message || 'Login failed',
           confirmButtonText: 'OK',
           confirmButtonColor: '#d33'
         });
+        return;
       }
-    });
-  }
+
+      const data = res.data;
+      const email = data.email ?? payload.email;
+      const password = payload.password;
+
+      if (remember) {
+        localStorage.setItem(
+          this.REMEMBER_KEY,
+          JSON.stringify({ email, password, rememberMe: true })
+        );
+      } else {
+        localStorage.removeItem(this.REMEMBER_KEY);
+      }
+
+      localStorage.setItem('username', data.username ?? '');
+      localStorage.setItem('token', data.token ?? '');
+      localStorage.setItem('id', String(data.userId ?? ''));
+      localStorage.setItem('email', data.email ?? '');
+
+      localStorage.setItem('approvalRoles', JSON.stringify(data.approvalLevelNames || []));
+      localStorage.setItem('approvalLevelIds', JSON.stringify(data.approvalLevelIds || []));
+      localStorage.setItem('teams', JSON.stringify(data.teams || []));
+      localStorage.setItem('allowedMenuIds', JSON.stringify(data.allowedMenuIds || []));
+      localStorage.setItem('locationId', String(data.locationId || 0));
+      localStorage.setItem('departmentId', String(data.departmentId || 0));
+      localStorage.setItem('orgGuid', data.orgGuid ?? '');
+      localStorage.setItem('menuIds', JSON.stringify(res.menuIds || []));
+      localStorage.setItem('databaseName', data.databaseName ?? '');
+      localStorage.setItem('isMasterOwner', String(!!data.isMasterOwner));
+      localStorage.setItem('isTenantUser', String(!!data.isTenantUser));
+      localStorage.setItem('organizations', JSON.stringify(data.organizations || []));
+      localStorage.setItem('organizationId', String(data.organizationId ?? ''));
+
+      this.loading = false;
+
+      if (data.isMasterOwner) {
+        this._router.navigate(['/master/companyList']);
+      } else if (data.isTenantUser) {
+        this._router.navigate(['/home']);
+      } else {
+        this._router.navigate([this.returnUrl || '/home']);
+      }
+    },
+    error: (err: any) => {
+      this.loading = false;
+
+      let errorMessage = 'Something went wrong!';
+      if (err?.error?.message) errorMessage = err.error.message;
+      else if (typeof err?.error === 'string') errorMessage = err.error;
+      else if (err?.status) errorMessage = `Error ${err.status}: ${err.statusText}`;
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: errorMessage,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#d33'
+      });
+    }
+  });
+}
 
   ngOnDestroy(): void {
     if (this.imageTimer) clearInterval(this.imageTimer);

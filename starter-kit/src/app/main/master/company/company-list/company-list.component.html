@@ -1,1 +1,190 @@
-<p>company-list works!</p>
+<div class="content-wrapper p-0">
+  <div class="content-body">
+    <section class="users-list-wrapper">
+      <div class="card">
+
+        <!-- ===== HEADER ===== -->
+        <div class="row">
+
+          <!-- Title + page size -->
+          <div class="col-md-4 col-12">
+            <h4
+              class="card-text"
+              style="margin-left:0.85rem;margin-top:0.75rem;font-size:1.25rem;font-weight:600;color:#2E5F73;">
+              Company List
+            </h4>
+
+            <label class="d-flex align-items-center m-1">
+              Show
+              <select
+                class="form-control mx-25"
+                style="width:80px"
+                [(ngModel)]="pageSize"
+                (change)="onPageSizeChange()">
+                <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
+              </select>
+              entries
+            </label>
+          </div>
+
+          <!-- Search + Add -->
+          <div class="col-md-8 col-12 d-flex justify-content-end align-items-center gap-1">
+            <label class="d-flex align-items-center">
+              Search:
+              <input
+                class="form-control ml-25"
+                style="width:260px"
+                [(ngModel)]="searchText"
+                (input)="onSearchChange()" />
+            </label>
+
+            <button
+              class="btn d-inline-flex align-items-center m-1"
+              style="background:#2E5F73;color:#fff;gap:6px;"
+              (click)="addCompany()">
+              <i class="fas fa-plus-circle"></i>
+              Add
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== TABLE ===== -->
+        <ngx-datatable
+          #table
+          *ngIf="!loading"
+          class="bootstrap core-bootstrap mt-1"
+          [rows]="filteredRows"
+          [rowHeight]="60"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="pageSize"
+          [columnMode]="'force'"
+          [scrollbarH]="true">
+
+          <!-- Company -->
+          <ngx-datatable-column name="COMPANY" [width]="350">
+  <ng-template ngx-datatable-cell-template let-row="row" let-rowIndex="rowIndex">
+    <div class="d-flex align-items-center">
+      <div
+        class="company-avatar mr-1"
+        [ngStyle]="getCompanyAvatarStyle(rowIndex)">
+        {{ getCompanyAvatar(row) }}
+      </div>
+
+      <div>
+        <div
+          class="font-weight-bolder company-name-text"
+          [title]="row.companyName || '-'">
+          {{ row.companyName || '-' }}
+        </div>
+        <small class="text-muted">
+          {{ row.companyCode || '-' }}
+        </small>
+      </div>
+    </div>
+  </ng-template>
+</ngx-datatable-column>
+           <ngx-datatable-column name="ADMIN USER" [width]="220">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <div>
+                <div class="font-weight-bolder">
+                  {{ row.adminUsername || '-' }}
+                </div>
+                <small class="text-muted" [title]="row.adminEmail || '-'">
+                  {{ row.adminEmail || '-' }}
+                </small>
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Currency -->
+          <!-- <ngx-datatable-column name="CURRENCY" prop="baseCurrency" [width]="120">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row.baseCurrency || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+         
+          <ngx-datatable-column name="COUNTRY" prop="country" [width]="140">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row.country || '-' }}
+            </ng-template>
+          </ngx-datatable-column> -->
+
+          <!-- Admin -->
+         
+
+      
+            <ngx-datatable-column name="CreatedBy" prop="CreatedBy" [width]="140">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row.createdByName || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Created Date -->
+          <ngx-datatable-column name="CREATED DATE" prop="createdDate" [width]="190">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row.createdDate ? (row.createdDate | date:'dd-MM-yyyy') : '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+             <ngx-datatable-column name="UpdatedBy" prop="updatedByName" [width]="140">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row.updatedByName || '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Created Date -->
+          <ngx-datatable-column name="UPDATED DATE" prop="updatedDate" [width]="190">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row.updatedDate ? (row.updatedDate | date:'dd-MM-yyyy') : '-' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <!-- Created By -->
+          <!-- <ngx-datatable-column name="CREATED BY" prop="createdBy" [width]="150">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ row.createdBy || '-' }}
+            </ng-template>
+          </ngx-datatable-column> -->
+    <!-- Status -->
+          <ngx-datatable-column name="STATUS" prop="isActive" [width]="140">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span
+                class="badge badge-pill company-status-badge"
+                [ngClass]="row.isActive ? 'badge-light-success' : 'badge-light-danger'">
+                {{ row.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
+          <!-- Action -->
+          <ngx-datatable-column name="ACTION" [width]="140" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <div class="d-flex align-items-center company-action-wrap">
+                <i
+                  class="fas fa-pen text-primary mr-1"
+                  style="cursor:pointer;"
+                  title="Edit"
+                  (click)="editCompany(row)">
+                </i>
+
+                <i
+                  class="fas fa-trash text-danger company-action-icon"
+                  style="cursor:pointer;"
+                  title="Delete"
+                  (click)="deleteCompany(row)">
+                </i>
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
+        </ngx-datatable>
+
+        <div *ngIf="loading" class="text-center p-2 text-muted">
+          Loading companies...
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>

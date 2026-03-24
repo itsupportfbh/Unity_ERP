@@ -36,31 +36,32 @@
           autocomplete="off"
         >
           <!-- Username -->
-          <div class="form-group">
-            <div class="d-flex justify-content-between">
-              <label class="form-label" for="login-username">Username</label>
-              <a routerLink="/pages/authentication/forgot-password" [queryParams]="{ mode: 'username' }">
-                <small>Forgot Username?</small>
-              </a>
-            </div>
+         <div class="form-group">
+  <div class="d-flex justify-content-between">
+    <label class="form-label" for="login-email">Email</label>
+    <a routerLink="/pages/authentication/forgot-password" [queryParams]="{ mode: 'email' }">
+      <small>Forgot Email?</small>
+    </a>
+  </div>
 
-            <input
-              id="login-username"
-              type="text"
-              name="uw_username"
-              autocomplete="username"
-              formControlName="username"
-              class="form-control"
-              [ngClass]="{ 'is-invalid': submitted && f.username.errors }"
-              placeholder="admin@demo.com"
-              autofocus
-              tabindex="1"
-            />
+  <input
+    id="login-email"
+    type="email"
+    name="uw_email"
+    autocomplete="email"
+    formControlName="email"
+    class="form-control"
+    [ngClass]="{ 'is-invalid': submitted && f.email.errors }"
+    placeholder="admin@demo.com"
+    autofocus
+    tabindex="1"
+  />
 
-            <div *ngIf="submitted && f.username.errors" class="invalid-feedback">
-              <div *ngIf="f.username.errors.required">Username is required</div>
-            </div>
-          </div>
+  <div *ngIf="submitted && f.email.errors" class="invalid-feedback">
+    <div *ngIf="f.email.errors.required">Email is required</div>
+    <div *ngIf="f.email.errors.email">Enter a valid email</div>
+  </div>
+</div>
 
           <!-- Password -->
           <div class="form-group">

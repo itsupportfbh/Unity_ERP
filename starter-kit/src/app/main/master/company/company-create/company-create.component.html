@@ -1,12 +1,11 @@
 <div class="content-wrapper container-xxl p-0">
   <div class="content-body">
-
     <div class="card shadow-sm cmp-card">
 
       <!-- HEADER -->
       <div class="cmp-hdr">
         <div class="cmp-hdr__left">
-          <div class="cmp-hdr__title">Company</div>
+          <div class="cmp-hdr__title">{{ isEdit ? 'Edit Company' : 'Company' }}</div>
           <div class="cmp-hdr__sub">Master → Company Setup</div>
         </div>
 
@@ -44,9 +43,15 @@
             </a>
           </li>
 
-          <li class="nav-item" (click)="setTab('integrations')">
+          <!-- <li class="nav-item" (click)="setTab('integrations')">
             <a class="nav-link" [class.active]="activeTab==='integrations'" href="javascript:void(0);">
               <i class="fas fa-plug me-50"></i> Integrations
+            </a>
+          </li> -->
+
+          <li class="nav-item" (click)="setTab('adminUser')">
+            <a class="nav-link" [class.active]="activeTab==='adminUser'" href="javascript:void(0);">
+              <i class="fas fa-user-shield me-50"></i> Initial Admin User
             </a>
           </li>
 
@@ -64,7 +69,6 @@
         <!-- ========================= GENERAL ========================= -->
         <div *ngIf="activeTab==='general'" class="cmp-panel">
 
-          <!-- LOGO -->
           <div class="cmp-logo-card">
             <div class="cmp-logo-left">
               <div class="cmp-logo-title">Company Logo</div>
@@ -92,33 +96,31 @@
           </div>
 
           <form [formGroup]="generalForm" class="cmp-form cmp-form--supplier">
-
-            <!-- Company Details (supplier style - no inner box) -->
             <div class="cmp-plain">
               <div class="cmp-plain__title">Company Details</div>
               <div class="cmp-plain__sub">Basic identity and contact</div>
 
               <div class="row g-2 mt-2">
-                <!-- Row 1 (3 fields) -->
                 <div class="col-md-4">
-                  <label class="form-label">Company Code</label>
+                  <label class="form-label">Company Code <span class="text-danger">*</span></label>
                   <input class="form-control" formControlName="code" />
+                  <small class="text-danger" *ngIf="isInvalid(generalForm, 'code')">Company code is required</small>
                 </div>
 
                 <div class="col-md-4">
-                  <label class="form-label">Company Name</label>
+                  <label class="form-label">Company Name <span class="text-danger">*</span></label>
                   <input class="form-control" formControlName="name" />
+                  <small class="text-danger" *ngIf="isInvalid(generalForm, 'name')">Company name is required</small>
                 </div>
 
                 <div class="col-md-4">
                   <label class="form-label">Status</label>
                   <select class="form-select cmp-select" formControlName="status">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
                   </select>
                 </div>
 
-                <!-- Row 2 (3 fields) -->
                 <div class="col-md-4">
                   <label class="form-label">Registration No</label>
                   <input class="form-control" formControlName="registrationNo" />
@@ -134,7 +136,6 @@
                   <input class="form-control" formControlName="email" />
                 </div>
 
-                <!-- Row 3 -->
                 <div class="col-md-4">
                   <label class="form-label">Legal Name</label>
                   <input class="form-control" formControlName="legalName" />
@@ -144,12 +145,16 @@
                   <label class="form-label">Website</label>
                   <input class="form-control" formControlName="website" />
                 </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Country</label>
+                  <input class="form-control" formControlName="country" />
+                </div>
               </div>
             </div>
 
             <div class="cmp-divider"></div>
 
-            <!-- Primary Contact -->
             <div class="cmp-plain mt-2">
               <div class="cmp-plain__title">Primary Contact</div>
               <div class="cmp-plain__sub">Main person for communication</div>
@@ -174,39 +179,37 @@
 
             <div class="cmp-divider"></div>
 
-            <!-- Registered Address -->
             <div class="cmp-plain mt-2">
               <div class="cmp-plain__title">Registered Address</div>
               <div class="cmp-plain__sub">Used for invoices / legal documents</div>
+
               <div class="row g-2 mt-2">
-              <!-- Address line 1 & 2 in same row -->
-              <div class="col-md-6">
-                <label class="form-label">Address Line 1</label>
-                <textarea class="form-control cmp-textarea" rows="2" formControlName="address1"></textarea>
-              </div>
+                <div class="col-md-6">
+                  <label class="form-label">Address Line 1</label>
+                  <textarea class="form-control cmp-textarea" rows="2" formControlName="address1"></textarea>
+                </div>
 
-              <div class="col-md-6">
-                <label class="form-label">Address Line 2</label>
-                <textarea class="form-control cmp-textarea" rows="2" formControlName="address2"></textarea>
-              </div>
+                <div class="col-md-6">
+                  <label class="form-label">Address Line 2</label>
+                  <textarea class="form-control cmp-textarea" rows="2" formControlName="address2"></textarea>
+                </div>
 
-              <div class="col-md-4">
-                <label class="form-label">City</label>
-                <input class="form-control" formControlName="city" />
-              </div>
+                <div class="col-md-4">
+                  <label class="form-label">City</label>
+                  <input class="form-control" formControlName="city" />
+                </div>
 
-              <div class="col-md-4">
-                <label class="form-label">State</label>
-                <input class="form-control" formControlName="state" />
-              </div>
+                <div class="col-md-4">
+                  <label class="form-label">State</label>
+                  <input class="form-control" formControlName="state" />
+                </div>
 
-              <div class="col-md-4">
-                <label class="form-label">Postal</label>
-                <input class="form-control" formControlName="postal" />
+                <div class="col-md-4">
+                  <label class="form-label">Postal</label>
+                  <input class="form-control" formControlName="postal" />
+                </div>
               </div>
             </div>
-            </div>
-
           </form>
         </div>
 
@@ -224,6 +227,7 @@
                     <option value="SGD">SGD</option>
                     <option value="INR">INR</option>
                     <option value="USD">USD</option>
+                    <option value="MYR">MYR</option>
                   </select>
                 </div>
 
@@ -232,6 +236,7 @@
                   <select class="form-select cmp-select" formControlName="country">
                     <option value="Singapore">Singapore</option>
                     <option value="India">India</option>
+                    <option value="Malaysia">Malaysia</option>
                   </select>
                 </div>
 
@@ -291,7 +296,6 @@
                   </div>
                 </div>
               </div>
-
             </div>
           </form>
         </div>
@@ -319,7 +323,6 @@
                   <input class="form-control" formControlName="defaultBin" />
                 </div>
 
-                <!-- ✅ SAME SIZE LIKE ABOVE FIELDS -->
                 <div class="col-md-4">
                   <label class="form-label">Default Language</label>
                   <select class="form-select cmp-select" formControlName="defaultLanguage">
@@ -333,10 +336,10 @@
                   <select class="form-select cmp-select" formControlName="timeZone">
                     <option value="Asia/Singapore">Asia/Singapore</option>
                     <option value="Asia/Kolkata">Asia/Kolkata</option>
+                    <option value="Asia/Kuala_Lumpur">Asia/Kuala_Lumpur</option>
                   </select>
                 </div>
               </div>
-
             </div>
           </form>
         </div>
@@ -367,16 +370,16 @@
                 <tbody>
                   <tr *ngFor="let r of numberSeries; let i=index">
                     <td>
-                      <input class="form-control" [(ngModel)]="r.document" name="doc{{i}}" />
+                      <input class="form-control" [(ngModel)]="r.document" [name]="'doc' + i" />
                     </td>
                     <td>
-                      <input class="form-control" [(ngModel)]="r.prefix" name="pre{{i}}" />
+                      <input class="form-control" [(ngModel)]="r.prefix" [name]="'pre' + i" />
                     </td>
                     <td>
-                      <input class="form-control" type="number" [(ngModel)]="r.nextNo" name="next{{i}}" />
+                      <input class="form-control" type="number" [(ngModel)]="r.nextNo" [name]="'next' + i" />
                     </td>
                     <td class="text-center">
-                      <input type="checkbox" [(ngModel)]="r.reset" name="reset{{i}}" />
+                      <input type="checkbox" [(ngModel)]="r.reset" [name]="'reset' + i" />
                     </td>
                     <td class="text-center">
                       <button class="btn btn-link text-danger p-0" type="button" (click)="removeNumberRow(i)">
@@ -395,48 +398,116 @@
         </div>
 
         <!-- ========================= INTEGRATIONS ========================= -->
-        <div *ngIf="activeTab==='integrations'" class="cmp-panel">
-  <form [formGroup]="integrationForm" class="cmp-form">
-    <div class="cmp-section">
-      <div class="cmp-section__title">Integrations</div>
-      <div class="cmp-section__sub">Enable / disable connectors</div>
+        <!-- <div *ngIf="activeTab==='integrations'" class="cmp-panel">
+          <form [formGroup]="integrationForm" class="cmp-form">
+            <div class="cmp-section">
+              <div class="cmp-section__title">Integrations</div>
+              <div class="cmp-section__sub">Enable / disable connectors</div>
 
-      <div class="cmp-toggle-card mt-2" [class.on]="integrationForm.value.whatsapp">
-        <div>
-          <div class="cmp-toggle-card__t">WhatsApp</div>
-          <div class="cmp-toggle-card__s">Send invoice / reminders via WhatsApp</div>
-        </div>
-        <label class="switch">
-          <input type="checkbox" formControlName="whatsapp">
-          <span class="slider"></span>
-        </label>
-      </div>
+              <div class="cmp-toggle-card mt-2" [class.on]="integrationForm.value.whatsapp">
+                <div>
+                  <div class="cmp-toggle-card__t">WhatsApp</div>
+                  <div class="cmp-toggle-card__s">Send invoice / reminders via WhatsApp</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" formControlName="whatsapp">
+                  <span class="slider"></span>
+                </label>
+              </div>
 
-      <div class="cmp-toggle-card mt-2" [class.on]="integrationForm.value.smtp">
-        <div>
-          <div class="cmp-toggle-card__t">Email (SMTP)</div>
-          <div class="cmp-toggle-card__s">Email PDF invoices / statements</div>
-        </div>
-        <label class="switch">
-          <input type="checkbox" formControlName="smtp">
-          <span class="slider"></span>
-        </label>
-      </div>
+              <div class="cmp-toggle-card mt-2" [class.on]="integrationForm.value.smtp">
+                <div>
+                  <div class="cmp-toggle-card__t">Email (SMTP)</div>
+                  <div class="cmp-toggle-card__s">Email PDF invoices / statements</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" formControlName="smtp">
+                  <span class="slider"></span>
+                </label>
+              </div>
 
-      <div class="cmp-toggle-card mt-2" [class.on]="integrationForm.value.ocr">
-        <div>
-          <div class="cmp-toggle-card__t">OCR</div>
-          <div class="cmp-toggle-card__s">Scan supplier invoice → auto lines</div>
-        </div>
-        <label class="switch">
-          <input type="checkbox" formControlName="ocr">
-          <span class="slider"></span>
-        </label>
-      </div>
+              <div class="cmp-toggle-card mt-2" [class.on]="integrationForm.value.ocr">
+                <div>
+                  <div class="cmp-toggle-card__t">OCR</div>
+                  <div class="cmp-toggle-card__s">Scan supplier invoice → auto lines</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" formControlName="ocr">
+                  <span class="slider"></span>
+                </label>
+              </div>
 
-    </div>
-  </form>
+              <div class="row g-2 mt-3">
+                <div class="col-md-6">
+                  <label class="form-label">API Endpoint</label>
+                  <input class="form-control" formControlName="apiEndpoint" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">API Key</label>
+                  <input class="form-control" formControlName="apiKey" />
+                </div>
+              </div>
+            </div>
+          </form>
+        </div> -->
+
+        <!-- ========================= INITIAL ADMIN USER ========================= -->
+        <div *ngIf="activeTab==='adminUser'" class="cmp-panel">
+          <form [formGroup]="adminUserForm" class="cmp-form">
+            <div class="cmp-section">
+              <div class="cmp-section__title">Initial Admin User</div>
+              <div class="cmp-section__sub">This user will be created in tenant DB and master DB</div>
+
+              <div class="row g-2 mt-2">
+                <div class="col-md-4">
+                  <label class="form-label">Username <span class="text-danger">*</span></label>
+                  <input class="form-control" formControlName="username" />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Email <span class="text-danger">*</span></label>
+                  <input class="form-control" formControlName="email" />
+                </div>
+
+          <div class="col-md-4">
+  <label class="form-label">
+    Password <span class="text-danger" *ngIf="!isEdit">*</span>
+  </label>
+
+  <div class="password-wrap">
+<input
+  class="form-control password-input"
+  [type]="showPassword ? 'text' : 'password'"
+  formControlName="password"
+  [attr.disabled]="isEdit ? true : null" />
+
+    <button
+      type="button"
+      class="password-toggle"
+      (click)="togglePassword()"
+      [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+      <i class="fas" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+    </button>
+  </div>
+
+ <small class="password-help" *ngIf="isEdit">
+  Leave blank to keep existing password
+</small>
 </div>
+
+                <!-- <div class="col-md-4">
+                  <label class="form-label">Department Id</label>
+                  <input class="form-control" type="number" formControlName="departmentId" />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Location Id</label>
+                  <input class="form-control" type="number" formControlName="locationId" />
+                </div> -->
+              </div>
+            </div>
+          </form>
+        </div>
 
         <!-- ========================= AUDIT ========================= -->
         <div *ngIf="activeTab==='audit'" class="cmp-panel">
@@ -486,10 +557,17 @@
                 </table>
               </div>
             </div>
-
           </div>
         </div>
 
+      </div>
+
+      <div *ngIf="successMsg" class="alert alert-success mx-3 mb-2">
+        {{ successMsg }}
+      </div>
+
+      <div *ngIf="errorMsg" class="alert alert-danger mx-3 mb-2">
+        {{ errorMsg }}
       </div>
 
       <!-- BOTTOM ACTIONS -->
@@ -497,23 +575,26 @@
         <button type="button"
                 class="btn btn-outline-secondary cmp-btn-prev"
                 (click)="goPrev()"
-                [disabled]="isFirstTab()">
+                [disabled]="isFirstTab() || saving">
           <i class="fas fa-arrow-left me-50"></i> Previous
         </button>
 
         <button *ngIf="!isLastTab()"
                 type="button"
                 class="btn btn-primary cmp-btn-next"
-                (click)="goNext()">
+                (click)="goNext()"
+                [disabled]="saving">
           Next <i class="fas fa-arrow-right ms-50"></i>
         </button>
 
-        <button *ngIf="isLastTab()"
-                type="button"
-                class="btn btn-primary cmp-btn-next"
-                (click)="save()">
-          <i class="fas fa-save me-50"></i> Save
-        </button>
+      <button *ngIf="isLastTab()"
+        type="button"
+        class="btn btn-primary cmp-btn-next"
+        (click)="save()"
+        [disabled]="saving || loading">
+  <i class="fas fa-save me-50"></i>
+  {{ saving ? (isEdit ? 'Updating...' : 'Saving...') : (isEdit ? 'Update' : 'Save') }}
+</button>
       </div>
 
     </div>

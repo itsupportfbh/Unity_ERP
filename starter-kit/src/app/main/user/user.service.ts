@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'environments/environment';
+import { Observable } from 'rxjs';
 
 export interface ApprovalLevel {
   id: number;
@@ -14,28 +15,25 @@ export interface UserView {
   email: string;
   isActive: boolean;
   approvalLevelIds: number[];
-  departmentId : number;
-  locationId:number;
+  departmentId: number;
+  locationId: number;
   approvalLevelNames: string[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private base = '/api/User';
-private url = environment.apiUrl;
+  private url = environment.apiUrl;
+
   constructor(private http: HttpClient) {}
 
-  // list with roles
   getAllView() {
     return this.http.get<UserView[]>(`${this.url}/User/getAllView`);
   }
 
-  // edit load with roles
   getViewById(id: number) {
     return this.http.get<UserView>(`${this.url}/User/view/${id}`);
   }
 
-  // crud
   insert(payload: any) {
     return this.http.post(`${this.url}/User/insert`, payload);
   }
@@ -48,13 +46,33 @@ private url = environment.apiUrl;
     return this.http.delete(`${this.url}/User/delete/${id}`);
   }
 
-  // roles master
   getApprovalLevels() {
-    return this.http.get<ApprovalLevel[]>(`${this.url}/ApprovalLevel/GetApprovalLevels`);
-    // change url if your approval controller route differs
+    return this.http.get<any>(`${this.url}/ApprovalLevel/GetApprovalLevels`);
   }
+
   getDepartments() {
-  return this.http.get<any>(`${this.url}/user/departments`);
+    return this.http.get<any>(`${this.url}/User/departments`);
+  }
+
+  getDepartmentMenuAccess(departmentId: number) {
+    return this.http.get<any>(`${this.url}/DepartmentMenuAccess/by-department/${departmentId}`);
+  }
+
+submitUserAccessWizard(payload: any) {
+  return this.http.post<any>(
+    `${this.url}/User/submit-user-access`,
+    payload
+  );
 }
 
+updateUserAccessWizard(id: number, payload: any) {
+  return this.http.put<any>(
+    `${this.url}/User/update-user-access/${id}`,
+    payload
+  );
+}
+
+  getOrganizationRoleByUserId(userId: number): Observable<any> {
+    return this.http.get<any>(`${this.url}/User/organization-role/${userId}`);
+  }
 }

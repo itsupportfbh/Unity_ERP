@@ -69,7 +69,7 @@ export class UserlistComponent implements OnInit {
   }
 
   edit(id: number) {
-    this.router.navigate(['/admin/users', id, 'edit']);
+    this.router.navigate(['/admin/users/access', id]);
   }
 
   disable(row: UserView) {

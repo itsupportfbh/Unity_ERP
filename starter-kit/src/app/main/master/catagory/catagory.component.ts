@@ -3,6 +3,7 @@ import { FormBuilder, NgForm } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { CatagoryService } from './catagory.service';
 import * as feather from 'feather-icons';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-catagory',
@@ -19,16 +20,86 @@ export class CatagoryComponent implements OnInit {
     selectedCatagory: any = null;
     public isDisplay = false;
     private iconsReplaced = false;
-    userId: string;
+     userId: number = 0;
+  functionId = 'catagory';
+
+  permission: FunctionPermission;
+    isPermissionLoaded = false;
+    isPageLoading = false;
+
     constructor(private fb: FormBuilder,
-      private CatagoryService: CatagoryService,) { 
-         this.userId = localStorage.getItem('id');
+      private CatagoryService: CatagoryService,
+      private permissionService : PermissionService
+    ) { 
+        this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
       }
   
     ngOnInit(): void {
-      this.loadCatagory();
+      // this.loadCatagory();
+     this.loadPermission();
     }
   
+      loadPermission(): void {
+        if (!this.userId || this.userId <= 0) {
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+    
+          Swal.fire({
+            icon: 'warning',
+            title: 'Access Denied',
+            text: 'User not found. Please login again.',
+            confirmButtonColor: '#0e3a4c'
+          });
+          return;
+        }
+    
+        this.isPageLoading = true;
+    
+        this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+          next: (res: FunctionPermission) => {
+            this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+            this.isPermissionLoaded = true;
+            this.isPageLoading = false;
+    
+            if (this.canView()) {
+              this.loadCatagory();
+            } else {
+              this.CatagoryList = [];
+              this.isDisplay = false;
+            }
+          },
+          error: (err) => {
+            console.error('Permission load error:', err);
+            this.permission = this.permissionService.getEmptyPermission(this.functionId);
+            this.isPermissionLoaded = true;
+            this.isPageLoading = false;
+    
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Unable to load permission.',
+              confirmButtonColor: '#d33'
+            });
+          }
+        });
+      }
+    
+      canView(): boolean {
+        return this.permissionService.hasView(this.permission);
+      }
+    
+      canCreate(): boolean {
+        return this.permissionService.hasCreate(this.permission);
+      }
+    
+      canEdit(): boolean {
+        return this.permissionService.hasEdit(this.permission);
+      }
+    
+      canDelete(): boolean {
+        return this.permissionService.hasDelete(this.permission);
+      }
     ngAfterViewInit(): void {
       feather.replace();
     }

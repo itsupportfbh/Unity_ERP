@@ -1,6 +1,6 @@
-<div class="content-wrapper p-0">
+<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper">
+    <section *ngIf="canView(); else noAccessTemplate" class="users-list-wrapper">
       <div class="card">
 
         <!-- Header row -->
@@ -37,7 +37,7 @@
                        (search)="filterUpdate($event)" />
               </label>
 
-              <button class="btn btn-primary m-1" (click)="Add()">
+              <button class="btn btn-primary m-1" *ngIf="canCreate()" (click)="Add()">
                 <i data-feather="plus" class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
                 <span class="d-none d-sm-inline-block">Add</span>
               </button>
@@ -144,9 +144,9 @@
                                 [draggable]="false">
             <ng-template let-row="row" ngx-datatable-cell-template>
               <div class="d-flex align-items-center">
-                <i class="fas fa-pen text-primary mr-2" style="cursor:pointer"
+                <i class="fas fa-pen text-primary mr-2" style="cursor:pointer" *ngIf="canEdit()"
                    (click)="onEdit(row)"></i>
-                <i class="fas fa-trash text-danger" style="cursor:pointer"
+                <i class="fas fa-trash text-danger" style="cursor:pointer" *ngIf="canDelete()"
                    (click)="confirmDeleteBank(row)"></i>
               </div>
             </ng-template>
@@ -158,3 +158,23 @@
     </section>
   </div>
 </div>
+
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

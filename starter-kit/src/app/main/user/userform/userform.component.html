@@ -1,155 +1,134 @@
-<div class="card shadow-sm">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <div>
-      <h4 class="mb-0" style="color:#2E5F73;font-weight:700;">
-        {{ isEdit ? 'Edit User' : 'New User' }}
-      </h4>
-      <small class="text-muted">Administration → Users</small>
-    </div>
-
-    <button class="btn btn-outline-secondary btn-sm" (click)="cancel()">
-      <i class="fas fa-arrow-left me-50"></i> Back
-    </button>
+<div class="ufx-wrap">
+  <div class="ufx-head">
+    <div class="ufx-title">Account Details</div>
+    <div class="ufx-subtitle">Fill in the user details to continue to permissions setup.</div>
   </div>
 
-  <div class="card-body">
-  <form [formGroup]="form" autocomplete="off">
-  <div class="row g-2">
+  <form [formGroup]="form" autocomplete="off" class="ufx-form">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="ufx-label">Username</label>
+        <input
+          class="form-control ufx-input"
+          formControlName="username"
+          name="new_username"
+          autocomplete="off"
+          autocapitalize="off"
+          autocorrect="off"
+          spellcheck="false"
+          inputmode="text"
+          placeholder="Enter username" />
+      </div>
 
-    <!-- USERNAME -->
-    <div class="col-md-4">
-      <label class="form-label small">Username</label>
-      <input
-        class="form-control"
-        formControlName="username"
-        name="new_username"
-        autocomplete="off"
-        autocapitalize="off"
-        autocorrect="off"
-        spellcheck="false"
-        inputmode="text"
-      />
-    </div>
+      <div class="col-md-4">
+        <label class="ufx-label">Department</label>
+        <ng-select
+          class="ufx-select"
+          [items]="departments"
+          bindLabel="name"
+          bindValue="id"
+          formControlName="departmentId"
+          appendTo="body"
+          (change)="emitContext()"
+          placeholder="Select Department">
+        </ng-select>
 
-    <!-- EMAIL -->
-    <div class="col-md-4">
-      <label class="form-label small">Email</label>
-      <input
-        class="form-control"
-        formControlName="email"
-        name="new_email"
-        autocomplete="off"
-        [class.is-invalid]="form.get('email')?.touched && form.get('email')?.invalid"
-      />
-      <div class="invalid-feedback">Enter a valid email address</div>
-    </div>
+        <div
+          *ngIf="form.get('departmentId')?.touched && form.get('departmentId')?.invalid"
+          class="ufx-error">
+          Department is required
+        </div>
+      </div>
 
-    <!-- PASSWORD -->
-    <div class="col-md-4">
-      <label class="form-label small d-flex justify-content-between align-items-center">
-        <span>Password</span>
-        <!-- <button
+      <div class="col-md-4">
+        <label class="ufx-label">Location</label>
+        <ng-select
+          class="ufx-select"
+          [items]="locations"
+          bindLabel="name"
+          bindValue="id"
+          formControlName="locationId"
+          appendTo="body"
+          placeholder="Select Location">
+        </ng-select>
+
+        <div
+          *ngIf="form.get('locationId')?.touched && form.get('locationId')?.invalid"
+          class="ufx-error">
+          Location is required
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="ufx-label">Email</label>
+        <input
+          class="form-control ufx-input"
+          formControlName="email"
+          name="new_email"
+          autocomplete="off"
+          placeholder="Enter email"
+          [class.is-invalid]="form.get('email')?.touched && form.get('email')?.invalid" />
+        <div class="invalid-feedback">Enter a valid email address</div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="ufx-label">Approval Levels</label>
+        <ng-select
+          class="ufx-select"
+          [items]="roles"
+          bindLabel="name"
+          bindValue="id"
+          [multiple]="true"
+          [closeOnSelect]="false"
+          appendTo="body"
+          placeholder="Select roles"
+          formControlName="approvalLevelIds"
+          (change)="emitContext()">
+        </ng-select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="ufx-label">Password</label>
+
+        <input type="text" name="fake_user" style="display:none" autocomplete="username">
+        <input type="password" name="fake_pass" style="display:none" autocomplete="current-password">
+
+        <input
+          type="password"
+          class="form-control ufx-input"
+          formControlName="password"
+          name="new_password"
+          [attr.autocomplete]="'new-password'"
+          [readonly]="isEdit && !canEditPassword"
+          placeholder="Enter password"
+          [class.is-invalid]="((!isEdit) || (isEdit && canEditPassword)) && form.get('password')?.touched && form.get('password')?.invalid" />
+
+        <small *ngIf="isEdit && !canEditPassword" class="ufx-note">
+          Password hidden. Click <b>Edit Password</b> to update.
+        </small>
+
+        <div class="invalid-feedback">
+          Password must be 8+ chars with uppercase, lowercase, number & special char
+        </div>
+
+        <button
           *ngIf="isEdit"
           type="button"
-          class="btn btn-sm btn-outline-primary"
+          class="btn btn-sm btn-outline-primary mt-50"
           (click)="togglePasswordEdit()">
-          {{ canEditPassword ? 'Cancel' : 'Change Password' }}
-        </button> -->
-      </label>
-
-      <!-- dummy hidden fields (prevents chrome autofill strongly) -->
-      <input type="text" name="fake_user" style="display:none" autocomplete="username">
-      <input type="password" name="fake_pass" style="display:none" autocomplete="current-password">
-
-      <input
-        type="password"
-        class="form-control"
-        formControlName="password"
-        name="new_password"
-        [attr.autocomplete]="isEdit ? 'new-password' : 'new-password'"
-        [readonly]="isEdit && !canEditPassword"
-        [class.is-invalid]="(canEditPassword || !isEdit) && form.get('password')?.touched && form.get('password')?.invalid"
-      />
-
-      <small *ngIf="isEdit && !canEditPassword" class="text-muted">
-        Password hidden. Click <b>Edit Password</b> to update.
-      </small>
-
-      <div class="invalid-feedback">
-        Password must be 8+ chars with uppercase, lowercase, number & special char
+          {{ canEditPassword ? 'Cancel Password Edit' : 'Edit Password' }}
+        </button>
       </div>
     </div>
+  </form>
 
-    <!-- DEPARTMENT -->
-    <div class="col-md-4 mt-1">
-      <label class="form-label small">Department (Team)</label>
-<ng-select
-  [items]="departments"
-  bindLabel="name"
-  bindValue="id"
-  formControlName="departmentId"
-  (change)="emitContext()"
-  placeholder="Select Department">
-</ng-select>
+  <div class="ufx-footer">
+    <button type="button" class="ufx-btn ufx-btn-light" (click)="cancel()">
+      <span>◀</span> Back
+    </button>
 
-
-      <div *ngIf="form.get('departmentId')?.touched && form.get('departmentId')?.invalid"
-           class="text-danger small mt-25">
-        Department is required
-      </div>
-    </div>
-
-    <!-- ROLES -->
-    <div class="col-md-4 mt-1">
-      <label class="form-label small">Roles (Approval Levels)</label>
-
-      <ng-select
-        [items]="roles"
-        bindLabel="name"
-        bindValue="id"
-        [multiple]="true"
-        [closeOnSelect]="false"
-        placeholder="Select roles"
-        
-        formControlName="approvalLevelIds"
-        (change)="emitContext()">
-      </ng-select>
-    </div>
-  <div class="col-md-4 mt-1">
-      <label class="form-label small">Location</label>
-<ng-select
-  [items]="locations"
-  bindLabel="name"
-  bindValue="id"
-  formControlName="locationId"
-  placeholder="Select Location">
-</ng-select>
-
-
-      <div *ngIf="form.get('locationId')?.touched && form.get('locationId')?.invalid"
-           class="text-danger small mt-25">
-        Location is required
-      </div>
-    </div>
+    <button type="button" class="ufx-btn ufx-btn-primary" (click)="next()">
+      Next <span>▶</span>
+    </button>
   </div>
-</form>
-
-  </div>
-
-  <div class="card-footer text-end">
-  <button class="btn btn-outline-secondary me-1" (click)="cancel()">Cancel</button>
-
-  <button class="btn btn-outline-primary me-1"
-          style="border-radius:12px;font-weight:800;"
-          (click)="next()">
-    Next
-  </button>
-
-  <button class="btn btn-brand"
-          style="background:#2E5F73;color:#fff;"
-          (click)="save()"
-          [disabled]="form.invalid">
-    Save
-  </button>
-</div>
 </div>

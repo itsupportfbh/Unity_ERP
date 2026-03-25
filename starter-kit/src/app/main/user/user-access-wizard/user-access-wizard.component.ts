@@ -177,77 +177,93 @@ export class UserAccessWizardComponent {
     }
   }
 
-  submitAll(): void {
-    if (!this.userFormComp?.form) return;
+ submitAll(): void {
+  if (!this.userFormComp?.form) return;
 
-    this.userFormComp.form.markAllAsTouched();
+  this.userFormComp.form.markAllAsTouched();
 
-    const passwordInvalid =
-      (!this.userFormComp.isEdit && this.userFormComp.form.get('password')?.invalid) ||
-      (this.userFormComp.isEdit &&
-        this.userFormComp.canEditPassword &&
-        this.userFormComp.form.get('password')?.invalid);
+  const passwordInvalid =
+    (!this.userFormComp.isEdit && this.userFormComp.form.get('password')?.invalid) ||
+    (this.userFormComp.isEdit &&
+      this.userFormComp.canEditPassword &&
+      this.userFormComp.form.get('password')?.invalid);
 
-    if (
-      this.userFormComp.form.get('username')?.invalid ||
-      this.userFormComp.form.get('email')?.invalid ||
-      this.userFormComp.form.get('departmentId')?.invalid ||
-      this.userFormComp.form.get('locationId')?.invalid ||
-      passwordInvalid
-    ) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Invalid User Details',
-        text: 'Please complete required fields in Account Details.'
-      });
-      this.activeTab = 'users';
-      return;
-    }
-
-    this.captureReviewUser();
-    this.captureReviewPermissions();
-
-    const payload = {
-      user: this.finalUserPayload,
-      permissions: this.finalPermissionPayload || []
-    };
-
-    console.log('FINAL SUBMIT PAYLOAD', payload);
-
+  if (
+    this.userFormComp.form.get('username')?.invalid ||
+    this.userFormComp.form.get('email')?.invalid ||
+    this.userFormComp.form.get('departmentId')?.invalid ||
+    this.userFormComp.form.get('locationId')?.invalid ||
+    passwordInvalid
+  ) {
     Swal.fire({
-      title: this.userFormComp.isEdit ? 'Updating...' : 'Saving...',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
+      icon: 'warning',
+      title: 'Invalid User Details',
+      text: 'Please complete required fields in Account Details.'
     });
-
-    const req = this.userFormComp.isEdit
-      ? this.userService.updateUserAccessWizard(this.userFormComp.id, payload)
-      : this.userService.submitUserAccessWizard(payload);
-
-    req.subscribe({
-      next: (res: any) => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Success',
-          text: res?.message || (this.userFormComp.isEdit
-            ? 'User access updated successfully.'
-            : 'User access saved successfully.')
-        }).then(() => {
-          this.router.navigate(['/admin/users']);
-        });
-      },
-      error: (err) => {
-        console.error('SUBMIT ERROR', err);
-        Swal.fire({
-          icon: 'error',
-          title: 'Failed',
-          text:
-            err?.error?.message ||
-            err?.error?.title ||
-            err?.message ||
-            'Something went wrong while saving.'
-        });
-      }
-    });
+    this.activeTab = 'users';
+    return;
   }
+
+  this.captureReviewUser();
+  this.captureReviewPermissions();
+
+  const orgGuid =
+    localStorage.getItem('orgGuid') ||
+    localStorage.getItem('OrgGuid') ||
+    localStorage.getItem('orgGUID') ||
+    '';
+
+  const payload = {
+    orgGuid: orgGuid,
+    user: this.finalUserPayload,
+    permissions: this.finalPermissionPayload || []
+  };
+
+  console.log('FINAL SUBMIT PAYLOAD', payload);
+
+  if (!orgGuid) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'OrgGuid Missing',
+      text: 'LocalStorage la orgGuid கிடைக்கலை.'
+    });
+    return;
+  }
+
+  Swal.fire({
+    title: this.userFormComp.isEdit ? 'Updating...' : 'Saving...',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  const req = this.userFormComp.isEdit
+    ? this.userService.updateUserAccessWizard(this.userFormComp.id, payload)
+    : this.userService.submitUserAccessWizard(payload);
+
+  req.subscribe({
+    next: (res: any) => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: res?.message || (this.userFormComp.isEdit
+          ? 'User access updated successfully.'
+          : 'User access saved successfully.')
+      }).then(() => {
+        this.router.navigate(['/admin/users']);
+      });
+    },
+    error: (err) => {
+      console.error('SUBMIT ERROR', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed',
+        text:
+          err?.error?.message ||
+          err?.error?.title ||
+          err?.message ||
+          'Something went wrong while saving.'
+      });
+    }
+  });
+}
 }

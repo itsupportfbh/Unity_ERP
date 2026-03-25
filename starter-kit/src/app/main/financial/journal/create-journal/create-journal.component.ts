@@ -41,12 +41,17 @@ export class CreateJournalComponent implements OnInit {
 
   // State
   isSaving = false;
+  userId: any;
 
   constructor(
     private router: Router,
     private _chart: ChartofaccountService,
-    private _journal: JournalService
-  ) {}
+    private _journal: JournalService,
+    
+  ) 
+  {
+     this.userId = localStorage.getItem('id');
+  }
 
   ngOnInit(): void {
     this.loadAccountHeads();
@@ -199,7 +204,7 @@ export class CreateJournalComponent implements OnInit {
       recurringCount: this.recurringEndType === 'EndByCount' ? this.recurringCount : null,
 
       timezone: this.timezone,
-      createdBy: 1,   // TODO: from logged-in user
+      createdBy: this.userId,   // TODO: from logged-in user
 
       lines: linePayloads
     };

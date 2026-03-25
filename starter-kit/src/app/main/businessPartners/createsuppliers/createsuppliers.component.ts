@@ -168,6 +168,7 @@ export class CreatesuppliersComponent implements OnInit {
   docs: ComplianceDoc[] = [
     { name: '', number: '', expiry: null, files: [] }
   ];
+  userId: string;
 
   constructor(
     private route: ActivatedRoute,
@@ -179,7 +180,10 @@ export class CreatesuppliersComponent implements OnInit {
     private itemsService: ItemsService,
     private _chartOfAccountService: ChartofaccountService,
     private router: Router
-  ) {}
+  ) 
+  {
+     this.userId = localStorage.getItem('id');
+  }
 
   /* =========================
      Lifecycle
@@ -693,8 +697,8 @@ export class CreatesuppliersComponent implements OnInit {
       bankSwift: this.supplier.bank?.swift ?? null,
       bankBranch: this.supplier.bank?.branch ?? null,
 
-      createdBy: 'admin',
-      updatedBy: 'admin'
+      createdBy: this.userId,
+      updatedBy: this.userId
     };
 
     console.log(payload);

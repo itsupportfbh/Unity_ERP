@@ -23,8 +23,8 @@ export interface DebitNoteDto {
   amount: number;
   linesJson: string;
   status: number;          // 0 = Draft, 1 = Posted (or as you decide)
-  createdBy?: string;
-  updatedBy?: string;
+  createdBy?: any;
+  updatedBy?: any;
 }
 
 @Injectable({

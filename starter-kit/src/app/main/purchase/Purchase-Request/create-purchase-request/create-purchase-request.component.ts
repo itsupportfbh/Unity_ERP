@@ -1252,8 +1252,8 @@ selectModalItem(item: any) {
       multiLoc: this.prHeader.multiLoc,
       oversea: this.prHeader.oversea,
       PurchaseRequestNo: '',
-      CreatedBy: '1',
-      UpdatedBy: '1',
+      CreatedBy:Number(localStorage.getItem('id') || 0),
+      UpdatedBy:Number(localStorage.getItem('id') || 0),
       IsActive: true,
       Status: 1,
       prLines: JSON.stringify(strippedLines)

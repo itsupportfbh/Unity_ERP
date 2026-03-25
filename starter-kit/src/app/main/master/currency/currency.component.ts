@@ -87,8 +87,8 @@ onSubmit(form: any) {
   const payload = {
     CurrencyName: this.CurrencyName,
     description: this.description,
-    CreatedBy: '1',
-    UpdatedBy: '1',
+    CreatedBy:Number(localStorage.getItem('id') || 0),
+    UpdatedBy: Number(localStorage.getItem('id') || 0),
     UpdatedDate: new Date(),
     isActive: true,
   };

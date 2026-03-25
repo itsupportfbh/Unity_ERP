@@ -68,9 +68,9 @@ export class IncomeComponent implements OnInit {
       id: this.id,
       name: this.name,
       description: this.description,
-      createdBy: '1',
+      createdBy: Number(localStorage.getItem('id') || 0),
       createdDate: new Date(),
-      updatedBy: '1',
+      updatedBy: Number(localStorage.getItem('id') || 0),
       updatedDate: new Date(),
       isActive: true,
     };

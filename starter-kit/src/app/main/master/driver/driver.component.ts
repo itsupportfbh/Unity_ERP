@@ -96,8 +96,8 @@ export class DriverComponent implements OnInit {
       licenseNumber: this.licenseNumber,
       licenseExpiryDate: this.licenseExpiryDate,
       remarks: this.remarks,
-      createdBy: 1,
-      updatedBy: 1,
+      createdBy: Number(localStorage.getItem('id') || 0),
+      updatedBy: Number(localStorage.getItem('id') || 0),
       createdDate: new Date(),
       updatedDate: new Date()
     };

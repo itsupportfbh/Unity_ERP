@@ -59,37 +59,44 @@ export class RolesPermissionsComponent implements OnChanges {
     }
   }
 
-  private loadDepartmentMenus(): void {
-    this.allowedMenuIds = [];
-    this.modules = [];
-    this.rows = [];
-    this.activeModuleId = '';
+private loadDepartmentMenus(): void {
+  this.allowedMenuIds = [];
+  this.modules = [];
+  this.rows = [];
+  this.activeModuleId = '';
 
-    if (!this.departmentId) return;
-
-    this.loadingMenus = true;
-
-    this.userSvc.getDepartmentMenuAccess(this.departmentId).subscribe({
-      next: (res: any) => {
-        const data = res?.data || res || [];
-
-        this.allowedMenuIds = (data || [])
-          .map((x: any) => (typeof x === 'string' ? x : x.menuId || x.MenuId || x.id))
-          .filter((x: any) => !!x)
-          .map((x: any) => String(x).trim());
-
-        this.rebuildScreen();
-      },
-      error: () => {
-        this.allowedMenuIds = [];
-        this.rebuildScreen();
-      },
-      complete: () => {
-        this.loadingMenus = false;
-      }
-    });
+  if (!this.departmentId) {
+    this.loadingMenus = false;
+    return;
   }
 
+  this.loadingMenus = true;
+
+  this.userSvc.getDepartmentMenuAccess(this.departmentId).subscribe({
+    next: (res: any) => {
+      console.log('Department menu access response:', res);
+
+      const menuIds = res?.menuIds || res?.data?.menuIds || [];
+
+      this.allowedMenuIds = Array.isArray(menuIds)
+        ? menuIds
+            .filter((x: any) => !!x)
+            .map((x: any) => String(x).trim().toLowerCase())
+        : [];
+
+      console.log('allowedMenuIds:', this.allowedMenuIds);
+
+      this.rebuildScreen();
+      this.loadingMenus = false;
+    },
+    error: (err) => {
+      console.error('Department menu access load failed:', err);
+      this.allowedMenuIds = [];
+      this.rebuildScreen();
+      this.loadingMenus = false;
+    }
+  });
+}
   private rebuildScreen(): void {
     this.modules = this.buildAllowedModulesFromDepartment(
       ALL_MENU as any[],

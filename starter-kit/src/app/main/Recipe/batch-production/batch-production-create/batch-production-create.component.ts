@@ -21,7 +21,7 @@ type ProductionPlanDto = {
   salesOrderNo: string;
   planDate: string;
   status: string;
-  createdBy: string;
+  createdBy: any;
   createdDate: string;
   totalShortage: number;
   productionPlanNo: string;

@@ -27,12 +27,16 @@ export class CitiesComponent implements OnInit, AfterViewChecked, AfterViewInit 
 
   selectedCountry: number | null = null;
   selectedState: number | null = null;
+  userId: number;
 
   constructor(
     private _cityService: CitiesService,
     private _stateService: StatesService,
     private _countriesService: CountriesService
-  ) {}
+  ) 
+  {
+         this.userId = Number(localStorage.getItem('id') || 0);
+  }
 
   ngOnInit(): void {
     this.getAllCities();
@@ -110,9 +114,9 @@ export class CitiesComponent implements OnInit, AfterViewChecked, AfterViewInit 
       cityName: this.cityName,
       countryId: this.selectedCountry,
       stateId: this.selectedState,
-      createdBy: '1',
+      createdBy: this.userId,
       createdDate: new Date(),
-      updatedBy: '1',
+      updatedBy: this.userId,
       updatedDate: new Date(),
       isActive: true,
     };

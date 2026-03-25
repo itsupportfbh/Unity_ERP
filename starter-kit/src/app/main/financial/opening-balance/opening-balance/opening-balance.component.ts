@@ -28,11 +28,15 @@ export class OpeningBalanceComponent implements OnInit, AfterViewInit, AfterView
   rows: any[] = [];
   tempData: any[] = [];
   openingBalanceList: any[] = [];
+  userId: any;
 
   constructor(
     private coaService: ChartofaccountService,
     private _openingBalanceService: OpeningBalanceService
-  ) {}
+  ) 
+  {
+    this.userId = localStorage.getItem('id');
+  }
 
   ngOnInit(): void {
     this.loadAccountHeads();
@@ -116,9 +120,9 @@ export class OpeningBalanceComponent implements OnInit, AfterViewInit, AfterView
       id: this.id,
       openingBalanceAmount: Number(this.openingBalanceAmount || 0),
       budgetLineId: this.budgetLine,      // number | null
-      createdBy: '1',
+      createdBy: this.userId,
       createdDate: new Date(),
-      updatedBy: '1',
+      updatedBy: this.userId,
       updatedDate: new Date(),
       isActive: true
     };

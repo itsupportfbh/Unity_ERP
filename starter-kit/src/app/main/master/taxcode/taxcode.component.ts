@@ -94,9 +94,9 @@ export class TaxcodeComponent implements OnInit, AfterViewInit, AfterViewChecked
       description: this.description,
       typeId: this.typeId,
       rate: this.rate,
-      createdBy: '1',
+      createdBy: Number(localStorage.getItem('id') || 0),
       createdDate: new Date(),
-      updatedBy: '1',
+      updatedBy: Number(localStorage.getItem('id') || 0),
       updatedDate: new Date(),
       isActive: true
     };

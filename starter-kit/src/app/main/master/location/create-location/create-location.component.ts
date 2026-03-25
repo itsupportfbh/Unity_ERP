@@ -223,9 +223,9 @@ this.locationForm.reset({
     stateId: +this.locationForm.value.stateId,
     cityId: +this.locationForm.value.cityId,
     isActive: true,
-    createdBy: "1",
+    createdBy:Number(localStorage.getItem('id') || 0),
     createdDate: isEdit ? undefined : new Date(),
-    updatedBy: "1",
+    updatedBy: Number(localStorage.getItem('id') || 0),
     updatedDate: new Date()
   };
 

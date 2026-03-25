@@ -65,6 +65,7 @@ export class MaterialRequisitionCreateComponent implements OnInit {
   // ✅ EDIT MODE
   isEdit = false;
   editId: number | null = null;
+  userId: any;
 
   constructor(
     private itemMasterService: ItemMasterService,
@@ -73,7 +74,10 @@ export class MaterialRequisitionCreateComponent implements OnInit {
 
     private route: ActivatedRoute,
     private router: Router
-  ) {}
+  ) 
+  {
+    this.userId = localStorage.getItem('id')
+  }
 
   ngOnInit(): void {
     // requesterName from localStorage
@@ -339,8 +343,8 @@ this.header.BinId = binId != null ? Number(binId) : null;
       reqDate: this.header.date,
       status: 1,
       remarks: null,
-      updatedBy: requester,
-      createdBy: requester,
+      updatedBy: this.userId,
+      createdBy: this.userId,
       isActive: true,
       lines: validLines
     };

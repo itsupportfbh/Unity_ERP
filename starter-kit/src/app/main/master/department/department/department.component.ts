@@ -181,9 +181,9 @@ export class DepartmentComponent implements OnInit, AfterViewInit, AfterViewChec
       id: this.id,
       departmentName: (this.departmentName || '').trim(),
       departmentCode: (this.departmentCode || '').trim(),
-      createdBy: '1',
+      createdBy: Number(localStorage.getItem('id') || 0),
       createdDate: new Date(),
-      updatedBy: '1',
+      updatedBy: Number(localStorage.getItem('id') || 0),
       updatedDate: new Date(),
       isActive: true
     };

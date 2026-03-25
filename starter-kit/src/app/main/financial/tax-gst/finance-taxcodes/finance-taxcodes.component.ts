@@ -46,8 +46,12 @@ export class FinanceTaxcodesComponent implements OnInit {
     rate: null,
     levelId: 1        // default Line Level
   };
+  userId: any;
 
-  constructor(private taxCodeService: TaxCodeService) {}
+  constructor(private taxCodeService: TaxCodeService) 
+  {
+    this.userId = localStorage.getItem('id');
+  }
 
   ngOnInit(): void {
     this.loadTaxCodes();
@@ -105,9 +109,9 @@ saveTaxCode(): void {
     typeId: this.newTax.typeId,
     rate: this.newTax.rate,
     level: this.newTax.levelId,
-    createdBy: '1',
+    createdBy: this.userId,
     createdDate: new Date(),
-    updatedBy: '1',
+    updatedBy:  this.userId,
     updatedDate: new Date(),
     isActive: true
   };

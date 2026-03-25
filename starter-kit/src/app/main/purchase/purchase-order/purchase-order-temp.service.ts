@@ -16,11 +16,15 @@ export class POTempService {
     currentRequest = this.requestSource.asObservable();
     constructor(private http: HttpClient) { }
 
-    getPODrafts(createdBy?: string): Observable<any> {
-        let params = new HttpParams();
-        if (createdBy) params = params.set('createdBy', createdBy);
-        return this.http.get<any>(this.url + POTempApiUrls.GetAll, { params });
-    }
+getPODrafts(createdBy?: number): Observable<any> {
+  let params = new HttpParams();
+
+  if (createdBy !== undefined && createdBy !== null) {
+    params = params.set('createdBy', createdBy.toString());
+  }
+
+  return this.http.get<any>(this.url + POTempApiUrls.GetAll, { params });
+}
     getPODraftById(id: number): Observable<any> {
         return this.http.get<any>(this.url + POTempApiUrls.GetById + id);
     }

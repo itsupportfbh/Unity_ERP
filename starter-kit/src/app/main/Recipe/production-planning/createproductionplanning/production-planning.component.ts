@@ -387,7 +387,7 @@ createPR(): void {
       salesOrderId: this.selectedSoId,
       outletId: this.outletId,
       warehouseId: this.warehouseId,
-      createdBy: userName,
+      createdBy: Number(localStorage.getItem('id') || 0),
       status: 0
     } as any).subscribe({
       next: (res: any) => {
@@ -454,7 +454,7 @@ createPR(): void {
       warehouseId: this.warehouseId,
       planDate: this.planDate,
       status: statusValue,      // ✅ INT
-      updatedBy: userName,
+      updatedBy: Number(localStorage.getItem('id') || 0),
       lines
     }).subscribe({
       next: (res: any) => {
@@ -472,7 +472,7 @@ createPR(): void {
     salesOrderId: this.selectedSoId,
     outletId: this.outletId,
     warehouseId: this.warehouseId,
-    createdBy: userName,
+    createdBy: Number(localStorage.getItem('id') || 0),
     status: statusValue          // ✅ if backend not added, ignore safely
   } as any).subscribe({
     next: (res: any) => {

@@ -20,10 +20,10 @@ export interface BatchProductionHeaderDto {
   batchNo?: string | null;
   status?: string | null;
 
-  createdBy?: string | null;
+  createdBy?: any | null;
   createdDate?: string | null;
 
-  updatedBy?: string | null;
+  updatedBy?: any | null;
   updatedDate?: string | null;
 
   postedBy?: string | null;

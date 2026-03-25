@@ -421,7 +421,7 @@ markPlanAsPending(planId: number): void {
 
     this.srv.updatePlanStatus(planId, {
       status: 1,
-      updatedBy: (localStorage.getItem('username') || '').trim() || 'admin'
+      updatedBy: Number(localStorage.getItem('id') || 0)
     }).subscribe({
       next: () => {
         // 1) main grid update

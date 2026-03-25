@@ -21,7 +21,7 @@ export interface ApplyGrnLine {
 export interface ApplyGrnRequest {
   grnNo?: string;
   receptionDate?: string | Date;
-  updatedBy?: string;
+  updatedBy?: any;
   lines: ApplyGrnLine[];
 }
 
@@ -37,7 +37,7 @@ export interface UpdateWarehouseAndSupplierPriceDto {
   price?: number | null;
   barcode?: string | null;
   remarks?: string | null;
-  updatedBy?: string;
+  updatedBy?: any;
 }
 
 @Injectable({ providedIn: 'root' })

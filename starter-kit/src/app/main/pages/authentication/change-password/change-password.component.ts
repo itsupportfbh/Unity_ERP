@@ -46,8 +46,8 @@ export class ChangePasswordComponent implements OnInit {
       currentPassword: this.currentPassword,
       newPassword: this.newPassword,
       confirmNewPassword: this.confirmNewPassword,
-      CreatedBy: this.userName,
-      UpdatedBy: this.userName,
+      CreatedBy: Number(localStorage.getItem('id') || 0),
+      UpdatedBy: Number(localStorage.getItem('id') || 0),
       UpdatedDate: new Date()
     };
 

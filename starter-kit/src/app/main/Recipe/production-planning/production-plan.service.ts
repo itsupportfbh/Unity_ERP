@@ -130,7 +130,7 @@ getSalesOrders(includeSoId?: number): Observable<SoHeaderDto[]> {
     return this.http.get<ProductionPlanResponseDto>(`${this.url}/ProductionPlan/so/${soId}?warehouseId=${warehouseId}`);
   }
 
-  savePlan(payload: { salesOrderId: number; outletId?: number; warehouseId?: number; createdBy?: string }) {
+  savePlan(payload: { salesOrderId: number; outletId?: number; warehouseId?: number; createdBy?: number }) {
     return this.http.post(`${this.url}/ProductionPlan/save`, payload);
   }
   createPrFromRecipeShortage(payload: CreatePrFromRecipeShortageRequest) {
@@ -162,7 +162,7 @@ deletePlan(planId: number) {
       `${this.url}/ProductionPlan/${id}/print`
     );
   }
-updatePlanStatus(id: number, payload: { status: number; updatedBy: string }) {
+updatePlanStatus(id: number, payload: { status: number; updatedBy: any }) {
   return this.http.put<any>(
     `${this.url}/ProductionPlan/${id}/status`,
     payload

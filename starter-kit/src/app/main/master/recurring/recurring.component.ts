@@ -71,9 +71,9 @@ export class RecurringComponent implements OnInit {
     const obj = {
       id: this.id,
       recurringName: this.recurringName,
-      createdBy: '1',
+      createdBy: Number(localStorage.getItem('id') || 0),
       createdDate: new Date(),
-      updatedBy: '1',
+      updatedBy: Number(localStorage.getItem('id') || 0),
       updatedDate: new Date(),
       isActive: true,
     };

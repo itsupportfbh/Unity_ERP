@@ -16,9 +16,9 @@ interface LocationRow {
   latitude: string;
   longitude: string;
   isActive: boolean;
-  createdBy: string;
+  createdBy: number;
   createdDate: string | Date;
-  updatedBy: string;
+  updatedBy: any;
   updatedDate: string | Date;
 }
 @Component({

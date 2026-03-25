@@ -128,6 +128,7 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   // Period lock
   isPeriodLocked = false;
   currentPeriodName = '';
+  userId: any;
 
   constructor(
     private apSvc: AccountsPayableService,
@@ -136,6 +137,7 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   ) {
     const today = new Date();
     this.payDate = today.toISOString().substring(0, 10);
+     this.userId = localStorage.getItem('id');
   }
 
   // =====================================================
@@ -530,7 +532,7 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
         notes: this.payNotes,
         bankAccountId: this.selectedBankId,
         bankId: this.selectedBankId,
-        createdBy: 1
+        createdBy: this.userId
       };
       requests = [this.apSvc.createPayment(payload)];
     } else {
@@ -545,7 +547,7 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
           notes: this.payNotes,
           bankAccountId: this.selectedBankId,
           bankId: this.selectedBankId,
-          createdBy: 1
+          createdBy: this.userId
         }))
         .map(payload => this.apSvc.createPayment(payload));
     }

@@ -17,7 +17,7 @@ export const ALL_MENU: CoreMenu[] = [
       { id: 'bin', title: 'Bin', type: 'item', icon: 'circle', url: '/master/bin' },
       { id: 'catagory', title: 'Catagory', type: 'item', icon: 'circle', url: '/master/catagory' },
       { id: 'cities', title: 'Cities', type: 'item', icon: 'circle', url: '/master/cities' },
-      { id: 'company', title: 'Company', type: 'item', icon: 'circle', url: '/master/company' },
+      { id: 'company', title: 'Company', type: 'item', icon: 'circle', url: '/master/companyList' },
       { id: 'costingmethod', title: 'Costing Method', type: 'item', icon: 'circle', url: '/master/coastingmethod' },
       { id: 'countries', title: 'Countries', type: 'item', icon: 'circle', url: '/master/countries' },
       { id: 'currency', title: 'Currency', type: 'item', icon: 'circle', url: '/master/currency' },

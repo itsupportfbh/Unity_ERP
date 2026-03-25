@@ -88,9 +88,9 @@ export class ServiceComponent implements OnInit, AfterViewInit, AfterViewChecked
     Charge:this.charges,
     Tax:this.tax,
     Description:this.description,
-    createdBy: '1',
+    createdBy: Number(localStorage.getItem('id') || 0),
     createdDate: new Date(),
-    updatedBy: '1',
+    updatedBy: Number(localStorage.getItem('id') || 0),
     updatedDate: new Date(),
     isActive: true,
   };

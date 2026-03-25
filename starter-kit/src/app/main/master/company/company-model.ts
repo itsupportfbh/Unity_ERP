@@ -77,7 +77,7 @@ export interface CompanyDetail {
   numberSeries: CompanyNumberSeriesRow[];
   integrations: CompanyIntegrations;
 
-  lastUpdatedBy?: string;
+  lastUpdatedBy?: any;
   lastUpdatedAt?: string; // yyyy-MM-dd HH:mm
 
   auditTrail: CompanyAuditRow[];

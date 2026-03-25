@@ -144,11 +144,44 @@
   [ngClass]="{ 'imN__select--ph': item.uomId == null }"
   [(ngModel)]="item.uomId"
   name="uomId"
+  (change)="onBaseOrPurchaseUomChange()"
   required>
   <option value="" [ngValue]="null" disabled>Select UOM</option>
   <option *ngFor="let u of uomList" [ngValue]="u.id">{{ u.name }}</option>
 </select>
         </div>
+
+        <div class="imN__field">
+  <label class="imN__label">Base UOM <span class="imN__req">*</span></label>
+
+  <select
+    class="imN__control imN__select"
+    [ngClass]="{ 'imN__select--ph': item.baseUomId == null }"
+    [(ngModel)]="item.baseUomId"
+    name="baseUomId"
+    (change)="onBaseOrPurchaseUomChange()"
+    required>
+    <option value="" [ngValue]="null" disabled>Select Base UOM</option>
+    <option *ngFor="let u of uomList" [ngValue]="u.id">{{ u.name }}</option>
+  </select>
+</div>
+
+<div class="imN__field">
+  <label class="imN__label">Conversion Factor <span class="imN__req">*</span></label>
+  <input
+    class="imN__control"
+    type="number"
+    [(ngModel)]="item.uomFactor"
+    name="uomFactor"
+    min="0.0001"
+    step="0.0001"
+    placeholder="1 Purchase UOM = ? Base UOM"
+    required
+  />
+  <small class="text-gray-500">
+    Example: CTN-12 Tins x 1L → L = 12, KG → KG = 1
+  </small>
+</div>
 
         <!-- Expiry -->
         <!-- <div class="imN__field">
@@ -276,9 +309,9 @@
                 <td class="px-3 py-2 text-center">{{ getWarehouseName(r.warehouseId) }}</td>
                 <td class="px-3 py-2 text-center">{{ getBinName(r.binId) }}</td>
                 <td class="px-3 py-2 text-center">{{ getStrategyName(r.strategyId) }}</td>
-                <td class="px-3 py-2 text-center">{{ r.onHand }}</td>
-                <td class="px-3 py-2 text-center">{{ r.reserved }}</td>
-                <td class="px-3 py-2 text-center">{{ r.available }}</td>
+                <td class="px-3 py-2 text-center">{{ r.onHand }}{{ r.baseUomName || '' }}</td>
+                <td class="px-3 py-2 text-center">{{ r.reserved }}{{ r.baseUomName || '' }}</td>
+                <td class="px-3 py-2 text-center">{{ r.available }}{{ r.baseUomName || '' }}</td>
                 <td class="px-3 py-2 text-center">{{ r.min ?? 0 }}</td>
                 <td class="px-3 py-2 text-center">{{ r.max ?? 0 }}</td>
                 <td class="px-3 py-2 text-center">{{ r.reorderQty ?? 0 }} / {{ r.leadTimeDays ?? 0 }}</td>
@@ -305,9 +338,9 @@
             <tfoot *ngIf="itemStocks?.length">
               <tr class="bg-gray-50 font-semibold">
                 <td class="px-3 py-2 text-center" colspan="3">Totals</td>
-                <td class="px-3 py-2 text-center">{{ totals.onHand }}</td>
-                <td class="px-3 py-2 text-center">{{ totals.reserved }}</td>
-                <td class="px-3 py-2 text-center">{{ totals.available }}</td>
+                <td class="px-3 py-2 text-center">{{ totals.onHand }}{{ itemStocks[0]?.baseUomName || '' }}</td>
+                <td class="px-3 py-2 text-center">{{ totals.reserved }}{{ itemStocks[0]?.baseUomName || '' }}</td>
+                <td class="px-3 py-2 text-center">{{ totals.available }}{{ itemStocks[0]?.baseUomName || '' }}</td>
                 <td class="px-3 py-2 text-right"></td>
                 <td class="px-3 py-2 text-right"></td>
                 <td class="px-3 py-2 text-right"></td>
@@ -413,7 +446,7 @@
 
                 <!-- Qty -->
                 <td class="px-3 py-2">
-                  <span class="text-gray-800">{{ p.qty || '-' }}</span>
+                  <span class="text-gray-800">{{ p.qty || '-' }}{{ p.baseUomName || '' }}</span>
                 </td>
 
                 <!-- Barcode -->
@@ -863,6 +896,12 @@
 
               <div class="imRev__k">UOM</div>
               <div class="imRev__v" [title]="item?.uom || ''">{{ item?.uom || '-' }}</div>
+
+              <div class="imRev__k">Base UOM</div>
+              <div class="imRev__v" [title]="getUomName(item?.baseUomId)">{{ getUomName(item?.baseUomId) || '-' }}</div>
+
+              <div class="imRev__k">Factor</div>
+              <div class="imRev__v">{{ item?.uomFactor || 1 }}</div>
             </div>
           </div>
 

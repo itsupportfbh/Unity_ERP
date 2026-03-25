@@ -80,6 +80,7 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
   // Load Items Master (FIXED)
   // =========================
   loadItemsMaster() {
+    debugger
     this.itemMasterService.getAllItemMaster().subscribe({
       next: (res: any) => {
         // your sample: { isSuccess, message, data: [...] }
@@ -87,7 +88,7 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
 
         // ✅ IMPORTANT FIX: itemType is null in your API, so DO NOT filter by finishedfoods.
        this.itemsMaster = (data || []).filter((x: any) =>
-        x?.isActive === true && Number(x?.itemTypeId) === 3  // ✅ only typeId=1
+        x?.isActive === true && Number(x?.itemTypeId) === 2  // ✅ only typeId=1
       );
 
         // debug

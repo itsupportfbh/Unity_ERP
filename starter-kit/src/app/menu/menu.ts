@@ -38,6 +38,7 @@ export const ALL_MENU: CoreMenu[] = [
       { id: 'suppliergroups', title: 'Supplier Groups', type: 'item', icon: 'circle', url: '/master/suppliergroups' },
       { id: 'taxcode', title: 'Taxcode', type: 'item', icon: 'circle', url: '/master/taxcode' },
       { id: 'uom', title: 'UOM', type: 'item', icon: 'circle', url: '/master/uom' },
+      { id: 'uomconversion', title: 'UOM Conversion', type: 'item', icon: 'circle', url: '/master/uomconversion' },
       { id: 'vehicle', title: 'Vehicle', type: 'item', icon: 'circle', url: '/master/vehicle' },
       { id: 'warehouse', title: 'Warehouse', type: 'item', icon: 'circle', url: '/master/warehouse' }
     ]

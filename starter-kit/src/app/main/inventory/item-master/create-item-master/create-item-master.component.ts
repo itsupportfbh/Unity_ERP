@@ -209,6 +209,14 @@ export class CreateItemMasterComponent implements OnInit {
         Swal.fire({ icon: 'warning', title: 'Required', text: 'UOM is required.' });
         return;
       }
+      if (!this.item.baseUomId) {
+        Swal.fire({ icon: 'warning', title: 'Required', text: 'Base UOM is required.' });
+        return;
+      }
+      if (!this.item.uomFactor || Number(this.item.uomFactor) <= 0) {
+        Swal.fire({ icon: 'warning', title: 'Required', text: 'Conversion Factor must be greater than 0.' });
+        return;
+      }
       if (!this.item.budgetLineId) {
         Swal.fire({ icon: 'warning', title: 'Required', text: 'Ledger Name is required.' });
         return;
@@ -371,6 +379,8 @@ export class CreateItemMasterComponent implements OnInit {
             name: h.name ?? h.itemName ?? '',
             category: h.category ?? h.catagoryName ?? '',
             uom: h.uom ?? h.uomName ?? '',
+            baseUomId: h.baseUomId ?? h.baseUomID ?? null,
+            uomFactor: h.uomFactor ?? 1,
             costingMethodId: h.costingMethodId ?? null,
             taxCodeId: h.taxCodeId ?? null,
             specs: h.specs ?? '',
@@ -385,7 +395,7 @@ export class CreateItemMasterComponent implements OnInit {
           const stockArr: any[] = Array.isArray(stocks)
             ? stocks
             : (stocks && 'data' in stocks ? (stocks as any).data : []) || [];
-
+debugger
           this.itemStocks = stockArr.map((r: any) => ({
             warehouseId: r.warehouseId,
             binId: r.binId,
@@ -405,6 +415,8 @@ export class CreateItemMasterComponent implements OnInit {
             isFullTransfer: !!r.isFullTransfer,
             isPartialTransfer: !!r.isPartialTransfer,
             approvedBy: Number(r.approvedBy ?? 0),
+            baseUomName:r.baseUomName,
+            uomFactor:r.uomFactor
           }));
 
           const priceArr: any[] = Array.isArray(prices)
@@ -423,6 +435,7 @@ export class CreateItemMasterComponent implements OnInit {
             countedQty: p.countedQty,
             badCountedQty: p.badCountedQty,
             reasonId: p.reasonId ? p.reasonId : '-',
+            baseUomName:p.baseUomName
           }));
           this.buildReviewView();
           this.loadBomSnapshotOrFallback();
@@ -450,15 +463,23 @@ export class CreateItemMasterComponent implements OnInit {
       await Swal.fire({ icon: 'warning', title: 'Required', text: 'Item Code and Item Name are required.' });
       return;
     }
-    if (!this.item.itemType || !this.item.categoryId || !this.item.uomId || !this.item.budgetLineId) {
-      await Swal.fire({ icon: 'warning', title: 'Required', text: 'Item Type, Category, UOM and Ledger Name are required.' });
+    if (!this.item.itemType || !this.item.categoryId || !this.item.uomId || !this.item.baseUomId || !this.item.budgetLineId) {
+      await Swal.fire({ icon: 'warning', title: 'Required', text: 'Item Type, Category, UOM , Base UOM and Ledger Name are required.' });
+      return;
+    }
+    if (!this.item.uomFactor || Number(this.item.uomFactor) <= 0) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Required',
+        text: 'Conversion Factor must be greater than 0.'
+      });
       return;
     }
 
     // ✅ map to old backend fields (so existing API continues)
     this.item.sku = this.item.itemCode?.trim();
     this.item.name = this.item.itemName?.trim();
-
+debugger
     const stocksPayload = this.itemStocks.map(r => ({
       warehouseId: r.warehouseId,
       binId: r.binId,
@@ -507,6 +528,8 @@ export class CreateItemMasterComponent implements OnInit {
       ItemTypeId: this.item.itemType,
       categoryId: Number(this.item.categoryId),
       uomId: Number(this.item.uomId),
+       BaseUomId: Number(this.item.baseUomId),   // new
+       UomFactor: Number(this.item.uomFactor),
       budgetLineId: Number(this.item.budgetLineId),
 
       itemStocks: stocksPayload,
@@ -576,6 +599,7 @@ export class CreateItemMasterComponent implements OnInit {
   }
 
   editLine(i: number): void {
+    debugger
     const r = this.itemStocks[i];
     if (!r) return;
     this.isEditMode = true;
@@ -1135,6 +1159,10 @@ syncBomFromPrices(opts: { preserveUnitCost?: boolean } = { preserveUnitCost: tru
       itemType: null,
       categoryId: null as number | null,
       uomId: null as number | null,
+
+       baseUomId: null as number | null,
+       uomFactor: 1,
+
       budgetLineId: null as number | null,
       fulfillmentMode: null,
       // keep old fields too (for existing API)
@@ -1712,5 +1740,14 @@ private getBomBaseCost(r: BomInlineRow): number {
   const hist = this.getLast3CostsForSupplier(r.supplierId);
   const last = Number(hist?.[0]?.value ?? 0);
   return last > 0 ? last : 0;
+}
+onBaseOrPurchaseUomChange(): void {
+  if (this.item.uomId && this.item.baseUomId && Number(this.item.uomId) === Number(this.item.baseUomId)) {
+    this.item.uomFactor = 1;
+  }
+}
+getUomName(id: any): string {
+  const u = this.uomList.find(x => String(x.id) === String(id));
+  return u?.name ?? '-';
 }
 }

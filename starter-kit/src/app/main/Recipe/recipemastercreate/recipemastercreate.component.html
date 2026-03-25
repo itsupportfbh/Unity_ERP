@@ -260,9 +260,23 @@
         </div>
 
         <div class="prl-col-12 prl-md-3">
-          <label class="prl-label">UOM</label>
-          <input class="prl-input" formControlName="uomName" readonly />
-        </div>
+      <label class="prl-label">UOM</label>
+
+      <ng-select
+        class="custom-ng-select pr-tail-select"
+        [items]="uomList"
+        bindLabel="name"
+        bindValue="id"
+        formControlName="uomId"
+        placeholder="Select UOM"
+        (change)="onLineUomChanged()">
+      </ng-select>
+
+      <small class="text-danger"
+        *ngIf="lineForm.get('uomId')?.invalid && (lineForm.get('uomId')?.touched || lineForm.get('uomId')?.dirty)">
+        UOM required
+      </small>
+    </div>
 
         <div class="prl-col-12 prl-md-3">
           <label class="prl-label">Yield %</label>

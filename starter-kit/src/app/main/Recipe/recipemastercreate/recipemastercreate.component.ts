@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ItemMasterService } from 'app/main/inventory/item-master/item-master.service';
 import { RecipemasterserviceService } from '../recipemasterservice.service';
 import Swal from 'sweetalert2';
+import { UomService } from 'app/main/master/uom/uom.service';
 
 interface ItemDto {
   id: number;
@@ -11,6 +12,7 @@ interface ItemDto {
   itemName: string;
   itemTypeId: any;
   uomName?: string;
+  uomId:number,
   isActive?: boolean;
 }
 
@@ -46,15 +48,17 @@ export class RecipemastercreateComponent implements OnInit {
   recipeId: number | null = null;
 
   // ✅ Item Type Ids
-  FINISHED_FOODS_TYPE_ID = 3;
+  FINISHED_FOODS_TYPE_ID = 2;
   RAW_MATERIAL_TYPE_ID = 1;
+  uomList: any[] = [];
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
     private itemSrv: ItemMasterService,
-    private recipeSrv: RecipemasterserviceService
+    private recipeSrv: RecipemasterserviceService,
+    private uomService: UomService,
   ) {}
 
   ngOnInit(): void {
@@ -78,12 +82,20 @@ export class RecipemastercreateComponent implements OnInit {
       ingredientName: [''],
       qty: [0, [Validators.required, Validators.min(0)]],
       uomName: [''],
+      uomId: [null, Validators.required],
       yieldPct: [100, [Validators.min(0), Validators.max(100)]],
       unitCost: [0, [Validators.min(0)]],
       remarks: ['']
     });
 
     this.loadMasterItem();
+    this.loadUoms();
+  }
+
+  private loadUoms(): void {
+    this.uomService.getAllUom().subscribe((res: any) => {
+      this.uomList = (res?.data ?? []).map((u: any) => ({ id: u.id, name: u.name }));
+    });
   }
 
   // ---------------- helper ----------------
@@ -178,6 +190,7 @@ export class RecipemastercreateComponent implements OnInit {
             ingredientItemId: Number(l.ingredientItemId),
             ingredientName: l.ingredientItemName ?? rm?.itemName ?? '',
             qty,
+            uomId: Number(l.uomId ?? rm?.uomId ?? 0),
             uomName: l.uom ?? l.uomName ?? l.ingredientUomName ?? rm?.uomName ?? '',
             yieldPct,
             unitCost,
@@ -205,6 +218,7 @@ export class RecipemastercreateComponent implements OnInit {
         ingredientItemId: l.ingredientItemId,
         ingredientName: l.ingredientName,
         qty: l.qty,
+        uomId: l.uomId ?? null,
         uomName: l.uomName,
         yieldPct: l.yieldPct,
         unitCost: l.unitCost,
@@ -215,6 +229,7 @@ export class RecipemastercreateComponent implements OnInit {
         ingredientItemId: '',
         ingredientName: '',
         qty: 0,
+        uomId: null,
         uomName: '',
         yieldPct: 100,
         unitCost: 0,
@@ -236,7 +251,7 @@ export class RecipemastercreateComponent implements OnInit {
 
     this.lineForm.patchValue({
       ingredientName: item?.itemName ?? '',
-      uomName: item?.uomName ?? ''
+      // uomName: item?.uomName ?? ''
     }, { emitEvent: false });
   }
 
@@ -261,6 +276,7 @@ export class RecipemastercreateComponent implements OnInit {
       ingredientItemId: Number(v.ingredientItemId),
       ingredientName: v.ingredientName,
       qty: Number(v.qty),
+      uomId: Number(v.uomId),
       uomName: v.uomName,
       yieldPct: Number(v.yieldPct),
       unitCost: Number(v.unitCost),
@@ -287,6 +303,7 @@ export class RecipemastercreateComponent implements OnInit {
       ingredientItemId: Number(v.ingredientItemId),
       ingredientName: v.ingredientName,
       qty: Number(v.qty),
+      uomId: Number(v.uomId),
       uomName: v.uomName,
       yieldPct: Number(v.yieldPct),
       unitCost: Number(v.unitCost),
@@ -305,6 +322,7 @@ export class RecipemastercreateComponent implements OnInit {
       ingredientItemId: '',
       ingredientName: '',
       qty: 0,
+      uomId: null,
       uomName: '',
       yieldPct: 100,
       unitCost: 0,
@@ -342,6 +360,7 @@ submit(): void {
     ingredients: this.bomLines.map(l => ({
       ingredientItemId: l.ingredientItemId,
       qty: l.qty,
+      uomId: l.uomId,
       uom: l.uomName,
       yieldPct: l.yieldPct,
       unitCost: l.unitCost,
@@ -393,4 +412,13 @@ submit(): void {
   onGoToRecipeList(): void {
     this.router.navigate(['/Recipe/recipelist']);
   }
+
+  onLineUomChanged(): void {
+  const id = Number(this.lineForm.get('uomId')?.value || 0);
+  const uom = this.uomList.find(x => Number(x.id) === id);
+
+  this.lineForm.patchValue({
+    uomName: uom?.name ?? ''
+  }, { emitEvent: false });
+}
 }

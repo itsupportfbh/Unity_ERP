@@ -176,11 +176,11 @@
             </td>
 
             <td class="num">
-              <span class="pp2-chip">{{ fmt(i.requiredQty) }}</span>
+              <span class="pp2-chip">{{ fmt(i.requiredQty) }}{{ i.baseUomName || '' }}</span>
             </td>
 
             <td class="num">
-              <span class="pp2-chip soft">{{ fmt(i.availableQty) }}</span>
+              <span class="pp2-chip soft">{{ fmt(i.availableQty) }}{{ i.baseUomName || '' }}</span>
             </td>
 
             <td>

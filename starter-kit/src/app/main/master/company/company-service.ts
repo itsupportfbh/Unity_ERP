@@ -8,6 +8,7 @@ export interface GeneralDto {
   name: string;
   legalName?: string;
   registrationNo?: string;
+  taxRegistrationNo?: string;
   status?: string;
   phone?: string;
   email?: string;
@@ -21,6 +22,7 @@ export interface GeneralDto {
   city?: string;
   state?: string;
   postal?: string;
+  createdBy: number;
 }
 
 export interface FinanceTaxDto {
@@ -61,12 +63,16 @@ export interface IntegrationsDto {
 export interface InitialAdminUserDto {
   username: string;
   email: string;
-  password: string;
+  password?: string | null;
   departmentId: number;
   locationId: number;
 }
 
 export interface CreateCompanySetupPayload {
+  isNewOrganization: boolean;
+  organizationId?: number | null;
+  orgGuid?: string | null;
+
   general: GeneralDto;
   financeTax: FinanceTaxDto;
   defaults: DefaultsDto;
@@ -78,9 +84,19 @@ export interface CreateCompanySetupPayload {
 
 export interface CreateCompanySetupResponse {
   organizationId: number;
+  companyId?: number;
+  orgGuid?: string;
   databaseName: string;
   message: string;
 }
+
+export interface OrganizationLookupRow {
+  id: number;
+  orgGuid: string;
+  orgCode: string;
+  orgName: string;
+}
+
 export interface CompanyRow {
   id: number;
   orgGuid: string;
@@ -99,15 +115,18 @@ export interface CompanyRow {
   isOwner?: boolean;
   approvalLevelName?: string;
 }
+
 export interface CompanySetupDetailDto {
   id: number;
   orgGuid?: string | null;
+  organizationId?: number | null;
 
   general: {
     code: string;
     name: string;
     legalName: string;
     registrationNo: string;
+    taxRegistrationNo?: string;
     status: string;
     phone: string;
     email: string;
@@ -161,16 +180,17 @@ export interface CompanySetupDetailDto {
   initialAdminUser: {
     username: string;
     email: string;
-    password?: string;
+    password?: string | null;
     departmentId: number | null;
     locationId: number | null;
   };
 
   logoBase64?: string | null;
-  lastUpdatedBy?: string | null;
+  lastUpdatedBy?: any | null;
   lastUpdatedAt?: string | null;
   auditTrail?: Array<{ date: string; user: string; change: string }>;
 }
+
 @Injectable({
   providedIn: 'root'
 })
@@ -185,21 +205,40 @@ export class CompanyService {
       payload
     );
   }
-   getCompanyList(approvalLevelName: string, orgGuid: string): Observable<CompanyRow[]> {
-  return this.http.get<CompanyRow[]>(`${this.baseUrl}/Company/list`, {
-    params: {
-      approvalLevelName: approvalLevelName || '',
-      orgGuid: orgGuid || ''
-    }
-  });
-}
+
+  createCompanyUnderOrganization(
+    payload: CreateCompanySetupPayload
+  ): Observable<CreateCompanySetupResponse> {
+    return this.http.post<CreateCompanySetupResponse>(
+      `${this.baseUrl}/organizations/create-company-under-org`,
+      payload
+    );
+  }
+
+  getOrganizations(): Observable<OrganizationLookupRow[]> {
+    return this.http.get<OrganizationLookupRow[]>(
+      `${this.baseUrl}/organizations/lookup`
+    );
+  }
+
+  getCompanyList(approvalLevelName: string, orgGuid: string): Observable<CompanyRow[]> {
+    return this.http.get<CompanyRow[]>(`${this.baseUrl}/Company/list`, {
+      params: {
+        approvalLevelName: approvalLevelName || '',
+        orgGuid: orgGuid || ''
+      }
+    });
+  }
+
   getCompanyById(id: number): Observable<CompanySetupDetailDto> {
     return this.http.get<CompanySetupDetailDto>(`${this.baseUrl}/Company/${id}`);
   }
-  updateCompany(id: number, payload: CreateCompanySetupPayload): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/Company/${id}`, payload);
+
+  updateCompany(id: number, payload: CreateCompanySetupPayload): Observable<CreateCompanySetupResponse> {
+    return this.http.put<CreateCompanySetupResponse>(`${this.baseUrl}/Company/${id}`, payload);
   }
-   deleteCompany(id: number): Observable<any> {
+
+  deleteCompany(id: number): Observable<any> {
     return this.http.delete<any>(`${this.baseUrl}/Company/${id}`);
   }
 }

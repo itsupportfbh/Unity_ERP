@@ -1,15 +1,21 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CompanyService, CreateCompanySetupPayload, CompanySetupDetailDto } from '../company-service';
+
+import {
+  CompanyService,
+  CreateCompanySetupPayload,
+  CompanySetupDetailDto,
+  OrganizationLookupRow
+} from '../company-service';
 import Swal from 'sweetalert2';
+import { Observable } from 'rxjs';
 
 type CompanyTab =
   | 'general'
   | 'financeTax'
   | 'defaults'
   | 'numberSeries'
- 
   | 'adminUser'
   | 'audit';
 
@@ -23,7 +29,8 @@ interface NumberSeriesRow {
 @Component({
   selector: 'app-company-create',
   templateUrl: './company-create.component.html',
-  styleUrls: ['./company-create.component.scss']
+  styleUrls: ['./company-create.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class CompanyCreateComponent implements OnInit {
   activeTab: CompanyTab = 'general';
@@ -33,7 +40,6 @@ export class CompanyCreateComponent implements OnInit {
     'financeTax',
     'defaults',
     'numberSeries',
-   
     'adminUser',
     'audit'
   ];
@@ -52,7 +58,7 @@ export class CompanyCreateComponent implements OnInit {
     { document: 'Delivery Order', prefix: 'DO', nextNo: 1, reset: true }
   ];
 
-  lastUpdatedBy ;
+  lastUpdatedBy: string = '—';
   lastUpdatedAt = '—';
   auditTrail: Array<{ date: string; user: string; change: string }> = [];
 
@@ -63,7 +69,13 @@ export class CompanyCreateComponent implements OnInit {
 
   isEdit = false;
   companyId = 0;
-showPassword = false;
+  showPassword = false;
+
+  isNewOrganization = true;
+  organizations: OrganizationLookupRow[] = [];
+  selectedOrganizationId = 0;
+  selectedOrgGuid = '';
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -73,6 +85,7 @@ showPassword = false;
 
   ngOnInit(): void {
     this.buildForms();
+    this.loadOrganizations();
 
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
@@ -80,13 +93,8 @@ showPassword = false;
       this.companyId = +idParam;
       this.loadCompany(this.companyId);
     }
-this.setPasswordState();
-    // this.generalForm.get('email')?.valueChanges.subscribe(v => {
-    //   const current = this.adminUserForm.get('email')?.value;
-    //   if (!current && v) {
-    //     this.adminUserForm.patchValue({ email: v }, { emitEvent: false });
-    //   }
-    // });
+
+    this.setPasswordState();
   }
 
   private buildForms(): void {
@@ -95,15 +103,16 @@ this.setPasswordState();
       name: ['', [Validators.required, Validators.maxLength(200)]],
       legalName: [''],
       registrationNo: [''],
+      taxRegistrationNo: [''],
       status: ['1'],
       phone: [''],
-      email: [''],
+      email: ['', [Validators.email]],
       website: [''],
       country: ['Singapore'],
 
       contactPerson: [''],
       contactMobileNo: [''],
-      contactEmail: [''],
+      contactEmail: ['', [Validators.email]],
 
       address1: [''],
       address2: [''],
@@ -141,7 +150,7 @@ this.setPasswordState();
     });
 
     this.adminUserForm = this.fb.group({
-      username: ['',[Validators.required, Validators.maxLength(100)]],
+      username: ['', [Validators.required, Validators.maxLength(100)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       departmentId: [1],
@@ -149,8 +158,38 @@ this.setPasswordState();
     });
   }
 
+  private loadOrganizations(): void {
+    this.companyService.getOrganizations().subscribe({
+      next: (res) => {
+        this.organizations = res || [];
+      },
+      error: () => {
+        this.organizations = [];
+      }
+    });
+  }
+
+  onOrganizationModeChange(value: boolean): void {
+    this.isNewOrganization = value;
+
+    if (value) {
+      this.selectedOrganizationId = 0;
+      this.selectedOrgGuid = '';
+    }
+  }
+
+  onOrganizationSelected(orgId: number | string): void {
+    this.selectedOrganizationId = Number(orgId || 0);
+
+    const org = this.organizations.find(x => x.id === this.selectedOrganizationId);
+    this.selectedOrgGuid = org?.orgGuid || '';
+  }
+
+  private getCurrentUserId(): number {
+    return Number(localStorage.getItem('id') || 0);
+  }
+
   private loadCompany(id: number): void {
-    debugger
     this.loading = true;
     this.errorMsg = '';
 
@@ -163,7 +202,8 @@ this.setPasswordState();
           name: res.general?.name ?? '',
           legalName: res.general?.legalName ?? '',
           registrationNo: res.general?.registrationNo ?? '',
-          status: res.general?.status ?? '1',
+          taxRegistrationNo: res.general?.taxRegistrationNo ?? '',
+          status: String(res.general?.status ?? '1'),
           phone: res.general?.phone ?? '',
           email: res.general?.email ?? '',
           website: res.general?.website ?? '',
@@ -175,8 +215,7 @@ this.setPasswordState();
           address2: res.general?.address2 ?? '',
           city: res.general?.city ?? '',
           state: res.general?.state ?? '',
-          postal: res.general?.postal ?? '',
-          updatedBy: localStorage.getItem('id')
+          postal: res.general?.postal ?? ''
         });
 
         this.financeForm.patchValue({
@@ -199,13 +238,13 @@ this.setPasswordState();
           timeZone: res.defaults?.timeZone ?? 'Asia/Kolkata'
         });
 
-        // this.integrationForm.patchValue({
-        //   whatsapp: res.integrations?.whatsapp ?? true,
-        //   smtp: res.integrations?.smtp ?? true,
-        //   ocr: res.integrations?.ocr ?? false,
-        //   apiEndpoint: res.integrations?.apiEndpoint ?? '',
-        //   apiKey: res.integrations?.apiKey ?? ''
-        // });
+        this.integrationForm.patchValue({
+          whatsapp: res.integrations?.whatsapp ?? true,
+          smtp: res.integrations?.smtp ?? true,
+          ocr: res.integrations?.ocr ?? false,
+          apiEndpoint: res.integrations?.apiEndpoint ?? '',
+          apiKey: res.integrations?.apiKey ?? ''
+        });
 
         this.adminUserForm.patchValue({
           username: res.initialAdminUser?.username ?? 'admin',
@@ -214,9 +253,6 @@ this.setPasswordState();
           departmentId: res.initialAdminUser?.departmentId ?? 1,
           locationId: res.initialAdminUser?.locationId ?? 1
         });
-
-        this.adminUserForm.get('password')?.clearValidators();
-        this.adminUserForm.get('password')?.updateValueAndValidity();
 
         this.numberSeries = res.numberSeries?.length
           ? res.numberSeries.map(x => ({
@@ -231,6 +267,12 @@ this.setPasswordState();
         this.lastUpdatedBy = res.lastUpdatedBy || '—';
         this.lastUpdatedAt = res.lastUpdatedAt || '—';
         this.auditTrail = res.auditTrail || [];
+
+        this.selectedOrganizationId = Number(res.organizationId || 0);
+        this.selectedOrgGuid = res.orgGuid || '';
+        this.isNewOrganization = false;
+
+        this.setPasswordState();
       },
       error: (err) => {
         this.loading = false;
@@ -259,18 +301,24 @@ this.setPasswordState();
 
   goPrev(): void {
     const idx = this.tabsOrder.indexOf(this.activeTab);
-    if (idx > 0) this.setTab(this.tabsOrder[idx - 1]);
+    if (idx > 0) {
+      this.setTab(this.tabsOrder[idx - 1]);
+    }
   }
 
   goNext(): void {
     const idx = this.tabsOrder.indexOf(this.activeTab);
-    if (idx < this.tabsOrder.length - 1) this.setTab(this.tabsOrder[idx + 1]);
+    if (idx < this.tabsOrder.length - 1) {
+      this.setTab(this.tabsOrder[idx + 1]);
+    }
   }
 
   onLogoPicked(evt: Event): void {
     const input = evt.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -296,9 +344,34 @@ this.setPasswordState();
     this.numberSeries.splice(i, 1);
   }
 
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  setPasswordState(): void {
+    const ctrl = this.adminUserForm.get('password');
+    if (!ctrl) {
+      return;
+    }
+
+    if (this.isEdit) {
+      ctrl.setValidators([]);
+    } else {
+      ctrl.setValidators([Validators.required, Validators.minLength(6)]);
+    }
+
+    ctrl.updateValueAndValidity({ emitEvent: false });
+  }
+
   private validateBeforeSave(): boolean {
     this.successMsg = '';
     this.errorMsg = '';
+
+    if (!this.isEdit && !this.isNewOrganization && this.selectedOrganizationId <= 0) {
+      this.errorMsg = 'Please select an organization.';
+      this.setTab('general');
+      return false;
+    }
 
     if (this.generalForm.invalid) {
       this.generalForm.markAllAsTouched();
@@ -318,12 +391,6 @@ this.setPasswordState();
       return false;
     }
 
-    // if (this.integrationForm.invalid) {
-    //   this.integrationForm.markAllAsTouched();
-    //   this.setTab('integrations');
-    //   return false;
-    // }
-
     if (this.adminUserForm.invalid) {
       this.adminUserForm.markAllAsTouched();
       this.setTab('adminUser');
@@ -341,14 +408,20 @@ this.setPasswordState();
   }
 
   save(): void {
-    if (!this.validateBeforeSave()) return;
+    if (!this.validateBeforeSave()) {
+      return;
+    }
 
     const adminRaw = this.adminUserForm.getRawValue();
 
     const payload: CreateCompanySetupPayload = {
+      isNewOrganization: this.isEdit ? false : this.isNewOrganization,
+      organizationId: this.isEdit ? this.selectedOrganizationId || null : (this.isNewOrganization ? null : this.selectedOrganizationId),
+      orgGuid: this.isEdit ? (this.selectedOrgGuid || null) : (this.isNewOrganization ? null : this.selectedOrgGuid),
+
       general: {
         ...this.generalForm.getRawValue(),
-        createdBy: localStorage.getItem('id')
+        createdBy: this.getCurrentUserId()
       },
       financeTax: {
         ...this.financeForm.getRawValue()
@@ -374,69 +447,66 @@ this.setPasswordState();
 
     this.saving = true;
 
-    const req$ = this.isEdit
-      ? this.companyService.updateCompany(this.companyId, payload)
-      : this.companyService.createCompany(payload);
+    let req$: Observable<any>;
 
-   req$.subscribe({
-  next: (res: any) => {
-    this.saving = false;
+    if (this.isEdit) {
+      req$ = this.companyService.updateCompany(this.companyId, payload);
+    } else if (this.isNewOrganization) {
+      req$ = this.companyService.createCompany(payload);
+    } else {
+      req$ = this.companyService.createCompanyUnderOrganization(payload);
+    }
 
-    const successText =
-      res?.message || (this.isEdit ? 'Company updated successfully' : 'Company created successfully');
+    req$.subscribe({
+      next: (res: any) => {
+        this.saving = false;
 
-    this.lastUpdatedBy = localStorage.getItem('id') || '1';
-    this.lastUpdatedAt = new Date().toLocaleString();
+        const successText =
+          res?.message ||
+          (this.isEdit ? 'Company updated successfully' : 'Company created successfully');
 
-    this.auditTrail.unshift({
-      date: new Date().toLocaleString(),
-      user: this.lastUpdatedBy,
-      change: this.isEdit ? 'Company updated' : 'Company created'
+        const currentUser = localStorage.getItem('id') || '1';
+
+        this.lastUpdatedBy = currentUser;
+        this.lastUpdatedAt = new Date().toLocaleString();
+
+        this.auditTrail.unshift({
+          date: new Date().toLocaleString(),
+          user: currentUser,
+          change: this.isEdit
+            ? 'Company updated'
+            : this.isNewOrganization
+            ? `Organization + Company created${res?.companyId ? ' (CompanyId: ' + res.companyId + ')' : ''}`
+            : `Company created under existing organization${res?.companyId ? ' (CompanyId: ' + res.companyId + ')' : ''}`
+        });
+
+        this.setTab('audit');
+
+        Swal.fire({
+          icon: 'success',
+          title: this.isEdit ? 'Updated' : 'Created',
+          text: successText,
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#2E5F73'
+        }).then(() => {
+          this.router.navigate(['/master/companyList']);
+        });
+      },
+      error: (err) => {
+        this.saving = false;
+        this.errorMsg = err?.error?.message || 'Failed to save company';
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: this.errorMsg,
+          confirmButtonColor: '#d33'
+        });
+      }
     });
-
-    this.setTab('audit');
-
-    Swal.fire({
-      icon: 'success',
-      title: this.isEdit ? 'Updated' : 'Created',
-      text: successText,
-      confirmButtonText: 'OK',
-      confirmButtonColor: '#2E5F73'
-    }).then(() => {
-      this.router.navigate(['/master/companyList']);
-    });
-  },
-  error: (err) => {
-    this.saving = false;
-
-    const errorText =
-      err?.error?.message || (this.isEdit ? 'Company update failed' : 'Company creation failed');
-
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: errorText,
-      confirmButtonText: 'OK',
-      confirmButtonColor: '#d33'
-    });
-  }
-});
   }
 
   cancel(): void {
     this.router.navigate(['/master/companyList']);
   }
-  togglePassword(): void {
-  this.showPassword = !this.showPassword;
-}
-setPasswordState(): void {
-  const ctrl = this.adminUserForm.get('password');
-  if (!ctrl) return;
-
-  if (this.isEdit) {
-    ctrl.disable({ emitEvent: false });
-  } else {
-    ctrl.enable({ emitEvent: false });
-  }
-}
 }

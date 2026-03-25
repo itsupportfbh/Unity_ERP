@@ -48,6 +48,7 @@ import { ItemsetComponent } from './itemset/itemset.component';
 import { ItemTypeComponent } from './item-type/item-type.component';
 import { CompanyListComponent } from './company/company-list/company-list.component';
 import { CompanyCreateComponent } from './company/company-create/company-create.component';
+import { UomconversionComponent } from './UomConversion/uomconversion/uomconversion.component';
 
 const routes: Routes = [
   { path: 'approval-level', component: ApprovalLevelComponent },
@@ -86,14 +87,15 @@ const routes: Routes = [
   { path: 'bank/edit/:id', component: BankComponent },
   { path: 'company', component: CompanyCreateComponent },
   { path: 'companyList', component: CompanyListComponent },
-   { path: 'company/:id/edit', component: CompanyCreateComponent }
+   { path: 'company/:id/edit', component: CompanyCreateComponent },
+   { path: 'uomconversion', component: UomconversionComponent },
 ];
 
 @NgModule({
   declarations: [ApprovalLevelComponent, CountriesComponent, CitiesComponent, UomComponent, IncotermsComponent, FlagissueComponent, PaymentTermsComponent, CurrencyComponent,
     StatesComponent, ServiceComponent, CustomerGroupsComponent, SupplierGroupsComponent, LocationComponent, CreateLocationComponent,
     RegionsComponent, DeductionsComponent, IncomeComponent, DepartmentComponent, ItemsComponent, CreateitemsidebarComponent, WarehouseListComponent, WarehouseCreateComponent, RecurringComponent, TaxcodeComponent, CatagoryComponent, CoastingMethodComponent, StrategyComponent,
-    StockIssueComponent, BinComponent, DriverComponent,VehicleComponent, BankComponent, ListBankComponent, ItemsetComponent, ItemTypeComponent, CompanyListComponent, CompanyCreateComponent
+    StockIssueComponent, BinComponent, DriverComponent,VehicleComponent, BankComponent, ListBankComponent, ItemsetComponent, ItemTypeComponent, CompanyListComponent, CompanyCreateComponent,UomconversionComponent
   ],
   imports: [
     CommonModule,

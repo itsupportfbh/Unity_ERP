@@ -25,6 +25,7 @@ export interface DebitNoteDto {
   status: number;          // 0 = Draft, 1 = Posted (or as you decide)
   createdBy?: any;
   updatedBy?: any;
+  countryId?:any;
 }
 
 @Injectable({

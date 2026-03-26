@@ -547,7 +547,8 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
           notes: this.payNotes,
           bankAccountId: this.selectedBankId,
           bankId: this.selectedBankId,
-          createdBy: this.userId
+          createdBy: this.userId,
+          countryId:(localStorage.getItem('countryId') || 1)
         }))
         .map(payload => this.apSvc.createPayment(payload));
     }

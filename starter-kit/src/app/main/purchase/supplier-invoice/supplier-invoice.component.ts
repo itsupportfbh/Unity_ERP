@@ -576,6 +576,7 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
       createdBy: this.userId,
       updatedBy: this.userId,
       isPartialInvoice: !!this.form.value.isPartialInvoice,
+      countryId:(localStorage.getItem('countryId') || 1)
     };
 
     if (payload.id <= 0) {

@@ -428,7 +428,8 @@ private fillRowsFromGrn(g: GRNHeader): void {
       linesJson,
       status: post ? 1 : 0,
       createdBy: this.userId,
-      updatedBy: this.userId
+      updatedBy: this.userId,
+      countryId:(localStorage.getItem('countryId') || 1)
     };
 
     const request$ = this.isEdit && this.dnId

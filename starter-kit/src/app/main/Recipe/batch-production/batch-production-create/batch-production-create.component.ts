@@ -327,12 +327,14 @@ postToInventory(): void {
       batchNo: null,
       status: 'Posted',
       postedDate: this.postedDate,
+      countryId: Number(localStorage.getItem('countryId') || 1),
       user,
       lines: this.lines.map(x => ({
         recipeId: x.recipeId,
         finishedItemId: x.finishedItemId ?? null,
         plannedQty: x.plannedQty,
-        actualQty: x.actualQty
+        actualQty: x.actualQty,
+        countryId: Number(localStorage.getItem('countryId') || 1),
       }))
     };
 

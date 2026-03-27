@@ -294,6 +294,7 @@
                 <th class="px-3 py-2 text-center">Warehouse</th>
                 <th class="px-3 py-2 text-center">Bin / Location</th>
                 <th class="px-3 py-2 text-center">Frequency</th>
+                <th class="px-3 py-2 text-center">Purchase Qty</th>
                 <th class="px-3 py-2 text-center">On Hand</th>
                 <th class="px-3 py-2 text-center">Reserved</th>
                 <th class="px-3 py-2 text-center">Available</th>
@@ -309,6 +310,7 @@
                 <td class="px-3 py-2 text-center">{{ getWarehouseName(r.warehouseId) }}</td>
                 <td class="px-3 py-2 text-center">{{ getBinName(r.binId) }}</td>
                 <td class="px-3 py-2 text-center">{{ getStrategyName(r.strategyId) }}</td>
+                <td class="px-3 py-2 text-center">{{ r.qty }}-({{ item.uom || '' }})</td>
                 <td class="px-3 py-2 text-center">{{ r.onHand }}{{ r.baseUomName || '' }}</td>
                 <td class="px-3 py-2 text-center">{{ r.reserved }}{{ r.baseUomName || '' }}</td>
                 <td class="px-3 py-2 text-center">{{ r.available }}{{ r.baseUomName || '' }}</td>
@@ -337,7 +339,7 @@
             </tbody>
             <tfoot *ngIf="itemStocks?.length">
               <tr class="bg-gray-50 font-semibold">
-                <td class="px-3 py-2 text-center" colspan="3">Totals</td>
+                <td class="px-3 py-2 text-center" colspan="4">Totals</td>
                 <td class="px-3 py-2 text-center">{{ totals.onHand }}{{ itemStocks[0]?.baseUomName || '' }}</td>
                 <td class="px-3 py-2 text-center">{{ totals.reserved }}{{ itemStocks[0]?.baseUomName || '' }}</td>
                 <td class="px-3 py-2 text-center">{{ totals.available }}{{ itemStocks[0]?.baseUomName || '' }}</td>
@@ -367,7 +369,8 @@
               <tr>
                 <th class="px-3 py-2 text-left">Supplier</th>
                 <th class="px-3 py-2 text-left">Price</th>
-                <th class="px-3 py-2 text-left">Qty</th> <!-- NEW -->
+                <th class="px-3 py-2 text-left">Purchase Qty</th> <!-- NEW -->
+                <th class="px-3 py-2 text-left">onHand</th> <!-- NEW -->
                 <th class="px-3 py-2 text-left">Barcode</th>
                 <!-- <th class="px-3 py-2 text-left">Accepted Qty</th> -->
                 <th class="px-3 py-2 text-left">Faulted Qty</th>
@@ -443,10 +446,13 @@
                 <td class="px-3 py-2">
                   <span class="text-gray-800">{{ p.price != null ? (p.price | number:'1.2-2') : '-' }}</span>
                 </td>
-
-                <!-- Qty -->
+                   <!-- Purcahse Qty -->
                 <td class="px-3 py-2">
-                  <span class="text-gray-800">{{ p.qty || '-' }}{{ p.baseUomName || '' }}</span>
+                  <span class="text-gray-800">{{ p.purchaseQty || 0 }}-({{ item.uom || '' }})</span>
+                </td>
+                <!-- Base Qty -->
+                <td class="px-3 py-2">
+                  <span class="text-gray-800">{{ p.qty || 0 }}{{ p.baseUomName || '' }}</span>
                 </td>
 
                 <!-- Barcode -->

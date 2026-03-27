@@ -26,6 +26,7 @@ import { RecurringService } from 'app/main/master/recurring/recurring.service';
 type PriceRow = {
   price: number | null;
   qty: number | null;
+  purchaseQty?: number | null;
   barcode: string | null;
   SupplierId: number | string | null;
   supplierName?: string | null;
@@ -73,6 +74,7 @@ interface ItemStockRow {
   binId: number | string | null;
   strategyId: number | string | null;
   onHand: number | null;
+  qty?: number | null; 
   reserved: number | null;
   available: number | null;
   min: number | null;
@@ -401,6 +403,7 @@ debugger
             binId: r.binId,
             strategyId: r.strategyId ?? null,
             onHand: Number(r.onHand || 0),
+             qty: Number(r.qty || 0),
             reserved: Number(r.reserved || 0),
             available: Math.max(0, Number(r.available ?? (Number(r.onHand || 0) - Number(r.reserved || 0)))),
             min: r.min ?? r.minQty ?? null,
@@ -426,6 +429,7 @@ debugger
           this.prices = priceArr.map((p: any) => ({
             price: p.price ?? null,
             qty: (p.qty != null ? Number(p.qty) : (p.quantity != null ? Number(p.quantity) : null)),
+            purchaseQty: (p.purchaseQty != null ? Number(p.purchaseQty) : null),
             barcode: p.barcode ?? null,
             SupplierId: p.supplierId ?? p.SupplierId ?? null,
             supplierName: p.supplierName ?? p.name ?? null,
@@ -484,6 +488,7 @@ debugger
       warehouseId: r.warehouseId,
       binId: r.binId,
       strategyId: r.strategyId,
+      qty: Number(r.qty || 0), 
       onHand: Number(r.onHand || 0),
       available: Math.max(0, Number(r.onHand || 0) - Number(r.reserved || 0)),
       reserved: Number(r.reserved || 0),
@@ -517,6 +522,7 @@ debugger
         warehouseId: p.warehouseId,
         price: Number(p.price),
         qty: p.qty == null || p.qty === ('' as any) ? 0 : Number(p.qty),
+         purchaseQty: Number(p.purchaseQty || 0),
         barcode: p.barcode ?? null,
         isTransfered: !!p.isTransfered
       }));

@@ -109,11 +109,51 @@ export interface CompanyRow {
   adminEmail: string;
   isActive: boolean;
   createdDate?: string;
-  createdBy?: string;
+  createdBy?: number;
+  createdByName?: string;
+  updatedDate?: string;
+  updatedBy?: number;
+  updatedByName?: string;
   roleName?: string;
   isDefault?: boolean;
   isOwner?: boolean;
   approvalLevelName?: string;
+  parentOrganizationName?: string;
+  parentOrganizationCode?: string;
+  organizationId?: number;
+}
+
+export interface CompanyItemDto {
+  id: number;
+  orgGuid: string;
+  companyCode: string;
+  companyName: string;
+  legalName?: string;
+  baseCurrency: string;
+  country: string;
+  adminUsername: string;
+  adminEmail: string;
+  isActive: boolean;
+  createdDate?: string;
+  createdBy?: number;
+  createdByName?: string;
+  updatedDate?: string;
+  updatedBy?: number;
+  updatedByName?: string;
+  roleName?: string;
+  isDefault?: boolean;
+  isOwner?: boolean;
+  approvalLevelName?: string;
+}
+
+export interface OrganizationCompanyGroupDto {
+  organizationId: number;
+  orgGuid: string;
+  orgCode: string;
+  orgName: string;
+  isActive: boolean;
+  companyCount: number;
+  companies: CompanyItemDto[];
 }
 
 export interface CompanySetupDetailDto {
@@ -228,6 +268,21 @@ export class CompanyService {
         orgGuid: orgGuid || ''
       }
     });
+  }
+
+  getOrganizationCompanyList(
+    approvalLevelName: string,
+    orgGuid: string
+  ): Observable<OrganizationCompanyGroupDto[]> {
+    return this.http.get<OrganizationCompanyGroupDto[]>(
+      `${this.baseUrl}/Company/organization-company-list`,
+      {
+        params: {
+          approvalLevelName: approvalLevelName || '',
+          orgGuid: orgGuid || ''
+        }
+      }
+    );
   }
 
   getCompanyById(id: number): Observable<CompanySetupDetailDto> {

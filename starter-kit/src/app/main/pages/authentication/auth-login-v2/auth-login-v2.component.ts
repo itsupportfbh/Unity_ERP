@@ -34,8 +34,6 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
   coreConfig: any;
 
   private _unsubscribeAll = new Subject<any>();
-
-  // ✅ NEW STORAGE KEY (single object)
   private readonly REMEMBER_KEY = 'remember_login';
 
   constructor(
@@ -61,13 +59,11 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit(): void {
-
-    // ✅ default empty form
-   this.loginForm = this._formBuilder.group({
-  email: ['', [Validators.required, Validators.email]],
-  password: ['', Validators.required],
-  rememberMe: [false]
-});
+    this.loginForm = this._formBuilder.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required],
+      rememberMe: [false]
+    });
 
     this.returnUrl = this._route.snapshot.queryParams['returnUrl'] || '/home';
 
@@ -75,18 +71,15 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribeAll))
       .subscribe(config => (this.coreConfig = config));
 
-    // ✅ background image slider
     this.imageTimer = setInterval(() => {
       this.imgIndex = (this.imgIndex + 1) % this.images.length;
       this.currentImage = this.images[this.imgIndex];
     }, 4000);
   }
 
-  // ✅ load remembered username + password AFTER view (autofill override)
   ngAfterViewInit(): void {
     setTimeout(() => {
       const raw = localStorage.getItem(this.REMEMBER_KEY);
-
       if (!raw) return;
 
       try {
@@ -102,29 +95,185 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
     }, 0);
   }
 
-  togglePasswordTextType() {
+  togglePasswordTextType(): void {
     this.passwordTextType = !this.passwordTextType;
   }
 
- onSubmit(): void {
-  this.submitted = true;
-  this.error = '';
+  private saveLoginStorage(data: any, password: string, remember: boolean): void {
+    const email = data.email ?? this.loginForm.value.email;
 
-  if (this.loginForm.invalid) return;
+    if (remember) {
+      localStorage.setItem(
+        this.REMEMBER_KEY,
+        JSON.stringify({
+          email,
+          password,
+          rememberMe: true
+        })
+      );
+    } else {
+      localStorage.removeItem(this.REMEMBER_KEY);
+    }
+
+    localStorage.setItem('username', data.username ?? '');
+    localStorage.setItem('token', data.token ?? '');
+    localStorage.setItem('id', String(data.userId ?? ''));
+    localStorage.setItem('email', data.email ?? '');
+
+    localStorage.setItem('approvalRoles', JSON.stringify(data.approvalLevelNames || []));
+    localStorage.setItem('approvalLevelIds', JSON.stringify(data.approvalLevelIds || []));
+    localStorage.setItem('teams', JSON.stringify(data.teams || []));
+    localStorage.setItem('allowedMenuIds', JSON.stringify(data.allowedMenuIds || []));
+    localStorage.setItem('menuIds', JSON.stringify(data.allowedMenuIds || []));
+
+    // CORRECT MAPPING
+    localStorage.setItem('companyId', String(data.companyId ?? 0));
+    localStorage.setItem('companyName', data.companyName ?? '');
+    localStorage.setItem('locationId', String(data.locationId ?? 0));
+    localStorage.setItem('departmentId', String(data.departmentId ?? 0));
+
+    localStorage.setItem('orgGuid', data.orgGuid ?? '');
+    localStorage.setItem('databaseName', data.databaseName ?? '');
+    localStorage.setItem('isMasterOwner', String(!!data.isMasterOwner));
+    localStorage.setItem('isTenantUser', String(!!data.isTenantUser));
+    localStorage.setItem('organizations', JSON.stringify(data.organizations || []));
+    localStorage.setItem('organizationId', String(data.organizationId ?? ''));
+    localStorage.setItem('companies', JSON.stringify(data.companies || []));
+    localStorage.setItem('requiresCompanySelection', String(!!data.requiresCompanySelection));
+  }
+
+  private clearOldLoginStorage(): void {
+    localStorage.removeItem('username');
+    localStorage.removeItem('token');
+    localStorage.removeItem('id');
+    localStorage.removeItem('email');
+    localStorage.removeItem('approvalRoles');
+    localStorage.removeItem('approvalLevelIds');
+    localStorage.removeItem('teams');
+    localStorage.removeItem('allowedMenuIds');
+    localStorage.removeItem('menuIds');
+    localStorage.removeItem('companyId');
+    localStorage.removeItem('companyName');
+    localStorage.removeItem('locationId');
+    localStorage.removeItem('departmentId');
+    localStorage.removeItem('orgGuid');
+    localStorage.removeItem('databaseName');
+    localStorage.removeItem('isMasterOwner');
+    localStorage.removeItem('isTenantUser');
+    localStorage.removeItem('organizations');
+    localStorage.removeItem('organizationId');
+    localStorage.removeItem('companies');
+    localStorage.removeItem('requiresCompanySelection');
+  }
+
+  onSubmit(): void {
+    this.submitted = true;
+    this.error = '';
+
+    if (this.loginForm.invalid) return;
+
+    this.loading = true;
+    this.clearOldLoginStorage();
+
+    const remember = !!this.loginForm.value.rememberMe;
+    const payload = {
+      email: this.loginForm.value.email,
+      password: this.loginForm.value.password,
+      selectedCompanyId: null
+    };
+
+    this.authService.userLogin(payload).subscribe({
+      next: (res: any) => {
+        this.loading = false;
+
+        if (!res?.success || !res?.data) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res?.message || 'Login failed',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#d33'
+          });
+          return;
+        }
+
+        const data = res.data;
+
+        if (data.requiresCompanySelection && data.companies?.length > 1) {
+          this.openCompanySelectionPopup(data.companies, payload.password, remember, payload.email);
+          return;
+        }
+
+        this.saveLoginStorage(data, payload.password, remember);
+
+        if (data.isMasterOwner) {
+          this._router.navigate(['/master/companyList']);
+        } else if (data.isTenantUser) {
+          this._router.navigate(['/home']);
+        } else {
+          this._router.navigate([this.returnUrl || '/home']);
+        }
+      },
+      error: (err: any) => {
+        this.loading = false;
+
+        let errorMessage = 'Something went wrong!';
+        if (err?.error?.message) errorMessage = err.error.message;
+        else if (typeof err?.error === 'string') errorMessage = err.error;
+        else if (err?.status) errorMessage = `Error ${err.status}: ${err.statusText}`;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: errorMessage,
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+private async openCompanySelectionPopup(companies: any[], password: string, remember: boolean, email: string): Promise<void> {
+  const inputOptions: Record<string, string> = {};
+
+  companies.forEach(c => {
+    const key = `${c.orgGuid}__${c.id}`;
+    inputOptions[key] = `${c.companyCode || ''} - ${c.companyName || ''}`.trim();
+  });
+
+  const result = await Swal.fire({
+    title: 'Select Company',
+    input: 'select',
+    inputOptions,
+    inputPlaceholder: 'Choose a company',
+    showCancelButton: false,
+    allowOutsideClick: false,
+    confirmButtonText: 'Continue',
+    confirmButtonColor: '#7367f0',
+    inputValidator: (value) => {
+      if (!value) return 'Please select a company';
+      return null;
+    }
+  });
+
+  if (!result.value) return;
+
+  const [selectedOrgGuid, selectedCompanyId] = String(result.value).split('__');
 
   this.loading = true;
 
-  const remember = !!this.loginForm.value.rememberMe;
-
   const payload = {
-    email: this.loginForm.value.email,
-    password: this.loginForm.value.password
+    email,
+    password,
+    selectedCompanyId: Number(selectedCompanyId),
+    selectedOrgGuid
   };
 
   this.authService.userLogin(payload).subscribe({
     next: (res: any) => {
+      this.loading = false;
+
       if (!res?.success || !res?.data) {
-        this.loading = false;
         Swal.fire({
           icon: 'error',
           title: 'Error',
@@ -136,48 +285,8 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
       }
 
       const data = res.data;
-      const email = data.email ?? payload.email;
-      const password = payload.password;
-
-      if (remember) {
-        localStorage.setItem(
-          this.REMEMBER_KEY,
-          JSON.stringify({ email, password, rememberMe: true })
-        );
-      } else {
-        localStorage.removeItem(this.REMEMBER_KEY);
-      }
-
-      localStorage.setItem('username', data.username ?? '');
-      localStorage.setItem('token', data.token ?? '');
-      localStorage.setItem('id', String(data.userId ?? ''));
-      localStorage.setItem('email', data.email ?? '');
-
-      localStorage.setItem('approvalRoles', JSON.stringify(data.approvalLevelNames || []));
-      localStorage.setItem('approvalLevelIds', JSON.stringify(data.approvalLevelIds || []));
-      localStorage.setItem('teams', JSON.stringify(data.teams || []));
-      localStorage.setItem('allowedMenuIds', JSON.stringify(data.allowedMenuIds || []));
-      localStorage.setItem('locationId', String(data.companyId || 0));
-      localStorage.setItem('companyId', String(data.locationId || 0));
-      localStorage.setItem('departmentId', String(data.departmentId || 0));
-      localStorage.setItem('orgGuid', data.orgGuid ?? '');
-
-    localStorage.setItem('menuIds', JSON.stringify(data.allowedMenuIds || []));
-      localStorage.setItem('databaseName', data.databaseName ?? '');
-      localStorage.setItem('isMasterOwner', String(!!data.isMasterOwner));
-      localStorage.setItem('isTenantUser', String(!!data.isTenantUser));
-      localStorage.setItem('organizations', JSON.stringify(data.organizations || []));
-      localStorage.setItem('organizationId', String(data.organizationId ?? ''));
-
-      this.loading = false;
-
-      if (data.isMasterOwner) {
-        this._router.navigate(['/master/companyList']);
-      } else if (data.isTenantUser) {
-        this._router.navigate(['/home']);
-      } else {
-        this._router.navigate([this.returnUrl || '/home']);
-      }
+      this.saveLoginStorage(data, password, remember);
+      this._router.navigate(['/home']);
     },
     error: (err: any) => {
       this.loading = false;
@@ -197,7 +306,6 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
     }
   });
 }
-
   ngOnDestroy(): void {
     if (this.imageTimer) clearInterval(this.imageTimer);
     this._unsubscribeAll.next(null);

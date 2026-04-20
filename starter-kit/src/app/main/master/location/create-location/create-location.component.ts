@@ -226,7 +226,8 @@ this.locationForm.reset({
     createdBy:Number(localStorage.getItem('id') || 0),
     createdDate: isEdit ? undefined : new Date(),
     updatedBy: Number(localStorage.getItem('id') || 0),
-    updatedDate: new Date()
+    updatedDate: new Date(),
+    companyId : localStorage.getItem('companyId') || 0
   };
 
   const request$ = isEdit

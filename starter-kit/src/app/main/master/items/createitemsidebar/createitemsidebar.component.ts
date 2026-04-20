@@ -174,7 +174,8 @@ export class CreateitemsidebarComponent implements OnInit, OnChanges {
       uomId: Number(this.uom),
       budgetLineId: Number(this.budgetLine),
       updatedBy: this.userId,
-      updatedDate: now
+      updatedDate: this.userId,
+      companyId : localStorage.getItem('companyId')
     };
 
     if (this.isEditMode && this.itemId) {

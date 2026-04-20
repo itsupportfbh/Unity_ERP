@@ -503,7 +503,8 @@ debugger
       stockIssueID: r.stockIssueID ?? 0,
       isFullTransfer: !!r.isFullTransfer,
       isPartialTransfer: !!r.isPartialTransfer,
-      approvedBy: Number(r.approvedBy ?? 0)
+      approvedBy: Number(r.approvedBy ?? 0),
+      companyId: localStorage.getItem('companyId')
     }));
 
     const bomPayload = (this.bomRows || []).map(r => ({

@@ -267,7 +267,9 @@ private loadData(): void {
       address: this.address?.trim() || null,
       description: this.description?.trim() || null,
       // IMPORTANT: backend expects PascalCase "BinID" (CSV string "1,3,4")
-      BinID: binIdCsv
+      BinID: binIdCsv,
+      companyId : localStorage.getItem('companyId') || 0
+
     };
 
     const request$ = this.isEdit

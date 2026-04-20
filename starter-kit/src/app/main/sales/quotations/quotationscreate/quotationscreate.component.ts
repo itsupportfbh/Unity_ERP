@@ -70,6 +70,7 @@ type UiLine = Omit<QuotationLine, 'uom' | 'uomId'> & {
 
   supplyMethod: number | null;
   supplyMethodText?: string;
+  companyId : any;
 };
 
 type UiQuotationHeader = Omit<QuotationHeader, 'validityDate'> & {
@@ -804,7 +805,8 @@ timeOptions: { label: string; value: string }[] = [];
             isSellable: false,
             isConsumable: false,
             allowManualFulfillment: false,
-            fulfillmentText: l.fulfillmentText ?? l.FulfillmentText
+            fulfillmentText: l.fulfillmentText ?? l.FulfillmentText,
+            companyId: localStorage.getItem('companyId')
           };
 
           this.computeLine(ui);
@@ -1128,7 +1130,8 @@ filterItemSets() {
 
             isSellable: false,
             isConsumable: false,
-            allowManualFulfillment: false
+            allowManualFulfillment: false,
+            companyId : localStorage.getItem('companyId')
           };
 
           this.computeLine(line);
@@ -1304,6 +1307,7 @@ filterItemSets() {
       costCentre: (this.header.costCentre || '').trim(),
       customerPoNo: (this.header.customerPoNo || '').trim(),
       orderTime: this.header.orderTime,
+      companyId: localStorage.getItem('companyId'),
 
     lines: this.lines
   .filter(l => !l.isSetHeader)
@@ -1505,7 +1509,8 @@ filterItemSets() {
 
       isSellable: false,
       isConsumable: false,
-      allowManualFulfillment: false
+      allowManualFulfillment: false,
+      companyId: localStorage.getItem('companyId')
     };
 
     this.computeLine(payload);

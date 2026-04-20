@@ -59,6 +59,7 @@ customersCache: any[] = [];
   totalSteps = 3;
   editingKycId: any;
   userId:string;
+  companyId: string | null;
   get isFirstStep() { return this.currentIndex === 0; }
   get isLastStep()  { return this.currentIndex === this.totalSteps - 1; }
 
@@ -76,7 +77,7 @@ customersCache: any[] = [];
     private router: Router,
     private route: ActivatedRoute,
      private coaService: ChartofaccountService,
-  ) {this.userId = localStorage.getItem('id')}
+  ) {this.companyId = localStorage.getItem('companyId')}
 
   // ---------------- INIT ----------------
   ngOnInit(): void {
@@ -95,6 +96,7 @@ customersCache: any[] = [];
         this.loadForEdit(id);
       }
     });
+    
   }
   private loadExistingCustomers(): void {
   this._customerService.getAllCustomerMaster().subscribe((res: any) => {
@@ -427,6 +429,8 @@ nextFromPersonalInfo(form: NgForm) {
     formData.append('CreditAmount', (this.TDCreditAmountVar ?? 0).toString());
     formData.append('CreatedBy', (this.userId)); // TODO: current user
     formData.append('UpdatedBy', (this.userId));
+     formData.append('CompanyId', (localStorage.getItem('companyId')));
+
     // Approval state:
     const approvedId = Number(this.selectedApprovedById || 0);
     // If record is already approved, keep it approved.

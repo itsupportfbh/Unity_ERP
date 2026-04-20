@@ -268,23 +268,35 @@ export class UserformComponent implements OnInit {
     pwd?.updateValueAndValidity({ emitEvent: false });
   }
 
-  buildUserPayload(): any {
-    const raw = this.form.getRawValue();
+buildUserPayload(): any {
+  const raw = this.form.getRawValue();
 
-    const payload: any = {
-      username: (raw.username || '').toString().trim(),
-      email: (raw.email || '').toString().trim(),
-      departmentId: this.toNumber(raw.departmentId),
-      locationId: this.toNumber(raw.locationId),
-      approvalLevelIds: this.toNumberArray(raw.approvalLevelIds || [])
-    };
+  const loginUserId =
+    Number(localStorage.getItem('userId') || localStorage.getItem('UserId') || 0) || 1;
 
-    if (!this.isEdit || this.canEditPassword) {
-      payload.password = (raw.password || '').toString();
-    }
+  const now = new Date().toISOString();
 
-    return payload;
+  const payload: any = {
+    username: (raw.username || '').toString().trim(),
+    email: (raw.email || '').toString().trim(),
+    departmentId: this.toNumber(raw.departmentId),
+    locationId: this.toNumber(raw.locationId),
+    approvalLevelIds: this.toNumberArray(raw.approvalLevelIds || []),
+
+    // create / update audit fields
+    createdBy: this.isEdit ? undefined : loginUserId,
+    createdDate: this.isEdit ? undefined : now,
+    updatedBy: loginUserId,
+    updatedDate: now,
+    isActive: true
+  };
+
+  if (!this.isEdit || this.canEditPassword) {
+    payload.password = (raw.password || '').toString();
   }
+
+  return payload;
+}
 
   cancel(): void {
     if (this.form.dirty) {

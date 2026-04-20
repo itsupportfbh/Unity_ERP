@@ -329,7 +329,8 @@ export class BankComponent implements OnInit {
       budgetLineId: this.bank.budgetLineId,
       isActive: true,
       createdBy: this.userId,
-      updatedBy: this.userId
+      updatedBy: this.userId,
+      companyId: localStorage.getItem('companyId') || 0
     };
 
     this.isSaving = true;

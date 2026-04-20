@@ -92,7 +92,8 @@ export class PaymentTermsComponent implements OnInit,AfterViewChecked {
       CreatedBy: this.userId,
       UpdatedBy: this.userId,
       UpdatedDate: new Date(),
-      isActive : true
+      isActive : true,
+      companyId : localStorage.getItem('companyId')
     };
 
     if (this.isEditMode) {

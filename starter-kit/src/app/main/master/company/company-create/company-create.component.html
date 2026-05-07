@@ -587,13 +587,16 @@
   Next <i class="fas fa-arrow-right ms-50"></i>
 </button>
 
-    <button *ngIf="isLastTab()"
-        type="button"
-        class="btn cmp-btn-theme"
-        (click)="save()"
-        [disabled]="saving || loading">
+<button
+  *ngIf="isPermissionLoaded && isLastTab() && ((!isEdit && canCreate()) || (isEdit && canEdit()))"
+  type="button"
+  class="btn cmp-btn-theme"
+  (click)="save()"
+  [disabled]="saving || loading">
+
   <i class="fas fa-save me-50"></i>
   {{ saving ? (isEdit ? 'Updating...' : 'Saving...') : (isEdit ? 'Update' : 'Save') }}
-</button> </div>
+</button>
+ </div>
 </div>
 </div>

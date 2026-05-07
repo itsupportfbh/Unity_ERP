@@ -94,6 +94,7 @@
     "@angular/compiler-cli": "14.1.0",
     "@angular/language-service": "14.1.0",
     "@angularclass/hmr": "3.0.0",
+    "@types/feather-icons": "^4.29.4",
     "@types/jasmine": "3.6.3",
     "@types/node": "12.11.1",
     "@types/pdfmake": "^0.2.12",

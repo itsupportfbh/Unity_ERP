@@ -429,7 +429,7 @@ nextFromPersonalInfo(form: NgForm) {
     formData.append('CreditAmount', (this.TDCreditAmountVar ?? 0).toString());
     formData.append('CreatedBy', (this.userId)); // TODO: current user
     formData.append('UpdatedBy', (this.userId));
-     formData.append('CompanyId', (localStorage.getItem('companyId')));
+  formData.append('CompanyId', (localStorage.getItem('companyId') || '0').toString());
 
     // Approval state:
     const approvedId = Number(this.selectedApprovedById || 0);

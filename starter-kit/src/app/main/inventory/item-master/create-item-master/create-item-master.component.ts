@@ -527,11 +527,13 @@ debugger
         barcode: p.barcode ?? null,
         isTransfered: !!p.isTransfered
       }));
+      const companyId = Number(localStorage.getItem('companyId') || 0);
 
     const payload: any = {
       ...this.item,
 
       // ✅ new fields
+      companyId: companyId, 
       ItemTypeId: this.item.itemType,
       categoryId: Number(this.item.categoryId),
       uomId: Number(this.item.uomId),

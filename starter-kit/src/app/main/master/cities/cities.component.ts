@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { CitiesService } from './cities.service';
 import { StatesService } from '../states/states.service';
 import { CountriesService } from '../countries/countries.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-cities',
@@ -29,20 +30,90 @@ export class CitiesComponent implements OnInit, AfterViewChecked, AfterViewInit 
   selectedState: number | null = null;
   userId: number;
 
+    functionId = 'cities';
+  
+    permission: FunctionPermission;
+      isPermissionLoaded = false;
+      isPageLoading = false;
   constructor(
     private _cityService: CitiesService,
     private _stateService: StatesService,
-    private _countriesService: CountriesService
+    private _countriesService: CountriesService,
+     private permissionService : PermissionService
   ) 
   {
          this.userId = Number(localStorage.getItem('id') || 0);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
   ngOnInit(): void {
-    this.getAllCities();
+    // this.getAllCities();
+    this.loadPermission();
     this.getAllCountries();
   }
 
+
+
+  loadPermission(): void {
+          if (!this.userId || this.userId <= 0) {
+            this.permission = this.permissionService.getEmptyPermission(this.functionId);
+            this.isPermissionLoaded = true;
+      
+            Swal.fire({
+              icon: 'warning',
+              title: 'Access Denied',
+              text: 'User not found. Please login again.',
+              confirmButtonColor: '#0e3a4c'
+            });
+            return;
+          }
+      
+          this.isPageLoading = true;
+      
+          this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+            next: (res: FunctionPermission) => {
+              this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+              this.isPermissionLoaded = true;
+              this.isPageLoading = false;
+      
+              if (this.canView()) {
+                this.getAllCities();
+              } else {
+                this.CityList = [];
+                this.isDisplay = false;
+              }
+            },
+            error: (err) => {
+              console.error('Permission load error:', err);
+              this.permission = this.permissionService.getEmptyPermission(this.functionId);
+              this.isPermissionLoaded = true;
+              this.isPageLoading = false;
+      
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Unable to load permission.',
+                confirmButtonColor: '#d33'
+              });
+            }
+          });
+        }
+      
+        canView(): boolean {
+          return this.permissionService.hasView(this.permission);
+        }
+      
+        canCreate(): boolean {
+          return this.permissionService.hasCreate(this.permission);
+        }
+      
+        canEdit(): boolean {
+          return this.permissionService.hasEdit(this.permission);
+        }
+      
+        canDelete(): boolean {
+          return this.permissionService.hasDelete(this.permission);
+        }
   ngAfterViewInit(): void { feather.replace(); }
   ngAfterViewChecked(): void { feather.replace(); }
 

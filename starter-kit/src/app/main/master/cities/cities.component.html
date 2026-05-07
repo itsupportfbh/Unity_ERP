@@ -1,5 +1,7 @@
-<div class="row">
+ <div *ngIf="isPermissionLoaded; else loadingTemplate">
+<div class="row" *ngIf="canView(); else noAccessTemplate">
   <!-- Left column - City List -->
+  
   <div class="col-lg-6 col-md-6">
     <div class="card card-transaction">
       <div class="card-header">
@@ -19,7 +21,7 @@
 
         </div>
 
-        <button (click)="createcity()"
+        <button *ngIf="canCreate()" (click)="createcity()"
           style="background-color:#2E5F73; color:white; border:none; padding:6px 14px; font-size:0.9rem; border-radius:4px; display:flex; align-items:center; gap:6px;">
           <i data-feather="plus-circle" class="w-4 h-4"></i>
           Create
@@ -50,14 +52,14 @@
                 <!-- Edit Button -->
                 <button type="button"
                   class="btn btn-outline-primary p-0 d-flex align-items-center justify-content-center"
-                  style="width:28px;height:28px;" (click)="getCityDetails(item.id)">
+                  style="width:28px;height:28px;" *ngIf="canEdit()" (click)="getCityDetails(item.id)">
                   <i data-feather="edit" style="width:14px;height:14px;"></i>
                 </button>
 
                 <!-- Delete Button -->
                 <button type="button"
                   class="btn btn-outline-danger p-0 d-flex align-items-center justify-content-center ml-1"
-                  style="width:28px;height:28px;" (click)="deleteCity(item.id)" [disabled]="isEditMode">
+                  style="width:28px;height:28px;" *ngIf="canDelete()" (click)="deleteCity(item.id)" [disabled]="isEditMode">
                   <i data-feather="trash" style="width:14px;height:14px;"></i>
                 </button>
               </div>
@@ -67,6 +69,7 @@
       </div>
     </div>
   </div>
+
 
   <!-- Right column - Create/Edit City Form -->
   <div class="col-sm-12 col-xs-12 col-lg-6 col-md-6" *ngIf="isDisplay">
@@ -134,3 +137,25 @@
     </div>
   </div>
 </div>
+</div>
+
+
+<ng-template #loadingTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

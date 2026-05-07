@@ -82,7 +82,7 @@ export class ApprovalLevelComponent implements OnInit, AfterViewChecked, AfterVi
         this.isPageLoading = false;
 
         if (this.canView()) {
-          this.loadApprovalLevel();
+          this.loadApprovalLevel();  
         } else {
           this.approvalLevelList = [];
           this.isDisplay = false;

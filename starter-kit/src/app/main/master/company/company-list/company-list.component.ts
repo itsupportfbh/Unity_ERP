@@ -6,6 +6,7 @@ import {
   CompanyService,
   OrganizationCompanyGroupDto
 } from '../company-service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 interface OrganizationCompanyGroupVm extends OrganizationCompanyGroupDto {
   expanded: boolean;
@@ -23,12 +24,17 @@ export class CompanyListComponent implements OnInit {
 
   rows: OrganizationCompanyGroupVm[] = [];
   filteredRows: OrganizationCompanyGroupVm[] = [];
-
+ public isDisplay = false;
   totalOrganizations = 0;
   totalCompanies = 0;
   activeCompanies = 0;
   inactiveCompanies = 0;
-
+  userId: number;
+ functionId = 'company';
+  
+    permission: FunctionPermission;
+      isPermissionLoaded = false;
+      isPageLoading = false;
   avatarThemes = [
     {
       background: 'linear-gradient(135deg, #eaf4f7 0%, #d8ebf1 100%)',
@@ -69,10 +75,16 @@ export class CompanyListComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private companyService: CompanyService
-  ) {}
+    private companyService: CompanyService,
+         private permissionService : PermissionService
+  ) 
+  {
+    this.userId = Number(localStorage.getItem('id') || 0);
+     this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   ngOnInit(): void {
+    this.loadPermission();
     this.loadOrganizationCompanies();
   }
 
@@ -257,4 +269,66 @@ export class CompanyListComponent implements OnInit {
   trackByCompany(index: number, item: CompanyItemDto): number {
     return item.id;
   }
+
+    loadPermission(): void {
+              if (!this.userId || this.userId <= 0) {
+                this.permission = this.permissionService.getEmptyPermission(this.functionId);
+                this.isPermissionLoaded = true;
+          
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Access Denied',
+                  text: 'User not found. Please login again.',
+                  confirmButtonColor: '#0e3a4c'
+                });
+                return;
+              }
+          
+              this.isPageLoading = true;
+          
+              this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+                next: (res: FunctionPermission) => {
+                  this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+                  this.isPermissionLoaded = true;
+                  this.isPageLoading = false;
+          
+                  if (this.canView()) {
+                    this.loadOrganizationCompanies();
+                  } else {
+                    this.rows = [];
+                    this.isDisplay = false;
+                  }
+                },
+                error: (err) => {
+                  console.error('Permission load error:', err);
+                  this.permission = this.permissionService.getEmptyPermission(this.functionId);
+                  this.isPermissionLoaded = true;
+                  this.isPageLoading = false;
+          
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Unable to load permission.',
+                    confirmButtonColor: '#d33'
+                  });
+                }
+              });
+            }
+          
+            canView(): boolean {
+              return this.permissionService.hasView(this.permission);
+            }
+          
+            canCreate(): boolean {
+              return this.permissionService.hasCreate(this.permission);
+            }
+          
+            canEdit(): boolean {
+              return this.permissionService.hasEdit(this.permission);
+            }
+          
+            canDelete(): boolean {
+              return this.permissionService.hasDelete(this.permission);
+            }
+  
 }

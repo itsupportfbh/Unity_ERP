@@ -34,6 +34,7 @@ export class ChartOfAccountCreateComponent implements OnInit, OnChanges {
   // used for Parent Head dropdown / datalist
   parentHeadList: Array<{ value: number; label: string }> = [];
   selectedParentHeadLabel = '';
+  companyId: string | number;
 
   constructor(
     private fb: FormBuilder,
@@ -316,6 +317,7 @@ export class ChartOfAccountCreateComponent implements OnInit, OnChanges {
 
     const payload = this.addForm.getRawValue();
     payload.parentHead = payload.parentHead || 0;
+    this.companyId = localStorage.getItem('companyId') || 0;
 
     const effectiveId = this.editId ?? this.chartOfAccountId;
 

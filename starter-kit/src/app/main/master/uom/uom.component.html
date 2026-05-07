@@ -23,6 +23,35 @@
             </div>
 
             <div class="card-body">
+                <!-- 🔍 Search Box -->
+               <div style="padding: 8px 10px; position: relative;">
+  
+  <input
+    type="text"
+    class="form-control pr-4"
+    placeholder="Search UOM..."
+    [(ngModel)]="searchText"
+    (input)="filterUom()"
+  />
+
+  <!-- ❌ Clear Button -->
+  <span
+    *ngIf="searchText"
+    (click)="clearSearch()"
+    style="
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 16px;
+      color: #999;
+    "
+  >
+    ✖
+  </span>
+
+</div>
                 <ul class="list-group">
                     <li class="list-group-item d-flex justify-content-between align-items-center"
                         *ngFor="let item of uomList">

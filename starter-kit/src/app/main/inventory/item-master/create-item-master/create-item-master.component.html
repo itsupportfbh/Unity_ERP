@@ -139,31 +139,37 @@
         <div class="imN__field">
           <label class="imN__label">UOM <span class="imN__req">*</span></label>
 
-        <select
-  class="imN__control imN__select"
-  [ngClass]="{ 'imN__select--ph': item.uomId == null }"
-  [(ngModel)]="item.uomId"
-  name="uomId"
-  (change)="onBaseOrPurchaseUomChange()"
-  required>
-  <option value="" [ngValue]="null" disabled>Select UOM</option>
-  <option *ngFor="let u of uomList" [ngValue]="u.id">{{ u.name }}</option>
-</select>
+     <ng-select
+    class="imN__ngselect"
+    [items]="uomList"
+    bindLabel="name"
+    bindValue="id"
+    [(ngModel)]="item.uomId"
+    name="uomId"
+    placeholder="Select UOM"
+    [searchable]="true"
+    [clearable]="true"
+    (change)="onBaseOrPurchaseUomChange()"
+    required>
+  </ng-select>
         </div>
 
         <div class="imN__field">
   <label class="imN__label">Base UOM <span class="imN__req">*</span></label>
 
-  <select
-    class="imN__control imN__select"
-    [ngClass]="{ 'imN__select--ph': item.baseUomId == null }"
+    <ng-select
+    class="imN__ngselect"
+    [items]="uomList"
+    bindLabel="name"
+    bindValue="id"
     [(ngModel)]="item.baseUomId"
     name="baseUomId"
+    placeholder="Select Base UOM"
+    [searchable]="true"
+    [clearable]="true"
     (change)="onBaseOrPurchaseUomChange()"
     required>
-    <option value="" [ngValue]="null" disabled>Select Base UOM</option>
-    <option *ngFor="let u of uomList" [ngValue]="u.id">{{ u.name }}</option>
-  </select>
+  </ng-select>
 </div>
 
 <div class="imN__field">

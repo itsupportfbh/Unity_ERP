@@ -192,9 +192,11 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
 
   // ---------- Data load ----------
   loadRequests(): void {
+    debugger
     this.salesOrderService.getSO().subscribe({
       next: (res: any) => {
-        const list: SoHeader[] = (res?.data ?? []).map((r: any) => ({ ...r }));
+        debugger
+        const list: SoHeader[] = (res ?? []).map((r: any) => ({ ...r }));
         this.rows = list;
         this.tempData = list;
         this.filterUpdate({ target: { value: this.searchValue } });

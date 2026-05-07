@@ -2347,3 +2347,66 @@ table td:nth-child(3) {
   background: #f8fafc;
   color: #64748b;
 }
+.imN__ngselect.ng-select {
+  width: 100%;
+  font-size: 15px;
+}
+
+.imN__ngselect .ng-select-container {
+  min-height: 48px !important;
+  height: 48px !important;
+  border-radius: 14px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #f8fafc !important;
+  padding: 0 10px !important;
+  box-shadow: none !important;
+}
+
+.imN__ngselect.ng-select-focused .ng-select-container {
+  border-color: #2E5F73 !important;
+  box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.12) !important;
+}
+
+.imN__ngselect .ng-value-container {
+  padding-left: 4px !important;
+  align-items: center !important;
+}
+
+.imN__ngselect .ng-value {
+  font-size: 16px !important;
+  color: #111827 !important;
+  margin: 0 !important;
+  line-height: 46px !important;
+}
+
+.imN__ngselect .ng-input {
+  top: 11px !important;
+  padding-left: 4px !important;
+}
+
+.imN__ngselect .ng-input > input {
+  font-size: 16px !important;
+  color: #111827 !important;
+}
+
+.imN__ngselect .ng-placeholder {
+  color: #9ca3af !important;
+  line-height: 46px !important;
+}
+
+.imN__ngselect .ng-clear-wrapper,
+.imN__ngselect .ng-arrow-wrapper {
+  align-self: center !important;
+}
+.imN__ngselect.ng-select.ng-select-single .ng-select-container .ng-value-container .ng-input {
+  position: absolute !important;
+  left: 0 !important;
+  width: 1px !important;
+  opacity: 0 !important;
+}
+
+.imN__ngselect.ng-select.ng-select-single.ng-select-opened .ng-select-container .ng-value-container .ng-input {
+  position: static !important;
+  width: auto !important;
+  opacity: 1 !important;
+}

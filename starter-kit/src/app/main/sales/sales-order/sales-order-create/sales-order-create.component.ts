@@ -170,6 +170,7 @@ export class SalesOrderCreateComponent implements OnInit {
 
   // local cache to reduce repeated calls (key = itemId|supplyMethodId)
   private availabilityCache = new Map<string, number>();
+  companyId: number = 0;
 
   constructor(
     private router: Router,
@@ -180,6 +181,13 @@ export class SalesOrderCreateComponent implements OnInit {
     private salesOrderService: SalesOrderService
   ) {
     this.userId = localStorage.getItem('id');
+    
+     const rawCompanyId =
+    localStorage.getItem('companyId') ||
+    localStorage.getItem('CompanyId') ||
+    '0';
+
+  this.companyId = Number(rawCompanyId) || 0;
 
     // ✅ try common keys, fallback to 0
     const rawLoc =
@@ -1034,6 +1042,7 @@ private fetchAvailabilityForLine(ln: SoLine) {
       customerName: this.searchTexts.customer,
       createdBy: this.userId,
       updatedBy: this.userId,
+      companyId: this.companyId,
 
       lineItems: this.soLines.map(l => ({
         id: l.__id || 0,
@@ -1053,7 +1062,8 @@ private fetchAvailabilityForLine(ln: SoLine) {
         SupplyMethodId: l.supplyMethod ?? null,
 
         createdBy: this.userId,
-        updatedBy: this.userId
+        updatedBy: this.userId,
+        companyId: this.companyId,
       })),
 
       totals: t

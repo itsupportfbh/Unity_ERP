@@ -22,7 +22,7 @@ export class BinComponent implements OnInit {
      private iconsReplaced = false;
   isPageLoading = false;
        userId: any = 0;
-  functionId = 'nin';
+  functionId = 'bin';
   
     permission: FunctionPermission;
     isPermissionLoaded = false;

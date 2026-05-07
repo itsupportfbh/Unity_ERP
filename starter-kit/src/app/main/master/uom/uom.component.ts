@@ -19,6 +19,9 @@ export class UomComponent implements OnInit, AfterViewChecked, AfterViewInit {
   public isDisplay = false;
   private iconsReplaced = false;
   userId: string;
+  searchText: string = '';
+  allUomList: any[] = []; // original data
+
   constructor(private fb: FormBuilder,
     private uomService: UomService,) { 
        this.userId = localStorage.getItem('id');
@@ -37,14 +40,31 @@ export class UomComponent implements OnInit, AfterViewChecked, AfterViewInit {
     feather.replace();
   }
   // Load data from API
+  // loadUom() {
+  //   debugger
+  //   this.uomService.getAllUom().subscribe((res: any) => {
+  //    this.uomList = res.data.filter((item: any) => item.isActive === true);
+  //     setTimeout(() => feather.replace(), 0);
+  //   });
+  // }
   loadUom() {
-    debugger
-    this.uomService.getAllUom().subscribe((res: any) => {
-     this.uomList = res.data.filter((item: any) => item.isActive === true);
-      setTimeout(() => feather.replace(), 0);
-    });
-  }
+  this.uomService.getAllUom().subscribe((res: any) => {
+    this.allUomList = res.data.filter((item: any) => item.isActive === true);
+    this.uomList = [...this.allUomList]; // initial display
+    setTimeout(() => feather.replace(), 0);
+  });
+}
+filterUom() {
+  const search = this.searchText.toLowerCase();
 
+  this.uomList = this.allUomList.filter((item: any) =>
+    item.name?.toLowerCase().includes(search)
+  );
+}
+clearSearch() {
+  this.searchText = '';
+  this.uomList = [...this.allUomList]; // reset list
+}
   // Show form for creating
   createUom() {
     this.isDisplay = true;

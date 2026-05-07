@@ -163,7 +163,7 @@ export class CreatePurchaseRequestComponent implements OnInit, OnDestroy {
     this.setMinDate();
     this.getAllCountries();
     this.applyRequesterDefault();
-    this.applyDepartmentFromTeams();
+   // this.applyDepartmentFromTeams();
     this.loadDepartments();
     this.loadCatalogs();
     this.loadRequests();
@@ -275,34 +275,46 @@ private applyDepartmentFromTeams(): void {
   if (!this.prHeader.departmentID) this.prHeader.departmentID = 0;
 }
 private applyDepartmentFromTeamsAndSetId(): void {
-  const raw = localStorage.getItem('teams'); // '["Purchase Team"]'
+  const raw = localStorage.getItem('teams'); // ex: ["Purchase Team"]
   if (!raw) return;
 
   let teams: string[] = [];
-  try { teams = JSON.parse(raw) || []; } catch { teams = []; }
-
-  const deptText = (teams[0] || '').trim();
-  if (!deptText) return;
-
-  // ✅ show in input
-  if (!this.searchText || !this.searchText.trim()) {
-    this.searchText = deptText;
+  try {
+    const parsed = JSON.parse(raw);
+    teams = Array.isArray(parsed) ? parsed.map(x => (x || '').toString()) : [];
+  } catch {
+    teams = [];
   }
 
-  // ✅ if master departments loaded, set departmentID
-  if (Array.isArray(this.departments) && this.departments.length) {
-    const t = deptText.toLowerCase();
+  let teamText = (teams[0] || '').trim();
+  if (!teamText) return;
 
-    // Try exact / contains match
-    const match = this.departments.find((d: any) => {
-      const name = (d.departmentName || d.DepartmentName || '').toString().toLowerCase();
-      return name === t || name.includes(t) || t.includes(name);
-    });
+  // Purchase Team -> Purchase
+  const cleanTeamName = teamText
+    .replace(/team/ig, '')
+    .trim()
+    .toLowerCase();
 
-    if (match) {
-      const id = this.toNum(match?.id ?? match?.Id ?? match?.departmentID ?? match?.DepartmentID);
-      if (id > 0) this.prHeader.departmentID = id;
-    }
+  const match = this.departments.find((d: any) => {
+    const deptName = (d.departmentName || d.DepartmentName || '')
+      .toString()
+      .trim()
+      .toLowerCase();
+
+    return deptName === cleanTeamName ||
+           deptName.includes(cleanTeamName) ||
+           cleanTeamName.includes(deptName);
+  });
+
+  if (match) {
+    const id = this.toNum(match.id ?? match.Id ?? match.departmentID ?? match.DepartmentID);
+    const name = match.departmentName ?? match.DepartmentName ?? '';
+
+    this.prHeader.departmentID = id;
+    this.searchText = name; // Admin / Finance / Purchase
+  } else {
+    this.prHeader.departmentID = 0;
+    this.searchText = teamText; // fallback
   }
 }
 
@@ -665,27 +677,26 @@ private applyDepartmentFromTeamsAndSetId(): void {
 
   // ---------------- Loads ----------------
 
-  loadDepartments() {
-    this.deptService.getDepartment().subscribe((res: any) => {
-      this.departments = (res?.data ?? []).map((x: any) => ({
-        ...x,
-        id: this.toNum(x.id ?? x.Id ?? x.departmentID ?? x.DepartmentID)
-      }));
-      this.filteredDepartments = [...this.departments];
+loadDepartments() {
+  this.deptService.getDepartment().subscribe((res: any) => {
+    this.departments = (res?.data ?? []).map((x: any) => ({
+      ...x,
+      id: Number(x.id ?? x.Id ?? 0),
+      departmentName: x.departmentName ?? x.DepartmentName ?? ''
+    }));
 
-      this.departmentsLoaded = true;
+    this.filteredDepartments = [...this.departments];
 
-      if (this.pendingDeptName && !this.searchText) {
-        this.searchText = this.pendingDeptName;
-      }
-      if (!this.searchText && (this.prHeader?.departmentID || this.pendingDeptId)) {
-        if (this.pendingDeptId) this.prHeader.departmentID = this.pendingDeptId;
-      }
+    // ✅ TEMP TEST: first department auto bind
+    if (this.departments.length > 0) {
+      const dept = this.departments[0];
 
-      this.resolveDepartmentName();
-       this.applyDepartmentFromTeamsAndSetId();
-    });
-  }
+      this.prHeader.departmentID = dept.id;
+      this.prHeader.departmentId = dept.id; // ✅ add both casing
+      this.searchText = dept.departmentName;
+    }
+  });
+}
 
   loadCatalogs() {
     this.chartOfAccountService.getAllChartOfAccount().subscribe((res: any) => {
@@ -1243,21 +1254,25 @@ selectModalItem(item: any) {
       return rest;
     });
 
-    const payload: any = {
-      id: this.prHeader.id || 0,
-      requester: this.prHeader.requester,
-      departmentID: this.prHeader.departmentID,
-      deliveryDate: this.prHeader.neededBy,
-      description: this.prHeader.description,
-      multiLoc: this.prHeader.multiLoc,
-      oversea: this.prHeader.oversea,
-      PurchaseRequestNo: '',
-      CreatedBy:Number(localStorage.getItem('id') || 0),
-      UpdatedBy:Number(localStorage.getItem('id') || 0),
-      IsActive: true,
-      Status: 1,
-      prLines: JSON.stringify(strippedLines)
-    };
+  const deptId = Number(this.prHeader.departmentID || this.prHeader.departmentId || 0);
+
+const payload: any = {
+  id: this.prHeader.id || 0,
+  requester: this.prHeader.requester,
+  departmentID: deptId,
+  departmentId: deptId,
+  DepartmentName: this.searchText || '',
+  deliveryDate: this.prHeader.neededBy,
+  description: this.prHeader.description,
+  multiLoc: this.prHeader.multiLoc,
+  oversea: this.prHeader.oversea,
+  PurchaseRequestNo: '',
+  CreatedBy: Number(localStorage.getItem('id') || 0),
+  UpdatedBy: Number(localStorage.getItem('id') || 0),
+  IsActive: true,
+  Status: 1,
+  prLines: JSON.stringify(strippedLines)
+};
 
     if (payload.id > 0) {
       this.purchaseService.update(payload.id, payload).subscribe({

@@ -1,19 +1,30 @@
-import { AfterViewChecked, AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewChecked,
+  AfterViewInit,
+  Component,
+  OnInit,
+  ViewChild,
+  ViewEncapsulation
+} from '@angular/core';
 import { NgForm } from '@angular/forms';
 import * as feather from 'feather-icons';
-import { StatesService } from './states.service';
 import Swal from 'sweetalert2';
+
+import { StatesService } from './states.service';
 import { CountriesService } from '../countries/countries.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+
 @Component({
   selector: 'app-states',
   templateUrl: './states.component.html',
-  styleUrls: ['./states.component.scss']
+  styleUrls: ['./states.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class StatesComponent implements OnInit, AfterViewChecked, AfterViewInit {
   @ViewChild('stateForm') stateForm!: NgForm;
 
   public id = 0;
-  public stateName = "";
+  public stateName = '';
   public isDisplay = false;
   public modeHeader = 'Add State';
   public resetButton = true;
@@ -21,143 +32,363 @@ export class StatesComponent implements OnInit, AfterViewChecked, AfterViewInit 
 
   rows: any[] = [];
   tempData: any;
-  StateList: any;
+  StateList: any[] = [];
 
-  // make this numeric
   selectedCountry: number | null = null;
+
+  userId: number = 0;
+
+  // IMPORTANT: DB/Menu permission code exact ah match aaganum
+  functionId = 'states';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
 
   constructor(
     private _stateService: StatesService,
-    private _countriesService: CountriesService
-  ) {}
+    private _countriesService: CountriesService,
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   ngOnInit(): void {
-    this.getAllState();
-    this.getAllCountries(); // <-- ensure list is ready for edit
+    this.loadPermission();
   }
 
-  ngAfterViewInit(): void { feather.replace(); }
-  ngAfterViewChecked(): void { feather.replace(); }
-
-  cancel() 
-  { 
-    this.isDisplay = false; 
-    this.isEditMode = false;
+  ngAfterViewInit(): void {
+    feather.replace();
   }
 
-  createState() {
-    this.isDisplay = true;
-    this.modeHeader = 'Add State';
-    this.reset();
-    // optional: refresh countries if needed
-    if (!this.rows?.length) this.getAllCountries();
+  ngAfterViewChecked(): void {
+    feather.replace();
   }
 
-  reset() {
-    this.modeHeader = 'Create State';
-    this.stateName = "";
-    this.id = 0;
-    this.selectedCountry = 0; 
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.getAllState();
+          this.getAllCountries();
+        } else {
+          this.StateList = [];
+          this.rows = [];
+          this.isDisplay = false;
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
+  cancel(): void {
+    this.isDisplay = false;
     this.isEditMode = false;
     this.resetButton = true;
   }
 
-  getAllState() {
-    this._stateService.getState().subscribe((response: any) => {
-      this.StateList = response.data;
-      this.tempData = this.rows;
+  createState(): void {
+    if (!this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isDisplay = true;
+    this.isEditMode = false;
+    this.modeHeader = 'Create State';
+    this.reset();
+
+    if (!this.rows?.length) {
+      this.getAllCountries();
+    }
+  }
+
+  reset(): void {
+    this.modeHeader = this.isEditMode ? 'Edit State' : 'Create State';
+    this.stateName = '';
+    this.id = 0;
+    this.selectedCountry = null;
+    this.isEditMode = false;
+    this.resetButton = true;
+  }
+
+  getAllState(): void {
+    this._stateService.getState().subscribe({
+      next: (response: any) => {
+        this.StateList = response?.data || [];
+      },
+      error: (err) => {
+        console.error('Load state error:', err);
+        this.StateList = [];
+      }
     });
   }
 
-  getAllCountries() {
-    this._countriesService.getCountry().subscribe((response: any) => {
-      this.rows = response.data;
-      this.tempData = this.rows;
+  getAllCountries(): void {
+    this._countriesService.getCountry().subscribe({
+      next: (response: any) => {
+        this.rows = response?.data || [];
+        this.tempData = this.rows;
+      },
+      error: (err) => {
+        console.error('Load country error:', err);
+        this.rows = [];
+      }
     });
   }
 
-  // helper: load countries then set the selected one
-  private ensureCountriesThenSet(countryId: number) {
+  private ensureCountriesThenSet(countryId: number): void {
     if (this.rows?.length) {
       this.selectedCountry = countryId;
       return;
     }
-    this._countriesService.getCountry().subscribe((response: any) => {
-      this.rows = response.data;
-      this.selectedCountry = countryId;
+
+    this._countriesService.getCountry().subscribe({
+      next: (response: any) => {
+        this.rows = response?.data || [];
+        this.tempData = this.rows;
+        this.selectedCountry = countryId;
+      },
+      error: (err) => {
+        console.error('Load country error:', err);
+        this.rows = [];
+        this.selectedCountry = countryId;
+      }
     });
   }
 
-  CreateState() {
+  CreateState(): void {
+    if (!this.stateName || !this.stateName.trim() || !this.selectedCountry) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: 'State Name and Country are required.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (this.id > 0 && !this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (this.id === 0 && !this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     const obj = {
       id: this.id,
-      StateName: this.stateName,
-      countryId: this.selectedCountry, // <-- numeric id
-      createdBy: Number(localStorage.getItem('id') || 0),
+      StateName: this.stateName.trim(),
+      countryId: Number(this.selectedCountry),
+      createdBy: this.userId,
       createdDate: new Date(),
-      updatedBy: Number(localStorage.getItem('id') || 0),
+      updatedBy: this.userId,
       updatedDate: new Date(),
-      isActive: true,
+      isActive: true
     };
 
-    const req$ = this.id === 0
-      ? this._stateService.insertState(obj)
-      : this._stateService.updateState(obj);
+    const req$ =
+      this.id === 0
+        ? this._stateService.insertState(obj)
+        : this._stateService.updateState(obj);
 
-    req$.subscribe((res: any) => {
-      if (res.isSuccess) {
-        Swal.fire({ title: 'Hi', text: res.message, icon: 'success', allowOutsideClick: false });
-        this.getAllState();
-        this.isDisplay = false;
-        this.isEditMode = false;
-      }
-      else{
-         Swal.fire({ title: 'Hi', text: res.message, icon: 'error', allowOutsideClick: false });
+    req$.subscribe({
+      next: (res: any) => {
+        if (res?.isSuccess) {
+          Swal.fire({
+            title: 'Success',
+            text: res.message || (this.id === 0 ? 'State created successfully' : 'State updated successfully'),
+            icon: 'success',
+            allowOutsideClick: false,
+            confirmButtonColor: '#0e3a4c'
+          });
+
+          this.getAllState();
+          this.isDisplay = false;
+          this.isEditMode = false;
+        } else {
+          Swal.fire({
+            title: 'Error',
+            text: res?.message || 'Operation failed',
+            icon: 'error',
+            allowOutsideClick: false,
+            confirmButtonColor: '#d33'
+          });
+        }
+      },
+      error: (err) => {
+        Swal.fire({
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Operation failed',
+          icon: 'error',
+          allowOutsideClick: false,
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }
 
-  getStateDetails(id: number) {
-    this._stateService.getStateById(id).subscribe((arg: any) => {
-      const s = arg.data;
-      this.id = s.id;
-      this.stateName = s.stateName;
+  getStateDetails(id: number): void {
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
-      // make the form visible first
-      this.isDisplay = true;
-      this.resetButton = false;
-      this.modeHeader = 'Edit State';
-      this.isEditMode = true;
+    this._stateService.getStateById(id).subscribe({
+      next: (arg: any) => {
+        const s = arg?.data;
 
-      // ensure country list is ready, then set value
-      this.ensureCountriesThenSet(s.countryId);
+        this.id = s?.id || 0;
+        this.stateName = s?.stateName || '';
+
+        this.isDisplay = true;
+        this.resetButton = false;
+        this.modeHeader = 'Edit State';
+        this.isEditMode = true;
+
+        this.ensureCountriesThenSet(Number(s?.countryId || 0));
+      },
+      error: (err) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load state details',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
-  deleteState(id: number) {
+  deleteState(id: number, isUsed?: any): void {
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (isUsed) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cannot Delete',
+        text: 'This state is already used.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     Swal.fire({
       title: 'Are you sure?',
-      text: "You won't be able to revert this!",
+      text: 'You will not be able to revert this!',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#7367F0',
-      cancelButtonColor: '#E42728',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
       confirmButtonText: 'Yes, Delete it!',
-      customClass: { confirmButton: 'btn btn-primary', cancelButton: 'btn btn-danger ml-1' },
-      allowOutsideClick: false,
+      cancelButtonText: 'Cancel',
+      allowOutsideClick: false
     }).then((result) => {
-      if (result.value) {
-        this._stateService.deleteState(id).subscribe((response: any) => {
-          Swal.fire({
-            icon: response.isSuccess ? 'success' : 'error',
-            title: response.isSuccess ? 'Deleted!' : 'Error!',
-            text: response.message,
-            allowOutsideClick: false,
-          });
-          this.getAllState();
+      if (result.isConfirmed) {
+        this._stateService.deleteState(id).subscribe({
+          next: (response: any) => {
+            Swal.fire({
+              icon: response?.isSuccess ? 'success' : 'error',
+              title: response?.isSuccess ? 'Deleted!' : 'Error!',
+              text: response?.message || (
+                response?.isSuccess
+                  ? 'State deleted successfully'
+                  : 'Failed to delete state'
+              ),
+              allowOutsideClick: false
+            });
+
+            this.getAllState();
+          },
+          error: (err) => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error!',
+              text: err?.error?.message || err?.message || 'Failed to delete state',
+              allowOutsideClick: false,
+              confirmButtonColor: '#d33'
+            });
+          }
         });
       }
     });
   }
 }
-

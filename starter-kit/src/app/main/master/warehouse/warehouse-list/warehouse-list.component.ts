@@ -3,8 +3,8 @@ import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { ColumnMode, DatatableComponent } from '@swimlane/ngx-datatable';
 import { WarehouseService } from '../warehouse.service';
-import { WarehouseCreateComponent } from '../warehouse-create/warehouse-create.component';
 import { CoreSidebarService } from '@core/components/core-sidebar/core-sidebar.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-warehouse-list',
@@ -13,81 +13,178 @@ import { CoreSidebarService } from '@core/components/core-sidebar/core-sidebar.s
   encapsulation: ViewEncapsulation.None
 })
 export class WarehouseListComponent implements OnInit {
-
-
   @ViewChild(DatatableComponent) table: DatatableComponent;
   @ViewChild('tableRowDetails') tableRowDetails: any;
   @ViewChild('SweetAlertFadeIn') SweetAlertFadeIn: any;
+
   colors = ['bg-light-primary', 'bg-light-success', 'bg-light-danger', 'bg-light-warning', 'bg-light-info'];
+
   rows: any[] = [];
   tempData: any[] = [];
+
   public searchValue = '';
   public ColumnMode = ColumnMode;
-  public selectedOption = 10;  
+  public selectedOption = 10;
+
   hover = false;
   passData: any;
-  constructor(private warehouseService: WarehouseService, private router: Router,
+
+  userId: number = 0;
+
+  // IMPORTANT: DB/Menu permission code exact ah match aaganum
+  functionId = 'warehouse';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+
+  constructor(
+    private warehouseService: WarehouseService,
+    private router: Router,
     private _coreSidebarService: CoreSidebarService,
-  ) { }
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
+
   ngOnInit(): void {
-    this.loadRequests();
+    this.loadPermission();
   }
-  filterUpdate(event) {
 
-    const val = event.target.value.toLowerCase();
-    const temp = this.tempData.filter(function (d) {
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
 
-      if (d.name.toLowerCase().indexOf(val) !== -1 || !val) {
-        return d.name.toLowerCase().indexOf(val) !== -1 || !val;
-      }
-      if (d.countryName.toLowerCase().indexOf(val) !== -1 || !val) {
-        return d.countryName.toLowerCase().indexOf(val) !== -1 || !val;
-      }
-      if (d.stateName.toLowerCase().indexOf(val) !== -1 || !val) {
-        return d.stateName.toLowerCase().indexOf(val) !== -1 || !val;
-      }
-      if (d.cityName.toLowerCase().indexOf(val) !== -1 || !val) {
-        return d.cityName.toLowerCase().indexOf(val) !== -1 || !val;
-      }
-      if (d.phone.toLowerCase().indexOf(val) !== -1 || !val) {
-        return d.phone.toLowerCase().indexOf(val) !== -1 || !val;
-      }
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.loadRequests();
+        } else {
+          this.rows = [];
+          this.tempData = [];
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
-    this.rows = temp;
-    this.table.offset = 0;
   }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
+  filterUpdate(event?: any): void {
+    const val = (event?.target?.value ?? this.searchValue ?? '').toLowerCase().trim();
+
+    if (!val) {
+      this.rows = [...this.tempData];
+      if (this.table) this.table.offset = 0;
+      return;
+    }
+
+    this.rows = this.tempData.filter((d: any) => {
+      return (
+        (d.name || '').toLowerCase().includes(val) ||
+        (d.countryName || '').toLowerCase().includes(val) ||
+        (d.stateName || '').toLowerCase().includes(val) ||
+        (d.cityName || '').toLowerCase().includes(val) ||
+        (d.locationname || '').toLowerCase().includes(val) ||
+        (d.phone || '').toLowerCase().includes(val)
+      );
+    });
+
+    if (this.table) this.table.offset = 0;
+  }
+
   getRandomColor(index: number): string {
     return this.colors[index % this.colors.length];
   }
 
-
   getInitial(orgName: string): string {
-    // Get the first two characters, or the entire string if it's shorter
-    const initials = orgName.slice(0, 2).toUpperCase();
-    return initials;
+    return (orgName || '').slice(0, 2).toUpperCase();
   }
-  loadRequests() {
+
+  loadRequests(): void {
     this.warehouseService.getWarehouse().subscribe({
       next: (res: any) => {
-        this.rows = res.data.map((req: any) => {
-          return {
-            ...req,
-          };
-        });
-        this.tempData = this.rows
+        this.rows = (res?.data || []).map((req: any) => ({ ...req }));
+        this.tempData = [...this.rows];
       },
-      error: (err: any) => console.error('Error loading list', err)
+      error: (err: any) => {
+        console.error('Error loading warehouse list', err);
+        this.rows = [];
+        this.tempData = [];
+      }
     });
   }
 
+  editWarehouse(row: any): void {
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
-  editWarehouse(row: any) {
-    this.passData = { ...row };                  // edit mode
+    this.passData = { ...row };
     this.toggleSidebar('app-warehouse-create');
   }
 
-  deleteWarehouse(id: number) {
+  deleteWarehouse(id: number): void {
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     Swal.fire({
       title: 'Are you sure?',
       text: 'This will permanently delete the Warehouse.',
@@ -95,39 +192,68 @@ export class WarehouseListComponent implements OnInit {
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
         this.warehouseService.deleteWarehouse(id).subscribe({
-          next: () => {
+          next: (res: any) => {
             this.loadRequests();
-            Swal.fire('Deleted!', 'Warehouse has been deleted.', 'success');
+
+            Swal.fire({
+              icon: res?.isSuccess === false ? 'error' : 'success',
+              title: res?.isSuccess === false ? 'Error!' : 'Deleted!',
+              text: res?.message || 'Warehouse has been deleted.',
+              confirmButtonColor: res?.isSuccess === false ? '#d33' : '#3085d6'
+            });
           },
-          error: (err) => console.error('Error deleting request', err)
+          error: (err) => {
+            console.error('Error deleting warehouse', err);
+
+            Swal.fire({
+              icon: 'error',
+              title: 'Error!',
+              text: err?.error?.message || err?.message || 'Failed to delete warehouse.',
+              confirmButtonColor: '#d33'
+            });
+          }
         });
       }
     });
   }
-  toggleLines(req: any) {
-    // Toggle showLines only for the clicked PR
+
+  toggleLines(req: any): void {
     req.showLines = !req.showLines;
   }
-  onRowExpandClick(row: any) {
-    // Expand/Collapse the row
+
+  onRowExpandClick(row: any): void {
     this.rowDetailsToggleExpand(row);
 
-    // Show SweetAlert fade-in
-    this.SweetAlertFadeIn.fire();
-  }
-  rowDetailsToggleExpand(row: any) {
-    row.$$expanded = !row.$$expanded; // toggle expand
-  }
-  openCreate() {
-    this.passData = {};                          // create mode
-    this.toggleSidebar('app-warehouse-create');
-  }
-  toggleSidebar(name): void {    
-    this._coreSidebarService.getSidebarRegistry(name).toggleOpen();
+    if (this.SweetAlertFadeIn) {
+      this.SweetAlertFadeIn.fire();
+    }
   }
 
+  rowDetailsToggleExpand(row: any): void {
+    row.$$expanded = !row.$$expanded;
+  }
+
+  openCreate(): void {
+    if (!this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.passData = {};
+    this.toggleSidebar('app-warehouse-create');
+  }
+
+  toggleSidebar(name: string): void {
+    this._coreSidebarService.getSidebarRegistry(name).toggleOpen();
+  }
 }

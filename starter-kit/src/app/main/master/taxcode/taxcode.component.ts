@@ -3,20 +3,23 @@ import {
   AfterViewChecked,
   Component,
   OnInit,
-  ViewChild
+  ViewChild,
+  ViewEncapsulation
 } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import * as feather from 'feather-icons';
 import Swal from 'sweetalert2';
+
 import { TaxCodeService } from './taxcode.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-taxcode',
   templateUrl: './taxcode.component.html',
-  styleUrls: ['./taxcode.component.scss']
+  styleUrls: ['./taxcode.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class TaxcodeComponent implements OnInit, AfterViewInit, AfterViewChecked {
-
   @ViewChild('taxCodeForm') taxCodeForm!: NgForm;
 
   public id = 0;
@@ -25,25 +28,39 @@ export class TaxcodeComponent implements OnInit, AfterViewInit, AfterViewChecked
   public rate: number | null = null;
   public typeId: number | null = null;
 
-  isDisplay: boolean = false;
+  isDisplay = false;
   modeHeader: string = 'Add TaxCode';
-  resetButton: boolean = true;
+  resetButton = true;
+
   rows: any[] = [];
   tempData: any;
   taxCodeValue: any;
-  isEditMode: boolean = false;
+  isEditMode = false;
 
-  // static dropdown – later you can load from API
+  userId: number = 0;
+
+  // IMPORTANT: DB/Menu permission code exact ah match aaganum
+  functionId = 'taxcode';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+
   taxTypes = [
     { id: 1, name: 'Input GST' },
     { id: 2, name: 'Output GST' }
-    // add more types if required
   ];
 
-  constructor(private taxCodeService: TaxCodeService) {}
+  constructor(
+    private taxCodeService: TaxCodeService,
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   ngOnInit(): void {
-    this.getAllTaxCode();
+    this.loadPermission();
   }
 
   ngAfterViewInit(): void {
@@ -54,21 +71,94 @@ export class TaxcodeComponent implements OnInit, AfterViewInit, AfterViewChecked
     feather.replace();
   }
 
-  cancel() {
-    this.isDisplay = false;
-    this.isEditMode = false;
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.getAllTaxCode();
+        } else {
+          this.rows = [];
+          this.isDisplay = false;
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
   }
 
-  createTaxCode() {
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
+  cancel(): void {
+    this.isDisplay = false;
+    this.isEditMode = false;
+    this.resetButton = true;
+  }
+
+  createTaxCode(): void {
+    if (!this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     this.isDisplay = true;
-    this.modeHeader = 'Add TaxCode';
+    this.modeHeader = 'Create TaxCode';
     this.resetButton = true;
     this.isEditMode = false;
     this.reset();
   }
 
-  reset() {
-    this.modeHeader = 'Create TaxCode';
+  reset(): void {
+    this.modeHeader = this.isEditMode ? 'Edit TaxCode' : 'Create TaxCode';
     this.id = 0;
     this.name = '';
     this.description = '';
@@ -80,124 +170,230 @@ export class TaxcodeComponent implements OnInit, AfterViewInit, AfterViewChecked
     }
   }
 
-  getAllTaxCode() {
-    this.taxCodeService.getTaxCode().subscribe((response: any) => {
-      this.rows = response.data;
-      this.tempData = this.rows;
+  getAllTaxCode(): void {
+    this.taxCodeService.getTaxCode().subscribe({
+      next: (response: any) => {
+        this.rows = response?.data || [];
+        this.tempData = this.rows;
+      },
+      error: (err) => {
+        console.error('Load tax code error:', err);
+        this.rows = [];
+      }
     });
   }
 
-  saveTaxCode() {
+  saveTaxCode(): void {
+    if (!this.name || !this.name.trim() || !this.typeId || this.rate === null) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: 'Name, Type and Rate are required.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (this.id > 0 && !this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (this.id === 0 && !this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     const obj = {
       id: this.id,
-      name: this.name,
+      name: this.name.trim(),
       description: this.description,
       typeId: this.typeId,
-      rate: this.rate,
-      createdBy: Number(localStorage.getItem('id') || 0),
+      rate: Number(this.rate || 0),
+      createdBy: this.userId,
       createdDate: new Date(),
-      updatedBy: Number(localStorage.getItem('id') || 0),
+      updatedBy: this.userId,
       updatedDate: new Date(),
       isActive: true
     };
 
     if (this.id === 0) {
-      // INSERT
-      this.taxCodeService.insertTaxCode(obj).subscribe((res: any) => {
-        if (res.isSuccess) {
+      this.taxCodeService.insertTaxCode(obj).subscribe({
+        next: (res: any) => {
+          if (res?.isSuccess) {
+            Swal.fire({
+              title: 'Success',
+              text: res.message || 'TaxCode created successfully',
+              icon: 'success',
+              allowOutsideClick: false,
+              confirmButtonColor: '#0e3a4c'
+            });
+
+            this.getAllTaxCode();
+            this.isDisplay = false;
+            this.isEditMode = false;
+          } else {
+            Swal.fire({
+              title: 'Error',
+              text: res?.message || 'Failed to create TaxCode',
+              icon: 'error',
+              allowOutsideClick: false,
+              confirmButtonColor: '#d33'
+            });
+          }
+        },
+        error: (err) => {
           Swal.fire({
-            title: 'Hi',
-            text: res.message,
-            icon: 'success',
-            allowOutsideClick: false
-          });
-          this.getAllTaxCode();
-          this.isDisplay = false;
-          this.isEditMode = false;
-        } else {
-          Swal.fire({
-            title: 'Hi',
-            text: res.message,
+            title: 'Error',
+            text: err?.error?.message || err?.message || 'Failed to create TaxCode',
             icon: 'error',
-            allowOutsideClick: false
+            allowOutsideClick: false,
+            confirmButtonColor: '#d33'
           });
         }
       });
     } else {
-      // UPDATE
-      this.taxCodeService.updateTaxCode(obj).subscribe((res: any) => {
-        if (res.isSuccess) {
+      this.taxCodeService.updateTaxCode(obj).subscribe({
+        next: (res: any) => {
+          if (res?.isSuccess) {
+            Swal.fire({
+              title: 'Success',
+              text: res.message || 'TaxCode updated successfully',
+              icon: 'success',
+              allowOutsideClick: false,
+              confirmButtonColor: '#0e3a4c'
+            });
+
+            this.getAllTaxCode();
+            this.isDisplay = false;
+            this.isEditMode = false;
+          } else {
+            Swal.fire({
+              title: 'Error',
+              text: res?.message || 'Failed to update TaxCode',
+              icon: 'error',
+              allowOutsideClick: false,
+              confirmButtonColor: '#d33'
+            });
+          }
+        },
+        error: (err) => {
           Swal.fire({
-            title: 'Hi',
-            text: res.message,
-            icon: 'success',
-            allowOutsideClick: false
-          });
-          this.getAllTaxCode();
-          this.isDisplay = false;
-          this.isEditMode = false;
-        } else {
-          Swal.fire({
-            title: 'Hi',
-            text: res.message,
+            title: 'Error',
+            text: err?.error?.message || err?.message || 'Failed to update TaxCode',
             icon: 'error',
-            allowOutsideClick: false
+            allowOutsideClick: false,
+            confirmButtonColor: '#d33'
           });
         }
       });
     }
   }
 
-  getTaxCodeDetails(id: any) {
-    this.taxCodeService.getTaxCodeById(id).subscribe((arg: any) => {
-      this.taxCodeValue = arg.data;
-      this.id = this.taxCodeValue.id;
-      this.name = this.taxCodeValue.name;
-      this.description = this.taxCodeValue.description;
-      this.typeId = this.taxCodeValue.typeId;
-      this.rate = this.taxCodeValue.rate;
+  getTaxCodeDetails(id: any): void {
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
-      this.isDisplay = true;
-      this.resetButton = false;
-      this.modeHeader = 'Edit TaxCode';
-      this.isEditMode = true;
+    this.taxCodeService.getTaxCodeById(id).subscribe({
+      next: (arg: any) => {
+        this.taxCodeValue = arg?.data;
+
+        this.id = this.taxCodeValue?.id || 0;
+        this.name = this.taxCodeValue?.name || '';
+        this.description = this.taxCodeValue?.description || '';
+        this.typeId = this.taxCodeValue?.typeId || null;
+        this.rate = this.taxCodeValue?.rate ?? null;
+
+        this.isDisplay = true;
+        this.resetButton = false;
+        this.modeHeader = 'Edit TaxCode';
+        this.isEditMode = true;
+      },
+      error: (err) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load TaxCode details',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
-  deleteTaxCode(id: any, isUsed?: boolean) {
-    const _self = this;
+  deleteTaxCode(id: any, isUsed?: boolean): void {
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (isUsed) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cannot Delete',
+        text: 'This TaxCode is already used.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     Swal.fire({
       title: 'Are you sure?',
-      text: 'You won\'t be able to revert this!',
-      icon: 'success',
+      text: 'You will not be able to revert this!',
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#7367F0',
-      cancelButtonColor: '#E42728',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
       confirmButtonText: 'Yes, Delete it!',
-      customClass: {
-        confirmButton: 'btn btn-primary',
-        cancelButton: 'btn btn-danger ml-1'
-      },
+      cancelButtonText: 'Cancel',
       allowOutsideClick: false
-    }).then(function (result) {
-      if (result.value) {
-        _self.taxCodeService.deleteTaxCode(id).subscribe((response: any) => {
-          if (response.isSuccess) {
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.taxCodeService.deleteTaxCode(id).subscribe({
+          next: (response: any) => {
             Swal.fire({
-              icon: 'success',
-              title: 'Deleted!',
-              text: response.message,
+              icon: response?.isSuccess ? 'success' : 'error',
+              title: response?.isSuccess ? 'Deleted!' : 'Error!',
+              text: response?.message || (
+                response?.isSuccess
+                  ? 'TaxCode deleted successfully'
+                  : 'Failed to delete TaxCode'
+              ),
               allowOutsideClick: false
             });
-          } else {
+
+            this.getAllTaxCode();
+          },
+          error: (err) => {
             Swal.fire({
               icon: 'error',
               title: 'Error!',
-              text: response.message,
-              allowOutsideClick: false
+              text: err?.error?.message || err?.message || 'Failed to delete TaxCode',
+              allowOutsideClick: false,
+              confirmButtonColor: '#d33'
             });
           }
-          _self.getAllTaxCode();
         });
       }
     });

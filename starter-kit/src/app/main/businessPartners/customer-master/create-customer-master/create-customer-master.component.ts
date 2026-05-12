@@ -13,6 +13,7 @@ import { ApprovallevelService } from 'app/main/master/approval-level/approvallev
 import { CustomerMasterService } from '../customer-master.service';
 import { environment } from 'environments/environment';
 import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-create-customer-master',
@@ -21,7 +22,7 @@ import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartof
 })
 export class CreateCustomerMasterComponent implements AfterViewInit, OnInit {
 
-  @ViewChild('stepper1', { static: true }) stepperEl!: ElementRef<HTMLDivElement>;
+  @ViewChild('stepper1', { static: false }) stepperEl!: ElementRef<HTMLDivElement>;
   private stepper!: Stepper;
 
   // --- Edit mode ---
@@ -58,14 +59,21 @@ customersCache: any[] = [];
   currentIndex = 0;
   totalSteps = 3;
   editingKycId: any;
-  userId:string;
+  userId:any;
   companyId: string | null;
+  
+
   get isFirstStep() { return this.currentIndex === 0; }
   get isLastStep()  { return this.currentIndex === this.totalSteps - 1; }
 
   // --- Lock KYC when already approved ---
   isKycLocked = false;
   parentHeadList: Array<{ value: number; label: string }> = [];
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  functionId = 'bp-customer';
+ 
 
   constructor(
     private _customerGroupService: CustomerGroupsService,
@@ -77,10 +85,83 @@ customersCache: any[] = [];
     private router: Router,
     private route: ActivatedRoute,
      private coaService: ChartofaccountService,
-  ) {this.companyId = localStorage.getItem('companyId')}
+     private permissionService: PermissionService
+  ) {this.companyId = localStorage.getItem('companyId')
+      this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   // ---------------- INIT ----------------
+
   ngOnInit(): void {
+      this.loadPermission();
+    }
+  
+    // =========================
+    // PERMISSION
+    // =========================
+    loadPermission(): void {
+      if (!this.userId || this.userId <= 0) {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+  
+        Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'User not found. Please login again.',
+          confirmButtonColor: '#0e3a4c'
+        });
+        return;
+      }
+  
+      this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+        next: (res: FunctionPermission) => {
+          this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+  
+          if (this.canView()) {
+            this.loadInitialData();
+          }
+        },
+        error: (err) => {
+          console.error('Permission load error:', err);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+  
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Unable to load permission.',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    }
+  
+    canView(): boolean {
+      return this.permissionService.hasView(this.permission);
+    }
+  
+    canCreate(): boolean {
+      return this.permissionService.hasCreate(this.permission);
+    }
+  
+    canEdit(): boolean {
+      return this.permissionService.hasEdit(this.permission);
+    }
+  
+    canDelete(): boolean {
+      return this.permissionService.hasDelete(this.permission);
+    }
+  
+    canShowSaveButton(): boolean {
+      return this.editMode ? this.canEdit() : this.canCreate();
+    }
+  
+    // =========================
+    // INITIAL LOAD
+    // =========================
+    loadInitialData(): void {
     this.loadCustomerGroups();
     this.loadPaymentTerms();
     this.loadCountries();
@@ -96,8 +177,7 @@ customersCache: any[] = [];
         this.loadForEdit(id);
       }
     });
-    
-  }
+    }
   private loadExistingCustomers(): void {
   this._customerService.getAllCustomerMaster().subscribe((res: any) => {
     if (res?.data && Array.isArray(res.data)) {
@@ -159,6 +239,8 @@ private findDuplicateCustomer(): any | null {
   }
 
   ngAfterViewInit(): void {
+    setTimeout(() => {
+         if (!this.stepperEl) return;
     this.stepper = new Stepper(this.stepperEl.nativeElement, { linear: true, animation: true });
     const update = () => {
       // @ts-ignore (private field on Stepper)
@@ -167,6 +249,7 @@ private findDuplicateCustomer(): any | null {
     };
     this.stepperEl.nativeElement.addEventListener('shown.bs.stepper', update);
     update();
+      }, 500);
   }
 
   // ------------- LOAD MASTER DATA -------------

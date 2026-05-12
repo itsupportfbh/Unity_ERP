@@ -2,6 +2,7 @@ import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import { CustomerMasterService } from '../customer-master.service';
 import Swal from 'sweetalert2';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-customer-master-list',
@@ -11,20 +12,91 @@ import Swal from 'sweetalert2';
 })
 export class CustomerMasterListComponent implements OnInit {
  selectedOption = 10;
-searchValue = '';
-CustomerMasterList: any[] = [];
-CustomerMasterListFiltered: any[] = [];
+  searchValue = '';
+  CustomerMasterList: any[] = [];
+  CustomerMasterListFiltered: any[] = [];
+  
+  userId: number = 0;
+  functionId = 'bp-customer';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+  public isDisplay = false;
+  
   constructor(
     private _customerMasterService : CustomerMasterService,
-    private router: Router
+    private router: Router,private permissionService: PermissionService
 
-  ) { }
+  ) {this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId); }
 
   ngOnInit(): void {
-    this.loadCustomerMasterDetails();
+    this.loadPermission();
+    
   }
 
-   filterUpdate(evt?: any) {
+    loadPermission(): void {
+      if (!this.userId || this.userId <= 0) {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+  
+        Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'User not found. Please login again.',
+          confirmButtonColor: '#0e3a4c'
+        });
+        return;
+      }
+  
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.loadCustomerMasterDetails(); 
+        } else {
+          this.CustomerMasterList = [];
+          this.isDisplay = false;
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+    }
+  canView(): boolean {
+  return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
+  filterUpdate(evt?: any) {
   const val = (this.searchValue || '').toString().toLowerCase().trim();
 
   if (!val) {

@@ -1,4 +1,5 @@
-<section id="location-list" class="content-wrapper p-0">
+<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
+<section *ngIf="canView(); else noAccessTemplate" id="location-list" class="content-wrapper p-0">
   <div class="content-body">
     <div class="card shadow-sm">
 
@@ -23,7 +24,7 @@
             />
           </label>
 
-          <button class="btn btn-primary ml-1" (click)="addSupplier()">
+          <button class="btn btn-primary ml-1" *ngIf="canCreate()" (click)="addSupplier()">
             <i data-feather="plus" class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
             <span class="d-none d-sm-inline-block">Add</span>
           </button>
@@ -112,12 +113,12 @@
       <ng-template let-row="row" ngx-datatable-cell-template>
         <div class="d-flex align-items-center">
           <i
-            class="fas fa-pen text-primary mr-2 cursor-pointer"
+            class="fas fa-pen text-primary mr-2 cursor-pointer" *ngIf="canEdit()"
             (click)="edit(row.id)"
           ></i>
           <i
             class="fas fa-trash text-danger"
-            style="cursor:pointer"
+            style="cursor:pointer" *ngIf="canDelete()"
             (click)="deleteSupplier(row.id)"
           ></i>
         </div>
@@ -131,3 +132,24 @@
     </div>
   </div>
 </section>
+</div>
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>
+

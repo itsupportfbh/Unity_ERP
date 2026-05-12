@@ -11,6 +11,7 @@ import { PaymentTermsService } from 'app/main/master/payment-terms/payment-terms
 import { SupplierService } from '../supplier/supplier.service';
 import { CountriesService } from 'app/main/master/countries/countries.service';
 import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 /* =========================
    Types
@@ -168,7 +169,13 @@ export class CreatesuppliersComponent implements OnInit {
   docs: ComplianceDoc[] = [
     { name: '', number: '', expiry: null, files: [] }
   ];
-  userId: string;
+  userId: any;
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  functionId = 'bp-supplier';
+  editMode = false;
+ 
 
   constructor(
     private route: ActivatedRoute,
@@ -179,18 +186,93 @@ export class CreatesuppliersComponent implements OnInit {
     private incotermsService: IncotermsService,
     private itemsService: ItemsService,
     private _chartOfAccountService: ChartofaccountService,
-    private router: Router
+    private router: Router,private permissionService: PermissionService
   ) 
   {
-     this.userId = localStorage.getItem('id');
+    this.userId = localStorage.getItem('id');
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
   /* =========================
      Lifecycle
   ========================= */
-  ngOnInit(): void {
+ 
+
+ngOnInit(): void {
+    this.loadPermission();
+  }
+
+  // =========================
+  // PERMISSION
+  // =========================
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+
+        if (this.canView()) {
+          this.loadInitialData();
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
+  canShowSaveButton(): boolean {
+    return this.editMode ? this.canEdit() : this.canCreate();
+  }
+
+  // =========================
+  // INITIAL LOAD
+  // =========================
+  loadInitialData(): void {
+    debugger
     const idParam = this.route.snapshot.paramMap.get('id');
     const id = idParam ? +idParam : null;
+    if (id) {
+        this.editMode = true;
+      }
 
     this.loadMasterData()
       .pipe(switchMap(() => id ? this.loadSupplierById(id) : of(null)))

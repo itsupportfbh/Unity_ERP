@@ -1,4 +1,5 @@
-<section class="horizontal-wizard">
+<div *ngIf="isPermissionLoaded; else loadingTemplate">
+  <section *ngIf="canView(); else noAccessTemplate" class="horizontal-wizard">
   <div #stepper1 id="stepper1" class="bs-stepper horizontal-wizard-example">
 
     <!-- HEADER -->
@@ -287,7 +288,7 @@
             <button type="button" class="btn-wiz btn-prev-wiz" (click)="prev()">
               <i data-feather="arrow-left-circle"></i><span>Previous</span>
             </button>
-            <button type="button" class="btn-wiz btn-submit-wiz" (click)="onSubmit()">
+            <button *ngIf="canShowSaveButton()" type="button" class="btn-wiz btn-submit-wiz" (click)="onSubmit()">
   <span>{{ editMode ? 'Update' : 'Submit' }}</span>
   <i data-feather="check-circle"></i>
 </button>
@@ -299,3 +300,25 @@
     </div>
   </div>
 </section>
+</div>
+
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>
+

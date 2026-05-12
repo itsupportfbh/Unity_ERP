@@ -1,162 +1,306 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  AfterViewChecked,
+  AfterViewInit,
+  ViewEncapsulation
+} from '@angular/core';
 import { FormBuilder, NgForm } from '@angular/forms';
 import Swal from 'sweetalert2';
-import { ItemTypeService } from './item-type.service';
 import * as feather from 'feather-icons';
+
+import { ItemTypeService } from './item-type.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-item-type',
   templateUrl: './item-type.component.html',
-  styleUrls: ['./item-type.component.scss']
+  styleUrls: ['./item-type.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
-export class ItemTypeComponent implements OnInit {
+export class ItemTypeComponent implements OnInit, AfterViewChecked, AfterViewInit {
+  @ViewChild('addForm') addForm!: NgForm;
 
- 
- @ViewChild('addForm') addForm!: NgForm;
   ItemTypeList: any[] = [];
   itemTypeName: string = '';
   description: string = '';
+
   isEditMode = false;
   selectedItemType: any = null;
   public isDisplay = false;
-  private iconsReplaced = false;
-  userId: string;
-  constructor(private fb: FormBuilder,
-    private ItemTypeService: ItemTypeService,) {
-       this.userId = localStorage.getItem('id');
-     }
+  modeHeader: string = 'Add Item Type';
+
+  userId: number = 0;
+
+  // IMPORTANT: DB/Menu permission code exact ah match aaganum
+  functionId = 'itemType';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+
+  constructor(
+    private fb: FormBuilder,
+    private ItemTypeService: ItemTypeService,
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   ngOnInit(): void {
-    this.loadItemType();
+    this.loadPermission();
   }
+
   ngAfterViewChecked(): void {
-    feather.replace();  // remove the guard so icons refresh every cycle
+    feather.replace();
   }
+
   ngAfterViewInit(): void {
     feather.replace();
   }
-  // Load data from API
-  loadItemType() {
-    debugger
-    this.ItemTypeService.getAllItemType().subscribe((res: any) => {
-     this.ItemTypeList = res.data.filter((item: any) => item.isActive === true);
-      setTimeout(() => feather.replace(), 0);
+
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.loadItemType();
+        } else {
+          this.ItemTypeList = [];
+          this.isDisplay = false;
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
-  // Show form for creating
-  createItemType() {
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
+  loadItemType(): void {
+    this.ItemTypeService.getAllItemType().subscribe({
+      next: (res: any) => {
+        this.ItemTypeList = (res?.data || []).filter((item: any) => item.isActive === true);
+        setTimeout(() => feather.replace(), 0);
+      },
+      error: (err) => {
+        console.error('Load item type error:', err);
+        this.ItemTypeList = [];
+      }
+    });
+  }
+
+  createItemType(): void {
+    if (!this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     this.isDisplay = true;
     this.isEditMode = false;
     this.selectedItemType = null;
+    this.modeHeader = 'Create Item Type';
     this.reset();
   }
 
-  // Show form for editing
-  editItemType(data: any) {
-    this.isDisplay = true;       // show the form
-    this.isEditMode = true;      // enable edit mode
+  editItemType(data: any): void {
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isDisplay = true;
+    this.isEditMode = true;
     this.selectedItemType = data;
 
-    // patch the form fields
-    this.itemTypeName = data.itemTypeName;       // bind to input
-    this.description = data.description; // bind to textarea
+    this.itemTypeName = data.itemTypeName || '';
+    this.description = data.description || '';
+    this.modeHeader = 'Edit Item Type';
   }
-  cancel() {
 
+  cancel(): void {
     this.isEditMode = false;
     this.isDisplay = false;
+    this.selectedItemType = null;
   }
 
-  reset() {
+  reset(): void {
     this.itemTypeName = '';
     this.description = '';
+    this.modeHeader = this.isEditMode ? 'Edit Item Type' : 'Create Item Type';
   }
 
-  // Save or update
-onSubmit(form: any) {
-  if (!form.valid) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Warning',
-      text: 'Please fill all required fields',
-      confirmButtonText: 'OK',
-      confirmButtonColor: '#0e3a4c'
-    });
-    return;
-  }
-
-  const payload = {
-    itemTypeName: this.itemTypeName,
-    description: this.description,
-    CreatedBy: Number(localStorage.getItem('id') || 0),
-    UpdatedBy: Number(localStorage.getItem('id') || 0),
-    UpdatedDate: new Date(),
-    isActive: true,
-  };
-
-  const showApiMessage = (res: any, successText: string) => {
-    if (res?.isSuccess === false) {
+  onSubmit(form: NgForm): void {
+    if (!form.valid) {
       Swal.fire({
-        icon: 'error',
+        icon: 'warning',
         title: 'Warning',
-        text: res?.message || 'Operation failed',
+        text: 'Please fill all required fields',
         confirmButtonText: 'OK',
         confirmButtonColor: '#0e3a4c'
       });
       return;
     }
 
-    Swal.fire({
-      icon: 'success',
-      title: 'Success!',
-      text: res?.message || successText,
-      confirmButtonText: 'OK',
-      confirmButtonColor: '#0e3a4c'
-    });
+    if (this.isEditMode && !this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
-    this.loadItemType();
-    this.cancel();
-  };
+    if (!this.isEditMode && !this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
-  if (this.isEditMode) {
-    const updatedItemType = { ...this.selectedItemType, ...payload };
+    const payload = {
+      itemTypeName: this.itemTypeName,
+      description: this.description,
+      CreatedBy: this.userId,
+      UpdatedBy: this.userId,
+      CreatedDate: new Date(),
+      UpdatedDate: new Date(),
+      isActive: true
+    };
 
-    this.ItemTypeService
-      .updateItemType(this.selectedItemType.id, updatedItemType)
-      .subscribe({
-        next: (res: any) => showApiMessage(res, 'ItemType updated successfully'),
-        error: (err) => {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: err?.error?.message || 'Failed to update ItemType',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#d33'
-          });
-        }
+    const showApiMessage = (res: any, successText: string) => {
+      if (res?.isSuccess === false) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Warning',
+          text: res?.message || 'Operation failed',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#0e3a4c'
+        });
+        return;
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: res?.message || successText,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0e3a4c'
       });
 
-  } else {
-    this.ItemTypeService
-      .createItemType(payload)
-      .subscribe({
-        next: (res: any) => showApiMessage(res, 'ItemType created successfully'),
-        error: (err) => {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: err?.error?.message || 'Failed to create ItemType',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#d33'
-          });
-        }
-      });
+      this.loadItemType();
+      this.cancel();
+    };
+
+    if (this.isEditMode) {
+      const updatedItemType = {
+        ...this.selectedItemType,
+        ...payload
+      };
+
+      this.ItemTypeService
+        .updateItemType(this.selectedItemType.id, updatedItemType)
+        .subscribe({
+          next: (res: any) => showApiMessage(res, 'Item Type updated successfully'),
+          error: (err) => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: err?.error?.message || err?.message || 'Failed to update Item Type',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#d33'
+            });
+          }
+        });
+    } else {
+      this.ItemTypeService
+        .createItemType(payload)
+        .subscribe({
+          next: (res: any) => showApiMessage(res, 'Item Type created successfully'),
+          error: (err) => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: err?.error?.message || err?.message || 'Failed to create Item Type',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#d33'
+            });
+          }
+        });
+    }
   }
-}
 
-  // Delete
-  confirmdeleteItemType(data: any) {
+  confirmdeleteItemType(data: any): void {
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     Swal.fire({
       title: 'Confirm Delete',
       text: 'Are you sure you want to delete this item?',
@@ -169,39 +313,30 @@ onSubmit(form: any) {
     }).then((result) => {
       if (result.isConfirmed) {
         this.deleteItemType(data);
-        Swal.fire({
-          icon: 'success',
-          title: 'Deleted!',
-          text: 'Item has been deleted.',
-          confirmButtonColor: '#3085d6'
-        });
       }
     });
   }
-  // Delete
-  deleteItemType(item: any) {
+
+  deleteItemType(item: any): void {
     this.ItemTypeService.deleteItemType(item.id).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         Swal.fire({
           icon: 'success',
           title: 'Deleted!',
-          text: 'ItemType deleted successfully',
+          text: res?.message || 'Item Type deleted successfully',
           confirmButtonColor: '#3085d6'
         });
-        this.ngOnInit();
+
+        this.loadItemType();
       },
       error: (err) => {
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Failed to delete ItemType',
+          text: err?.error?.message || err?.message || 'Failed to delete Item Type',
           confirmButtonColor: '#d33'
         });
       }
     });
   }
-
-
-
-
 }

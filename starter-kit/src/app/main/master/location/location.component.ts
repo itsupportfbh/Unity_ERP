@@ -1,8 +1,11 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ColumnMode, SelectionType } from '@swimlane/ngx-datatable';
+import Swal from 'sweetalert2';
+
 import { LocationService } from './location.service';
 import { CoreSidebarService } from '@core/components/core-sidebar/core-sidebar.service';
-import Swal from 'sweetalert2';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+
 interface LocationRow {
   id: number;
   name: string;
@@ -21,16 +24,16 @@ interface LocationRow {
   updatedBy: any;
   updatedDate: string | Date;
 }
+
 @Component({
   selector: 'app-location',
   templateUrl: './location.component.html',
   styleUrls: ['./location.component.scss'],
-    encapsulation:ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None
 })
 export class LocationComponent implements OnInit {
-
- rows: LocationRow[] = [];
-  tempData: LocationRow[] = []; // backup for filtering
+  rows: LocationRow[] = [];
+  tempData: LocationRow[] = [];
 
   searchValue = '';
   pageSize = 10;
@@ -39,13 +42,95 @@ export class LocationComponent implements OnInit {
   SelectionType = SelectionType;
 
   selected: LocationRow[] = [];
-  selectedLocationId: number;
+  selectedLocationId: number | null = null;
 
-constructor(private _locationService : LocationService, private _coreSidebarService: CoreSidebarService,){
+  userId: number = 0;
 
-}
+  // IMPORTANT: DB/Menu permission code exact ah match aaganum
+  functionId = 'location';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+
+  constructor(
+    private _locationService: LocationService,
+    private _coreSidebarService: CoreSidebarService,
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
+
+  ngOnInit(): void {
+    this.loadPermission();
+  }
+
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.getAllLocations();
+        } else {
+          this.rows = [];
+          this.tempData = [];
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
   filterUpdate(): void {
     const val = (this.searchValue || '').toLowerCase().trim();
+
     if (!val) {
       this.rows = [...this.tempData];
       return;
@@ -63,81 +148,116 @@ constructor(private _locationService : LocationService, private _coreSidebarServ
       );
     });
   }
-  // For ngx-datatable template bindings
 
+  addNew(): void {
+    if (!this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
-
-  ngOnInit(): void {
-    this.getAllLocations();
+    this.selectedLocationId = null;
+    this.toggleSidebar('app-create-location');
   }
-  addNew() {
-  this.selectedLocationId = null; // ✅ important for create mode
-  this.toggleSidebar('app-create-location');
-}
 
- toggleSidebar(name): void {
+  toggleSidebar(name: string): void {
     this._coreSidebarService.getSidebarRegistry(name).toggleOpen();
   }
-  getAllLocations(): void {
-    this._locationService.getLocationDetails().subscribe((response: any) => {
-      const data: LocationRow[] = response?.data ?? [];
-      data.forEach(d => {
-        d.createdDate = d.createdDate ? new Date(d.createdDate) : d.createdDate;
-        d.updatedDate = d.updatedDate ? new Date(d.updatedDate) : d.updatedDate;
-      });
 
-      this.rows = data;
-      this.tempData = [...data];
+  getAllLocations(): void {
+    this._locationService.getLocationDetails().subscribe({
+      next: (response: any) => {
+        const data: LocationRow[] = response?.data ?? [];
+
+        data.forEach(d => {
+          d.createdDate = d.createdDate ? new Date(d.createdDate) : d.createdDate;
+          d.updatedDate = d.updatedDate ? new Date(d.updatedDate) : d.updatedDate;
+        });
+
+        this.rows = data;
+        this.tempData = [...data];
+      },
+      error: (err) => {
+        console.error('Load locations error:', err);
+        this.rows = [];
+        this.tempData = [];
+      }
     });
   }
 
-edit(id: number) {
-  debugger
-  this.selectedLocationId = id;      // Save selected ID
-  this.toggleSidebar('app-create-location');  // Open sidebar
-}
-  onActivate(event: any) {
-    // optional: row hover/click events
+  edit(id: number): void {
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.selectedLocationId = id;
+    this.toggleSidebar('app-create-location');
   }
 
-  onSelect({ selected }: { selected: LocationRow[] }) {
+  onActivate(event: any): void {}
+
+  onSelect({ selected }: { selected: LocationRow[] }): void {
     this.selected = [...selected];
   }
 
-
-  deleteLocation(id: number) {
-  Swal.fire({
-    title: 'Are you sure?',
-    text: "You won't be able to revert this!",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#7367F0',
-    cancelButtonColor: '#E42728',
-    confirmButtonText: 'Yes, Delete it!',
-    customClass: {
-      confirmButton: 'btn btn-primary',
-      cancelButton: 'btn btn-danger ml-1'
-    },
-    allowOutsideClick: false,
-  }).then((result) => {
-    if (result.isConfirmed) {  // note: SweetAlert2 uses isConfirmed instead of value in recent versions
-      this._locationService.deleteLocation(id).subscribe((response: any) => {
-        Swal.fire({
-          icon: response.isSuccess ? 'success' : 'error',
-          title: response.isSuccess ? 'Deleted!' : 'Error!',
-          text: response.message,
-          allowOutsideClick: false,
-        });
-        this.getAllLocations();  // Refresh the list after deletion
-      }, error => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error!',
-          text: 'Something went wrong while deleting.',
-        });
+  deleteLocation(id: number): void {
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
       });
+      return;
     }
-  });
-}
 
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'You will not be able to revert this!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, Delete it!',
+      cancelButtonText: 'Cancel',
+      allowOutsideClick: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this._locationService.deleteLocation(id).subscribe({
+          next: (response: any) => {
+            Swal.fire({
+              icon: response?.isSuccess ? 'success' : 'error',
+              title: response?.isSuccess ? 'Deleted!' : 'Error!',
+              text: response?.message || (
+                response?.isSuccess
+                  ? 'Location deleted successfully'
+                  : 'Failed to delete location'
+              ),
+              allowOutsideClick: false
+            });
+
+            this.getAllLocations();
+          },
+          error: (err) => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error!',
+              text: err?.error?.message || err?.message || 'Something went wrong while deleting.',
+              confirmButtonColor: '#d33'
+            });
+          }
+        });
+      }
+    });
+  }
 }

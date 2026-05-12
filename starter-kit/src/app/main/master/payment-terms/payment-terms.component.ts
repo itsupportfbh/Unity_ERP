@@ -1,80 +1,192 @@
-import { AfterViewChecked, Component, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewChecked,
+  AfterViewInit,
+  Component,
+  OnInit,
+  ViewChild,
+  ViewEncapsulation
+} from '@angular/core';
 import { FormBuilder, NgForm } from '@angular/forms';
 import Swal from 'sweetalert2';
-import { PaymentTermsService } from './payment-terms.service';
 import * as feather from 'feather-icons';
+
+import { PaymentTermsService } from './payment-terms.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-payment-terms',
   templateUrl: './payment-terms.component.html',
-  styleUrls: ['./payment-terms.component.scss']
+  styleUrls: ['./payment-terms.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
-export class PaymentTermsComponent implements OnInit,AfterViewChecked {
- @ViewChild('addForm') addForm!: NgForm;
+export class PaymentTermsComponent implements OnInit, AfterViewChecked, AfterViewInit {
+  @ViewChild('addForm') addForm!: NgForm;
+
   PaymentTermsList: any[] = [];
   PaymentTermsName: string = '';
   description: string = '';
+
   isEditMode = false;
   selectedPaymentTerms: any = null;
   public isDisplay = false;
-  private iconsReplaced = false;
-  userId: string;
-  constructor(private fb: FormBuilder,
-    private PaymentTermsService: PaymentTermsService,) { 
-       this.userId = localStorage.getItem('id');
-    }
+  modeHeader: string = 'Add Payment Terms';
+
+  userId: number = 0;
+
+  // IMPORTANT: DB/Menu permission code exact ah match aaganum
+  functionId = 'paymentTerms';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+
+  constructor(
+    private fb: FormBuilder,
+    private PaymentTermsService: PaymentTermsService,
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   ngOnInit(): void {
-    this.loadPaymentTerms();
+    this.loadPermission();
   }
- ngAfterViewChecked(): void {
-      setTimeout(() => {
-        feather.replace();
-      });
-    }
+
+  ngAfterViewChecked(): void {
+    feather.replace();
+  }
+
   ngAfterViewInit(): void {
     feather.replace();
   }
-  // Load data from API
-  loadPaymentTerms() {
-    debugger
-    this.PaymentTermsService.getAllPaymentTerms().subscribe((res: any) => {
-      this.PaymentTermsList = res.data.filter((item: any) => item.isActive === true);
-      setTimeout(() => feather.replace(), 0);
+
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.loadPaymentTerms();
+        } else {
+          this.PaymentTermsList = [];
+          this.isDisplay = false;
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
-  // Show form for creating
-  createPaymentTerms() {
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
+  loadPaymentTerms(): void {
+    this.PaymentTermsService.getAllPaymentTerms().subscribe({
+      next: (res: any) => {
+        this.PaymentTermsList = (res?.data || []).filter((item: any) => item.isActive === true);
+        setTimeout(() => feather.replace(), 0);
+      },
+      error: (err) => {
+        console.error('Load payment terms error:', err);
+        this.PaymentTermsList = [];
+      }
+    });
+  }
+
+  createPaymentTerms(): void {
+    if (!this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     this.isDisplay = true;
     this.isEditMode = false;
     this.selectedPaymentTerms = null;
+    this.modeHeader = 'Create Payment Terms';
     this.reset();
   }
 
-  // Show form for editing
-  editPaymentTerms(data: any) {
-    this.isDisplay = true;       // show the form
-    this.isEditMode = true;      // enable edit mode
+  editPaymentTerms(data: any): void {
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isDisplay = true;
+    this.isEditMode = true;
     this.selectedPaymentTerms = data;
 
-    // patch the form fields
-    this.PaymentTermsName = data.paymentTermsName;       // bind to input
-    this.description = data.description; // bind to textarea
+    this.PaymentTermsName = data.paymentTermsName || '';
+    this.description = data.description || '';
+    this.modeHeader = 'Edit Payment Terms';
   }
-  cancel() {
 
+  cancel(): void {
     this.isEditMode = false;
     this.isDisplay = false;
+    this.selectedPaymentTerms = null;
   }
 
-  reset() {
+  reset(): void {
     this.PaymentTermsName = '';
     this.description = '';
+    this.modeHeader = this.isEditMode ? 'Edit Payment Terms' : 'Create Payment Terms';
   }
 
-  // Save or update
-  onSubmit(form: any) {
+  onSubmit(form: NgForm): void {
     if (!form.valid) {
       Swal.fire({
         icon: 'warning',
@@ -86,58 +198,109 @@ export class PaymentTermsComponent implements OnInit,AfterViewChecked {
       return;
     }
 
+    if (this.isEditMode && !this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (!this.isEditMode && !this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     const payload = {
       PaymentTermsName: this.PaymentTermsName,
       description: this.description,
       CreatedBy: this.userId,
       UpdatedBy: this.userId,
+      CreatedDate: new Date(),
       UpdatedDate: new Date(),
-      isActive : true,
-      companyId : localStorage.getItem('companyId')
+      isActive: true,
+      companyId: Number(localStorage.getItem('companyId') || 0)
     };
 
     if (this.isEditMode) {
-      const updatedPaymentTerms = { ...this.selectedPaymentTerms, ...payload };
-      this.PaymentTermsService.updatePaymentTerms(this.selectedPaymentTerms.id, updatedPaymentTerms).subscribe({
-        next: () => {
-          Swal.fire({
-            icon: 'success',
-            title: 'Updated!',
-            text: 'PaymentTerms updated successfully',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#0e3a4c'
-          });
-          this.loadPaymentTerms();
-          this.cancel();
-        },
-        error: () => {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to update PaymentTerms',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#d33'
-          });
-        }
-      });
+      const updatedPaymentTerms = {
+        ...this.selectedPaymentTerms,
+        ...payload
+      };
+
+      this.PaymentTermsService
+        .updatePaymentTerms(this.selectedPaymentTerms.id, updatedPaymentTerms)
+        .subscribe({
+          next: (res: any) => {
+            if (res?.isSuccess === false) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: res?.message || 'Failed to update Payment Terms',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#d33'
+              });
+              return;
+            }
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Updated!',
+              text: res?.message || 'Payment Terms updated successfully',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#0e3a4c'
+            });
+
+            this.loadPaymentTerms();
+            this.cancel();
+          },
+          error: (err) => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: err?.error?.message || err?.message || 'Failed to update Payment Terms',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#d33'
+            });
+          }
+        });
     } else {
       this.PaymentTermsService.createPaymentTerms(payload).subscribe({
-        next: () => {
+        next: (res: any) => {
+          if (res?.isSuccess === false) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: res?.message || 'Failed to create Payment Terms',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#d33'
+            });
+            return;
+          }
+
           Swal.fire({
             icon: 'success',
             title: 'Created!',
-            text: 'PaymentTerms created successfully',
+            text: res?.message || 'Payment Terms created successfully',
             confirmButtonText: 'OK',
             confirmButtonColor: '#0e3a4c'
           });
+
           this.loadPaymentTerms();
           this.cancel();
         },
-        error: () => {
+        error: (err) => {
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Failed to create PaymentTerms',
+            text: err?.error?.message || err?.message || 'Failed to create Payment Terms',
             confirmButtonText: 'OK',
             confirmButtonColor: '#d33'
           });
@@ -145,8 +308,18 @@ export class PaymentTermsComponent implements OnInit,AfterViewChecked {
       });
     }
   }
-  // Delete
-  confirmdeletePaymentTerms(data: any) {
+
+  confirmdeletePaymentTerms(data: any): void {
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     Swal.fire({
       title: 'Confirm Delete',
       text: 'Are you sure you want to delete this item?',
@@ -159,32 +332,27 @@ export class PaymentTermsComponent implements OnInit,AfterViewChecked {
     }).then((result) => {
       if (result.isConfirmed) {
         this.deletePaymentTerms(data);
-        Swal.fire({
-          icon: 'success',
-          title: 'Deleted!',
-          text: 'Item has been deleted.',
-          confirmButtonColor: '#3085d6'
-        });
       }
     });
   }
-  // Delete
-  deletePaymentTerms(item: any) {
+
+  deletePaymentTerms(item: any): void {
     this.PaymentTermsService.deletePaymentTerms(item.id).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         Swal.fire({
           icon: 'success',
           title: 'Deleted!',
-          text: 'PaymentTerms deleted successfully',
+          text: res?.message || 'Payment Terms deleted successfully',
           confirmButtonColor: '#3085d6'
         });
-        this.ngOnInit();
+
+        this.loadPaymentTerms();
       },
       error: (err) => {
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Failed to delete PaymentTerms',
+          text: err?.error?.message || err?.message || 'Failed to delete Payment Terms',
           confirmButtonColor: '#d33'
         });
       }

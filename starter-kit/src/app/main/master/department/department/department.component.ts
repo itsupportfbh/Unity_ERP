@@ -1,21 +1,29 @@
-import { Component, OnInit, ViewChild, AfterViewInit, AfterViewChecked } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  AfterViewInit,
+  AfterViewChecked,
+  ViewEncapsulation
+} from '@angular/core';
 import { NgForm } from '@angular/forms';
 import * as feather from 'feather-icons';
 import Swal from 'sweetalert2';
 import { DepartmentService } from '../department.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 type OriginContext = 'standalone' | 'fromPR';
 
 @Component({
   selector: 'app-department',
   templateUrl: './department.component.html',
-  styleUrls: ['./department.component.scss']
+  styleUrls: ['./department.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class DepartmentComponent implements OnInit, AfterViewInit, AfterViewChecked {
-  @ViewChild('addForm') departmentForm!: NgForm;
+  @ViewChild('departmentForm') departmentForm!: NgForm;
 
-  // --- form fields / state
   public id = 0;
   departmentCode: string = '';
   departmentName: string = '';
@@ -27,48 +35,137 @@ export class DepartmentComponent implements OnInit, AfterViewInit, AfterViewChec
   departmentValue: any;
   isEditMode: boolean = false;
 
-  // --- origin & return handling
   private origin: OriginContext = 'standalone';
   private returnUrl: string | null = null;
-  get isFromPR() { return this.origin === 'fromPR'; }
+  get isFromPR() {
+    return this.origin === 'fromPR';
+  }
+
+  userId: number = 0;
+
+  // IMPORTANT: DB/Menu permission code exact ah match aaganum
+  functionId = 'department';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
 
   constructor(
     private _departmentService: DepartmentService,
     private route: ActivatedRoute,
-    private router: Router
-  ) {}
+    private router: Router,
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
-  // -------------------- Lifecycle --------------------
   ngOnInit(): void {
-    this.getAllDepartment();
-
     const st = (window.history.state || {}) as any;
     const qpFrom = this.route.snapshot.queryParamMap.get('from');
 
-    // Mark origin
-    this.origin = (st?.from === 'pr' || st?.openCreate === true || qpFrom === 'pr')
-      ? 'fromPR'
-      : 'standalone';
+    this.origin =
+      st?.from === 'pr' || st?.openCreate === true || qpFrom === 'pr'
+        ? 'fromPR'
+        : 'standalone';
 
-    // If PR asked to open create directly
-    if (st?.openCreate === true) this.createDepartment();
-
-    // Only use what PR passes; no default fallback to PR route
     this.returnUrl = st?.returnUrl || null;
+
+    this.loadPermission(st);
   }
 
-  ngAfterViewInit(): void { feather.replace(); }
-  ngAfterViewChecked(): void { feather.replace(); }
+  ngAfterViewInit(): void {
+    feather.replace();
+  }
 
-  // -------------------- UI actions --------------------
-  createDepartment() {
+  ngAfterViewChecked(): void {
+    feather.replace();
+  }
+
+  loadPermission(st?: any): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.getAllDepartment();
+
+          if (st?.openCreate === true) {
+            this.createDepartment();
+          }
+        } else {
+          this.rows = [];
+          this.isDisplay = false;
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
+  createDepartment(): void {
+    if (!this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     this.isDisplay = true;
     this.modeHeader = 'Add Department';
     this.reset();
   }
 
-  reset() {
-    this.modeHeader = 'Create Department';
+  reset(): void {
+    this.modeHeader = this.isEditMode ? 'Edit Department' : 'Create Department';
     this.departmentName = '';
     this.departmentCode = '';
     this.id = 0;
@@ -76,8 +173,7 @@ export class DepartmentComponent implements OnInit, AfterViewInit, AfterViewChec
     this.isEditMode = false;
   }
 
-  // Cancel with PR awareness + unsaved changes guard
-  cancel() {
+  cancel(): void {
     const hasChanges =
       !!this.id ||
       !!(this.departmentName && this.departmentName.trim()) ||
@@ -88,7 +184,6 @@ export class DepartmentComponent implements OnInit, AfterViewInit, AfterViewChec
       if (this.isFromPR) {
         this.cancelAndReturnToPR();
       } else {
-        // Standalone: just close the panel and refresh list
         this.getAllDepartment();
         this.isDisplay = false;
         this.isEditMode = false;
@@ -112,32 +207,32 @@ export class DepartmentComponent implements OnInit, AfterViewInit, AfterViewChec
         },
         allowOutsideClick: false
       }).then(res => {
-        if (res.isConfirmed) doCancel();
+        if (res.isConfirmed) {
+          doCancel();
+        }
       });
     } else {
       doCancel();
     }
   }
 
-  // -------------------- Helpers --------------------
-  private cancelAndReturnToPR() {
+  private cancelAndReturnToPR(): void {
     if (!this.returnUrl) {
-      // If PR didn't pass returnUrl, fail-safe: stay on list
       this.getAllDepartment();
       this.isDisplay = false;
       this.isEditMode = false;
       this.resetButton = true;
       return;
     }
+
     this.router.navigate([this.returnUrl], {
       state: { from: 'department', cancelled: true },
       replaceUrl: true
     });
   }
 
-  private afterSave(newDeptId?: number) {
+  private afterSave(newDeptId?: number): void {
     if (this.isFromPR && this.returnUrl) {
-      // Return to PR, pass selection via navigation state
       this.router.navigate([this.returnUrl], {
         state: {
           deptId: newDeptId ?? this.id ?? null,
@@ -147,7 +242,6 @@ export class DepartmentComponent implements OnInit, AfterViewInit, AfterViewChec
         replaceUrl: true
       });
     } else {
-      // Standalone OR PR forgot returnUrl → stay here and show list
       this.getAllDepartment();
       this.isDisplay = false;
       this.isEditMode = false;
@@ -155,35 +249,59 @@ export class DepartmentComponent implements OnInit, AfterViewInit, AfterViewChec
     }
   }
 
-  // -------------------- Data --------------------
-  getAllDepartment() {
-    this._departmentService.getDepartment().subscribe((response: any) => {
-      this.rows = response?.data || [];
+  getAllDepartment(): void {
+    this._departmentService.getDepartment().subscribe({
+      next: (response: any) => {
+        this.rows = response?.data || [];
+      },
+      error: (err) => {
+        console.error('Load department error:', err);
+        this.rows = [];
+      }
     });
   }
 
-  getDepartmentDetails(id: any) {
-    this._departmentService.getDepartmentById(id).subscribe((arg: any) => {
-      this.departmentValue = arg?.data;
-      this.id = this.departmentValue?.id ?? 0;
-      this.departmentName = this.departmentValue?.departmentName ?? '';
-      this.departmentCode = this.departmentValue?.departmentCode ?? '';
-      this.isDisplay = true;
-      this.resetButton = false;
-      this.modeHeader = 'Edit Department';
-      this.isEditMode = true;
+  getDepartmentDetails(id: any): void {
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this._departmentService.getDepartmentById(id).subscribe({
+      next: (arg: any) => {
+        this.departmentValue = arg?.data;
+        this.id = this.departmentValue?.id ?? 0;
+        this.departmentName = this.departmentValue?.departmentName ?? '';
+        this.departmentCode = this.departmentValue?.departmentCode ?? '';
+        this.isDisplay = true;
+        this.resetButton = false;
+        this.modeHeader = 'Edit Department';
+        this.isEditMode = true;
+      },
+      error: (err) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load department details',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
-  // -------------------- Create / Update --------------------
-  saveDepartment() {
+  saveDepartment(): void {
     const payload = {
       id: this.id,
       departmentName: (this.departmentName || '').trim(),
       departmentCode: (this.departmentCode || '').trim(),
-      createdBy: Number(localStorage.getItem('id') || 0),
+      createdBy: this.userId,
       createdDate: new Date(),
-      updatedBy: Number(localStorage.getItem('id') || 0),
+      updatedBy: this.userId,
       updatedDate: new Date(),
       isActive: true
     };
@@ -198,46 +316,87 @@ export class DepartmentComponent implements OnInit, AfterViewInit, AfterViewChec
       return;
     }
 
+    if (this.id > 0 && !this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (this.id === 0 && !this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     if (this.id === 0) {
-      // Create
       this._departmentService.insertDepartment(payload).subscribe({
         next: (res: any) => {
+          if (res?.isSuccess === false) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: res?.message || 'Failed to create Department',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#d33'
+            });
+            return;
+          }
+
           const newId = res?.data?.id ?? 0;
+
           Swal.fire({
             icon: 'success',
             title: 'Created!',
-            text: 'Department created successfully',
+            text: res?.message || 'Department created successfully',
             confirmButtonText: 'OK',
             confirmButtonColor: '#0e3a4c'
           }).then(() => this.afterSave(newId));
         },
-        error: () => {
+        error: (err) => {
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Failed to create Department',
+            text: err?.error?.message || err?.message || 'Failed to create Department',
             confirmButtonText: 'OK',
             confirmButtonColor: '#d33'
           });
         }
       });
     } else {
-      // Update
       this._departmentService.updateDepartment(payload).subscribe({
-        next: () => {
+        next: (res: any) => {
+          if (res?.isSuccess === false) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: res?.message || 'Failed to update Department',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#d33'
+            });
+            return;
+          }
+
           Swal.fire({
             icon: 'success',
             title: 'Updated!',
-            text: 'Department updated successfully',
+            text: res?.message || 'Department updated successfully',
             confirmButtonText: 'OK',
             confirmButtonColor: '#0e3a4c'
           }).then(() => this.afterSave(this.id));
         },
-        error: () => {
+        error: (err) => {
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Failed to update Department',
+            text: err?.error?.message || err?.message || 'Failed to update Department',
             confirmButtonText: 'OK',
             confirmButtonColor: '#d33'
           });
@@ -246,41 +405,70 @@ export class DepartmentComponent implements OnInit, AfterViewInit, AfterViewChec
     }
   }
 
-  // -------------------- Delete --------------------
-  deleteDepartment(id: any) {
-    const _self = this;
+  deleteDepartment(id: any, isUsed?: any): void {
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (isUsed) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cannot Delete',
+        text: 'This department is already used.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     Swal.fire({
       title: 'Are you sure?',
-      text: "You won't be able to revert this!",
+      text: 'You will not be able to revert this!',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#7367F0',
-      cancelButtonColor: '#E42728',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
       confirmButtonText: 'Yes, Delete it!',
-      customClass: {
-        confirmButton: 'btn btn-primary',
-        cancelButton: 'btn btn-danger ml-1'
-      },
+      cancelButtonText: 'Cancel',
       allowOutsideClick: false
-    }).then(function (result) {
-      if (result.value) {
-        _self._departmentService.deleteDepartment(id).subscribe((response: any) => {
-          if (response?.isSuccess) {
-            Swal.fire({
-              icon: 'success',
-              title: 'Deleted!',
-              text: response?.message,
-              allowOutsideClick: false
-            });
-          } else {
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this._departmentService.deleteDepartment(id).subscribe({
+          next: (response: any) => {
+            if (response?.isSuccess) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Deleted!',
+                text: response?.message || 'Department deleted successfully',
+                allowOutsideClick: false,
+                confirmButtonColor: '#3085d6'
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: response?.message || 'Failed to delete department',
+                allowOutsideClick: false,
+                confirmButtonColor: '#d33'
+              });
+            }
+
+            this.getAllDepartment();
+          },
+          error: (err) => {
             Swal.fire({
               icon: 'error',
               title: 'Error!',
-              text: response?.message,
-              allowOutsideClick: false
+              text: err?.error?.message || err?.message || 'Failed to delete department',
+              allowOutsideClick: false,
+              confirmButtonColor: '#d33'
             });
           }
-          _self.getAllDepartment();
         });
       }
     });

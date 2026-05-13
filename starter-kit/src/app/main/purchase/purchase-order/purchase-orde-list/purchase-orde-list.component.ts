@@ -130,6 +130,10 @@ emailSending = false;
 poPermission: FunctionPermission | null = null;
 canApprovePo = false;
 canRejectPo = false;
+canCreatePO= false;
+canEditPO = false;
+canDeletePO = false;
+
 
 showPoApprovalModal = false;
 pendingPoList: any[] = [];
@@ -202,6 +206,10 @@ poApprovalSearch = '';
       this.poPermission = permission;
       this.canApprovePo = this.permissionService.hasApprove(permission);
       this.canRejectPo = this.permissionService.hasReject(permission);
+        this.canCreatePO=this.permissionService.hasCreate(permission);
+        this.canEditPO = this.permissionService.hasCreate(permission);
+          this.canDeletePO = this.permissionService.hasCreate(permission);
+      
     },
     error: () => {
       this.poPermission = this.permissionService.getEmptyPermission('pr-list');
@@ -210,6 +218,7 @@ poApprovalSearch = '';
     }
   });
 }
+
 
 get pendingPoApprovalCount(): number {
   return (this.tempData || []).filter((x: any) => Number(x.approvalStatus) === 1).length;
@@ -731,30 +740,76 @@ copyQrLink(): void {
     this.showPendingPrModal = false;
   }
 
-  loadPendingPrAlerts() {
-    // PR status: Pending = 1 :contentReference[oaicite:2]{index=2}
-    this.purchaseService.getAll().subscribe({
-      next: (res: any) => {
-        const list = res?.data ?? [];
-        this.pendingPrList = list.filter((x: any) => +x.status === 1);
-        this.pendingPrCount = this.pendingPrList.length;
-        setTimeout(() => feather.replace());
-      },
-      error: () => {
-        this.pendingPrList = [];
-        this.pendingPrCount = 0;
-      }
-    });
-  }
-
-  loadPendingPrCount() {
-  this.purchaseService.getAll().subscribe({
+loadPendingPrAlerts() {
+  forkJoin({
+    prs: this.purchaseService.getAll(),
+    pos: this.poService.getPO()
+  }).subscribe({
     next: (res: any) => {
-      const list = res?.data ?? [];
-      // Pending status = 1
-      this.pendingPrList = list.filter((x: any) => +x.status === 1);
-      this.pendingPrCount = this.pendingPrList.length;
+      const prs = res?.prs?.data ?? [];
+      const pos = res?.pos?.data ?? [];
 
+      this.pendingPrList = prs.filter((x: any) =>
+        +x.status === 1 &&
+        !this.isPrAlreadyUsedInPo(x, pos)
+      );
+
+      this.pendingPrCount = this.pendingPrList.length;
+      setTimeout(() => feather.replace());
+    },
+    error: () => {
+      this.pendingPrList = [];
+      this.pendingPrCount = 0;
+    }
+  });
+}
+
+
+  private isPrAlreadyUsedInPo(pr: any, pos: any[]): boolean {
+  const prId = Number(pr?.id ?? pr?.ID ?? 0);
+  const prNo = (pr?.purchaseRequestNo ?? pr?.PurchaseRequestNo ?? '').toString().trim();
+
+  return (pos || []).some((po: any) => {
+    // Best check: PO created from PR
+    const sourceType = (po?.sourceType ?? po?.SourceType ?? '').toString().toUpperCase();
+    const sourceRefId = Number(po?.sourceRefId ?? po?.SourceRefId ?? 0);
+
+    if (sourceType === 'PR' && sourceRefId === prId) {
+      return true;
+    }
+
+    // Fallback check: PR No inside PO lines
+    let lines: any[] = [];
+    try {
+      lines = Array.isArray(po?.poLines)
+        ? po.poLines
+        : JSON.parse(po?.poLines || '[]');
+    } catch {
+      lines = [];
+    }
+
+    return lines.some((ln: any) => {
+      const linePrNo = (ln?.prNo ?? ln?.PRNo ?? ln?.purchaseRequestNo ?? '').toString().trim();
+      return prNo && linePrNo === prNo;
+    });
+  });
+}
+
+ loadPendingPrCount() {
+  forkJoin({
+    prs: this.purchaseService.getAll(),
+    pos: this.poService.getPO()
+  }).subscribe({
+    next: (res: any) => {
+      const prs = res?.prs?.data ?? [];
+      const pos = res?.pos?.data ?? [];
+
+      this.pendingPrList = prs.filter((x: any) =>
+        +x.status === 1 &&
+        !this.isPrAlreadyUsedInPo(x, pos)
+      );
+
+      this.pendingPrCount = this.pendingPrList.length;
       setTimeout(() => feather.replace());
     },
     error: () => {

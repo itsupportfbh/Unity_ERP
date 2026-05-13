@@ -4,53 +4,73 @@ import { environment } from 'environments/environment';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { POApiUrls } from 'Urls/POApiurls';
 
-
-
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root'
 })
 export class POService {
-    private url = environment.apiUrl
-    private requestSource = new BehaviorSubject<any>(null);
-    currentRequest = this.requestSource.asObservable();
-    constructor(private http: HttpClient) { }
+  private url = environment.apiUrl;
 
-    getPO(): Observable<any[]> {
-        return this.http.get<any[]>(this.url + POApiUrls.GetAllPO);
-    }
+  private requestSource = new BehaviorSubject<any>(null);
+  currentRequest = this.requestSource.asObservable();
 
-    
-     getPODetailswithGRN(): Observable<any[]> {
-        return this.http.get<any[]>(this.url + POApiUrls.GetAllPODetailsWithGRN);
-    }
+  constructor(private http: HttpClient) {}
 
-    getPOById(id: any): Observable<any[]> {
-        return this.http.get<any[]>(this.url + POApiUrls.GetPOById + id);
-    }
+  getPO(): Observable<any> {
+    return this.http.get<any>(this.url + POApiUrls.GetAllPO);
+  }
 
-    insertPO(data: any): Observable<any> {
-        return this.http.post<any>(this.url + POApiUrls.CreatePO, data);
-    }
+  getPODetailswithGRN(): Observable<any> {
+    return this.http.get<any>(this.url + POApiUrls.GetAllPODetailsWithGRN);
+  }
 
-    updatePO(data: any): Observable<any> {
-        return this.http.put<any>(this.url + POApiUrls.UpdatePO, data);
-    }
+  getPOById(id: any): Observable<any> {
+    return this.http.get<any>(this.url + POApiUrls.GetPOById + id);
+  }
 
-    deletePO(id: any) {
-        return this.http.delete<any>(this.url + POApiUrls.DeletePO + id);
-    }
-    getPoQr(poNo: string) {
-        return this.http.get<any>(this.url+ `/PurchaseOrder/${encodeURIComponent(poNo)}/qr`);
-    }
+  insertPO(data: any): Observable<any> {
+    const payload = this.cleanPOPayload(data);
+    return this.http.post<any>(this.url + POApiUrls.CreatePO, payload);
+  }
 
-    emailSupplierPo(id: number, formData: FormData) {
-        return this.http.post(`${this.url}/purchaseorder/${id}/email-supplier`, formData);
-    }
+  updatePO(data: any): Observable<any> {
+    const payload = this.cleanPOPayload(data);
+    return this.http.put<any>(this.url + POApiUrls.UpdatePO, payload);
+  }
 
- updatePOApprovalStatus(id: number, status: number): Observable<any> {
-  return this.http.put<any>(
-    this.url + `/PurchaseOrder/UpdateApprovalStatus/${id}`,
-    { approvalStatus: status }
-  );
-}
+  deletePO(id: any): Observable<any> {
+    return this.http.delete<any>(this.url + POApiUrls.DeletePO + id);
+  }
+
+  getPoQr(poNo: string): Observable<any> {
+    return this.http.get<any>(
+      this.url + `/PurchaseOrder/${encodeURIComponent(poNo)}/qr`
+    );
+  }
+
+  emailSupplierPo(id: number, formData: FormData): Observable<any> {
+    return this.http.post<any>(
+      `${this.url}/PurchaseOrder/${id}/email-supplier`,
+      formData
+    );
+  }
+
+  updatePOApprovalStatus(id: number, status: number): Observable<any> {
+    return this.http.put<any>(
+      this.url + `/PurchaseOrder/UpdateApprovalStatus/${id}`,
+      {
+        approvalStatus: status
+      }
+    );
+  }
+
+  private cleanPOPayload(data: any): any {
+    const payload = { ...(data || {}) };
+
+    delete payload.approveLevelId;
+    delete payload.ApproveLevelId;
+    delete payload.approveLevelName;
+    delete payload.ApproveLevelName;
+
+    return payload;
+  }
 }

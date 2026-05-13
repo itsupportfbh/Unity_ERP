@@ -55,6 +55,7 @@
               </button> -->
 <button
                    (click)="openCreate()"
+                     *ngIf="canCreatePO"
                   class="btn mr-1 d-inline-flex align-items-center"
                   style="background-color:#2E5F73;color:white;gap:6px;"
                   [disabled]="isPeriodLocked"
@@ -72,6 +73,7 @@
                 class="btn d-inline-flex align-items-center justify-content-center flex-shrink-0 position-relative"
                 style="border:1px solid #2E5F73; color:#2E5F73; background:white; width:44px; height:38px; padding:0;"
                 title="PR Pending Alerts"
+                  *ngIf="canCreatePO"
                 (click)="openPendingPrAlerts()">
 
                 <i data-feather="bell" class="w-4 h-4"></i>
@@ -160,6 +162,7 @@
                             <td style="padding:10px 12px;text-align:center;">
                               <button
                                 class="btn btn-sm btn-primary"
+                                 *ngIf="canCreatePO"
                                 style="background:#2E5F73;border:0;"
                                 (click)="createPoFromPr(pr)">
                                 Create PO
@@ -190,6 +193,7 @@
                             <!-- Reorder (ICON ONLY) -->
                 <button
                   (click)="openReorderDetails()"
+                    *ngIf="canCreatePO"
                   class="btn d-inline-flex align-items-center justify-content-center position-relative flex-shrink-0"
                   style="border:1px solid #2E5F73; color:#2E5F73; background:white; width:44px; height:38px; padding:0;"
                   title="Reorder">
@@ -207,6 +211,7 @@
                 <div class="position-relative d-inline-block flex-shrink-0">
                   <button
                     (click)="openDraftsModal()"
+                      *ngIf="canCreatePO"
                     class="btn d-inline-flex align-items-center justify-content-center"
                     style="border:1px solid #2E5F73; color:#2E5F73; background:white; width:44px; height:38px; padding:0;"
                     title="Drafts">
@@ -322,6 +327,7 @@
               <button class="icon-btn"
                       type="button"
                       [disabled]="row.approvalStatus !== 2"
+                        *ngIf="canEditPO"
                       (click)="openEmailConfirm(row)"
                       title="Email">
                 <i class="fas fa-envelope"></i>
@@ -348,6 +354,7 @@
               <button class="icon-btn danger"
                       type="button"
                       [disabled]="isRowLocked(row)"
+                        *ngIf="canDeletePO"
                       (click)="deletePO(row.id)"
                       title="Delete">
                 <i class="fas fa-trash"></i>

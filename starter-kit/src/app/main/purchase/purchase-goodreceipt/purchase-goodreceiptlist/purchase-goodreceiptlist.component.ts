@@ -16,6 +16,7 @@ import { WarehouseService } from 'app/main/master/warehouse/warehouse.service';
 import { StockAdjustmentService } from 'app/main/inventory/stock-adjustment/stock-adjustment.service';
 import { StrategyService } from 'app/main/master/strategies/strategy.service';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 interface GrnRow {
   id: number;
@@ -67,7 +68,13 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
   public ColumnMode = ColumnMode;
   public selectedOption = 10;
   public searchValue = '';
+  userId: number;
 
+    functionId = 'grn-list';
+  
+    permission: FunctionPermission;
+      isPermissionLoaded = false;
+      isPageLoading = false;
   rows: GrnRow[] = [];
   allRows: GrnRow[] = [];
 
@@ -81,6 +88,7 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
   // ✅ NEW: modal search
   modalSearch = '';
 
+  
   modalHeader: {
     grnNo?: string;
     pono?: string;
@@ -105,14 +113,18 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
     private warehouseService: WarehouseService,
     private stockService: StockAdjustmentService,
     private strategyService: StrategyService,
-    private periodLock: PeriodCloseService
-  ) {}
+    private periodLock: PeriodCloseService,
+      private permissionService : PermissionService
+  ) {
+     this.userId = Number(localStorage.getItem('id') || 0);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   // ---------- lifecycle ----------
   ngOnInit(): void {
     this.loadWarehouses();
     this.loadStrategies();
-    this.loadGrns();
+    this.loadPermission();
     this.checkPeriodLockForToday();
   }
 
@@ -141,6 +153,67 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
   }
 
   // ---------- data load ----------
+  
+    loadPermission(): void {
+            if (!this.userId || this.userId <= 0) {
+              this.permission = this.permissionService.getEmptyPermission(this.functionId);
+              this.isPermissionLoaded = true;
+        
+              Swal.fire({
+                icon: 'warning',
+                title: 'Access Denied',
+                text: 'User not found. Please login again.',
+                confirmButtonColor: '#0e3a4c'
+              });
+              return;
+            }
+        
+            this.isPageLoading = true;
+        
+            this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+              next: (res: FunctionPermission) => {
+                this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+                this.isPermissionLoaded = true;
+                this.isPageLoading = false;
+        
+                if (this.canView()) {
+                  this.loadGrns();
+                } else {
+                  this.rows = [];
+                  // this.isDisplay = false;
+                }
+              },
+              error: (err) => {
+                console.error('Permission load error:', err);
+                this.permission = this.permissionService.getEmptyPermission(this.functionId);
+                this.isPermissionLoaded = true;
+                this.isPageLoading = false;
+        
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error',
+                  text: 'Unable to load permission.',
+                  confirmButtonColor: '#d33'
+                });
+              }
+            });
+          }
+        
+          canView(): boolean {
+            return this.permissionService.hasView(this.permission);
+          }
+        
+          canCreate(): boolean {
+            return this.permissionService.hasCreate(this.permission);
+          }
+        
+          canEdit(): boolean {
+            return this.permissionService.hasEdit(this.permission);
+          }
+        
+          canDelete(): boolean {
+            return this.permissionService.hasDelete(this.permission);
+          }
   private loadGrns(): void {
     this.grnService.getAllDetails().subscribe({
       next: (res: any) => {

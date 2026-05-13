@@ -201,7 +201,7 @@ poApprovalSearch = '';
   loadPoPermission(): void {
   const userId = Number(localStorage.getItem('id') || 0);
 
-  this.permissionService.getFunctionPermission(userId, 'pr-list').subscribe({
+  this.permissionService.getFunctionPermission(userId, 'po-list').subscribe({
     next: (permission) => {
       this.poPermission = permission;
       this.canApprovePo = this.permissionService.hasApprove(permission);

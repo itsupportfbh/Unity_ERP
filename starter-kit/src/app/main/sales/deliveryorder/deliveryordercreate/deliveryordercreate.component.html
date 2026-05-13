@@ -1,3 +1,5 @@
+<div *ngIf="isPermissionLoaded; else loadingTemplate">
+  <div *ngIf="canView(); else noAccessTemplate">
 <div class="do-ui-page">
 
   <!-- top toolbar -->
@@ -46,13 +48,13 @@
           Clear
         </button>
 
-        <button type="button"
-                class="btn do-ui-btn-primary"
-                (click)="saveDo()"
-                [disabled]="!canSaveHeader() || (isEdit && isPosted)">
-          <i class="fas fa-save me-1"></i>
-          {{ isEdit ? 'Update Header' : 'Save DO' }}
-        </button>
+       <button type="button"
+        class="btn do-ui-btn-primary"
+        (click)="saveDo()"
+        [disabled]="!canSaveWithPermission()">
+  <i class="fas fa-save me-1"></i>
+  {{ isEdit ? 'Update Header' : 'Save DO' }}
+</button>
       </div>
     </div>
 
@@ -70,18 +72,18 @@
         <div class="row g-3">
           <div class="col-lg-4 col-md-6">
             <label class="form-label do-ui-label">Sales Order</label>
-            <ng-select
-              class="custom-ng-select do-ui-ng-select"
-              [items]="soList"
-              bindLabel="salesOrderNo"
-              bindValue="id"
-              [(ngModel)]="selectedSoId"
-              name="soId"
-              [searchable]="true"
-              [clearable]="true"
-              placeholder="Select Sales Order"
-              [disabled]="isEdit"
-              (change)="onSoChanged(selectedSoId)">
+           <ng-select
+  class="custom-ng-select do-ui-ng-select"
+  [items]="soList"
+  bindLabel="salesOrderNo"
+  bindValue="id"
+  [(ngModel)]="selectedSoId"
+  name="soId"
+  [searchable]="true"
+  [clearable]="true"
+  placeholder="Select Sales Order"
+  [disabled]="isEdit"
+  (change)="onSoChanged($event)">
 
               <ng-template ng-option-tmp let-item="item">
                 {{ item?.salesOrderNo }} — {{ item?.isCashSales === true || item?.customerId === 0 ? 'Cash Sales' : (item?.customerName || 'Cash Sales') }}
@@ -298,11 +300,12 @@
                   <td class="text-end">{{ l.qty | number:'1.0-2' }}</td>
                   <td>{{ l.notes || '-' }}</td>
                   <td>
-                    <button class="btn btn-outline-danger btn-sm"
-                            (click)="removeEditLine(l.id)"
-                            [disabled]="isPosted">
-                      Remove
-                    </button>
+                   <button *ngIf="canDelete()"
+        class="btn btn-outline-danger btn-sm"
+        (click)="removeEditLine(l.id)"
+        [disabled]="isPosted">
+  Remove
+</button>
                   </td>
                 </tr>
               </tbody>
@@ -343,11 +346,11 @@
               <span>Deliver More: <b>{{ totalDeliverMore | number:'1.0-2' }}</b></span>
             </div>
 
-            <button class="btn do-ui-btn-outline"
-                    (click)="addSelectedRedeliveries()"
-                    [disabled]="totalDeliverMore <= 0 || isPosted">
-              Add to DO
-            </button>
+          <button class="btn do-ui-btn-outline"
+        (click)="addSelectedRedeliveries()"
+        [disabled]="totalDeliverMore <= 0 || isPosted || !canEdit()">
+  Add to DO
+</button>
           </div>
         </div>
 
@@ -458,7 +461,8 @@
     </div>
   </div>
 </div>
-
+</div>
+</div>
 <!-- signature modal -->
 <div class="do-ui-modal-backdrop" *ngIf="showSignatureModal" (click)="closeSignatureModal()"></div>
 
@@ -500,3 +504,22 @@
     </div>
   </div>
 </div>
+<ng-template #loadingTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

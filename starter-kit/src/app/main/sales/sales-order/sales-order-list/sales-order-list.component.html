@@ -1,172 +1,181 @@
-<!-- app/main/sales/sales-order/list/sales-order-list.component.html -->
-<div class="content-wrapper p-0">
-  <div class="content-body">
-    <section class="users-list-wrapper">
-      <div class="card">
+<div *ngIf="isPermissionLoaded; else loadingTemplate">
+  <div class="content-wrapper p-0" *ngIf="canView(); else noAccessTemplate">
+    <div class="content-body">
+      <section class="users-list-wrapper">
+        <div class="card">
 
-        <!-- Title -->
-        <h4 class="card-text heading">Sales Order List</h4>
+          <h4 class="card-text heading">Sales Order List</h4>
 
-        <!-- Controls row -->
-        <div class="so-controls">
-          <div class="entries">
-            <label class="d-flex align-items-center gap-2">Show
-              <select class="form-control mx-25" [(ngModel)]="selectedOption">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-              entries
-            </label>
+          <div class="so-controls">
+            <div class="entries">
+              <label class="d-flex align-items-center gap-2">
+                Show
+                <select class="form-control mx-25" [(ngModel)]="selectedOption">
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="25">25</option>
+                  <option [ngValue]="50">50</option>
+                  <option [ngValue]="100">100</option>
+                </select>
+                entries
+              </label>
+            </div>
+
+            <div class="search-wrap">
+              <input
+                [(ngModel)]="searchValue"
+                name="searchValue"
+                type="search"
+                class="form-control so-search"
+                placeholder="Search SO no / customer / status / date"
+                (keyup)="filterUpdate($event)"
+                (search)="filterUpdate($event)" />
+            </div>
+
+            <div class="actions">
+              <button
+                *ngIf="canCreate()"
+                (click)="openCreate()"
+                class="btn m-1 d-inline-flex align-items-center"
+                style="background-color:#2E5F73;color:white;gap:6px;"
+                [disabled]="isPeriodLocked"
+                [attr.title]="isPeriodLocked
+                  ? (currentPeriodName
+                      ? 'Period ' + currentPeriodName + ' is locked'
+                      : 'Accounting period is locked')
+                  : 'Create Sales Order'">
+
+                <i data-feather="plus-circle" class="w-4 h-4"></i>
+                <span>Add</span>
+              </button>
+            </div>
           </div>
 
-          <div class="search-wrap">
-            <input [(ngModel)]="searchValue" name="searchValue" type="search" class="form-control so-search"
-              placeholder="Search SO no / customer / status / date" (keyup)="filterUpdate($event)"
-              (search)="filterUpdate($event)" />
-          </div>
+          <ngx-datatable
+            class="bootstrap core-bootstrap so-table"
+            [rows]="rows"
+            [rowHeight]="50"
+            [headerHeight]="50"
+            [footerHeight]="50"
+            [limit]="selectedOption"
+            [columnMode]="'force'"
+            [scrollbarH]="true"
+            [reorderable]="true">
 
-          <div class="actions">
-            <button (click)="openDrafts()" class="btn btn-drafts">
-              <i class="fas fa-file-alt me-1"></i>
-              <span>Drafts</span>
-              <span *ngIf="draftCount > 0" class="notif-count">{{ draftCount }}</span>
-            </button>
+            <ngx-datatable-column
+              [width]="50"
+              [resizeable]="false"
+              [sortable]="false"
+              [draggable]="false"
+              [canAutoResize]="false">
 
-            <button (click)="openCreate()" class="btn m-1 d-inline-flex align-items-center"
-              style="background-color:#2E5F73;color:white;gap:6px;" [disabled]="isPeriodLocked" [attr.title]="isPeriodLocked
-                ? (currentPeriodName
-                    ? 'Period ' + currentPeriodName + ' is locked'
-                    : 'Accounting period is locked')
-                : 'Create Sales Order'">
-              <i data-feather="plus-circle" class="w-4 h-4"></i>
-              <span>Add</span>
-            </button>
-          </div>
+              <ng-template ngx-datatable-cell-template let-row="row">
+                <span
+                  (click)="openLinesModal(row)"
+                  title="View Details"
+                  style="cursor:pointer; font-size:18px; color:#2E5F73;">
+
+                  <i class="fas fa-eye"></i>
+                </span>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="SO Number" prop="salesOrderNo" [width]="140"></ngx-datatable-column>
+
+            <ngx-datatable-column name="Customer Name" prop="customerName" [width]="210">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div
+                  class="po-wrap-cell"
+                  [title]="row.isCashSales || row.customerId === 0 || row.customerId == null ? 'Cash Sales' : (row.customerName || '-')">
+
+                  {{ row.isCashSales || row.customerId === 0 || row.customerId == null ? 'Cash Sales' : (row.customerName || '-') }}
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Requested Date" prop="requestedDate" [width]="150">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.requestedDate | date:'dd-MM-yyyy' }}
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="150">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.deliveryDate | date:'dd-MM-yyyy' }}
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Status" prop="status" [width]="140">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <span
+                  class="badge badge-pill"
+                  [ngClass]="{
+                    'badge-warning': +row.status === 1,
+                    'badge-primary': +row.status === 2,
+                    'badge-success': +row.status === 3
+                  }"
+                  style="padding:6px 12px; font-size:13px;">
+
+                  {{
+                    +row.status === 1 ? 'Pending' :
+                    +row.status === 2 ? 'Approved' :
+                    +row.status === 3 ? 'Completed' : 'Unknown'
+                  }}
+                </span>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Action" [width]="120" [sortable]="false">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="d-flex align-items-center">
+                  <i
+                    class="fas fa-print text-primary mr-2"
+                    style="cursor:pointer;"
+                    (click)="openPrint(row)"
+                    title="Print / PDF">
+                  </i>
+
+                  <!-- <ng-container *ngIf="isRowLocked(row); else actionsEnabled">
+                    <i
+                      *ngIf="canEdit()"
+                      class="fas fa-pen text-muted mr-2"
+                      title="Disabled for approved/rejected SO">
+                    </i>
+
+                    <i
+                      *ngIf="canDelete()"
+                      class="fas fa-trash text-muted"
+                      title="Disabled for approved/rejected SO">
+                    </i>
+                  </ng-container> -->
+
+                  <ng-template #actionsEnabled>
+                    <i
+                      *ngIf="canEdit()"
+                      class="fas fa-pen text-success mr-2"
+                      style="cursor:pointer;"
+                      (click)="editSO(row)"
+                      title="Edit">
+                    </i>
+
+                    <i
+                      *ngIf="canDelete()"
+                      class="fas fa-trash text-danger"
+                      style="cursor:pointer;"
+                      (click)="deleteSO(row.id)"
+                      title="Delete">
+                    </i>
+                  </ng-template>
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+          </ngx-datatable>
         </div>
-
-        <!-- Table -->
-        <ngx-datatable class="bootstrap core-bootstrap so-table" [rows]="rows" [rowHeight]="50" [headerHeight]="50"
-          [footerHeight]="50" [limit]="selectedOption" [columnMode]="'force'" [scrollbarH]="true" [reorderable]="true">
-
-          <!-- View Details -->
-          <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false"
-            [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span (click)="openLinesModal(row)" title="View Details"
-                style="cursor:pointer; font-size:18px; color:#2E5F73;">
-                <i class="fas fa-eye"></i>
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="SO Number" prop="salesOrderNo" [width]="140"></ngx-datatable-column>
-
-         <ngx-datatable-column name="Customer Name" prop="customerName" [width]="210">
-  <ng-template let-row="row" ngx-datatable-cell-template>
-    <div
-      class="po-wrap-cell"
-      [title]="row.isCashSales || row.customerId === 0 || row.customerId == null ? 'Cash Sales' : (row.customerName || '-')">
-      {{ row.isCashSales || row.customerId === 0 || row.customerId == null ? 'Cash Sales' : (row.customerName || '-') }}
+      </section>
     </div>
-  </ng-template>
-</ngx-datatable-column>
-
-          <ngx-datatable-column name="Requested Date" prop="requestedDate" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.requestedDate | date:'dd-MM-yyyy' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.deliveryDate | date:'dd-MM-yyyy' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Status" prop="status" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="badge badge-pill" [ngClass]="{
-                      'badge-warning'  : +row.status === 1,
-                      'badge-primary'  : +row.status === 2,
-                      'badge-success'  : +row.status === 3
-                    }" style="padding:6px 12px; font-size:13px;">
-                {{
-                +row.status === 1 ? 'Pending' :
-                +row.status === 2 ? 'Approved' :
-                +row.status === 3 ? 'Completed' : 'Unknown'
-                }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Approval -->
-          <!-- <ngx-datatable-column name="Approval" [width]="170">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-
-              <button *ngIf="+row.status === 1"
-                      (click)="onApprove(row)"
-                      class="btn btn-sm btn-success mr-1"
-                      [disabled]="hasInsufficientQty(row)"
-                      [attr.title]="hasInsufficientQty(row) ? 'Cannot approve: Insufficient stock / allocation incomplete' : 'Approve'"
-                      style="padding:3px 8px; font-size:12px;">
-                Approve
-              </button>
-
-              <button *ngIf="+row.status === 1"
-                      (click)="onReject(row)"
-                      class="btn btn-sm btn-danger"
-                      style="padding:3px 8px; font-size:12px;">
-                Reject
-              </button>
-
-            </ng-template>
-          </ngx-datatable-column> -->
-
-          <!-- Action -->
-        <ngx-datatable-column name="Action" [width]="150">
-  <ng-template let-row="row" ngx-datatable-cell-template>
- 
-    <!-- ✅ PRINT (Always enabled) -->
-    <i class="fas fa-print text-primary mr-2"
-       style="cursor:pointer;"
-       (click)="openPrint(row)"
-       title="Print / PDF">
-    </i>
- 
-    <!-- ✅ EDIT + DELETE only disabled when locked -->
-    <ng-container *ngIf="isRowLocked(row); else actionsEnabled">
-      <i class="fas fa-pen text-gray-300 mr-2" title="Disabled for approved/rejected SO"></i>
-      <i class="fas fa-trash text-gray-300" title="Disabled for approved/rejected SO"></i>
-    </ng-container>
- 
-    <ng-template #actionsEnabled>
-      <i class="fas fa-pen text-success mr-2"
-         style="cursor:pointer;"
-         (click)="editSO(row)"
-         title="Edit">
-      </i>
- 
-      <i class="fas fa-trash text-danger"
-         style="cursor:pointer;"
-         (click)="deleteSO(row.id)"
-         title="Delete">
-      </i>
-    </ng-template>
- 
-  </ng-template>
-</ngx-datatable-column>
- 
- 
-
-        </ngx-datatable>
-      </div>
-    </section>
   </div>
 </div>
 
-<!-- Lines Modal -->
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="backdrop">
   <div (click)="$event.stopPropagation()" class="modal-card">
     <div class="modal-head">
@@ -185,11 +194,9 @@
               <th *ngIf="lineCols.unitPrice" class="num">Unit Price</th>
               <th *ngIf="lineCols.discount" class="num">Discount(%)</th>
               <th *ngIf="lineCols.tax" class="num">Tax</th>
-             
               <th *ngIf="lineCols.lockedQty" class="num">Allocated</th>
-
-           <th class="num">Shortage</th>
-               <th *ngIf="lineCols.total" class="num">Total</th>
+              <th class="num">Shortage</th>
+              <th *ngIf="lineCols.total" class="num">Total</th>
               <th class="num">Proc. Status</th>
             </tr>
           </thead>
@@ -198,21 +205,20 @@
             <tr *ngFor="let l of modalLines; let i = index" [class.alt]="i % 2 === 0">
               <td>{{ l.itemName || l.item || '-' }}</td>
               <td *ngIf="lineCols.uom">{{ l.uom || '-' }}</td>
-              <td *ngIf="lineCols.qty" class="num">{{ (l.quantity ?? l.qty ?? 0) }}</td>
-              <td *ngIf="lineCols.unitPrice" class="num">{{ (l.unitPrice ?? l.price ?? 0) }}</td>
+              <td *ngIf="lineCols.qty" class="num">{{ l.quantity ?? l.qty ?? 0 }}</td>
+              <td *ngIf="lineCols.unitPrice" class="num">{{ l.unitPrice ?? l.price ?? 0 }}</td>
               <td *ngIf="lineCols.discount" class="num">{{ l.discount ?? 0 }}</td>
               <td *ngIf="lineCols.tax" class="num">{{ l.tax ?? 0 }}</td>
-              
               <td *ngIf="lineCols.lockedQty" class="num">{{ l.lockedQty ?? 0 }}</td>
-
-              <!-- ✅ NEW: ProcurementStatus badge -->
-             
-
               <td class="num">{{ getShortageQty(l) }}</td>
               <td *ngIf="lineCols.total" class="num">{{ l.total ?? 0 }}</td>
-               <td class="num">
-                <span class="badge badge-pill" [ngClass]="getProcStatusBadgeClass(l)"
+
+              <td class="num">
+                <span
+                  class="badge badge-pill"
+                  [ngClass]="getProcStatusBadgeClass(l)"
                   style="padding:6px 12px; font-size:12px; min-width:140px; display:inline-block; text-align:center;">
+
                   {{ getProcStatusText(l) }}
                 </span>
               </td>
@@ -224,14 +230,11 @@
           </tbody>
 
           <tfoot *ngIf="modalLines?.length">
-  <tr>
-    <!-- ✅ Total label spans ALL columns except the last one -->
-    <td [attr.colspan]="getLinesColsCount() - 1" class="total-label">Total</td>
-
-    <!-- ✅ Total value always in last column -->
-    <td class="total-val num">{{ modalTotal | number:'1.2-2' }}</td>
-  </tr>
-</tfoot>
+            <tr>
+              <td [attr.colspan]="getLinesColsCount() - 1" class="total-label">Total</td>
+              <td class="total-val num">{{ modalTotal | number:'1.2-2' }}</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
@@ -242,7 +245,6 @@
   </div>
 </div>
 
-<!-- DRAFTS MODAL -->
 <div *ngIf="showDraftsModal" class="backdrop" (click)="closeDrafts()">
   <div class="modal-card" (click)="$event.stopPropagation()">
     <div class="modal-head">
@@ -252,6 +254,7 @@
           <span>Total: <strong>{{ draftRows?.length || 0 }}</strong></span>
         </div>
       </div>
+
       <button (click)="closeDrafts()" aria-label="Close" class="modal-close">×</button>
     </div>
 
@@ -303,4 +306,22 @@
   </div>
 </div>
 
-<!-- ✅ PDF PREVIEW MODAL (Screenshot style) -->
+<ng-template #loadingTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

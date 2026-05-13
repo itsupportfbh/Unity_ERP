@@ -73,4 +73,8 @@ private base = environment.apiUrl;
 getItemFlagsBulk(itemIds: number[]) {
   return this.http.post<any>(`${this.base}/Quotation/item-flags/bulk`, { itemIds });
 }
+ getAllQuotation(): Observable<QuotationHeader[]> {
+    return this.http.get<any>(this.base + QuotationAPIUrls.GetAllQuotation)
+     
+  }
 }

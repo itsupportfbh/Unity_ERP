@@ -7,6 +7,7 @@ import { CustomerMasterService } from 'app/main/businessPartners/customer-master
 import { QuotationsService } from '../../quotations/quotations.service';
 import { CountriesService } from 'app/main/master/countries/countries.service';
 import { SalesOrderService } from '../sales-order.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 /* ================= Types ================= */
 type WarehouseInfo = {
@@ -128,7 +129,7 @@ export class SalesOrderCreateComponent implements OnInit {
     taxAmount: 0,
     subTotal: 0,
     grandTotal: 0,
-    status: 2,
+    status: 1,
     statusText: 'Pending',
      orderTime: null
   };
@@ -144,6 +145,11 @@ export class SalesOrderCreateComponent implements OnInit {
   setGroups: SetGroup[] = [];
 
   submitted = false;
+
+  soPermission: FunctionPermission | null = null;
+  isPermissionLoaded = false;
+  canCreateSO = false;
+  canEditSO = false;
 
   searchTexts: { [k: string]: string } = {
     quotationNo: '',
@@ -178,7 +184,8 @@ export class SalesOrderCreateComponent implements OnInit {
     private customerSvc: CustomerMasterService,
     private quotationSvc: QuotationsService,
     private countriesSvc: CountriesService,
-    private salesOrderService: SalesOrderService
+    private salesOrderService: SalesOrderService,
+    private permissionService: PermissionService
   ) {
     this.userId = localStorage.getItem('id');
     
@@ -239,6 +246,8 @@ export class SalesOrderCreateComponent implements OnInit {
 
   /* ================= INIT ================= */
   ngOnInit(): void {
+    this.loadSOPermission();
+
     const idParam = this.route.snapshot.paramMap.get('id');
     this.editMode = !!idParam;
     this.routeId = idParam ? Number(idParam) : null;
@@ -256,7 +265,7 @@ export class SalesOrderCreateComponent implements OnInit {
     });
 
     forkJoin({
-      quotations: this.quotationSvc.getAll(),
+      quotations: this.quotationSvc.getAllQuotation(),
       customers: this.customerSvc.GetAllCustomerDetails(),
       salesOrders: this.salesOrderService.getSO()
     }).subscribe((res: any) => {
@@ -282,6 +291,29 @@ export class SalesOrderCreateComponent implements OnInit {
         this.loadSOForEdit(this.routeId);
       }
     });
+  }
+
+  loadSOPermission(): void {
+    const userId = Number(localStorage.getItem('id') || 0);
+
+    this.permissionService.getFunctionPermission(userId, 'sales-order').subscribe({
+      next: (permission) => {
+        this.soPermission = permission;
+        this.canCreateSO = this.permissionService.hasCreate(permission);
+        this.canEditSO = this.permissionService.hasEdit(permission);
+        this.isPermissionLoaded = true;
+      },
+      error: () => {
+        this.soPermission = this.permissionService.getEmptyPermission('sales-order');
+        this.canCreateSO = false;
+        this.canEditSO = false;
+        this.isPermissionLoaded = true;
+      }
+    });
+  }
+
+  canSaveSO(): boolean {
+    return this.editMode ? this.canEditSO : this.canCreateSO;
   }
 
   /* ======== math helpers ======== */
@@ -1085,7 +1117,21 @@ private fetchAvailabilityForLine(ln: SoLine) {
   });
 }
 async post(): Promise<void> {
+  if (!this.canSaveSO()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Permission Denied',
+      text: this.editMode
+        ? 'You do not have permission to update Sales Order.'
+        : 'You do not have permission to create Sales Order.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
+  }
+
   if (!this.validateSO()) return;
+
+  this.submitted = true;
 
   // ✅ ensure availability fetched before checking shortage
   await this.ensureAvailabilityBeforeSave();
@@ -1115,7 +1161,10 @@ async post(): Promise<void> {
       confirmButtonColor: '#0e3a4c'
     });
 
-    if (!res.isConfirmed) return;
+    if (!res.isConfirmed) {
+      this.submitted = false;
+      return;
+    }
   }
 
   // 🔴 STEP 2: Save SO normally
@@ -1144,6 +1193,8 @@ async post(): Promise<void> {
         html += `<br/><b>PO Team Alert Sent</b>`;
       }
 
+      this.submitted = false;
+
       Swal.fire({
         icon: 'success',
         title: 'Success',
@@ -1154,6 +1205,8 @@ async post(): Promise<void> {
       });
     },
     error: (err) => {
+      this.submitted = false;
+
       Swal.fire({
         icon: 'error',
         title: 'Error',

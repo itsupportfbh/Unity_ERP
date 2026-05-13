@@ -15,6 +15,7 @@ import * as feather from 'feather-icons';
 
 import { SalesOrderService } from '../sales-order.service';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 type SoLine = {
   id?: number;
@@ -34,8 +35,6 @@ type SoLine = {
   binId?: number | null;
   supplierId?: number | null;
   lockedQty?: number | null;
-
-  // procurement status fields (some APIs use different casing)
   procurementStatus?: number;
   ProcurementStatus?: number;
   status?: number;
@@ -45,6 +44,8 @@ type SoHeader = {
   id: number;
   salesOrderNo: string;
   customerName: string;
+  customerId?: number | null;
+  isCashSales?: boolean;
   requestedDate: string | Date;
   deliveryDate: string | Date;
   status: number | string;
@@ -74,26 +75,23 @@ export interface PeriodStatusDto {
 export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterViewChecked {
   @ViewChild(DatatableComponent) table!: DatatableComponent;
 
-  // list data
   rows: SoHeader[] = [];
   tempData: SoHeader[] = [];
   searchValue = '';
   ColumnMode = ColumnMode;
   selectedOption = 10;
 
-  // drafts modal
   showDraftsModal = false;
   draftRows: any[] = [];
   draftLoading = false;
   get draftCount(): number { return this.draftRows?.length || 0; }
 
-  // SO ids which have shortage / drafts -> approve disabled
   private blockedSoIds = new Set<number>();
 
-  // SO Lines modal (dynamic columns)
   showLinesModal = false;
   modalLines: SoLine[] = [];
   modalTotal = 0;
+
   lineCols = {
     uom: true,
     qty: true,
@@ -105,27 +103,105 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     ProcurementStatus: 0
   };
 
-  // period lock
   isPeriodLocked = false;
   currentPeriodName = '';
+
+  userId: number = 0;
+
+  // IMPORTANT: DB/Menu permission code exact ah match aaganum
+  functionId = 'so-list';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
 
   constructor(
     private salesOrderService: SalesOrderService,
     private router: Router,
     private datePipe: DatePipe,
-    private periodService: PeriodCloseService
-  ) {}
-
-  ngOnInit(): void {
-    const today = new Date().toISOString().substring(0, 10);
-    this.checkPeriodLockForDate(today);
-
-    this.loadRequests();
-    this.prefetchDraftsCount();
+    private periodService: PeriodCloseService,
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
-  ngAfterViewInit(): void { feather.replace(); }
-  ngAfterViewChecked(): void { feather.replace(); }
+  ngOnInit(): void {
+    this.loadPermission();
+  }
+
+  ngAfterViewInit(): void {
+    feather.replace();
+  }
+
+  ngAfterViewChecked(): void {
+    feather.replace();
+  }
+
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          const today = new Date().toISOString().substring(0, 10);
+          this.checkPeriodLockForDate(today);
+          this.loadRequests();
+          this.prefetchDraftsCount();
+        } else {
+          this.rows = [];
+          this.tempData = [];
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
 
   getLinesColsCount(): number {
     const dynamicCols = Object.values(this.lineCols).filter(Boolean).length;
@@ -158,7 +234,6 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     );
   }
 
-  // shortage = ordered - allocated
   getShortageQty(r: any): number {
     const qty = Number(r?.quantity ?? r?.qty ?? 0);
     const locked = Number(r?.lockedQty ?? 0);
@@ -190,12 +265,9 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     return id > 0 && this.blockedSoIds.has(id);
   }
 
-  // ---------- Data load ----------
   loadRequests(): void {
-    debugger
     this.salesOrderService.getSO().subscribe({
       next: (res: any) => {
-        debugger
         const list: SoHeader[] = (res ?? []).map((r: any) => ({ ...r }));
         this.rows = list;
         this.tempData = list;
@@ -205,13 +277,17 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     });
   }
 
-  // ---------- Search ----------
   filterUpdate(event: any): void {
     const val = (event?.target?.value ?? this.searchValue ?? '').toString().toLowerCase().trim();
 
     const temp = this.tempData.filter((d: SoHeader) => {
       const soNo = (d.salesOrderNo || '').toString().toLowerCase();
-      const cust = (d.customerName || '').toString().toLowerCase();
+      const cust = (
+        d.isCashSales || d.customerId === 0 || d.customerId == null
+          ? 'Cash Sales'
+          : (d.customerName || '')
+      ).toString().toLowerCase();
+
       const reqDateStr = this.datePipe.transform(d.requestedDate, 'dd-MM-yyyy')?.toLowerCase() || '';
       const delDateStr = this.datePipe.transform(d.deliveryDate, 'dd-MM-yyyy')?.toLowerCase() || '';
       const statusCode = (d.approvalStatus ?? d.status);
@@ -231,7 +307,6 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     if (this.table) this.table.offset = 0;
   }
 
-  // ---------- Status helpers ----------
   statusToText(v: any): string {
     const code = Number(v);
     switch (code) {
@@ -256,24 +331,55 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     return [2, 3].includes(code);
   }
 
-  // ---------- Routing / CRUD ----------
   openCreate(): void {
+    if (!this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     if (this.isPeriodLocked) {
       this.showPeriodLockedSwal('create Sales Orders');
       return;
     }
+
     this.router.navigate(['/Sales/Sales-Order-create']);
   }
 
   editSO(row: SoHeader): void {
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     if (this.isPeriodLocked) {
       this.showPeriodLockedSwal('edit Sales Orders');
       return;
     }
+
     this.router.navigateByUrl(`/Sales/Sales-Order-edit/${row.id}`);
   }
 
   deleteSO(id: number): void {
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     if (this.isPeriodLocked) {
       this.showPeriodLockedSwal('delete Sales Orders');
       return;
@@ -290,18 +396,20 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     }).then(res => {
       if (!res.isConfirmed) return;
 
-      this.salesOrderService.deleteSO(id, 1).subscribe({
+      this.salesOrderService.deleteSO(id, this.userId || 1).subscribe({
         next: () => {
           this.loadRequests();
           this.prefetchDraftsCount();
           Swal.fire('Deleted!', 'Sales Order has been deleted.', 'success');
         },
-        error: (err) => { console.error(err); Swal.fire('Error', 'Delete failed.', 'error'); }
+        error: (err) => {
+          console.error(err);
+          Swal.fire('Error', 'Delete failed.', 'error');
+        }
       });
     });
   }
 
-  // ---------- Approve / Reject ----------
   onApprove(row: SoHeader): void {
     if (this.hasInsufficientQty(row)) {
       Swal.fire(
@@ -322,15 +430,18 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     }).then(res => {
       if (!res.isConfirmed) return;
 
-      this.salesOrderService.approveSO(row.id, 1).subscribe({
+      this.salesOrderService.approveSO(row.id, this.userId || 1).subscribe({
         next: () => {
           row.status = 2;
           row.approvalStatus = 2;
-          row.approvedBy = 1;
+          row.approvedBy = this.userId || 1;
           Swal.fire('Approved', 'Sales Order approved successfully.', 'success');
           this.prefetchDraftsCount();
         },
-        error: (err) => { console.error(err); Swal.fire('Error', 'Failed to approve Sales Order.', 'error'); }
+        error: (err) => {
+          console.error(err);
+          Swal.fire('Error', 'Failed to approve Sales Order.', 'error');
+        }
       });
     });
   }
@@ -353,12 +464,14 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
           Swal.fire('Rejected', 'Sales Order rejected and lines unlocked.', 'success');
           this.prefetchDraftsCount();
         },
-        error: (err) => { console.error(err); Swal.fire('Error', 'Failed to reject Sales Order.', 'error'); }
+        error: (err) => {
+          console.error(err);
+          Swal.fire('Error', 'Failed to reject Sales Order.', 'error');
+        }
       });
     });
   }
 
-  // ---------- Lines modal ----------
   openLinesModal(row: SoHeader): void {
     const lines = this.extractLinesFromRow(row);
 
@@ -372,9 +485,10 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     this.showLinesModal = true;
   }
 
-  closeLinesModal(): void { this.showLinesModal = false; }
+  closeLinesModal(): void {
+    this.showLinesModal = false;
+  }
 
-  // ---------- Drafts ----------
   prefetchDraftsCount(): void {
     this.salesOrderService.getDrafts().subscribe({
       next: (res) => {
@@ -408,11 +522,10 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     });
   }
 
-  closeDrafts(): void { this.showDraftsModal = false; }
+  closeDrafts(): void {
+    this.showDraftsModal = false;
+  }
 
-  // =========================
-  // ✅ PRINT (HTML like Quotation)
-  // =========================
   openPrint(row: SoHeader): void {
     const lines = this.extractLinesFromRow(row);
     const html = this.buildSoPrintHtml(row, lines);
@@ -444,7 +557,6 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     return lines ?? [];
   }
 
-  // ---------- Procurement status (modal badges) ----------
   getProcStatusText(l: any): string {
     const s = +(l.procurementStatus ?? l.ProcurementStatus ?? l.status ?? 0);
 
@@ -461,51 +573,43 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
 
     return {
       'badge-secondary': s === 1,
-      'badge-info':      s === 2,
-      'badge-warning':   s === 3,
-      'badge-success':   s === 4,
-      'badge-danger':    s === 5
+      'badge-info': s === 2,
+      'badge-warning': s === 3,
+      'badge-success': s === 4,
+      'badge-danger': s === 5
     };
   }
 
+  private getSoPrintStatus(h: any, lines: any[]): string {
+    const headerPs = +(h?.procurementStatus ?? h?.ProcurementStatus ?? 0);
 
+    if (headerPs > 0) {
+      return this.mapProcToText(headerPs);
+    }
 
-private getSoPrintStatus(h: any, lines: any[]): string {
-  // 1) ✅ If header has ProcurementStatus use it first
-  const headerPs =
-    +(h?.procurementStatus ?? h?.ProcurementStatus ?? 0);
+    const statuses = (lines || [])
+      .map(l => +(l?.procurementStatus ?? l?.ProcurementStatus ?? 0))
+      .filter(x => x > 0);
 
-  if (headerPs > 0) {
-    return this.mapProcToText(headerPs);
+    if (!statuses.length) return this.statusToText(h?.status ?? 1);
+
+    if (statuses.every(s => s === 4)) return 'Completed';
+    if (statuses.some(s => s === 5)) return 'Shortage';
+    if (statuses.some(s => s === 3)) return 'Partially Received';
+    if (statuses.some(s => s === 2)) return 'PO Created';
+
+    return 'Pending';
   }
 
-  // 2) ✅ Else compute from lines
-  const statuses = (lines || [])
-    .map(l => +(l?.procurementStatus ?? l?.ProcurementStatus ?? 0))
-    .filter(x => x > 0);
+  private mapProcToText(s: number): string {
+    return s === 1 ? 'Pending'
+      : s === 2 ? 'PO Created'
+      : s === 3 ? 'Partially Received'
+      : s === 4 ? 'Completed'
+      : s === 5 ? 'Shortage'
+      : 'Pending';
+  }
 
-  if (!statuses.length) return this.statusToText(h?.status ?? 1); // fallback to existing status
-
-  if (statuses.every(s => s === 4)) return 'Completed';
-  if (statuses.some(s => s === 5)) return 'Shortage';
-  if (statuses.some(s => s === 3)) return 'Partially Received';
-  if (statuses.some(s => s === 2)) return 'PO Created';
-
-  return 'Pending';
-}
-
-private mapProcToText(s: number): string {
-  return s === 1 ? 'Pending'
-    : s === 2 ? 'PO Created'
-    : s === 3 ? 'Partially Received'
-    : s === 4 ? 'Completed'
-    : s === 5 ? 'Shortage'
-    : 'Pending';
-}
-
-  // =========================
-  // ✅ PRINT HTML BUILD HELPERS
-  // =========================
   private escapeHtml(s: any): string {
     const str = String(s ?? '');
     return str
@@ -537,14 +641,12 @@ private mapProcToText(s: number): string {
   }
 
   private buildSoPrintHtml(h: SoHeader, lines: SoLine[]): string {
-    // ✅ White theme + dark title
     const brand = '#2E5F73';
     const dark = '#0f172a';
     const text = '#111827';
     const muted = '#6b7280';
     const line = '#d1d5db';
 
-    // ✅ Company
     const companyName = 'Continental Catering Solutions Pvt Ltd';
     const companyAddr1 = 'No: 3/8, Church Street';
     const companyAddr2 = 'Nungambakkam, Chennai - 600034';
@@ -552,16 +654,15 @@ private mapProcToText(s: number): string {
     const companyEmail = 'info@unityworks.com';
 
     const soNo = this.escapeHtml(h?.salesOrderNo || '-');
-    const customer = this.escapeHtml(h?.customerName || 'Cash Sales');
+    const customer = this.escapeHtml(
+      h?.isCashSales || h?.customerId === 0 || h?.customerId == null
+        ? 'Cash Sales'
+        : (h?.customerName || '-')
+    );
     const reqDate = this.escapeHtml(this.datePipe.transform(h?.requestedDate as any, 'dd-MM-yyyy') || this.fmtDate(h?.requestedDate));
     const delDate = this.escapeHtml(this.datePipe.transform(h?.deliveryDate as any, 'dd-MM-yyyy') || this.fmtDate(h?.deliveryDate));
-    const deliveryTo = this.escapeHtml(
-  (h as any)?.deliveryTo ?? (h as any)?.DeliveryTo ?? '-'
-);
-    const status = this.escapeHtml(
-  this.getSoPrintStatus(h, lines)
-  
-);
+    const deliveryTo = this.escapeHtml((h as any)?.deliveryTo ?? (h as any)?.DeliveryTo ?? '-');
+    const status = this.escapeHtml(this.getSoPrintStatus(h, lines));
 
     const rowsHtml = (lines || []).map((l: any, i: number) => {
       const qty = Number(l?.quantity ?? l?.qty ?? 0);
@@ -587,7 +688,7 @@ private mapProcToText(s: number): string {
 
     const subTotal = (lines || []).reduce((s, l: any) => {
       const qty = Number(l?.quantity ?? l?.qty ?? 0);
-      const up  = Number(l?.unitPrice ?? l?.price ?? 0);
+      const up = Number(l?.unitPrice ?? l?.price ?? 0);
       const t = Number(l?.total ?? (qty * up));
       return s + (isNaN(t) ? 0 : t);
     }, 0);
@@ -623,34 +724,15 @@ private mapProcToText(s: number): string {
         @page { margin: 8mm 10mm 14mm 10mm; }
         * { box-sizing:border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         body { font-family: Arial, Helvetica, sans-serif; margin:0; background:#fff; color:${text}; }
-
-        .hdr{
-          display:flex; gap:16px;
-          padding-bottom:14px; margin-bottom:14px;
-          border-bottom:2px solid ${brand};
-        }
-        .logo{
-          width:48px; height:48px; border-radius:14px;
-          background:${brand}; color:#fff;
-          display:flex; align-items:center; justify-content:center;
-          font-weight:900;
-        }
+        .hdr{ display:flex; gap:16px; padding-bottom:14px; margin-bottom:14px; border-bottom:2px solid ${brand}; }
+        .logo{ width:48px; height:48px; border-radius:14px; background:${brand}; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; }
         .cname{ font-size:20px; font-weight:900; }
         .doc{ font-size:14px; font-weight:900; color:${dark}; letter-spacing:1px; margin-top:2px; }
         .cmeta{ font-size:12px; color:${muted}; margin-top:4px; }
-
-        .meta{
-          display:grid; grid-template-columns: 1fr 1fr;
-          gap:10px 24px;
-          padding:14px;
-          border:1px solid ${line};
-          border-radius:12px;
-          margin-bottom:12px;
-        }
-        .row{ display:grid; grid-template-columns: 150px 1fr; gap:10px; }
+        .meta{ display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; padding:14px; border:1px solid ${line}; border-radius:12px; margin-bottom:12px; }
+        .row{ display:grid; grid-template-columns:150px 1fr; gap:10px; }
         .k{ color:${muted}; font-weight:700; }
         .v{ font-weight:800; word-break:break-word; }
-
         .tbl{ width:100%; border-collapse:collapse; font-size:13px; }
         .tbl th, .tbl td{ border:1px solid ${line}; padding:10px; vertical-align:top; }
         .tbl thead th{ background:${brand}; color:#fff; font-weight:900; text-transform:uppercase; }
@@ -658,23 +740,13 @@ private mapProcToText(s: number): string {
         .c{ text-align:center; }
         .r{ text-align:right; }
         .b{ font-weight:900; }
-
         .totals{ margin-top:12px; display:flex; justify-content:flex-end; }
         .totTbl{ width:300px; border-collapse:collapse; }
         .totTbl td{ border:1px solid ${line}; padding:10px 12px; }
-
-        .footer{
-          position: fixed; left:10mm; right:10mm; bottom:6mm;
-          font-size:11px; color:${muted};
-          display:flex; justify-content:space-between;
-        }
-        .empty{
-          border:1px dashed ${muted}; color:${muted};
-          padding:18px; text-align:center; border-radius:12px; font-size:14px; margin-top:10px;
-        }
+        .footer{ position:fixed; left:10mm; right:10mm; bottom:6mm; font-size:11px; color:${muted}; display:flex; justify-content:space-between; }
+        .empty{ border:1px dashed ${muted}; color:${muted}; padding:18px; text-align:center; border-radius:12px; font-size:14px; margin-top:10px; }
       </style>
     </head>
-
     <body>
       <div class="hdr">
         <div class="logo">CC</div>
@@ -692,13 +764,10 @@ private mapProcToText(s: number): string {
       <div class="meta">
         <div class="row"><div class="k">SO No</div><div class="v">${soNo}</div></div>
         <div class="row"><div class="k">Status</div><div class="v">${status}</div></div>
-
         <div class="row"><div class="k">Customer</div><div class="v">${customer}</div></div>
         <div class="row"><div class="k">Order Date</div><div class="v">${reqDate}</div></div>
-         <div class="row"><div class="k">Delivery Date</div><div class="v">${delDate}</div></div>
-
-       <div class="row"><div class="k">Delivery To</div><div class="v">${deliveryTo}</div></div>
-        <div class="row"><div class="k"></div><div class="v"></div></div>
+        <div class="row"><div class="k">Delivery Date</div><div class="v">${delDate}</div></div>
+        <div class="row"><div class="k">Delivery To</div><div class="v">${deliveryTo}</div></div>
       </div>
 
       ${tableHtml}

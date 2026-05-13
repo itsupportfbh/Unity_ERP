@@ -20,6 +20,7 @@ import {
   PeriodCloseService,
   PeriodStatusDto
 } from 'app/main/financial/period-close-fx/period-close-fx.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 type PurchaseAlert = {
   id: number;
@@ -54,18 +55,25 @@ export class PurchaseRequestListComponent
   showLinesModal = false;
   modalLines: any[] = [];
   modalTotalQty = 0;
-
+  isDisplay = false;
   // Drafts
   drafts: any[] = [];
   draftCount = 0;
   showDraftsModal = false;
+
+   functionId = 'pr-list';
+  
+    permission: FunctionPermission;
+    isPermissionLoaded = false;
+    isPageLoading = false;
 
   // Alerts
   showAlertsPanel = false;
   alerts: PurchaseAlert[] = [];
   alertCount = 0;
 
-  userId: string;
+ userId: number = 0;
+
 
   // 🔒 NEW: period lock flags
   isPeriodLocked = false;
@@ -77,9 +85,12 @@ export class PurchaseRequestListComponent
     private router: Router,
     private alertSvc: PurchaseAlertService,
     // 🔒 NEW
-    private periodService: PeriodCloseService
+    private periodService: PeriodCloseService,
+     private permissionService: PermissionService
   ) {
-    this.userId = localStorage.getItem('id') || '';
+    // this.userId = localStorage.getItem('id') || '';
+     this.userId = Number(localStorage.getItem('id') || 0);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
   // ============== Lifecycle ==============
@@ -89,9 +100,11 @@ export class PurchaseRequestListComponent
     const today = new Date().toISOString().substring(0, 10);
     this.checkPeriodLockForDate(today);
 
-    this.loadRequests();
+    // this.loadRequests();
     this.refreshDraftCount();
     this.refreshAlerts();
+
+    this.loadPermission();
   }
 
   ngAfterViewInit(): void {
@@ -102,6 +115,68 @@ export class PurchaseRequestListComponent
     feather.replace();
   }
 
+
+    loadPermission(): void {
+      if (!this.userId || this.userId <= 0) {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+  
+        Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'User not found. Please login again.',
+          confirmButtonColor: '#0e3a4c'
+        });
+        return;
+      }
+  
+      this.isPageLoading = true;
+  
+      this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+        next: (res: FunctionPermission) => {
+          this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+  
+          if (this.canView()) {
+            this.loadRequests();
+          } else {
+            this.rows = [];
+            this.isDisplay = false;
+          }
+        },
+        error: (err) => {
+          console.error('Permission load error:', err);
+  
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+  
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Unable to load permission.',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    }
+  
+    canView(): boolean {
+      return this.permissionService.hasView(this.permission);
+    }
+  
+    canCreate(): boolean {
+      return this.permissionService.hasCreate(this.permission);
+    }
+  
+    canEdit(): boolean {
+      return this.permissionService.hasEdit(this.permission);
+    }
+  
+    canDelete(): boolean {
+      return this.permissionService.hasDelete(this.permission);
+    }
   // ============== Period Lock (NEW) ==============
 
   private checkPeriodLockForDate(dateStr: string): void {

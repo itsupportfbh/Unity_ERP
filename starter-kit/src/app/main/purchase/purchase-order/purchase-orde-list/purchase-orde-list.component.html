@@ -85,6 +85,25 @@
                 </span>
               </button>
 
+              <button
+  *ngIf="canApprovePo"
+  type="button"
+  class="btn d-inline-flex align-items-center position-relative flex-shrink-0"
+  style="border:1px solid #2E5F73; color:#2E5F73; background:#fff; height:38px; gap:6px;"
+  title="PO Approvals"
+  (click)="openPoApprovalModal()">
+
+  <i class="fas fa-clipboard-check"></i>
+  <span>Approvals</span>
+
+  <span
+    *ngIf="pendingPoApprovalCount > 0"
+    style="position:absolute; top:-7px; right:-7px; min-width:20px; height:20px; padding:0 6px;
+           border-radius:999px; background:#dc3545; color:#fff; display:flex; align-items:center;
+           justify-content:center; font-size:12px; font-weight:700;">
+    {{ pendingPoApprovalCount }}
+  </span>
+</button>
                 <!-- Pending PR Alerts Modal -->
               <div
                 *ngIf="showPendingPrModal"
@@ -785,3 +804,106 @@
   </div>
 </div>
 
+<div
+  *ngIf="showPoApprovalModal"
+  (click)="closePoApprovalModal()"
+  style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1060;display:flex;align-items:center;justify-content:center;">
+
+  <div
+    (click)="$event.stopPropagation()"
+    style="width:1050px;max-width:96vw;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.25);">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #eef2f7;">
+      <h3 style="margin:0;font-size:18px;font-weight:700;color:#2E5F73;">
+        Pending PO Approvals
+      </h3>
+
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input
+          [(ngModel)]="poApprovalSearch"
+          type="search"
+          class="form-control"
+          placeholder="Search PO / Supplier / User"
+          style="width:320px;height:38px;" />
+
+        <button type="button" class="btn btn-sm btn-light" (click)="openPoApprovalModal()">
+          Refresh
+        </button>
+
+        <button
+          type="button"
+          (click)="closePoApprovalModal()"
+          style="border:0;background:transparent;font-size:24px;color:#6b7280;">
+          ×
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:14px 16px;max-height:70vh;overflow:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead style="background:#f8fafc;">
+          <tr>
+            <th style="padding:10px;text-align:left;">PO No</th>
+            <th style="padding:10px;text-align:left;">Created By</th>
+            <th style="padding:10px;text-align:left;">Supplier</th>
+            <th style="padding:10px;text-align:left;">Items</th>
+            <th style="padding:10px;text-align:right;">Net Total</th>
+            <th style="padding:10px;text-align:center;">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let po of filteredPendingPoList()" style="border-top:1px solid #eef2f7;">
+            <td style="padding:10px;font-weight:700;color:#2E5F73;">
+              {{ po.purchaseOrderNo }}
+            </td>
+
+            <td style="padding:10px;">
+              {{ po.createdBy || '-' }}
+            </td>
+
+            <td style="padding:10px;">
+              {{ po.supplierName || '-' }}
+            </td>
+
+            <td style="padding:10px;">
+              <div *ngFor="let l of getPoLines(po)" style="margin-bottom:4px;">
+                <b>{{ l.item || l.itemName || l.description }}</b>
+                <span> | Qty: {{ l.qty }}</span>
+                <span> | Price: {{ l.price | number:'1.2-2' }}</span>
+                <span> | Total: {{ l.total | number:'1.2-2' }}</span>
+              </div>
+            </td>
+
+            <td style="padding:10px;text-align:right;font-weight:700;">
+              {{ po.netTotal | number:'1.2-2' }} {{ po.currencyName }}
+            </td>
+
+            <td style="padding:10px;text-align:center;white-space:nowrap;">
+              <button
+                *ngIf="canApprovePo"
+                class="btn btn-sm btn-success mr-1"
+                (click)="approveRejectPO(po, 2)">
+                Approve
+              </button>
+
+              <button
+                *ngIf="canRejectPo"
+                class="btn btn-sm btn-danger"
+                (click)="approveRejectPO(po, 3)">
+                Reject
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredPendingPoList().length === 0">
+            <td colspan="6" style="padding:16px;text-align:center;color:#6b7280;">
+              No Pending PO Approvals
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>

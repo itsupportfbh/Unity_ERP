@@ -53,6 +53,8 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
 
     this.loadMenu(this._router.url);
 
+    window.addEventListener('menu-permission-updated', this.onMenuPermissionUpdated);
+
     this._router.events
       .pipe(
         filter(event => event instanceof NavigationEnd),
@@ -64,6 +66,10 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
         this._coreSidebarService.getSidebarRegistry('menu')?.close();
       });
   }
+
+  private onMenuPermissionUpdated = () => {
+    this.loadMenu(this._router.url);
+  };
 
   private loadMenu(url?: string): void {
     const currentUrl = url || this._router.url || '/home';
@@ -92,9 +98,15 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
 
   private getAllowedMenuIds(): string[] {
     try {
-      const raw = localStorage.getItem('menuIds');
+      const raw =
+        localStorage.getItem('allowedMenuIds') ||
+        localStorage.getItem('menuIds');
+
       const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
+
+      return Array.isArray(parsed)
+        ? parsed.map((x: any) => String(x).trim().toLowerCase())
+        : [];
     } catch {
       return [];
     }
@@ -110,16 +122,25 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
     }
   }
 
-  private filterMenu(items: any[], parentAllowed: boolean = false): any[] {
+  private filterMenu(items: any[]): any[] {
     const allowedMenuIds = this.getAllowedMenuIds();
     const approvalRoles = this.getApprovalRoles();
 
+    const allowedSet = new Set(
+      (allowedMenuIds || []).map(x => String(x).trim().toLowerCase())
+    );
+
     return (items || [])
       .map(item => {
-        const selfAllowed = parentAllowed || allowedMenuIds.includes(item.id);
+        if (item.hidden === true) {
+          return null;
+        }
+
+        const itemId = String(item.id || '').trim().toLowerCase();
 
         const hasTeamRules = Array.isArray(item.teams) && item.teams.length > 0;
-        const hasApprovalRules = Array.isArray(item.approvalRoles) && item.approvalRoles.length > 0;
+        const hasApprovalRules =
+          Array.isArray(item.approvalRoles) && item.approvalRoles.length > 0;
 
         const authAllowed =
           !hasTeamRules && !hasApprovalRules
@@ -130,15 +151,14 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
           item.id === 'department-menu-access' &&
           approvalRoles.includes('Super Admin');
 
-        const children = item.children
-          ? this.filterMenu(item.children, selfAllowed )
-          : undefined;
-
+        const children = item.children ? this.filterMenu(item.children) : undefined;
         const hasVisibleChildren = Array.isArray(children) && children.length > 0;
+
+        const selfAllowed = allowedSet.has(itemId);
 
         const finalAllowed =
           authAllowed &&
-          (selfAllowed  || hasVisibleChildren ||superAdminExtraAccess);
+          (selfAllowed || hasVisibleChildren || superAdminExtraAccess);
 
         if (!finalAllowed) {
           return null;
@@ -239,6 +259,8 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    window.removeEventListener('menu-permission-updated', this.onMenuPermissionUpdated);
+
     this._unsubscribeAll.next(null);
     this._unsubscribeAll.complete();
   }

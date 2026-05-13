@@ -541,77 +541,36 @@
       </div>
 
       <!-- Approval -->
-      <div class="box box--approval dropdown-scope" (click)="$event.stopPropagation()">
-        <div class="box__head">
-          <div class="box__title">
-            <div class="box__t1">Approval</div>
-            <div class="box__t2">Select level & take action</div>
-          </div>
-          <div class="pill pill--soft">Pending</div>
-        </div>
+     
+<!-- ACTIONS -->
+<div class="box box--approval">
+  <div class="box__head">
+    <div class="box__title">
+      <div class="box__t1">Actions</div>
+      <div class="box__t2">Save purchase order as pending</div>
+    </div>
+    <div class="pill pill--soft">Pending</div>
+  </div>
 
-        <div class="approvalGrid">
+  <div class="actionBar">
+    <button
+      class="btnMain"
+      type="button"
+      (click)="saveRequest()"
+      [disabled]="disabledButton || !mastersLoaded">
+      <i class="fas fa-save"></i>
+      Save
+    </button>
 
-          <!-- Dropdown -->
-          <div class="field dd dropdown-scope" (click)="$event.stopPropagation()">
-            <label>Approval Level <span class="req">*</span></label>
-
-            <div class="ig">
-              <input
-                type="text"
-                [(ngModel)]="searchTexts['approval']"
-                (input)="filter('approval')"
-                (focus)="toggleDropdown('approval', true, $event)"
-                placeholder="Search approval..."
-              />
-              <button *ngIf="searchTexts['approval']" type="button" class="ig__btn"
-                (click)="onClearSearch('approval'); $event.stopPropagation()"
-                title="Clear">✕</button>
-              <button type="button" class="ig__btn ig__btn--caret"
-                (click)="toggleDropdown('approval', undefined, $event)"
-                title="Open">▼</button>
-            </div>
-
-            <div *ngIf="submitted && isEmpty(searchTexts['approval'])" class="err">Approval Level is required.</div>
-
-            <ul *ngIf="dropdownOpen['approval']" class="menu menu--up" (click)="$event.stopPropagation()">
-              <li *ngFor="let item of filteredLists['approval']"
-                  (click)="select('approval', item); $event.stopPropagation()">
-                <div class="m1">{{ item.name }}</div>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Icon action bar -->
-          <div class="actionBar actionBar--icons">
-            <button class="iconBtn iconBtn--warn" type="button"
-              (click)="setApprovalStatus(1)" [disabled]="disabledButton"
-              title="Pending" aria-label="Pending">
-              <i class="fas fa-hourglass-half"></i>
-            </button>
-
-            <button class="iconBtn iconBtn--ok" type="button"
-              (click)="setApprovalStatus(2)" [disabled]="disabledButton"
-              title="Approve" aria-label="Approve">
-              <i class="fas fa-check-circle"></i>
-            </button>
-
-            <button class="iconBtn iconBtn--danger" type="button"
-              (click)="setApprovalStatus(3)"
-              title="Reject" aria-label="Reject">
-              <i class="fas fa-ban"></i>
-            </button>
-
-            <button class="iconBtn iconBtn--cancel" type="button"
-              (click)="cancel()"
-              title="Cancel" aria-label="Cancel">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-
-        </div>
-      </div>
-
+    <button
+      class="btnDanger"
+      type="button"
+      (click)="cancel()">
+      <i class="fas fa-times"></i>
+      Cancel
+    </button>
+  </div>
+</div>
     </div>
 
   </div>

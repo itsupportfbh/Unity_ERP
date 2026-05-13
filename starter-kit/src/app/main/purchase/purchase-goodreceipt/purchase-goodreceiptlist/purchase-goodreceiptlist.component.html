@@ -47,6 +47,7 @@
 
               <button
                 (click)="goToCreateGRN()"
+                *ngIf="canCreate()"
                 class="btn m-1 d-inline-flex align-items-center"
                 style="background-color:#2E5F73; color:white; gap:6px;"
                 [disabled]="isPeriodLocked"
@@ -152,6 +153,7 @@
                                   ? 'Posted to Inventory (cannot edit)'
                                   : (isPeriodLocked ? 'Period locked' : 'Edit')"
                    style="cursor:pointer;"
+                    *ngIf="canEdit()"
                    (click)="onEdit(row)">
                 </i>
               </div>

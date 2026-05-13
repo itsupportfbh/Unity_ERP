@@ -129,8 +129,8 @@ export class SalesOrderCreateComponent implements OnInit {
     taxAmount: 0,
     subTotal: 0,
     grandTotal: 0,
-    status: 1,
-    statusText: 'Pending',
+    status: 2,
+    statusText: 'Approved',
      orderTime: null
   };
 
@@ -296,7 +296,7 @@ export class SalesOrderCreateComponent implements OnInit {
   loadSOPermission(): void {
     const userId = Number(localStorage.getItem('id') || 0);
 
-    this.permissionService.getFunctionPermission(userId, 'sales-order').subscribe({
+    this.permissionService.getFunctionPermission(userId, 'so-list').subscribe({
       next: (permission) => {
         this.soPermission = permission;
         this.canCreateSO = this.permissionService.hasCreate(permission);
@@ -304,7 +304,7 @@ export class SalesOrderCreateComponent implements OnInit {
         this.isPermissionLoaded = true;
       },
       error: () => {
-        this.soPermission = this.permissionService.getEmptyPermission('sales-order');
+        this.soPermission = this.permissionService.getEmptyPermission('so-list');
         this.canCreateSO = false;
         this.canEditSO = false;
         this.isPermissionLoaded = true;

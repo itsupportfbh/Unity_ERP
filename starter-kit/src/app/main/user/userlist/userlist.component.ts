@@ -3,6 +3,7 @@ import { DatatableComponent } from '@swimlane/ngx-datatable';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { UserService, UserView } from '../user.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-userlist',
@@ -23,14 +24,85 @@ export class UserlistComponent implements OnInit {
   pageSizes = [5, 10, 25, 50, 100];
   searchText = '';
 
+  public isDisplay = false;
+  userId: number = 0;
+  functionId = 'users';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+
   constructor(
     private svc: UserService,
-    private router: Router
-  ) {}
+    private router: Router,
+     private permissionService: PermissionService
+  ) {this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);}
 
   ngOnInit(): void {
-    this.load();
+    this.loadPermission();
   }
+  
+    loadPermission(): void {
+      if (!this.userId || this.userId <= 0) {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+  
+        Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'User not found. Please login again.',
+          confirmButtonColor: '#0e3a4c'
+        });
+        return;
+      }
+  
+      this.isPageLoading = true;
+  
+      this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+        next: (res: FunctionPermission) => {
+          this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+  
+          if (this.canView()) {
+            this.load();  
+          } else {
+            this.rows  = [];
+            this.isDisplay = false;
+          }
+        },
+        error: (err) => {
+          console.error('Permission load error:', err);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+  
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Unable to load permission.',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    }
+  
+    canView(): boolean {
+      return this.permissionService.hasView(this.permission);
+    }
+  
+    canCreate(): boolean {
+      return this.permissionService.hasCreate(this.permission);
+    }
+  
+    canEdit(): boolean {
+      return this.permissionService.hasEdit(this.permission);
+    }
+  
+    canDelete(): boolean {
+      return this.permissionService.hasDelete(this.permission);
+    }
 
   load() {
     this.loading = true;

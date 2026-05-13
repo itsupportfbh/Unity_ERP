@@ -5,6 +5,18 @@
       <div class="rpx-subtitle">
         Configure visible functions and permission flags for the selected department
       </div>
+       <!-- Legend -->
+      <div class="rpx-legend" *ngIf="!loadingMenus && modules.length > 0">
+        <span><b>V</b> - View</span>
+        <span><b>C</b> - Create</span>
+        <span><b>E</b> - Edit</span>
+        <span><b>D</b> - Delete</span>
+        <span><b>A</b> - Approve</span>
+        <span><b>R</b> - Reject</span>
+        <span><b>X</b> - Export</span>
+        <span><b>P</b> - Print</span>
+        <span><b>M</b> - Post / Finalize</span>
+      </div>
     </div>
   </div>
 
@@ -82,19 +94,6 @@
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <!-- Legend -->
-    <div class="rpx-legend" *ngIf="!loadingMenus && modules.length > 0">
-      <span><b>V</b> - View</span>
-      <span><b>C</b> - Create</span>
-      <span><b>E</b> - Edit</span>
-      <span><b>D</b> - Delete</span>
-      <span><b>A</b> - Approve</span>
-      <span><b>R</b> - Reject</span>
-      <span><b>X</b> - Export</span>
-      <span><b>P</b> - Print</span>
-      <span><b>M</b> - Post / Finalize</span>
     </div>
 
     <!-- Footer -->

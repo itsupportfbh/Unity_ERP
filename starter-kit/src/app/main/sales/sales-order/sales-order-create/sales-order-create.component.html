@@ -351,10 +351,22 @@
   <!-- Sticky actions -->
   <div class="soSticky">
     <div class="soSticky__inner">
-      <button type="button" class="soBtn soBtn--primary" (click)="post()">
+      <button
+        *ngIf="isPermissionLoaded && canSaveSO()"
+        type="button"
+        class="soBtn soBtn--primary"
+        (click)="post()"
+        [disabled]="submitted">
         <i class="fas fa-save"></i>
-        {{ editMode ? 'Update' : 'Save' }}
+        {{ submitted ? 'Saving...' : (editMode ? 'Update' : 'Save') }}
       </button>
+
+      <div
+        *ngIf="isPermissionLoaded && !canSaveSO()"
+        class="alert alert-warning mb-0"
+        style="padding:10px 14px;border-radius:10px;">
+        You do not have permission to {{ editMode ? 'update' : 'create' }} Sales Order.
+      </div>
 
       <button type="button" class="soBtn soBtn--ghost" (click)="cancel()">
         <i class="fas fa-times"></i>

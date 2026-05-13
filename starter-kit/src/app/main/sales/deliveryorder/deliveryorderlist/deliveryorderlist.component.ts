@@ -13,7 +13,7 @@ import { Observable, of } from 'rxjs';
 
 import { catchError, map } from 'rxjs/operators';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
-
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 // -------- Types for rows/lines (UI) ----------
 type DoRow = {
   id: number;
@@ -83,15 +83,27 @@ export class DeliveryorderlistComponent implements OnInit, AfterViewInit, AfterV
   isPeriodLocked = false;
   currentPeriodName = '';
 
-  constructor(
-    private router: Router,
-    private doSvc: DeliveryOrderService,
-    private driverSvc: DriverService,
-    private vehicleSvc: VehicleService,
-    private itemsSvc: ItemsService,
-    private uomSvc: UomService,
-    private periodService: PeriodCloseService
-  ) {}
+ constructor(
+  private router: Router,
+  private doSvc: DeliveryOrderService,
+  private driverSvc: DriverService,
+  private vehicleSvc: VehicleService,
+  private itemsSvc: ItemsService,
+  private uomSvc: UomService,
+  private periodService: PeriodCloseService,
+  private permissionService: PermissionService
+) {
+  this.userId = Number(localStorage.getItem('id') || 0);
+  this.permission = this.permissionService.getEmptyPermission(this.functionId);
+}
+userId: number = 0;
+
+// DB/Menu function code exact ah match aaganum
+functionId = 'do-list2';
+
+permission: FunctionPermission;
+isPermissionLoaded = false;
+isPageLoading = false;
 
   ngOnInit(): void {
     const today = new Date().toISOString().substring(0, 10);
@@ -99,8 +111,71 @@ export class DeliveryorderlistComponent implements OnInit, AfterViewInit, AfterV
 
     this.loadLookups();
     this.loadList();
+     this.loadPermission();
+  }
+loadPermission(): void {
+  if (!this.userId || this.userId <= 0) {
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+    this.isPermissionLoaded = true;
+
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'User not found. Please login again.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
   }
 
+  this.isPageLoading = true;
+
+  this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+    next: (res: FunctionPermission) => {
+      this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+      this.isPageLoading = false;
+
+      if (this.canView()) {
+        const today = new Date().toISOString().substring(0, 10);
+        this.checkPeriodLockForDate(today);
+
+        this.loadLookups();
+        this.loadList();
+      } else {
+        this.rows = [];
+        this.allRows = [];
+      }
+    },
+    error: () => {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+      this.isPageLoading = false;
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Unable to load permission.',
+        confirmButtonColor: '#d33'
+      });
+    }
+  });
+}
+
+canView(): boolean {
+  return this.permissionService.hasView(this.permission);
+}
+
+canCreate(): boolean {
+  return this.permissionService.hasCreate(this.permission);
+}
+
+canEdit(): boolean {
+  return this.permissionService.hasEdit(this.permission);
+}
+
+canDelete(): boolean {
+  return this.permissionService.hasDelete(this.permission);
+}
   ngAfterViewInit(): void { feather.replace(); }
   ngAfterViewChecked(): void { feather.replace(); }
 
@@ -602,52 +677,84 @@ printFromRow(row: DoRow) {
   }
 
   // ---------------- Actions ----------------
-  goToCreate() {
-    if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('create Delivery Orders');
-      return;
-    }
-    this.router.navigate(['/Sales/Delivery-order-create']);
-  }
-
-  editDo(id: number) {
-    if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('edit Delivery Orders');
-      return;
-    }
-    this.router.navigate(['/Sales/Delivery-order-edit', id]);
-  }
-
-  deleteDo(id: number) {
-    if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('delete Delivery Orders');
-      return;
-    }
-
+goToCreate() {
+  if (!this.canCreate()) {
     Swal.fire({
       icon: 'warning',
-      title: 'Delete Delivery Order?',
-      text: 'This action cannot be undone.',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#9ca3af',
-      confirmButtonText: 'Delete'
-    }).then(result => {
-      if (!result.isConfirmed) return;
-
-      if (!('delete' in this.doSvc) || typeof (this.doSvc as any).delete !== 'function') {
-        Swal.fire({ icon: 'info', title: 'Delete not wired yet' });
-        return;
-      }
-
-      (this.doSvc as any).delete(id).subscribe({
-        next: () => {
-          this.allRows = this.allRows.filter(r => r.id !== id);
-          this.filterUpdate(null);
-          Swal.fire('Deleted!', 'Delivery Order has been deleted.', 'success');
-        },
-        error: () => Swal.fire({ icon: 'error', title: 'Failed to delete' })
-      });
+      title: 'Access Denied',
+      text: 'You do not have create permission.',
+      confirmButtonColor: '#0e3a4c'
     });
+    return;
   }
+
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Delivery Orders');
+    return;
+  }
+
+  this.router.navigate(['/Sales/Delivery-order-create']);
+}
+
+editDo(id: number) {
+  if (!this.canEdit()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'You do not have edit permission.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
+  }
+
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('edit Delivery Orders');
+    return;
+  }
+
+  this.router.navigate(['/Sales/Delivery-order-edit', id]);
+}
+
+deleteDo(id: number) {
+  if (!this.canDelete()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'You do not have delete permission.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
+  }
+
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('delete Delivery Orders');
+    return;
+  }
+
+  Swal.fire({
+    icon: 'warning',
+    title: 'Delete Delivery Order?',
+    text: 'This action cannot be undone.',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#9ca3af',
+    confirmButtonText: 'Delete'
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    if (!('delete' in this.doSvc) || typeof (this.doSvc as any).delete !== 'function') {
+      Swal.fire({ icon: 'info', title: 'Delete not wired yet' });
+      return;
+    }
+
+    (this.doSvc as any).delete(id).subscribe({
+      next: () => {
+        this.allRows = this.allRows.filter(r => r.id !== id);
+        this.filterUpdate(null);
+        Swal.fire('Deleted!', 'Delivery Order has been deleted.', 'success');
+      },
+      error: () => Swal.fire({ icon: 'error', title: 'Failed to delete' })
+    });
+  });
+}
 }

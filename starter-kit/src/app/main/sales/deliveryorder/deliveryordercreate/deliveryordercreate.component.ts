@@ -14,7 +14,7 @@ import { DriverService } from 'app/main/master/driver/driver.service';
 import { SalesOrderService } from '../../sales-order/sales-order.service';
 import { UomService } from 'app/main/master/uom/uom.service';
 import { environment } from 'environments/environment';
-
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 /* ---------- local types ---------- */
 
 type SoBrief = {
@@ -183,16 +183,27 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
   private lastX = 0;
   private lastY = 0;
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private vehicleSrv: VehicleService,
-    private driverSrv: DriverService,
-    private soSrv: SalesOrderService,
-    private doSrv: DeliveryOrderService,
-    private uomService: UomService
-  ) {}
+constructor(
+  private route: ActivatedRoute,
+  private router: Router,
+  private vehicleSrv: VehicleService,
+  private driverSrv: DriverService,
+  private soSrv: SalesOrderService,
+  private doSrv: DeliveryOrderService,
+  private uomService: UomService,
+  private permissionService: PermissionService
+) {
+  this.userId = Number(localStorage.getItem('id') || 0);
+  this.permission = this.permissionService.getEmptyPermission(this.functionId);
+}
+userId: number = 0;
 
+// DB/Menu function code exact ah irukkanum
+functionId = 'do-list2';
+
+permission: FunctionPermission;
+isPermissionLoaded = false;
+isPageLoading = false;
   ngOnInit(): void {
     this.detectMode();
     this.loadUoms();
@@ -201,8 +212,96 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
     if (this.isEdit && this.doId) {
       this.loadForEdit(this.doId);
     }
+    this.loadPermission();
+  }
+loadPermission(): void {
+  if (!this.userId || this.userId <= 0) {
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+    this.isPermissionLoaded = true;
+
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'User not found. Please login again.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
   }
 
+  this.isPageLoading = true;
+
+  this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+    next: (res: FunctionPermission) => {
+      this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+      this.isPageLoading = false;
+
+      if (this.canView()) {
+        this.detectMode();
+        this.loadUoms();
+        this.loadDropdowns();
+
+        if (this.isEdit && this.doId) {
+          this.loadForEdit(this.doId);
+        }
+
+        if (!this.isEdit && !this.canCreate()) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Access Denied',
+            text: 'You do not have create permission.',
+            confirmButtonColor: '#0e3a4c'
+          });
+        }
+
+        if (this.isEdit && !this.canEdit()) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Access Denied',
+            text: 'You do not have edit permission.',
+            confirmButtonColor: '#0e3a4c'
+          });
+        }
+      }
+    },
+    error: () => {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+      this.isPageLoading = false;
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Unable to load permission.',
+        confirmButtonColor: '#d33'
+      });
+    }
+  });
+}
+
+canView(): boolean {
+  return this.permissionService.hasView(this.permission);
+}
+
+canCreate(): boolean {
+  return this.permissionService.hasCreate(this.permission);
+}
+
+canEdit(): boolean {
+  return this.permissionService.hasEdit(this.permission);
+}
+
+canDelete(): boolean {
+  return this.permissionService.hasDelete(this.permission);
+}
+
+canSaveWithPermission(): boolean {
+  if (!this.canSaveHeader()) return false;
+  if (!this.isEdit && !this.canCreate()) return false;
+  if (this.isEdit && !this.canEdit()) return false;
+  if (this.isEdit && this.isPosted) return false;
+  return true;
+}
   ngAfterViewChecked(): void {
     if (this.showSignatureModal && this.signatureCanvas && !this.hasCanvasInitialized) {
       this.initCanvas();
@@ -625,49 +724,69 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
 
   /* ---------------- SO change ---------------- */
 
-  onSoChanged(soId: number | null) {
-    if (this.isEdit) return;
+onSoChanged(selectedSo: any) {
+  if (this.isEdit) return;
 
-    this.soLines = [];
-    this.totalDeliverQty = 0;
+  this.soLines = [];
+  this.totalDeliverQty = 0;
 
-    if (!soId) {
-      this.routeText = '';
-      return;
-    }
-
-    this.soSrv.getSOById(soId).subscribe((res: any) => {
-      const dto = res?.data ?? res ?? {};
-      this.deliveryDate = res.data.deliveryDate
-
-      this.routeText = (dto.deliveryTo ?? '').toString();
-
-      const lines = dto.lineItemsList ?? dto.lineItems ?? dto.lines ?? dto.items ?? [];
-
-      this.soLines = (lines || []).map((l: any) => {
-        const ordered = Number(l.quantity ?? l.orderedQty ?? l.qty ?? 0);
-        const delivered = Number(l.deliveredQty ?? l.shippedQty ?? 0);
-        const pending = Math.max(ordered - delivered, 0);
-
-        return {
-          soLineId: Number(l.id ?? l.soLineId ?? 0),
-          itemId: Number(l.itemId ?? 0),
-          itemName: String(l.itemName ?? ''),
-          uom: String(l.uomName ?? l.uom ?? ''),
-          orderedQty: ordered,
-          pendingQty: pending || ordered,
-          deliverQty: pending || ordered,
-          notes: '',
-          warehouseId: l.warehouseId ?? null,
-          binId: l.binId ?? null,
-          supplierId: l.supplierId ?? null,
-          available: l.available ?? null
-        } as UiSoLine;
-      });
-
-      this.recalcTotals();
-    });
+  if (!selectedSo) {
+    this.selectedSoId = null;
+    this.routeText = '';
+    return;
   }
+
+  const soId = Number(selectedSo.id ?? selectedSo);
+
+  const canCreateDO =
+    selectedSo.canCreateDeliveryOrder === true ||
+    selectedSo.canCreateDeliveryOrder === 1 ||
+    selectedSo.canCreateDeliveryOrder === 'true';
+
+  if (!canCreateDO) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'PO Not Created',
+      text: 'Purchase Order is not created for this Sales Order. Please create PO first.'
+    });
+
+    this.selectedSoId = null;
+    this.routeText = '';
+    return;
+  }
+
+  this.soSrv.getSOById(soId).subscribe((res: any) => {
+    const dto = res?.data ?? res ?? {};
+
+    this.deliveryDate = dto.deliveryDate;
+    this.routeText = (dto.deliveryTo ?? '').toString();
+
+    const lines = dto.lineItemsList ?? dto.lineItems ?? dto.lines ?? dto.items ?? [];
+
+    this.soLines = (lines || []).map((l: any) => {
+      const ordered = Number(l.quantity ?? l.orderedQty ?? l.qty ?? 0);
+      const delivered = Number(l.deliveredQty ?? l.shippedQty ?? 0);
+      const pending = Math.max(ordered - delivered, 0);
+
+      return {
+        soLineId: Number(l.id ?? l.soLineId ?? 0),
+        itemId: Number(l.itemId ?? 0),
+        itemName: String(l.itemName ?? ''),
+        uom: String(l.uomName ?? l.uom ?? ''),
+        orderedQty: ordered,
+        pendingQty: pending || ordered,
+        deliverQty: pending || ordered,
+        notes: '',
+        warehouseId: l.warehouseId ?? null,
+        binId: l.binId ?? null,
+        supplierId: l.supplierId ?? null,
+        available: l.available ?? null
+      } as UiSoLine;
+    });
+
+    this.recalcTotals();
+  });
+}
 
   /* ---------------- Totals ---------------- */
 
@@ -691,6 +810,23 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
   /* ---------------- Save ---------------- */
 
   saveDo() {
+    if (!this.isEdit && !this.canCreate()) {
+  return Swal.fire({
+    icon: 'warning',
+    title: 'Access Denied',
+    text: 'You do not have create permission.',
+    confirmButtonColor: '#0e3a4c'
+  });
+}
+
+if (this.isEdit && !this.canEdit()) {
+  return Swal.fire({
+    icon: 'warning',
+    title: 'Access Denied',
+    text: 'You do not have edit permission.',
+    confirmButtonColor: '#0e3a4c'
+  });
+}
     if (!this.selectedSoId) {
       return Swal.fire({ icon: 'warning', title: 'Sales Order required' });
     }
@@ -725,7 +861,6 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
         receivedPersonName: (this.receivedPersonName || '').trim() || null,
         receivedPersonMobileNo: this.receivedPersonMobileNo || null,
         receivedSignature: this.receivedSignature || null,
-          companyId: localStorage.getItem('companyId'),
         lines: this.soLines
           .filter(l => (Number(l.deliverQty) || 0) > 0)
           .map(l => ({
@@ -738,8 +873,7 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
             notes: l.notes || null,
             warehouseId: l.warehouseId ?? null,
             binId: l.binId ?? null,
-            supplierId: l.supplierId ?? null,
-              companyId: localStorage.getItem('companyId'),
+            supplierId: l.supplierId ?? null
           }))
       };
       console.log('DO payload =>', payload);
@@ -777,6 +911,14 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
   /* ---------------- Remove line ---------------- */
 
   removeEditLine(lineId: number) {
+    if (!this.canDelete()) {
+  return Swal.fire({
+    icon: 'warning',
+    title: 'Access Denied',
+    text: 'You do not have delete permission.',
+    confirmButtonColor: '#0e3a4c'
+  });
+}
     if (!this.isEdit || this.isPosted) return;
 
     Swal.fire({

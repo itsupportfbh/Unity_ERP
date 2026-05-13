@@ -1,3 +1,5 @@
+<div *ngIf="isPermissionLoaded; else loadingTemplate">
+  <div class="content-wrapper p-0" *ngIf="canView(); else noAccessTemplate">
 <div class="content-wrapper p-0">
   <div class="content-body">
     <section class="users-list-wrapper">
@@ -48,18 +50,19 @@
               </label>
 
               <button
-                (click)="goToCreate()"
-                class="btn m-1 d-inline-flex align-items-center"
-                style="background-color:#2E5F73;color:white;gap:6px;"
-                [disabled]="isPeriodLocked"
-                [attr.title]="isPeriodLocked
-                  ? (currentPeriodName
-                      ? 'Period ' + currentPeriodName + ' is locked'
-                      : 'Accounting period is locked')
-                  : 'Create Delivery Order'">
-                <i data-feather="plus-circle" class="w-4 h-4"></i>
-                <span>Add</span>
-              </button>
+  *ngIf="canCreate()"
+  (click)="goToCreate()"
+  class="btn m-1 d-inline-flex align-items-center"
+  style="background-color:#2E5F73;color:white;gap:6px;"
+  [disabled]="isPeriodLocked"
+  [attr.title]="isPeriodLocked
+    ? (currentPeriodName
+        ? 'Period ' + currentPeriodName + ' is locked'
+        : 'Accounting period is locked')
+    : 'Create Delivery Order'">
+  <i data-feather="plus-circle" class="w-4 h-4"></i>
+  <span>Add</span>
+</button>
 
             </div>
           </div>
@@ -147,49 +150,66 @@
           </ngx-datatable-column>
 
           <!-- Action -->
-          <ngx-datatable-column name="Action" [width]="210">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="actions">
+         <ngx-datatable-column
+  *ngIf="canEdit() || canDelete()"
+  name="Action"
+  [width]="210"
+  [sortable]="false">
 
-                <!-- EDIT / DELETE disabled when Posted OR Period Locked -->
-                <ng-container *ngIf="row?.isPosted || isPeriodLocked; else editDeleteEnabled">
-                  <i class="fas fa-pen text-muted me-2"
-                     [attr.title]="isPeriodLocked ? 'Period locked' : 'Posted - Edit disabled'"
-                     style="pointer-events:none; opacity:.45;"></i>
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <div class="actions">
 
-                  <i class="fas fa-trash text-muted me-2"
-                     [attr.title]="isPeriodLocked ? 'Period locked' : 'Posted - Delete disabled'"
-                     style="pointer-events:none; opacity:.45;"></i>
-                </ng-container>
+      <ng-container *ngIf="row?.isPosted || isPeriodLocked; else editDeleteEnabled">
+        <i
+          *ngIf="canEdit()"
+          class="fas fa-pen text-muted me-2"
+          [attr.title]="isPeriodLocked ? 'Period locked' : 'Posted - Edit disabled'"
+          style="pointer-events:none; opacity:.45;">
+        </i>
 
-                <ng-template #editDeleteEnabled>
-                  <i class="fas fa-pen text-primary me-2"
-                     (click)="editDo(row.id)"
-                     title="Edit"
-                     style="cursor:pointer;"></i>
+        <i
+          *ngIf="canDelete()"
+          class="fas fa-trash text-muted me-2"
+          [attr.title]="isPeriodLocked ? 'Period locked' : 'Posted - Delete disabled'"
+          style="pointer-events:none; opacity:.45;">
+        </i>
+      </ng-container>
 
-                  <i class="fas fa-trash text-danger me-2"
-                     (click)="deleteDo(row.id)"
-                     title="Delete"
-                     style="cursor:pointer;"></i>
-                </ng-template>
+      <ng-template #editDeleteEnabled>
+        <i
+          *ngIf="canEdit()"
+          class="fas fa-pen text-primary me-2"
+          (click)="editDo(row.id)"
+          title="Edit"
+          style="cursor:pointer;">
+        </i>
 
-                <!-- PRINT always enabled (prints from modal data if opened, else loads lines and prints) -->
-                <i class="fas fa-print text-info"
-                   (click)="printFromRow(row)"
-                   title="Print"
-                   style="cursor:pointer;"></i>
+        <i
+          *ngIf="canDelete()"
+          class="fas fa-trash text-danger me-2"
+          (click)="deleteDo(row.id)"
+          title="Delete"
+          style="cursor:pointer;">
+        </i>
+      </ng-template>
 
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
+      <i
+        class="fas fa-print text-info"
+        (click)="printFromRow(row)"
+        title="Print"
+        style="cursor:pointer;">
+      </i>
 
+    </div>
+  </ng-template>
+</ngx-datatable-column>
         </ngx-datatable>
       </div>
     </section>
   </div>
 </div>
-
+</div>
+</div>
 <!-- DO Lines Modal -->
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="overlay">
   <div (click)="$event.stopPropagation()" class="modal-card">
@@ -243,5 +263,24 @@
     </div>
   </div>
 </div>
+<ng-template #loadingTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>
 
 

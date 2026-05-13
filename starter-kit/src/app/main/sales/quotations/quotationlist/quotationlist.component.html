@@ -1,203 +1,213 @@
-<div class="content-wrapper p-0">
-  <div class="content-body">
-    <section class="users-list-wrapper">
-      <div class="card">
+<div *ngIf="isPermissionLoaded; else loadingTemplate">
+  <div class="content-wrapper p-0" *ngIf="canView(); else noAccessTemplate">
+    <div class="content-body">
+      <section class="users-list-wrapper">
+        <div class="card">
 
-        <!-- Header row -->
-        <div class="row">
-          <!-- Title + page size -->
-          <div class="col-md-6 col-12">
-            <h4 class="card-text page-title">Quotation List</h4>
+          <div class="row">
+            <div class="col-md-6 col-12">
+              <h4 class="card-text page-title">Quotation List</h4>
 
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center gap-1">
-                Show
-                <select class="form-control mx-25" (change)="onLimitChange($event)">
-                  <option [selected]="selectedOption===10" value="10">10</option>
-                  <option [selected]="selectedOption===25" value="25">25</option>
-                  <option [selected]="selectedOption===50" value="50">50</option>
-                  <option [selected]="selectedOption===100" value="100">100</option>
-                </select>
-                entries
-              </label>
+              <div class="d-flex justify-content-between align-items-center m-1">
+                <label class="d-flex align-items-center gap-1">
+                  Show
+                  <select class="form-control mx-25" (change)="onLimitChange($event)">
+                    <option [selected]="selectedOption===10" value="10">10</option>
+                    <option [selected]="selectedOption===25" value="25">25</option>
+                    <option [selected]="selectedOption===50" value="50">50</option>
+                    <option [selected]="selectedOption===100" value="100">100</option>
+                  </select>
+                  entries
+                </label>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+              <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+                <label class="d-flex align-items-center ml-1 ml-md-0">
+                  Search:
+                  <input
+                    [(ngModel)]="searchValue"
+                    name="searchValue"
+                    type="search"
+                    class="form-control ml-25"
+                    (keyup)="filterUpdate($event)"
+                    (search)="filterUpdate($event)"
+                    placeholder="QT number / customer / status / created / modified"
+                  />
+                </label>
+
+                <button
+                  *ngIf="canCreate()"
+                  (click)="goToCreate()"
+                  class="btn m-1 d-inline-flex align-items-center"
+                  style="background-color:#2E5F73;color:white;gap:6px;"
+                >
+                  <i data-feather="plus-circle" class="w-4 h-4"></i>
+                  <span>Add</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Search + Add -->
-          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-              <label class="d-flex align-items-center ml-1 ml-md-0">
-                Search:
-                <input
-                  [(ngModel)]="searchValue"
-                  name="searchValue"
-                  type="search"
-                  class="form-control ml-25"
-                  (keyup)="filterUpdate($event)"
-                  (search)="filterUpdate($event)"
-                  placeholder="QT number / customer / status / created / modified"
-                />
-              </label>
+          <ngx-datatable
+            class="bootstrap core-bootstrap qt-table"
+            [rows]="rows"
+            [rowHeight]="50"
+            [headerHeight]="50"
+            [footerHeight]="50"
+            [limit]="selectedOption"
+            [columnMode]="'standard'"
+            [scrollbarH]="true"
+            [reorderable]="true"
+          >
 
-              <button
-                (click)="goToCreate()"
-                class="btn m-1 d-inline-flex align-items-center"
-                style="background-color:#2E5F73;color:white;gap:6px;"
-              >
-                <i data-feather="plus-circle" class="w-4 h-4"></i>
-                <span>Add</span>
-              </button>
-            </div>
-          </div>
+            <ngx-datatable-column
+              [width]="50"
+              [resizeable]="false"
+              [sortable]="false"
+              [draggable]="false"
+              [canAutoResize]="false">
+              <ng-template ngx-datatable-cell-template let-row="row">
+                <span (click)="openLinesModal(row)" title="View Details" class="eye">
+                  <i class="fas fa-eye"></i>
+                </span>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="QT No" prop="number" [width]="140">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="cell-clip" [title]="row.number">{{ row.number }}</div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Customer" [width]="240">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div
+                  class="cell-clip"
+                  [title]="getCustomerName(row.customerId) || row.customerName || ('#' + row.customerId)"
+                >
+                  {{
+                    row.isCashSales || row.customerId === 0 || row.customerId == null
+                      ? 'Cash Sales'
+                      : (getCustomerName(row.customerId) || row.customerName || ('#' + row.customerId))
+                  }}
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Currency" [width]="110">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="cell-clip" [title]="getCurrencyCode(row.currencyId) || '-'">
+                  {{ getCurrencyCode(row.currencyId) || '-' }}
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Payment Terms" [width]="150">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="cell-clip" [title]="row.paymentTermsName || '-'">
+                  {{ row.paymentTermsName || '-' }}
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Grand Total" [width]="160">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="cell-clip" [title]="row.grandTotal || 0">
+                  {{ row.grandTotal | currency:getCurrencyCode(row.currencyId) }}
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="140">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="cell-clip" [title]="row.deliveryDate | date:'dd-MM-yyyy'">
+                  {{ row.deliveryDate | date:'dd-MM-yyyy' }}
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Validity Date" prop="validityDate" [width]="140">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="cell-clip" [title]="row.validityDate | date:'dd-MM-yyyy'">
+                  {{ row.validityDate | date:'dd-MM-yyyy' }}
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Created By" prop="createdUserName" [width]="160">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="cell-clip" [title]="row.createdUserName || '-'">
+                  {{ row.createdUserName || '-' }}
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Modified By" prop="modifiedUserName" [width]="160">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="cell-clip" [title]="row.modifiedUserName || '-'">
+                  {{ row.modifiedUserName || '-' }}
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="Status" prop="status" [width]="130">
+              <ng-template let-value="value" ngx-datatable-cell-template>
+                <div class="badge badge-pill status-pill" [ngClass]="statusClass(value)" [title]="statusLabel(value)">
+                  {{ statusLabel(value) }}
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column
+              *ngIf="canEdit() || canDelete()"
+              name="Action"
+              [width]="200"
+              [sortable]="false"
+            >
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="actions">
+
+                  <i
+                    class="fas fa-print text-info"
+                    title="Print / Download PDF"
+                    (click)="printFromRow(row)">
+                  </i>
+
+                  <ng-container *ngIf="+row.status === 2 || +row.status === 3 || +row.status === 4; else actionsEnabled">
+                    <i *ngIf="canEdit()" class="fas fa-pen text-muted" title="Disabled"></i>
+                    <i *ngIf="canDelete()" class="fas fa-trash text-muted" title="Disabled"></i>
+                  </ng-container>
+
+                  <ng-template #actionsEnabled>
+                    <i
+                      *ngIf="canEdit()"
+                      class="fas fa-pen text-primary"
+                      (click)="editQuotation(row.id)"
+                      title="Edit">
+                    </i>
+
+                    <i
+                      *ngIf="canDelete()"
+                      class="fas fa-trash text-danger"
+                      (click)="deleteQuotation(row.id)"
+                      title="Delete">
+                    </i>
+                  </ng-template>
+
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+          </ngx-datatable>
+
         </div>
-
-        <!-- Main datatable -->
-        <ngx-datatable
-          class="bootstrap core-bootstrap qt-table"
-          [rows]="rows"
-          [rowHeight]="50"
-          [headerHeight]="50"
-          [footerHeight]="50"
-          [limit]="selectedOption"
-          [columnMode]="'standard'"
-          [scrollbarH]="true"
-          [reorderable]="true"
-        >
-
-          <!-- View / eye -->
-          <ngx-datatable-column
-            [width]="50"
-            [resizeable]="false"
-            [sortable]="false"
-            [draggable]="false"
-            [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span (click)="openLinesModal(row)" title="View Details" class="eye">
-                <i class="fas fa-eye"></i>
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- QT No -->
-          <ngx-datatable-column name="QT No" prop="number" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="cell-clip" [title]="row.number">{{ row.number }}</div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Customer -->
-          <ngx-datatable-column name="Customer" [width]="240">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="cell-clip" [title]="getCustomerName(row.customerId) || row.customerName || ('#' + row.customerId)">
-               {{ row.isCashSales || row.customerId === 0 || row.customerId == null ? 'Cash Sales' : (getCustomerName(row.customerId) || row.customerName || ('#' + row.customerId)) }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Currency -->
-          <ngx-datatable-column name="Currency" [width]="110">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="cell-clip" [title]="getCurrencyCode(row.currencyId) || '-'">
-                {{ getCurrencyCode(row.currencyId) || '-' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Payment Terms -->
-          <ngx-datatable-column name="Payment Terms" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="cell-clip" [title]="row.paymentTermsName || '-'">
-                {{ row.paymentTermsName || '-' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Grand Total -->
-          <ngx-datatable-column name="Grand Total" [width]="160">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="cell-clip" [title]="(row.grandTotal || 0)">
-                {{ row.grandTotal | currency:getCurrencyCode(row.currencyId) }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Delivery / Validity Date (your data has deliveryDate) -->
-          <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="cell-clip" [title]="(row.deliveryDate | date:'dd-MM-yyyy')">
-                {{ row.deliveryDate | date:'dd-MM-yyyy' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
- <ngx-datatable-column name="Validity Date" prop="validityDate" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="cell-clip" [title]="(row.validityDate | date:'dd-MM-yyyy')">
-                {{ row.validityDate | date:'dd-MM-yyyy' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-          <!-- Created By -->
-          <ngx-datatable-column name="Created By" prop="createdUserName" [width]="160">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="cell-clip" [title]="row.createdUserName || '-'">
-                {{ row.createdUserName || '-' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Modified By -->
-          <ngx-datatable-column name="Modified By" prop="modifiedUserName" [width]="160">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="cell-clip" [title]="row.modifiedUserName || '-'">
-                {{ row.modifiedUserName || '-' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Status -->
-          <ngx-datatable-column name="Status" prop="status" [width]="130">
-            <ng-template let-value="value" ngx-datatable-cell-template>
-              <div class="badge badge-pill status-pill" [ngClass]="statusClass(value)" [title]="statusLabel(value)">
-                {{ statusLabel(value) }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Action -->
-          <ngx-datatable-column name="Action" [width]="200" [sortable]="false">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="actions">
-
-                <!-- Print -->
-                <i
-                  class="fas fa-print text-info"
-                  title="Print / Download PDF"
-                  (click)="printFromRow(row)">
-                </i>
-
-                <!-- Disable edit/delete for Approved/Posted etc -->
-                <ng-container *ngIf="+row.status === 2 || +row.status === 3 || +row.status === 4; else actionsEnabled">
-                  <i class="fas fa-pen text-muted" title="Disabled"></i>
-                  <i class="fas fa-trash text-muted" title="Disabled"></i>
-                </ng-container>
-
-                <ng-template #actionsEnabled>
-                  <i class="fas fa-pen text-primary" (click)="editQuotation(row.id)" title="Edit"></i>
-                  <i class="fas fa-trash text-danger" (click)="deleteQuotation(row.id)" title="Delete"></i>
-                </ng-template>
-
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-        </ngx-datatable>
-
-      </div>
-    </section>
+      </section>
+    </div>
   </div>
 </div>
 
-<!-- Quotation Lines Modal -->
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="overlay">
   <div (click)="$event.stopPropagation()" class="modal-card">
     <div class="modal-head">
@@ -224,7 +234,7 @@
           <tbody>
             <tr *ngFor="let l of modalLines; let i = index" [class.zebra]="i % 2 === 0">
               <td>{{ l.itemName || getItemName(l.itemId) || l.itemId }}</td>
-              <td>{{ l.uomName  || getUomName(l.uomId)   || '-' }}</td>
+              <td>{{ l.uomName || getUomName(l.uomId) || '-' }}</td>
               <td class="ta-right">{{ l.qty | number:'1.0-3' }}</td>
               <td class="ta-right">{{ l.unitPrice | number:'1.2-4' }}</td>
               <td class="ta-right">{{ l.discountPct | number:'1.0-2' }}</td>
@@ -256,5 +266,22 @@
   </div>
 </div>
 
-<!-- ✅ PDF Preview Modal -->
+<ng-template #loadingTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
 
+<ng-template #noAccessTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

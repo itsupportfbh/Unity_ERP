@@ -1,6 +1,6 @@
-<div class="content-wrapper p-0">
+<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper">
+    <section *ngIf="canView(); else noAccessTemplate"  class="users-list-wrapper">
       <div class="card">
 
         <!-- ===== HEADER ===== -->
@@ -39,6 +39,7 @@
             </label>
 
             <button
+              *ngIf="canCreate()"
               class="btn d-inline-flex align-items-center m-1"
               style="background:#2E5F73;color:#fff;gap:6px;"
               (click)="add()">
@@ -108,6 +109,7 @@
             <ng-template ngx-datatable-cell-template let-row="row">
               <div class="d-flex justify-content-center align-items-center gap-1">
                 <i
+                  *ngIf="canEdit()"
                   class="fas fa-pen text-primary mr-1"
                   style="cursor:pointer;"
                   (click)="edit(row.id)"
@@ -115,6 +117,7 @@
                 </i>
 
                 <i
+                  *ngIf="canDelete()"
                   class="fas fa-trash text-danger"
                   style="cursor:pointer;"
                   (click)="disable(row)"
@@ -132,3 +135,23 @@
     </section>
   </div>
 </div>
+
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

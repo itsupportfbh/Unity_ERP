@@ -25,6 +25,7 @@ export interface PeriodStatusDto {
   endDate?: string;
 }
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 type PoLinePrintRow = {
   description: string;
@@ -126,7 +127,13 @@ pendingPrSearch = '';
 emailConfirmRow: any = null;
 emailSending = false;
 
+poPermission: FunctionPermission | null = null;
+canApprovePo = false;
+canRejectPo = false;
 
+showPoApprovalModal = false;
+pendingPoList: any[] = [];
+poApprovalSearch = '';
   // Print details 
       // ✅ PO PDF modal
     showPoPdfModal = false;
@@ -162,7 +169,8 @@ emailSending = false;
     private poTempService: POTempService,
     private purchaseService: PurchaseService,
     private periodService: PeriodCloseService,
-     private sanitizer: DomSanitizer
+     private sanitizer: DomSanitizer,
+     private permissionService: PermissionService,
   ) {}
 
   // ================== Lifecycle ==================
@@ -174,6 +182,7 @@ emailSending = false;
     this.loadDrafts();
     this.loadReorderCount();
     this.loadPendingPrCount();
+    this.loadPoPermission();
   }
 
   ngAfterViewInit(): void {
@@ -183,6 +192,91 @@ emailSending = false;
   ngAfterViewChecked(): void {
     feather.replace();
   }
+
+
+  loadPoPermission(): void {
+  const userId = Number(localStorage.getItem('id') || 0);
+
+  this.permissionService.getFunctionPermission(userId, 'pr-list').subscribe({
+    next: (permission) => {
+      this.poPermission = permission;
+      this.canApprovePo = this.permissionService.hasApprove(permission);
+      this.canRejectPo = this.permissionService.hasReject(permission);
+    },
+    error: () => {
+      this.poPermission = this.permissionService.getEmptyPermission('pr-list');
+      this.canApprovePo = false;
+      this.canRejectPo = false;
+    }
+  });
+}
+
+get pendingPoApprovalCount(): number {
+  return (this.tempData || []).filter((x: any) => Number(x.approvalStatus) === 1).length;
+}
+
+openPoApprovalModal(): void {
+  this.pendingPoList = (this.tempData || []).filter((x: any) => Number(x.approvalStatus) === 1);
+  this.showPoApprovalModal = true;
+}
+
+closePoApprovalModal(): void {
+  this.showPoApprovalModal = false;
+  this.poApprovalSearch = '';
+}
+
+filteredPendingPoList(): any[] {
+  const q = (this.poApprovalSearch || '').toLowerCase().trim();
+
+  if (!q) return this.pendingPoList;
+
+  return this.pendingPoList.filter((x: any) =>
+    (x.purchaseOrderNo || '').toLowerCase().includes(q) ||
+    (x.supplierName || '').toLowerCase().includes(q) ||
+    (x.createdBy || '').toLowerCase().includes(q)
+  );
+}
+
+getPoLines(row: any): any[] {
+  try {
+    return Array.isArray(row?.poLines)
+      ? row.poLines
+      : JSON.parse(row?.poLines || '[]');
+  } catch {
+    return [];
+  }
+}
+
+approveRejectPO(row: any, status: number): void {
+  const actionText = status === 2 ? 'approve' : 'reject';
+
+  Swal.fire({
+    title: 'Are you sure?',
+    text: `Do you want to ${actionText} this PO?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: status === 2 ? 'Approve' : 'Reject',
+    confirmButtonColor: status === 2 ? '#28a745' : '#dc3545'
+  }).then((result) => {
+    if (!result.isConfirmed) return;
+
+    this.poService.updatePOApprovalStatus(row.id, status).subscribe({
+      next: () => {
+        Swal.fire(
+          'Success',
+          `PO ${status === 2 ? 'approved' : 'rejected'} successfully`,
+          'success'
+        );
+
+        this.closePoApprovalModal();
+        this.loadRequests();
+      },
+      error: () => {
+        Swal.fire('Error', 'Failed to update PO status', 'error');
+      }
+    });
+  });
+}
 
   // ================== Helpers ==================
 

@@ -47,4 +47,10 @@ export class POService {
         return this.http.post(`${this.url}/purchaseorder/${id}/email-supplier`, formData);
     }
 
+ updatePOApprovalStatus(id: number, status: number): Observable<any> {
+  return this.http.put<any>(
+    this.url + `/PurchaseOrder/UpdateApprovalStatus/${id}`,
+    { approvalStatus: status }
+  );
+}
 }

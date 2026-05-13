@@ -177,93 +177,119 @@ export class UserAccessWizardComponent {
     }
   }
 
- submitAll(): void {
-  if (!this.userFormComp?.form) return;
+  private refreshCurrentUserMenuIdsAfterSave(): void {
+    const viewRows = (this.rolesComp?.rows || [])
+      .filter((r: any) => r.flags?.V === true);
 
-  this.userFormComp.form.markAllAsTouched();
+    const moduleIds = viewRows.map((r: any) =>
+      String(r.moduleId).trim().toLowerCase()
+    );
 
-  const passwordInvalid =
-    (!this.userFormComp.isEdit && this.userFormComp.form.get('password')?.invalid) ||
-    (this.userFormComp.isEdit &&
-      this.userFormComp.canEditPassword &&
-      this.userFormComp.form.get('password')?.invalid);
+    const functionIds = viewRows.map((r: any) =>
+      String(r.functionId).trim().toLowerCase()
+    );
 
-  if (
-    this.userFormComp.form.get('username')?.invalid ||
-    this.userFormComp.form.get('email')?.invalid ||
-    this.userFormComp.form.get('departmentId')?.invalid ||
-    this.userFormComp.form.get('locationId')?.invalid ||
-    passwordInvalid
-  ) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Invalid User Details',
-      text: 'Please complete required fields in Account Details.'
-    });
-    this.activeTab = 'users';
-    return;
+    const finalIds = Array.from(
+      new Set([...moduleIds, ...functionIds])
+    );
+
+    console.log('UPDATED MENU IDS =>', finalIds);
+
+    localStorage.setItem('allowedMenuIds', JSON.stringify(finalIds));
+    localStorage.setItem('menuIds', JSON.stringify(finalIds));
+
+    window.dispatchEvent(new Event('menu-permission-updated'));
   }
 
-  this.captureReviewUser();
-  this.captureReviewPermissions();
+  submitAll(): void {
+    if (!this.userFormComp?.form) return;
 
-  const orgGuid =
-    localStorage.getItem('orgGuid') ||
-    localStorage.getItem('OrgGuid') ||
-    localStorage.getItem('orgGUID') ||
-    '';
+    this.userFormComp.form.markAllAsTouched();
 
-  const payload = {
-    orgGuid: orgGuid,
-    user: this.finalUserPayload,
-    permissions: this.finalPermissionPayload || []
-  };
+    const passwordInvalid =
+      (!this.userFormComp.isEdit && this.userFormComp.form.get('password')?.invalid) ||
+      (this.userFormComp.isEdit &&
+        this.userFormComp.canEditPassword &&
+        this.userFormComp.form.get('password')?.invalid);
 
-  console.log('FINAL SUBMIT PAYLOAD', payload);
-
-  if (!orgGuid) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'OrgGuid Missing',
-      text: 'LocalStorage la orgGuid கிடைக்கலை.'
-    });
-    return;
-  }
-
-  Swal.fire({
-    title: this.userFormComp.isEdit ? 'Updating...' : 'Saving...',
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading()
-  });
-
-  const req = this.userFormComp.isEdit
-    ? this.userService.updateUserAccessWizard(this.userFormComp.id, payload)
-    : this.userService.submitUserAccessWizard(payload);
-
-  req.subscribe({
-    next: (res: any) => {
+    if (
+      this.userFormComp.form.get('username')?.invalid ||
+      this.userFormComp.form.get('email')?.invalid ||
+      this.userFormComp.form.get('departmentId')?.invalid ||
+      this.userFormComp.form.get('locationId')?.invalid ||
+      passwordInvalid
+    ) {
       Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: res?.message || (this.userFormComp.isEdit
-          ? 'User access updated successfully.'
-          : 'User access saved successfully.')
-      }).then(() => {
-        this.router.navigate(['/admin/users']);
+        icon: 'warning',
+        title: 'Invalid User Details',
+        text: 'Please complete required fields in Account Details.'
       });
-    },
-    error: (err) => {
-      console.error('SUBMIT ERROR', err);
-      Swal.fire({
-        icon: 'error',
-        title: 'Failed',
-        text:
-          err?.error?.message ||
-          err?.error?.title ||
-          err?.message ||
-          'Something went wrong while saving.'
-      });
+      this.activeTab = 'users';
+      return;
     }
-  });
-}
+
+    this.captureReviewUser();
+    this.captureReviewPermissions();
+
+    const orgGuid =
+      localStorage.getItem('orgGuid') ||
+      localStorage.getItem('OrgGuid') ||
+      localStorage.getItem('orgGUID') ||
+      '';
+
+    const payload = {
+      orgGuid: orgGuid,
+      user: this.finalUserPayload,
+      permissions: this.finalPermissionPayload || []
+    };
+
+    console.log('FINAL SUBMIT PAYLOAD', payload);
+
+    if (!orgGuid) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'OrgGuid Missing',
+        text: 'LocalStorage la orgGuid கிடைக்கலை.'
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: this.userFormComp.isEdit ? 'Updating...' : 'Saving...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    const req = this.userFormComp.isEdit
+      ? this.userService.updateUserAccessWizard(this.userFormComp.id, payload)
+      : this.userService.submitUserAccessWizard(payload);
+
+    req.subscribe({
+      next: (res: any) => {
+        this.refreshCurrentUserMenuIdsAfterSave();
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: res?.message || (this.userFormComp.isEdit
+            ? 'User access updated successfully.'
+            : 'User access saved successfully.')
+        }).then(() => {
+          this.router.navigate(['/admin/users']);
+        });
+      },
+      error: (err) => {
+        console.error('SUBMIT ERROR', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Failed',
+          text:
+            err?.error?.message ||
+            err?.error?.title ||
+            err?.message ||
+            'Something went wrong while saving.'
+        });
+      }
+    });
+  }
 }

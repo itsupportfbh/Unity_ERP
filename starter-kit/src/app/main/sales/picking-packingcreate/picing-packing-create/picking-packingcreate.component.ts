@@ -296,6 +296,7 @@ export class PickingPackingcreateComponent implements OnInit {
   }
   // Save / Generate DO
   saveDo() {
+    debugger
     if (!this.selectedSoId || !this.hasAnyDeliverQty()) return;
 
     if (!this.validateBeforeSave()) return;
@@ -309,6 +310,7 @@ export class PickingPackingcreateComponent implements OnInit {
       qrCode: this.soHdr.qrCode,
       barCodeSrc: this.toBase64(this.barCodeSrc),
       qrCodeSrc: this.toBase64(this.qrCodeSrc),
+      companyId: localStorage.getItem('companyId'),
       lineItems: this.rows
         .filter(r => (r.quantity ?? 0) > 0)
         .map(r => ({
@@ -321,7 +323,8 @@ export class PickingPackingcreateComponent implements OnInit {
           supplierName: r.supplierName,
           binId: r.binId,
           quantity: r.quantity,
-          cartonId: r.cartonId ?? null
+          cartonId: r.cartonId ?? null,
+          companyId: localStorage.getItem('companyId')
         }))
     };
 

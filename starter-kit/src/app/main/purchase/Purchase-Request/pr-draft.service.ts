@@ -57,7 +57,7 @@ private url = environment.apiUrl
   }
 
   // ✅ DELETE - Delete a draft
-  delete(id: number, userId: string): Observable<any> {
+  delete(id: number, userId: number): Observable<any> {
     return this.http.delete<any>(`${this.url + PurchaseDraftAPIUrls.DeletePurchaseRequestDraft}${id}`, {
       params: { userId }
     });

@@ -1409,15 +1409,15 @@ calcTotals(lines: any[], shipping = 0, headerDiscount = 0) {
     prNo: (l.prNo || '').toString().trim()
   }));
 }
- private getRequiredKeysForSave(): string[] {
-  const base = ['supplier', 'approval', 'paymentTerms'];
-  if (!this.lockHeaderByPR) base.push('deliveryLoc'); // ✅ required only when no PR
+private getRequiredKeysForSave(): string[] {
+  const base = ['supplier', 'paymentTerms'];
+  if (!this.lockHeaderByPR) base.push('deliveryLoc');
   return base;
 }
 
   saveRequest() {
     debugger
-
+this.disabledButton = true;
     if (this.draftId) {
 
       this.submitted = true;
@@ -1446,7 +1446,10 @@ calcTotals(lines: any[], shipping = 0, headerDiscount = 0) {
       }
 
 
-      if (!this.validatePO()) return;
+      if (!this.validatePO()) {
+  this.disabledButton = false;
+  return;
+}
       this.normalizeLinesBeforeSave();
       const draftPayload = this.buildPayloadForSaveDraft();
 
@@ -1494,30 +1497,33 @@ calcTotals(lines: any[], shipping = 0, headerDiscount = 0) {
 
     this.normalizeLinesBeforeSave();
 
-    const payload = {
-      id: this.poHdr.id ? this.poHdr.id : 0,
-      purchaseOrderNo: this.poHdr.purchaseOrderNo ? this.poHdr.purchaseOrderNo : '',
-      supplierId: this.poHdr.supplierId,
-      approveLevelId: this.poHdr.approveLevelId,
-      paymentTermId: this.poHdr.paymentTermId,
-      currencyId: this.poHdr.currencyId,
-      fxRate: this.poHdr.fxRate,
-      incotermsId: this.poHdr.incotermsId,
-      poDate: this.poHdr.poDate,
-      deliveryDate: this.poHdr.deliveryDate,
-      location:this.poHdr.location,
-      contactNumber: this.poHdr.contactNumber,
-      remarks: this.poHdr.remarks,
-      tax: this.poHdr.tax,
-      shipping: this.poHdr.shipping,
-      discount: this.poHdr.discount,
-      subTotal: Number(this.poTotals.subTotal.toFixed(2)),
-      netTotal: Number(this.poTotals.netTotal.toFixed(2)),
-      approvalStatus: this.poHdr.approvalStatus,
-      poLines: JSON.stringify(this.poLines),
-      StockReorderId: this.poHdr.stockReorderId
-    };
+  const totals = this.poTotals;
 
+const payload = {
+  id: this.poHdr.id ? this.poHdr.id : 0,
+  purchaseOrderNo: this.poHdr.purchaseOrderNo || '',
+  supplierId: Number(this.poHdr.supplierId || 0),
+  approveLevelId: 0,
+  paymentTermId: Number(this.poHdr.paymentTermId || 0),
+  currencyId: Number(this.poHdr.currencyId || 0),
+  fxRate: Number(this.poHdr.fxRate || 0),
+  incotermsId: Number(this.poHdr.incotermsId || 0),
+  poDate: this.poHdr.poDate,
+  deliveryDate: this.poHdr.deliveryDate,
+  location: this.poHdr.location || '',
+  contactNumber: (this.poHdr.contactNumber || '').toString(),
+  remarks: this.poHdr.remarks || '',
+  tax: Number(this.poHdr.tax || 0),
+  shipping: Number(this.poHdr.shipping || 0),
+  discount: Number(this.poHdr.discount || 0),
+
+  subTotal: Number((totals.subTotal || 0).toFixed(2)),
+  netTotal: Number((totals.netTotal || 0).toFixed(2)),
+
+  approvalStatus: 1,
+  poLines: JSON.stringify(this.poLines || []),
+  stockReorderId: Number(this.poHdr.stockReorderId || 0)
+};
     if (this.poHdr.id && this.poHdr.id > 0) {
       // 🔹 Update request
       this.poService.updatePO(payload).subscribe({
@@ -1534,7 +1540,9 @@ calcTotals(lines: any[], shipping = 0, headerDiscount = 0) {
 
         },
         error: () => {
+          this.disabledButton = false;
           Swal.fire({
+            
             icon: 'error',
             title: 'Error',
             text: 'Failed to updated PO',
@@ -1560,6 +1568,7 @@ calcTotals(lines: any[], shipping = 0, headerDiscount = 0) {
 
         },
         error: () => {
+          this.disabledButton = false;
           Swal.fire({
             icon: 'error',
             title: 'Error',

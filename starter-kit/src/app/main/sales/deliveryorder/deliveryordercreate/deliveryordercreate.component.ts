@@ -725,6 +725,7 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
         receivedPersonName: (this.receivedPersonName || '').trim() || null,
         receivedPersonMobileNo: this.receivedPersonMobileNo || null,
         receivedSignature: this.receivedSignature || null,
+          companyId: localStorage.getItem('companyId'),
         lines: this.soLines
           .filter(l => (Number(l.deliverQty) || 0) > 0)
           .map(l => ({
@@ -737,7 +738,8 @@ export class DeliveryordercreateComponent implements OnInit, AfterViewChecked {
             notes: l.notes || null,
             warehouseId: l.warehouseId ?? null,
             binId: l.binId ?? null,
-            supplierId: l.supplierId ?? null
+            supplierId: l.supplierId ?? null,
+              companyId: localStorage.getItem('companyId'),
           }))
       };
       console.log('DO payload =>', payload);

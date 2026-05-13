@@ -82,4 +82,12 @@ export class PermissionService {
   hasDelete(permission: FunctionPermission | null | undefined): boolean {
     return !!permission?.delete;
   }
+
+  hasApprove(permission: FunctionPermission | null | undefined): boolean {
+  return !!permission?.approve;
+}
+
+hasReject(permission: FunctionPermission | null | undefined): boolean {
+  return !!permission?.reject;
+}
 }

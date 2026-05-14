@@ -76,7 +76,6 @@
     </button>
   </div>
 
-  <!-- ✅ multi-grn controls -->
   <input type="hidden" formControlName="grnIds" />
   <input type="hidden" formControlName="grnNos" />
 
@@ -87,15 +86,19 @@
       type="button"
       class="pinX__dropItemOneLine"
       *ngFor="let g of grnFiltered"
+      [class.pinX__dropItem--blocked]="isGrnBlocked(g)"
+      [attr.title]="getGrnBlockMessage(g)"
       (click)="toggleGrn(g)">
 
       <span class="xNo">{{ g.grnNo }}</span>
       <span class="xSep">•</span>
-   
       <span class="xPo" *ngIf="g.poNo">PO: {{ g.poNo }}</span>
 
-      <!-- ✅ selected tick -->
-      <span class="ml-auto" *ngIf="isGrnSelected(g.id)">
+      <span class="ml-auto" *ngIf="isGrnBlocked(g)">
+        <i class="fas fa-exclamation-triangle text-warning"></i>
+      </span>
+
+      <span class="ml-auto" *ngIf="!isGrnBlocked(g) && isGrnSelected(g.id)">
         <i class="fas fa-check text-success"></i>
       </span>
     </button>
@@ -103,14 +106,12 @@
     <div *ngIf="!grnFiltered?.length" class="pinX__dropEmpty">No results</div>
   </div>
 
-<div class="mt-50" *ngIf="selectedGrnNos?.length">
-  <span class="pinX__grnBadge"
-        *ngFor="let n of selectedGrnNos">
-    {{ n }}
-    <i class="fas fa-times"
-       (click)="removeGrnByNo(n)"></i>
-  </span>
-</div>
+  <div class="mt-50" *ngIf="selectedGrnNos?.length">
+    <span class="pinX__grnBadge" *ngFor="let n of selectedGrnNos">
+      {{ n }}
+      <i class="fas fa-times" (click)="removeGrnByNo(n)"></i>
+    </span>
+  </div>
 </div>
 
             <!-- Supplier -->

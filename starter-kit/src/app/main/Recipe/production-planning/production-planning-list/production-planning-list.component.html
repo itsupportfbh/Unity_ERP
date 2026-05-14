@@ -1,6 +1,6 @@
-<div class="content-wrapper p-0">
+<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper">
+    <section *ngIf="canView(); else noAccessTemplate" class="users-list-wrapper">
       <div class="card">
 
         <div class="row">
@@ -31,7 +31,7 @@
                        (keyup)="applyFilter()" (search)="applyFilter()">
               </label>
 
-              <button class="btn d-inline-flex align-items-center"
+              <button *ngIf="canCreate()" class="btn d-inline-flex align-items-center"
                       style="background:#2E5F73;color:#fff;gap:6px;" (click)="goToCreate()"
                       >
                 <i data-feather="plus-circle"></i>
@@ -110,18 +110,18 @@
               <div style="display:flex;justify-content:center;gap:12px;align-items:center;">
 
                   <!-- PDF icon -->
-              <i class="fas fa-file-pdf text-danger"
+              <i *ngIf="canExport()" class="fas fa-file-pdf text-danger"
                 style="cursor:pointer;font-size:18px;"
                 (click)="downloadPdf(row.id)"
                 title="Download PDF"></i>
                 <!-- Edit icon -->
-                <i class="fas fa-pen text-primary"
+                <i *ngIf="canEdit()" class="fas fa-pen text-primary"
                    style="cursor:pointer;"
                    (click)="edit(row.id)"
                    title="Edit"></i>
 
                 <!-- Delete icon -->
-                <i class="fas fa-trash text-danger"
+                <i  *ngIf="canDelete()" class="fas fa-trash text-danger"
    style="cursor:pointer;"
    (click)="remove(row.id)"
    title="Delete"></i>
@@ -277,3 +277,23 @@
 
   </div>
 </div>
+
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

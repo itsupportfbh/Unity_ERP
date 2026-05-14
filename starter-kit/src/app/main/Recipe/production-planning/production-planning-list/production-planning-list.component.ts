@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import { ProductionPlanLineDto, ProductionPlanPrintDto, ProductionPlanService } from '../production-plan.service';
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 const vfs = (pdfFonts as any)?.pdfMake?.vfs || (pdfFonts as any)?.vfs;
 if (!vfs) {
   console.error('pdfmake vfs not found. Check vfs_fonts import', pdfFonts);
@@ -33,12 +34,89 @@ shortageGrnSearch = '';
 selectedOption = 10;
 selectedPlanId: number | null = null;
 
-  constructor(private srv: ProductionPlanService, private router: Router) {}
+userId: number = 0;
+functionId = 'pp-list';
+
+permission: FunctionPermission;
+isPermissionLoaded = false;
+isPageLoading = false;
+
+  constructor(private srv: ProductionPlanService, private router: Router,
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   ngOnInit(): void {
-    this.load();
-    this.loadShortageGrnCount();
+    this.loadPermission();
+  }
+    
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
 
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+        console.log('Permission:', this.permission);
+console.log('Can Export:', this.canExport());
+
+        if (this.canView()) {
+            this.load();
+            this.loadShortageGrnCount();
+        } else {
+          this.rows = [];
+          // this.isDisplay = false;
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+  canExport(): boolean {
+    return this.permissionService.hasExport(this.permission);
   }
 
   load(): void {

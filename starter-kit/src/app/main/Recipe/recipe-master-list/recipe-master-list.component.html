@@ -1,6 +1,6 @@
-<div class="content-wrapper p-0">
+<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper">
+    <section *ngIf="canView(); else noAccessTemplate" class="users-list-wrapper">
       <div class="card">
 
         <!-- ==================== HEADER ROW ==================== -->
@@ -45,6 +45,7 @@
               <div class="d-flex align-items-center ml-1">
                 <!-- Add -->
                 <button
+                  *ngIf="canCreate()"
                   (click)="goToCreate()"
                   class="btn mr-1 d-inline-flex align-items-center"
                   style="background-color:#2E5F73;color:white;gap:6px;"
@@ -122,13 +123,15 @@
               <div style="display:flex;justify-content:center;align-items:center;gap:10px;">
 
                 <!-- Edit -->
-                <i class="fas fa-pen text-primary"
+                <i *ngIf="canEdit()" class="fas fa-pen text-primary"
                    style="cursor:pointer;"
                    (click)="editRecipe(row.id)"
                    title="Edit"></i>
 
                 <!-- Delete -->
-                <i class="fas fa-trash text-danger"
+                <i 
+                  *ngIf="canDelete()"
+                  class="fas fa-trash text-danger"
                    style="cursor:pointer;"
                    (click)="deleteRecipe(row.id)"
                    title="Delete"></i>
@@ -246,4 +249,24 @@
 
   </div>
 </div>
+
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>
 

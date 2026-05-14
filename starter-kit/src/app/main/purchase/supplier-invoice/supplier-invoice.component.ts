@@ -21,6 +21,10 @@ interface GRNHeader {
   poLinesJson?: any;
   currencyId?: number;
   tax?: number;
+
+  previousPinPending?: boolean;
+  previousPinNo?: string;
+  previousGrnNo?: string;
 }
 
 type TaxMode = 'EXCLUSIVE' | 'INCLUSIVE' | 'ZERO';
@@ -32,8 +36,6 @@ type PinLine = {
   discountPct: number;
   location?: string;
   budgetLineId?: number | null;
-
-  // ✅ per-line tax mode only
   taxMode?: TaxMode;
 };
 
@@ -46,9 +48,7 @@ type PinLine = {
 export class SupplierInvoiceComponent implements OnInit, OnDestroy {
 
   form: FormGroup;
-
-  // ✅ Scenario A/B
-  combineMode = true; // true = multi GRN, false = single
+  combineMode = true;
 
   grnOpen = false;
   grnSearch = '';
@@ -56,9 +56,8 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
   grnFiltered: GRNHeader[] = [];
 
   selectedGrnNos: string[] = [];
-
   minDate = '';
-  userId: string;
+userId: number = 0;
 
   subTotal = 0;
   discountTotal = 0;
@@ -68,7 +67,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
 
   parentHeadList: any[] = [];
   ocrOpen = false;
-
   isPartialAsked = false;
 
   trackByLine = (index: number) => index;
@@ -82,9 +80,9 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     private coaService: ChartofaccountService,
     private cdr: ChangeDetectorRef
   ) {
-    this.userId = localStorage.getItem('id') ?? 'System';
+     const storedUserId = localStorage.getItem('id');
+  this.userId = storedUserId ? Number(storedUserId) : 0;
 
-    // ✅ Header tax% only (taxMode removed)
     this.form = this.fb.group({
       id: [0],
       invoiceNo: [''],
@@ -94,10 +92,7 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
       supplierName: [''],
       invoiceDate: ['', Validators.required],
       amount: [0, [Validators.required, Validators.min(0)]],
-
-      // ✅ header tax percent only
       tax: [0, [Validators.min(0)]],
-
       currencyId: [null],
       status: [0],
       lines: this.fb.array([]),
@@ -105,19 +100,19 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     });
   }
 
-  get lines(): FormArray { return this.form.get('lines') as FormArray; }
+  get lines(): FormArray {
+    return this.form.get('lines') as FormArray;
+  }
 
   ngOnInit(): void {
     document.body.classList.add('pin-supplier-invoice-page');
-
     this.setMinDate();
     this.loadAccountHeads();
 
     this.route.paramMap.subscribe(pm => {
       const id = Number(pm.get('id') || 0);
-      if (id > 0) {
-        this.loadInvoice(id);
-      } else {
+      if (id > 0) this.loadInvoice(id);
+      else {
         this.loadGrnsForCreate();
         this.seedEmptyLine();
       }
@@ -128,15 +123,14 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     document.body.classList.remove('pin-supplier-invoice-page');
   }
 
-  // -------------------------
-  // GRN list load
-  // -------------------------
   private loadGrnsForCreate(): void {
     this.grnService.getAvailableForPinCreate().subscribe({
       next: (res: any) => {
         const raw = res?.data ?? res ?? [];
         this.grnList = raw.map((x: any) => this.mapGrn(x));
         this.grnFiltered = [...this.grnList];
+
+        console.log('GRN LIST FOR PIN', this.grnList);
       },
       error: (err) => console.error('Error loading GRNs', err)
     });
@@ -154,24 +148,63 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
   }
 
   private mapGrn(x: any): GRNHeader {
+    const previousPinPendingValue =
+      x.previousPinPending ??
+      x.PreviousPinPending ??
+      x.previousPINPending ??
+      x.previous_pin_pending ??
+      0;
+
     return {
-      id: x.id,
-      grnNo: x.grnNo,
-      poid: x.poid,
-      poNo: x.poNo,
-      tax: x.tax,
-      supplierId: x.supplierId,
-      supplierName: x.supplierName,
-      grnJson: x.grnJson,
-      poLines: x.poLines,
-      poLinesJson: x.poLinesJson,
-      currencyId: x.currencyId
+      id: Number(x.id ?? x.Id ?? 0),
+      grnNo: x.grnNo ?? x.GrnNo ?? x.GRNNo ?? '',
+      poid: Number(x.poid ?? x.poId ?? x.POID ?? x.PoId ?? 0),
+      poNo: x.poNo ?? x.PoNo ?? x.PONo ?? '',
+      tax: x.tax ?? x.Tax ?? 0,
+      supplierId: Number(x.supplierId ?? x.SupplierId ?? 0),
+      supplierName: x.supplierName ?? x.SupplierName ?? '',
+      grnJson: x.grnJson ?? x.GRNJson ?? x.GrnJson,
+      poLines: x.poLines ?? x.PoLines,
+      poLinesJson: x.poLinesJson ?? x.PoLinesJson,
+      currencyId: x.currencyId ?? x.CurrencyId,
+
+      previousPinPending:
+        previousPinPendingValue === true ||
+        previousPinPendingValue === 1 ||
+        previousPinPendingValue === '1' ||
+        String(previousPinPendingValue).toLowerCase() === 'true',
+
+      previousPinNo: x.previousPinNo ?? x.PreviousPinNo ?? '',
+      previousGrnNo: x.previousGrnNo ?? x.PreviousGrnNo ?? ''
     };
   }
 
-  // -------------------------
-  // GRN combobox UI
-  // -------------------------
+  isGrnBlocked(g: GRNHeader): boolean {
+    const currentIds: number[] = (this.form.value.grnIds || []).map((x: any) => Number(x));
+    if (currentIds.includes(Number(g.id))) return false;
+    return g.previousPinPending === true;
+  }
+
+  getGrnBlockMessage(g: GRNHeader): string {
+    if (!this.isGrnBlocked(g)) return '';
+
+    return `Already invoice ${g.previousPinNo || ''} created for previous GRN ${g.previousGrnNo || ''} under this same PO. Please approve & post that invoice to A/P before selecting this GRN.`;
+  }
+
+  private showGrnBlockedWarning(g: GRNHeader): void {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Approve & Post Required',
+      html: `
+        <div style="text-align:left">
+          <p>Already invoice <b>${g.previousPinNo || '-'}</b> created for previous GRN <b>${g.previousGrnNo || '-'}</b> under this same PO.</p>
+          <p>Please <b>Approve & Post to A/P</b> that invoice before selecting this GRN.</p>
+        </div>
+      `,
+      confirmButtonText: 'OK'
+    });
+  }
+
   onGrnFocus(): void {
     this.grnFiltered = [...this.grnList];
     this.grnOpen = true;
@@ -195,7 +228,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     return ids.includes(Number(grnId));
   }
 
-  // ✅ normalize tax code from PO lines (Exclusive/Inclusive/0)
   private normalizeTaxMode(code: any): TaxMode {
     const s = String(code || '').trim().toUpperCase();
     if (s === 'INCLUSIVE' || s === 'INC') return 'INCLUSIVE';
@@ -203,8 +235,8 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     return 'EXCLUSIVE';
   }
 
-  // ✅ from GRN: only tax% needed for header, mode for default lines
-  private getTaxPctFromGrn(g: GRNHeader): number {
+  private getTaxPctFromGrn(g: GRNHeader | undefined): number {
+    if (!g) return 0;
     return this.toNumber(g.tax);
   }
 
@@ -214,17 +246,24 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     return this.normalizeTaxMode(taxCode || 'Exclusive');
   }
 
-  // ✅ Main selection
   toggleGrn(g: GRNHeader): void {
     const currentIds: number[] = (this.form.value.grnIds || []).map((x: any) => Number(x));
     const before = [...currentIds];
 
+    const gid = Number(g.id);
+    const isAlreadySelected = currentIds.includes(gid);
+
+    if (!isAlreadySelected && this.isGrnBlocked(g)) {
+      this.showGrnBlockedWarning(g);
+      return;
+    }
+
     let ids: number[] = [];
+
     if (!this.combineMode) {
-      ids = [Number(g.id)];
+      ids = [gid];
     } else {
       ids = [...currentIds];
-      const gid = Number(g.id);
       const idx = ids.indexOf(gid);
       if (idx >= 0) ids.splice(idx, 1);
       else ids.push(gid);
@@ -232,7 +271,22 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
 
     const selected = this.grnList.filter(x => ids.includes(Number(x.id)));
 
-    // supplier consistency
+    if (!selected.length) {
+      this.applySelectedGrns([]);
+      return;
+    }
+
+    const blocked = selected.find(x => {
+      const alreadySelected = before.includes(Number(x.id));
+      return !alreadySelected && this.isGrnBlocked(x);
+    });
+
+    if (blocked) {
+      this.showGrnBlockedWarning(blocked);
+      this.form.patchValue({ grnIds: before }, { emitEvent: false });
+      return;
+    }
+
     const suppliers = Array.from(new Set(selected.map(s => Number(s.supplierId || 0)).filter(Boolean)));
     if (suppliers.length > 1) {
       Swal.fire('Invalid', 'Multiple suppliers GRN cannot be combined into one invoice.', 'warning');
@@ -240,7 +294,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // PO consistency
     const poIds = Array.from(new Set(selected.map(s => Number(s.poid || 0)).filter(Boolean)));
     if (poIds.length > 1) {
       Swal.fire('Invalid', 'Multiple PO GRN cannot be combined into one invoice (3-way match).', 'warning');
@@ -248,7 +301,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ Tax mode consistency across GRNs (optional, keep if you want strict)
     const taxModes = Array.from(new Set(selected.map(s => this.getTaxModeFromGrn(s))));
     if (taxModes.length > 1) {
       Swal.fire('Invalid', 'Different Tax Mode GRN cannot be combined into one invoice.', 'warning');
@@ -266,17 +318,35 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
 
     const ids = currentIds.filter(x => x !== Number(toRemove.id));
     const selected = this.grnList.filter(x => ids.includes(Number(x.id)));
-
     this.applySelectedGrns(selected);
   }
 
   private applySelectedGrns(selected: GRNHeader[]): void {
+    if (!selected || selected.length === 0) {
+      this.selectedGrnNos = [];
+      this.grnSearch = '';
+
+      this.form.patchValue({
+        grnIds: [],
+        grnNos: '',
+        supplierId: null,
+        supplierName: '',
+        currencyId: null,
+        tax: 0,
+        amount: 0
+      }, { emitEvent: false });
+
+      this.replaceLinesWith([{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
+      this.recalcAllLines();
+      this.recalcHeaderFromLines();
+      this.isPartialAsked = false;
+      return;
+    }
+
     const ids = selected.map(x => Number(x.id));
     const displayText = selected.map(x => x.grnNo).join(', ');
-
     this.selectedGrnNos = selected.map(x => x.grnNo);
 
-    // ✅ header tax % auto bind from GRN
     const pct = this.getTaxPctFromGrn(selected[0]);
 
     this.form.patchValue({
@@ -289,20 +359,12 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     }, { emitEvent: false });
 
     this.grnSearch = displayText;
-
-    // merge lines
     this.mergeLinesFromMultipleGrns(selected);
-
-    // recalc all lines (tax amt + totals)
     this.recalcAllLines();
     this.recalcHeaderFromLines();
-
     this.isPartialAsked = false;
   }
 
-  // -------------------------
-  // Lines seed
-  // -------------------------
   private seedEmptyLine(): void {
     if (this.lines.length === 0) {
       this.replaceLinesWith([{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
@@ -311,9 +373,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     }
   }
 
-  // -------------------------
-  // Lines merge from GRNs
-  // -------------------------
   private mergeLinesFromMultipleGrns(grns: GRNHeader[]): void {
     if (!grns || grns.length === 0) {
       this.replaceLinesWith([{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
@@ -329,7 +388,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
       grnItems.forEach((x: any) => {
         const code = (x.itemCode || x.item || '').toString().trim();
         const itemText = (x.itemName ? `${code} - ${x.itemName}` : '') || code;
-
         const qty = this.toNumber(x.qtyReceived || x.qty);
         const unitPrice = this.toNumber(x.unitPrice || x.price);
 
@@ -351,10 +409,7 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     });
 
     const grouped = this.groupSameItemSumQty(merged);
-
-    this.replaceLinesWith(grouped.length
-      ? grouped
-      : [{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
+    this.replaceLinesWith(grouped.length ? grouped : [{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
   }
 
   private groupSameItemSumQty(lines: PinLine[]): PinLine[] {
@@ -378,8 +433,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
       const unitPrice = Number(l.unitPrice || 0);
       const discountPct = Number(l.discountPct || 0);
       const taxMode: TaxMode = (l.taxMode || 'EXCLUSIVE') as TaxMode;
-
-      // base only here; tax will be recalculated by recalcLine
       const base = this.calcLineBase(qty, unitPrice, discountPct);
 
       arr.push(this.fb.group({
@@ -389,14 +442,10 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
         qty: [qty, [Validators.required, Validators.min(0.0001)]],
         unitPrice: [unitPrice, [Validators.required, Validators.min(0)]],
         discountPct: [discountPct],
-
-        // ✅ per-line tax mode
         taxMode: [taxMode],
-
-        // ✅ computed
-        lineTotal: [base],          // base
-        taxAmt: [0],                // computed
-        lineGrandTotal: [base],     // computed
+        lineTotal: [base],
+        taxAmt: [0],
+        lineGrandTotal: [base],
         matchStatus: ['OK'],
         mismatchFields: [''],
         dcNoteNo: [''],
@@ -408,9 +457,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // -------------------------
-  // Line calculations
-  // -------------------------
   private calcLineBase(qty: number, price: number, discount: number): number {
     const gross = qty * price;
     const discAmt = discount > 0 ? (gross * discount / 100) : 0;
@@ -421,16 +467,13 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     const taxPct = this.toNumber(this.form.get('tax')?.value);
     const rate = taxPct / 100;
 
-    if (mode === 'ZERO' || !rate) {
-      return { taxAmt: 0, lineGrand: +base.toFixed(2) };
-    }
+    if (mode === 'ZERO' || !rate) return { taxAmt: 0, lineGrand: +base.toFixed(2) };
 
     if (mode === 'EXCLUSIVE') {
       const taxAmt = +(base * rate).toFixed(2);
       return { taxAmt, lineGrand: +(base + taxAmt).toFixed(2) };
     }
 
-    // INCLUSIVE: base already includes tax
     const netBase = +(base / (1 + rate)).toFixed(2);
     const taxAmt = +(base - netBase).toFixed(2);
     return { taxAmt, lineGrand: +base.toFixed(2) };
@@ -455,14 +498,9 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
   }
 
   private recalcAllLines(): void {
-    for (let i = 0; i < this.lines.length; i++) {
-      this.recalcLine(i);
-    }
+    for (let i = 0; i < this.lines.length; i++) this.recalcLine(i);
   }
 
-  // -------------------------
-  // UI events
-  // -------------------------
   onCellChange(i: number): void {
     this.recalcLine(i);
     this.recalcHeaderFromLines();
@@ -495,7 +533,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
       }
     }
 
-    // recalc after qty updates
     this.recalcLine(i);
     this.recalcHeaderFromLines();
   }
@@ -506,14 +543,10 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
   }
 
   onTaxChange(): void {
-    // header tax% changed -> recalc all line tax amt + totals
     this.recalcAllLines();
     this.recalcHeaderFromLines();
   }
 
-  // -------------------------
-  // Header totals
-  // -------------------------
   private recalcHeaderFromLines(): void {
     let grossTotal = 0;
     let discount = 0;
@@ -530,7 +563,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
 
       grossTotal += gross;
       discount += discAmt;
-
       taxTotal += this.toNumber(l.taxAmt);
       grandTotal += this.toNumber(l.lineGrandTotal);
     });
@@ -544,11 +576,11 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     this.form.patchValue({ amount: this.grandTotal }, { emitEvent: false });
   }
 
-  // -------------------------
-  // SAVE
-  // -------------------------
-  save(action: 'HOLD' | 'POST' = 'POST') {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+  save(action: 'HOLD' | 'POST' = 'POST'): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
     const v = this.form.value;
     const grnIds = (v.grnIds || []).map((x: any) => Number(x)).filter((n: number) => n > 0);
@@ -561,22 +593,19 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     const payload = {
       id: Number(v.id || 0),
       invoiceNo: v.invoiceNo,
-      grnIds: grnIds,
+      grnIds,
       grnNos: v.grnNos,
       invoiceDate: v.invoiceDate,
       supplierId: v.supplierId ? Number(v.supplierId) : null,
       currencyId: v.currencyId != null ? Number(v.currencyId) : null,
       amount: Number(v.amount || 0),
-
-      // ✅ tax total from lines
       tax: Number(this.taxAmount || 0),
-
       status: action === 'HOLD' ? 1 : 2,
       linesJson: JSON.stringify(this.lines.value),
       createdBy: this.userId,
       updatedBy: this.userId,
       isPartialInvoice: !!this.form.value.isPartialInvoice,
-      countryId:(localStorage.getItem('countryId') || 1)
+      countryId: Number(localStorage.getItem('countryId') || 1)
     };
 
     if (payload.id <= 0) {
@@ -599,9 +628,6 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     });
   }
 
-  // -------------------------
-  // EDIT LOAD
-  // -------------------------
   private loadInvoice(id: number): void {
     this.api.getById(id).subscribe({
       next: (res: any) => {
@@ -619,14 +645,11 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
           isPartialInvoice: !!d.isPartialInvoice,
           grnIds: (d.grnIds || []).map((x: any) => Number(x)),
           grnNos: d.grnNos || '',
-          tax: this.toNumber(d.taxPct ?? d.taxPercent ?? d.taxRate ?? d.tax) // keep safe
+          tax: this.toNumber(d.taxPct ?? d.taxPercent ?? d.taxRate ?? d.tax)
         }, { emitEvent: false });
 
         this.grnSearch = d.grnNos || '';
-        this.selectedGrnNos = (d.grnNos || '')
-          .split(',')
-          .map((s: string) => s.trim())
-          .filter(Boolean);
+        this.selectedGrnNos = (d.grnNos || '').split(',').map((s: string) => s.trim()).filter(Boolean);
 
         let lines: any[] = [];
         try { lines = JSON.parse(d.linesJson || '[]'); } catch { lines = []; }
@@ -641,21 +664,15 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
           taxMode: (l.taxMode || 'EXCLUSIVE') as TaxMode
         }));
 
-        this.replaceLinesWith(mappedLines.length
-          ? mappedLines
-          : [{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
+        this.replaceLinesWith(mappedLines.length ? mappedLines : [{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
 
         this.recalcAllLines();
         this.recalcHeaderFromLines();
-
         this.loadGrnsForEdit(id);
       }
     });
   }
 
-  // -------------------------
-  // UI helpers
-  // -------------------------
   @HostListener('document:click', ['$event'])
   onDocClick(ev: MouseEvent): void {
     if (!(ev.target as HTMLElement).closest('.grn-combobox')) this.grnOpen = false;
@@ -674,12 +691,12 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
 
   private setMinDate(): void {
     const d = new Date();
-    this.minDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    this.minDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   private toNumber(v: any): number {
     if (v === null || v === undefined) return 0;
-    const s = String(v).replace(/[,]/g,'').replace(/\$/g,'').replace(/SGD/gi,'').trim();
+    const s = String(v).replace(/[,]/g, '').replace(/\$/g, '').replace(/SGD/gi, '').trim();
     const n = Number(s);
     return isNaN(n) ? 0 : n;
   }
@@ -698,9 +715,15 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
       }
       return Array.isArray(val) ? val : [];
     }
+
     return Array.isArray(val) ? val : [];
   }
 
-  openOcr(): void { this.ocrOpen = true; }
-  onOcrApplied(_res: any): void { this.ocrOpen = false; }
+  openOcr(): void {
+    this.ocrOpen = true;
+  }
+
+  onOcrApplied(_res: any): void {
+    this.ocrOpen = false;
+  }
 }

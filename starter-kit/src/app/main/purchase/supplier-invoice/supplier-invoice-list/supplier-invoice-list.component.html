@@ -75,6 +75,7 @@
 
               <button
                 (click)="goToCreate()"
+                *ngIf="canCreate()"
                 class="btn m-1 d-inline-flex align-items-center"
                 style="background-color:#2E5F73;color:white;gap:6px;"
                 [disabled]="isPeriodLocked"
@@ -187,12 +188,12 @@
               <ng-template #actionsEnabled>
                 <i class="fas fa-pen text-blue-600 cursor-pointer mr-2"
                    title="Edit"
-                   *ngIf="row.canEdit && !isPeriodLocked"
+                   *ngIf="row.canEdit && !isPeriodLocked && canEdit()"
                    (click)="editInvoice(row.id)"></i>
 
                 <i class="fas fa-trash text-danger cursor-pointer"
                    title="Delete"
-                   *ngIf="canShowDelete(row)"
+                   *ngIf="canShowDelete(row) && canDelete()"
                    (click)="deleteInvoice(row.id)"></i>
               </ng-template>
 
@@ -324,22 +325,15 @@
       </ng-template>
     </div>
 
-    <div class="match-footer">
-      <!-- <button
-        type="button"
-        class="btn btn-secondary"
-        (click)="goToDebitNote()"
-        [disabled]="isPosting || !currentRow || !threeWay || threeWay.pinMatch || +currentRow.status >= 2">
-        Go to Debit Note
-      </button> -->
-
-     <button
-  type="button"
-  class="btn btn-primary"
-  (click)="approveAndPostToAp()"
-  [disabled]="isPosting || !currentRow || !currentRow.canApproveToAp">
-  Approve &amp; Post to A/P
-</button>
-    </div>
+<div class="match-footer">
+  <button
+  *ngIf="canApprove()"
+    type="button"
+    class="btn btn-primary"
+    (click)="approveAndPostToAp()"
+    [disabled]="isPosting || !currentRow || !currentRow.canApproveToAp">
+    Approve &amp; Post to A/P
+  </button>
+</div>
   </div>
 </div>

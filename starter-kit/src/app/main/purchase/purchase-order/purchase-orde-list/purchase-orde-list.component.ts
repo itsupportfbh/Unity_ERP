@@ -133,6 +133,8 @@ canRejectPo = false;
 canCreatePO= false;
 canEditPO = false;
 canDeletePO = false;
+canExportPO = false;
+canPrintPO = false;
 
 
 showPoApprovalModal = false;
@@ -209,6 +211,8 @@ poApprovalSearch = '';
         this.canCreatePO=this.permissionService.hasCreate(permission);
         this.canEditPO = this.permissionService.hasCreate(permission);
           this.canDeletePO = this.permissionService.hasCreate(permission);
+          this.canExportPO = this.permissionService.hasExport(permission);
+          this.canPrintPO = this.permissionService.hasPrint(permission)
       
     },
     error: () => {

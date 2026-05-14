@@ -144,16 +144,16 @@ private loadDepartmentMenus(): void {
           return {
             ...r,
             flags: {
-              V: !!p.View,
-              C: !!p.Create,
-              E: !!p.Edit,
-              D: !!p.Delete,
-              A: !!p.Approve,
-              R: !!p.Reject,
-              X: !!p.Cancel,
-              P: !!p.Print,
-               M: !!(p.Post ?? p.Finalize ?? p.Export)
-            }
+  V: !!(p.View ?? p.view),
+  C: !!(p.Create ?? p.create),
+  E: !!(p.Edit ?? p.edit),
+  D: !!(p.Delete ?? p.delete),
+  A: !!(p.Approve ?? p.approve),
+  R: !!(p.Reject ?? p.reject),
+  X: !!(p.Export ?? p.export),
+  P: !!(p.Print ?? p.print),
+  M: !!(p.Post ?? p.post ?? p.Finalize ?? p.finalize)
+}
           };
         });
       }
@@ -207,16 +207,25 @@ private loadDepartmentMenus(): void {
     this.nextStep.emit();
   }
 
-  getPermissionPayload(): any[] {
-    return this.rows.map(r => ({
-      moduleId: r.moduleId,
-      moduleTitle: r.moduleTitle,
-      functionId: r.functionId,
-      functionTitle: r.functionTitle,
-      flags: r.flags
-    }));
-  }
-
+getPermissionPayload(): any[] {
+  return this.rows.map(r => ({
+    moduleId: r.moduleId,
+    moduleTitle: r.moduleTitle,
+    functionId: r.functionId,
+    functionTitle: r.functionTitle,
+    flags: {
+      V: r.flags.V === true,
+      C: r.flags.C === true,
+      E: r.flags.E === true,
+      D: r.flags.D === true,
+      A: r.flags.A === true,
+      R: r.flags.R === true,
+      X: r.flags.X === true,
+      P: r.flags.P === true,
+      M: r.flags.M === true
+    }
+  }));
+}
   private isAllowedByRole(item: any, roleNames: string[]): boolean {
     const approvalRoles: string[] = item?.approvalRoles || [];
     if (!approvalRoles.length) return true;

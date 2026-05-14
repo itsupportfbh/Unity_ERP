@@ -232,40 +232,67 @@ getPermissionPayload(): any[] {
     return (roleNames || []).some(r => approvalRoles.includes(r));
   }
 
+private flattenMenuItems(items: any[], allowedSet: Set<string>, roleNames: string[], parentAllowed: boolean): any[] {
+  const out: any[] = [];
+
+  (items || []).forEach((item: any) => {
+    if (!item || item.hidden) return;
+
+    const itemId = String(item.id || '').trim().toLowerCase();
+    const roleAllowed = this.isAllowedByRole(item, roleNames);
+    if (!roleAllowed) return;
+
+    const currentAllowed = parentAllowed || allowedSet.has(itemId);
+
+    // menu item / child item
+    if (currentAllowed && item.type !== 'collapsible') {
+      out.push({
+        id: item.id,
+        title: item.title,
+        url: item.url
+      });
+    }
+
+    // internal nested children
+    if (item.children && item.children.length) {
+      out.push(
+        ...this.flattenMenuItems(
+          item.children,
+          allowedSet,
+          roleNames,
+          currentAllowed
+        )
+      );
+    }
+  });
+
+  return out;
+}
+
 private buildAllowedModulesFromDepartment(
   menuArr: any[],
   allowedMenuIds: string[],
   roleNames: string[]
 ): ModuleTab[] {
-  const allowedSet = new Set((allowedMenuIds || []).map(x => String(x).trim().toLowerCase()));
+  const allowedSet = new Set(
+    (allowedMenuIds || []).map(x => String(x).trim().toLowerCase())
+  );
+
   const parents = (menuArr || []).filter(x => x.type === 'collapsible' && !x.hidden);
 
   return parents
     .map(parent => {
       const parentId = String(parent.id || '').trim().toLowerCase();
       const parentAllowed = allowedSet.has(parentId);
-      const roleAllowedParent = this.isAllowedByRole(parent, roleNames);
 
-      if (!roleAllowedParent) return null;
+      if (!this.isAllowedByRole(parent, roleNames)) return null;
 
-      const children = (parent.children || [])
-        .filter((child: any) => {
-          if (!child || child.hidden) return false; // ✅ hidden menu show aaga koodadhu
-
-          const childId = String(child.id || '').trim().toLowerCase();
-          const roleAllowedChild = this.isAllowedByRole(child, roleNames);
-          if (!roleAllowedChild) return false;
-
-          // parent full access irundhalum hidden child varakoodadhu
-          if (parentAllowed) return true;
-
-          return allowedSet.has(childId);
-        })
-        .map((child: any) => ({
-          id: child.id,
-          title: child.title,
-          url: child.url
-        }));
+      const children = this.flattenMenuItems(
+        parent.children || [],
+        allowedSet,
+        roleNames,
+        parentAllowed
+      );
 
       if (!children.length) return null;
 

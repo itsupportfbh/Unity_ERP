@@ -83,7 +83,7 @@
   [clearable]="true"
   placeholder="Select Sales Order"
   [disabled]="isEdit"
-  (change)="onSoChanged($event)">
+  (change)="onSoChanged(selectedSoId)">
 
               <ng-template ng-option-tmp let-item="item">
                 {{ item?.salesOrderNo }} — {{ item?.isCashSales === true || item?.customerId === 0 ? 'Cash Sales' : (item?.customerName || 'Cash Sales') }}

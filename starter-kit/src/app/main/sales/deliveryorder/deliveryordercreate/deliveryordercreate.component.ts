@@ -17,13 +17,15 @@ import { environment } from 'environments/environment';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 /* ---------- local types ---------- */
 
-type SoBrief = {
+interface SoBrief {
   id: number;
   salesOrderNo: string;
   customerName?: string;
-  customerId?: number | null;
+  customerId?: number;
   isCashSales?: boolean;
-};
+  isPoCreated?: boolean;
+  canCreateDeliveryOrder?: boolean | number | string;
+}
 
 type Driver  = { id: number; name: string; mobileNumber: string };
 type Vehicle = { id: number; vehicleNo: string; vehicleType?: string };
@@ -534,7 +536,9 @@ canSaveWithPermission(): boolean {
         salesOrderNo: String(r.salesOrderNo ?? r.SalesOrderNo ?? r.soNumber ?? ''),
         customerName: String(r.customerName ?? r.CustomerName ?? ''),
         customerId: r.customerId != null ? Number(r.customerId ?? r.CustomerId) : null,
-        isCashSales: !!(r.isCashSales ?? r.IsCashSales)
+        isCashSales: !!(r.isCashSales ?? r.IsCashSales),
+        isPoCreated: r.isPoCreated === true,
+        canCreateDeliveryOrder: r.canCreateDeliveryOrder === true
       }));
 
       if (this.isEdit && this.selectedSoId) {
@@ -724,11 +728,24 @@ canSaveWithPermission(): boolean {
 
   /* ---------------- SO change ---------------- */
 
-onSoChanged(selectedSo: any) {
+onSoChanged(selectedSoOrId: any) {
+  debugger
   if (this.isEdit) return;
 
   this.soLines = [];
   this.totalDeliverQty = 0;
+
+  if (!selectedSoOrId) {
+    this.selectedSoId = null;
+    this.routeText = '';
+    return;
+  }
+
+  const soId = Number(selectedSoOrId?.id ?? selectedSoOrId);
+
+  const selectedSo: any = this.soList.find((x: any) => Number(x.id) === soId);
+
+  console.log('selectedSo:', selectedSo);
 
   if (!selectedSo) {
     this.selectedSoId = null;
@@ -736,12 +753,7 @@ onSoChanged(selectedSo: any) {
     return;
   }
 
-  const soId = Number(selectedSo.id ?? selectedSo);
-
-  const canCreateDO =
-    selectedSo.canCreateDeliveryOrder === true ||
-    selectedSo.canCreateDeliveryOrder === 1 ||
-    selectedSo.canCreateDeliveryOrder === 'true';
+  const canCreateDO = selectedSo.canCreateDeliveryOrder === true;
 
   if (!canCreateDO) {
     Swal.fire({

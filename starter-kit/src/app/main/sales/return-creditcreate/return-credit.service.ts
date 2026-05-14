@@ -95,5 +95,9 @@ export class CreditNoteService {
     if (excludeCnId) params = params.set('excludeCnId', String(excludeCnId));
     return this.http.get(`${this.url}/CreditNote/dolines/${doId}`, { params });
   }
-
+getAvailableDeliveryOrdersForCreditNote() {
+  return this.http.get<any>(
+    `${this.url}/DeliveryOrder/available-delivery-orders`
+  );
+}
 }

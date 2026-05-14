@@ -104,4 +104,8 @@ export class DeliveryOrderService {
     return this.http.get<any>(`${this.base}${DeliveryOrderAPIUrls.GetSoSnapshot}${doId}`)
       .pipe(map(res => res?.data ?? res ?? []));
   }
+
+getAvailableDoForSalesInvoice() {
+  return this.http.get<any>(`${this.base}/SalesInvoice/available-do`);
+}
 }

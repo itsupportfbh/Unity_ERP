@@ -1,3 +1,5 @@
+<div *ngIf="isPermissionLoaded; else loadingTemplate">
+  <div class="content-wrapper p-0" *ngIf="canView(); else noAccessTemplate">
 <div class="content-wrapper p-0">
   <div class="content-body">
     <section class="users-list-wrapper">
@@ -51,19 +53,20 @@
                 <i class="fas fa-file-invoice"></i>
                 <span>Add</span>
               </button> -->
-               <button
-                  (click)="goToCreate()"
-                  class="btn m-1 d-inline-flex align-items-center"
-                  style="background-color:#2E5F73;color:white;gap:6px;"
-                  [disabled]="isPeriodLocked"
-                  [attr.title]="isPeriodLocked
-                    ? (currentPeriodName
-                        ? 'Period ' + currentPeriodName + ' is locked'
-                        : 'Accounting period is locked')
-                    : 'Create Purchase Request'">
-                  <i data-feather="plus-circle" class="w-4 h-4"></i>
-                  <span>Add</span>
-                </button>
+              <button
+  *ngIf="canCreate()"
+  (click)="goToCreate()"
+  class="btn m-1 d-inline-flex align-items-center"
+  style="background-color:#2E5F73;color:white;gap:6px;"
+  [disabled]="isPeriodLocked"
+  [attr.title]="isPeriodLocked
+    ? (currentPeriodName
+        ? 'Period ' + currentPeriodName + ' is locked'
+        : 'Accounting period is locked')
+    : 'Create Sales Invoice'">
+  <i data-feather="plus-circle" class="w-4 h-4"></i>
+  <span>Add</span>
+</button>
             </div>
           </div>
         </div>
@@ -110,14 +113,19 @@
               <div class="text-right">{{ row.total | number:'1.2-2' }}</div>
             </ng-template>
           </ngx-datatable-column>
-          <ngx-datatable-column name="Action" [width]="220">
+      <ngx-datatable-column
+  name="Action"
+  [width]="220"
+  [sortable]="false">
+
   <ng-template let-row="row" ngx-datatable-cell-template>
     <div class="si-action-icons">
-       <i
+      <i
         class="fas fa-envelope si-mail"
         (click)="openEmailConfirm(row)"
         title="Email">
       </i>
+
       <div class="si-print-wrap" title="Print">
         <i
           class="fas fa-print"
@@ -131,19 +139,22 @@
           {{ row.printCount }}
         </span>
       </div>
+
       <ng-container *ngIf="isPeriodLocked; else actionsEnabled">
-        <i class="fas fa-pen text-gray-300" title="Period Locked"></i>
-        <i class="fas fa-trash text-gray-300" title="Period Locked"></i>
+        <i *ngIf="canEdit()" class="fas fa-pen text-gray-300" title="Period Locked"></i>
+        <i *ngIf="canDelete()" class="fas fa-trash text-gray-300" title="Period Locked"></i>
       </ng-container>
 
       <ng-template #actionsEnabled>
         <i
+          *ngIf="canEdit()"
           class="fas fa-pen text-primary"
           (click)="edit(row.id)"
           title="Edit">
         </i>
 
         <i
+          *ngIf="canDelete()"
           class="fas fa-trash text-danger"
           (click)="delete(row.id)"
           title="Delete">
@@ -152,14 +163,32 @@
     </div>
   </ng-template>
 </ngx-datatable-column>
-
-
         </ngx-datatable>
       </div>
     </section>
   </div>
 </div>
+</div>
+</div>
+<ng-template #loadingTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
 
+<ng-template #noAccessTemplate>
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>
 <!-- SI Lines Modal -->
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="overlay">
   <div (click)="$event.stopPropagation()" class="modal-card">

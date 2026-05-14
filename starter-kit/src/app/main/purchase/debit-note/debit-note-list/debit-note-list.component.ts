@@ -8,6 +8,7 @@ import { DatePipe } from '@angular/common';
 import { DebitNoteService } from '../debit-note.service';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
 import * as feather from 'feather-icons';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 export interface PeriodStatusDto {
   isLocked: boolean;
   periodName?: string;
@@ -50,18 +51,31 @@ export class DebitNoteListComponent implements OnInit {
   modalTotal = 0;
 isPeriodLocked = false;
   currentPeriodName = '';
+
+    userId: number;
+    
+        functionId = 'dn-list';
+      
+        permission: FunctionPermission;
+          isPermissionLoaded = false;
+          isPageLoading = false;
+  
   constructor(
     private debitNoteService: DebitNoteService,
     private router: Router,
     private _coreSidebarService: CoreSidebarService,
     private datePipe: DatePipe,
-    private periodService: PeriodCloseService
-  ) {}
+    private periodService: PeriodCloseService,
+     private permissionService : PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   ngOnInit(): void {
      const today = new Date().toISOString().substring(0, 10);
     this.checkPeriodLockForDate(today);
-    this.loadRequests();
+    this.loadPermission();
   }
   ngAfterViewInit(): void {
       feather.replace();
@@ -139,6 +153,70 @@ private checkPeriodLockForDate(dateStr: string): void {
     if (this.table) this.table.offset = 0;
   }
 
+    loadPermission(): void {
+            if (!this.userId || this.userId <= 0) {
+              this.permission = this.permissionService.getEmptyPermission(this.functionId);
+              this.isPermissionLoaded = true;
+        
+              Swal.fire({
+                icon: 'warning',
+                title: 'Access Denied',
+                text: 'User not found. Please login again.',
+                confirmButtonColor: '#0e3a4c'
+              });
+              return;
+            }
+        
+            this.isPageLoading = true;
+        
+            this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+              next: (res: FunctionPermission) => {
+                this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+                this.isPermissionLoaded = true;
+                this.isPageLoading = false;
+        
+                if (this.canView()) {
+                  this.loadRequests();
+                } else {
+                  this.rows = [];
+                  // this.isDisplay = false;
+                }
+              },
+              error: (err) => {
+                console.error('Permission load error:', err);
+                this.permission = this.permissionService.getEmptyPermission(this.functionId);
+                this.isPermissionLoaded = true;
+                this.isPageLoading = false;
+        
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error',
+                  text: 'Unable to load permission.',
+                  confirmButtonColor: '#d33'
+                });
+              }
+            });
+          }
+        
+          canView(): boolean {
+            return this.permissionService.hasView(this.permission);
+          }
+        
+          canCreate(): boolean {
+            return this.permissionService.hasCreate(this.permission);
+          }
+        
+          canEdit(): boolean {
+            return this.permissionService.hasEdit(this.permission);
+          }
+        
+          canDelete(): boolean {
+            return this.permissionService.hasDelete(this.permission);
+          }
+  
+          canApprove(): boolean{
+            return this.permissionService.hasApprove(this.permission);
+          }
   openCreate(): void {
      if (this.isPeriodLocked) {
       this.showPeriodLockedSwal('create Purchase Requests');

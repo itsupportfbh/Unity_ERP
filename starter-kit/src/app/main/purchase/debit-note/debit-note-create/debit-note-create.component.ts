@@ -13,7 +13,8 @@ interface GRNHeader {
   poNo?: string | number;
   supplierId?: number;
   supplierName?: string;
-  grnJson?: any;        // ✅ line JSON from GRN
+  grnJson?: any;      
+  poLines?: any;  // ✅ line JSON from GRN
   currencyId?: number;
   tax?: number;
 }
@@ -151,9 +152,11 @@ export class DebitNoteCreateComponent implements OnInit {
       poNo: x.poNo,
       supplierId: x.supplierId != null ? Number(x.supplierId) : undefined,
       supplierName: x.supplierName,
-      grnJson: x.grnJson, // IMPORTANT
+      grnJson: x.grnJson, 
+      poLines: x.poLines,// IMPORTANT
       currencyId: x.currencyId != null ? Number(x.currencyId) : undefined,
-      tax: x.tax != null ? Number(x.tax) : undefined
+      tax: x.tax != null ? Number(x.tax) : undefined,
+
     };
   }
 
@@ -220,34 +223,34 @@ export class DebitNoteCreateComponent implements OnInit {
   }
 
 private fillRowsFromGrn(g: GRNHeader): void {
-  const items = this.safeJsonArray(g.grnJson);
+  const grnItems = this.safeJsonArray(g.grnJson);
+  const poItems = this.safeJsonArray(g.poLines);
 
-  if (!items.length) {
+  if (!grnItems.length) {
     this.retRows = [{}];
     return;
   }
 
-  this.retRows = items.map((x: any) => {
-    const code = (x.itemCode || x.code || '').toString().trim();
-    const name = (x.itemName || x.name || '').toString().trim();
-    const itemText = name ? `${code ? code + ' - ' : ''}${name}` : (code || x.item || '');
+  this.retRows = grnItems.map((x: any) => {
+    const code = (x.itemCode || '').toString().trim();
+    const name = (x.itemName || '').toString().trim();
+    const itemText = x.itemText || (name ? `${code} - ${name}` : code);
 
-    // ✅ VARIANCE ONLY (don’t use qtyReceived fallback)
-    const varianceQty =
-      this.toNumber(
-        x.varianceQty ??
-        x.qtyVariance ??
-        x.grnVarianceQty ??
-        x.returnQty ??
-        x.shortQty ??
-        0
-      );
+    const poLine = poItems.find((p: any) => {
+      const poItem = (p.item || '').toString();
+      return poItem.includes(code);
+    });
 
-    const price = this.toNumber(x.unitPrice ?? x.price ?? 0);
+    const poQty = this.toNumber(poLine?.qty ?? 0);
+    const receivedQty = this.toNumber(x.qtyReceived ?? 0);
+
+    const varianceQty = Math.max(poQty - receivedQty, 0);
+
+    const price = this.toNumber(x.unitPrice ?? poLine?.price ?? 0);
 
     return {
       item: itemText,
-      qty: varianceQty,     // ✅ Variance Qty only
+      qty: varianceQty,
       price: price,
       remarks: ''
     } as LineRow;

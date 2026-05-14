@@ -92,55 +92,64 @@ export class CoreMenuService {
   }
 
   // ✅ New method: view permission true iruntha mattum menu show
-  filterMenuByViewPermission(menu: any[], permissions: any[]): any[] {
-    const viewMap = new Map<string, boolean>();
+filterMenuByViewPermission(menu: any[], permissions: any[]): any[] {
+  const viewMap = new Map<string, boolean>();
 
-    permissions.forEach(p => {
-      const functionId = p.FunctionId || p.functionId;
-      const view = p.Permissions?.View ?? p.permissions?.view ?? p.view ?? p.View ?? false;
+  permissions.forEach(p => {
+    const functionId = String(p.FunctionId || p.functionId || '').trim();
+    const view =
+      p.Permissions?.View ??
+      p.permissions?.view ??
+      p.view ??
+      p.View ??
+      false;
 
-      if (functionId) {
-        viewMap.set(functionId, !!view);
-      }
-    });
+    if (functionId) {
+      viewMap.set(functionId, !!view);
+    }
+  });
 
-    return menu
-      .map(item => this.filterMenuItem(item, viewMap))
-      .filter(item => !!item);
+  return (menu || [])
+    .map(item => this.filterMenuItem(item, viewMap))
+    .filter(item => !!item);
+}
+
+private filterMenuItem(item: any, viewMap: Map<string, boolean>): any | null {
+  if (!item || item.hidden === true) {
+    return null;
   }
 
-  private filterMenuItem(item: any, viewMap: Map<string, boolean>): any | null {
-    if (item.hidden === true) {
-      return null;
-    }
+  const itemId = String(item.id || '').trim();
 
-    if (item.children && item.children.length > 0) {
-      const children = item.children
-        .map(child => this.filterMenuItem(child, viewMap))
-        .filter(child => !!child);
+  // ✅ Parent / collapsible menu
+  if (Array.isArray(item.children) && item.children.length > 0) {
+    const children = item.children
+      .map(child => this.filterMenuItem(child, viewMap))
+      .filter(child => !!child);
 
-      if (children.length === 0) {
-        return null;
-      }
-
+    // ✅ Parent show only when child has view permission
+    if (children.length > 0) {
       return {
         ...item,
         children
       };
     }
 
-    return viewMap.get(item.id) === true ? item : null;
+    return null;
   }
 
-  // ✅ Existing menu replace panna easy method
-  setMenuByPermission(key: string, menu: any[], permissions: any[]): void {
-    const filteredMenu = this.filterMenuByViewPermission(menu, permissions);
+  // ✅ Leaf item permission check
+  return viewMap.get(itemId) === true ? item : null;
+}
 
-    if (this._registry[key]) {
-      this.unregister(key);
-    }
+setMenuByPermission(key: string, menu: any[], permissions: any[]): void {
+  const filteredMenu = this.filterMenuByViewPermission(menu, permissions);
 
-    this.register(key, filteredMenu);
-    this.setCurrentMenu(key);
+  if (this._registry[key]) {
+    this.unregister(key);
   }
+
+  this.register(key, filteredMenu);
+  this.setCurrentMenu(key);
+}
 }

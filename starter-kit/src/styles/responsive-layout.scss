@@ -1,0 +1,226 @@
+/* ============================================
+   RESPONSIVE LAYOUT SYSTEM
+   Mobile-first, flexible grid & utilities
+   ============================================ */
+
+// Breakpoints
+$breakpoint-xs: 320px;
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-xxl: 1400px;
+
+// Mixin for media queries
+@mixin responsive($breakpoint) {
+  @if $breakpoint == 'sm' {
+    @media (min-width: $breakpoint-sm) {
+      @content;
+    }
+  } @else if $breakpoint == 'md' {
+    @media (min-width: $breakpoint-md) {
+      @content;
+    }
+  } @else if $breakpoint == 'lg' {
+    @media (min-width: $breakpoint-lg) {
+      @content;
+    }
+  } @else if $breakpoint == 'xl' {
+    @media (min-width: $breakpoint-xl) {
+      @content;
+    }
+  } @else if $breakpoint == 'xxl' {
+    @media (min-width: $breakpoint-xxl) {
+      @content;
+    }
+  }
+}
+
+/* ===== Container & Wrapper ===== */
+.container {
+  width: 100%;
+  padding: 0 15px;
+  margin: 0 auto;
+
+  @include responsive('sm') {
+    max-width: 540px;
+  }
+  @include responsive('md') {
+    max-width: 720px;
+  }
+  @include responsive('lg') {
+    max-width: 960px;
+  }
+  @include responsive('xl') {
+    max-width: 1140px;
+  }
+  @include responsive('xxl') {
+    max-width: 1320px;
+  }
+}
+
+.content-wrapper {
+  width: 100%;
+  height: auto;
+  max-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+
+  @include responsive('md') {
+    padding: 30px;
+  }
+  @include responsive('lg') {
+    padding: 40px;
+  }
+}
+
+/* ===== Grid System (12-column) ===== */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -15px;
+}
+
+.col {
+  flex: 1 0 0%;
+  padding: 0 15px;
+}
+
+@for $i from 1 through 12 {
+  .col-#{$i} {
+    flex: 0 0 auto;
+    width: percentage($i / 12);
+    padding: 0 15px;
+  }
+
+  @include responsive('sm') {
+    .col-sm-#{$i} {
+      flex: 0 0 auto;
+      width: percentage($i / 12);
+      padding: 0 15px;
+    }
+  }
+
+  @include responsive('md') {
+    .col-md-#{$i} {
+      flex: 0 0 auto;
+      width: percentage($i / 12);
+      padding: 0 15px;
+    }
+  }
+
+  @include responsive('lg') {
+    .col-lg-#{$i} {
+      flex: 0 0 auto;
+      width: percentage($i / 12);
+      padding: 0 15px;
+    }
+  }
+
+  @include responsive('xl') {
+    .col-xl-#{$i} {
+      flex: 0 0 auto;
+      width: percentage($i / 12);
+      padding: 0 15px;
+    }
+  }
+}
+
+/* ===== Flexbox Utilities ===== */
+.d-flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.justify-content-center {
+  justify-content: center;
+}
+
+.justify-content-between {
+  justify-content: space-between;
+}
+
+.justify-content-around {
+  justify-content: space-around;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+.align-items-start {
+  align-items: flex-start;
+}
+
+.align-items-end {
+  align-items: flex-end;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.gap-1 { gap: 8px; }
+.gap-2 { gap: 12px; }
+.gap-3 { gap: 16px; }
+.gap-4 { gap: 20px; }
+.gap-5 { gap: 24px; }
+
+/* ===== Spacing Utilities ===== */
+@for $i from 1 through 5 {
+  $value: $i * 4px;
+
+  .m-#{$i} { margin: $value; }
+  .mt-#{$i} { margin-top: $value; }
+  .mb-#{$i} { margin-bottom: $value; }
+  .ml-#{$i} { margin-left: $value; }
+  .mr-#{$i} { margin-right: $value; }
+  .mx-#{$i} { margin-left: $value; margin-right: $value; }
+  .my-#{$i} { margin-top: $value; margin-bottom: $value; }
+
+  .p-#{$i} { padding: $value; }
+  .pt-#{$i} { padding-top: $value; }
+  .pb-#{$i} { padding-bottom: $value; }
+  .pl-#{$i} { padding-left: $value; }
+  .pr-#{$i} { padding-right: $value; }
+  .px-#{$i} { padding-left: $value; padding-right: $value; }
+  .py-#{$i} { padding-top: $value; padding-bottom: $value; }
+}
+
+/* ===== Display & Visibility ===== */
+.d-none { display: none; }
+.d-block { display: block; }
+.d-inline { display: inline; }
+.d-inline-block { display: inline-block; }
+
+.hide-mobile {
+  @media (max-width: $breakpoint-md - 1) {
+    display: none !important;
+  }
+}
+
+.hide-desktop {
+  @include responsive('md') {
+    display: none !important;
+  }
+}
+
+/* ===== Text Utilities ===== */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.text-justify { text-align: justify; }
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-break {
+  word-break: break-word;
+}

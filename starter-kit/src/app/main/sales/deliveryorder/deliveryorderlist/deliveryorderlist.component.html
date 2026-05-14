@@ -89,9 +89,9 @@
             </ng-template>
           </ngx-datatable-column>
 
-          <ngx-datatable-column name="DO No" prop="doNumber" [width]="160"></ngx-datatable-column>
+          <ngx-datatable-column name="DO No" prop="doNumber" [width]="100"></ngx-datatable-column>
 
-          <ngx-datatable-column name="SO No" [width]="160">
+          <ngx-datatable-column name="SO No" [width]="100">
             <ng-template let-row="row" ngx-datatable-cell-template>
               {{ row.salesOrderNo || '-' }}
             </ng-template>
@@ -103,7 +103,7 @@
             </ng-template>
           </ngx-datatable-column>
 
-          <ngx-datatable-column name="Driver Contact" [width]="170">
+          <ngx-datatable-column name="Driver Contact" [width]="120">
             <ng-template let-row="row" ngx-datatable-cell-template>
               {{ row.driverMobileNo || '-' }}
             </ng-template>
@@ -121,7 +121,7 @@
             </ng-template>
           </ngx-datatable-column>
 
-          <ngx-datatable-column name="Vehicle" [width]="160">
+          <ngx-datatable-column name="Vehicle" [width]="130">
             <ng-template let-row="row" ngx-datatable-cell-template>
               <div class="po-wrap-cell" [title]="row.vehicleId">
                 {{ getVehicleNo(row.vehicleId) || '-' }}
@@ -135,13 +135,13 @@
             </ng-template>
           </ngx-datatable-column>
 
-          <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="170">
+          <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="120">
             <ng-template let-row="row" ngx-datatable-cell-template>
               {{ row.deliveryDate | date:'dd-MM-yyyy' }}
             </ng-template>
           </ngx-datatable-column>
 
-          <ngx-datatable-column name="Posted" [width]="120">
+          <ngx-datatable-column name="Posted" [width]="80">
             <ng-template let-row="row" ngx-datatable-cell-template>
               <span class="badge badge-pill" [ngClass]="row.isPosted ? 'badge-success' : 'badge-secondary'">
                 {{ row.isPosted ? 'Yes' : 'No' }}
@@ -153,13 +153,13 @@
          <ngx-datatable-column
   *ngIf="canEdit() || canDelete()"
   name="Action"
-  [width]="210"
+  [width]="60"
   [sortable]="false">
 
   <ng-template let-row="row" ngx-datatable-cell-template>
     <div class="actions">
 
-      <ng-container *ngIf="row?.isPosted || isPeriodLocked; else editDeleteEnabled">
+      <!-- <ng-container *ngIf="row?.isPosted || isPeriodLocked; else editDeleteEnabled">
         <i
           *ngIf="canEdit()"
           class="fas fa-pen text-muted me-2"
@@ -173,8 +173,8 @@
           [attr.title]="isPeriodLocked ? 'Period locked' : 'Posted - Delete disabled'"
           style="pointer-events:none; opacity:.45;">
         </i>
-      </ng-container>
-
+      </ng-container> -->
+<!-- 
       <ng-template #editDeleteEnabled>
         <i
           *ngIf="canEdit()"
@@ -191,7 +191,7 @@
           title="Delete"
           style="cursor:pointer;">
         </i>
-      </ng-template>
+      </ng-template> -->
 
       <i
         class="fas fa-print text-info"

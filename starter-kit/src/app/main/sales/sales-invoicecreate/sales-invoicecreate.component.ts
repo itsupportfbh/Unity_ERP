@@ -124,21 +124,21 @@ export class SalesInvoicecreateComponent implements OnInit, OnDestroy {
         // Load static lookups
         forkJoin({
           taxCodes: this.taxCodeService.getTaxCode(),
-          soList: this.soSrv.getForSalesInvoice(),
-          doList: this.doSrv.getAll()
+         soList: this.soSrv.getAvailableSoForSalesInvoice(),
+doList: this.doSrv.getAvailableDoForSalesInvoice()
         })
           .pipe(takeUntil(this.destroy$))
           .subscribe({
             next: (bag: any) => {
               this.taxCodes = Array.isArray(bag?.taxCodes?.data) ? bag.taxCodes.data : [];
-              this.soList = Array.isArray(bag?.soList?.data) ? bag.soList.data : [];
+             this.soList = Array.isArray(bag?.soList?.data) ? bag.soList.data : [];
 
-              const doRaw = Array.isArray(bag?.doList) ? bag.doList : [];
-              this.doList = doRaw.map((d: any) => ({
-                ...d,
-                id: +d.id,
-                doNumber: d.doNumber ?? d.DoNumber ?? ''
-              }));
+const doRaw = Array.isArray(bag?.doList?.data) ? bag.doList.data : [];
+this.doList = doRaw.map((d: any) => ({
+  ...d,
+  id: +d.id,
+  doNumber: d.doNumber ?? d.DoNumber ?? ''
+}));
 
               // Load items
               this.itemsService.getAllItem()

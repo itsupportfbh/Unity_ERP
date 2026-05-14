@@ -3,6 +3,7 @@ import { ApiResponse, SalesInvoiceService } from '../sales-invoice.service';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 type SiListRow = {
   id: number;
   invoiceNo: string;
@@ -63,17 +64,91 @@ isPeriodLocked = false;
   emailSending = false;
   private _pdfMake: any = null;
 private _pdfReady = false;
-  constructor(
-    private si: SalesInvoiceService,
-    private router: Router,
-     private periodService: PeriodCloseService
-  ) {}
+ constructor(
+  private si: SalesInvoiceService,
+  private router: Router,
+  private periodService: PeriodCloseService,
+  private permissionService: PermissionService
+) {
+  this.userId = Number(localStorage.getItem('id') || 0);
+  this.permission = this.permissionService.getEmptyPermission(this.functionId);
+}
+userId: number = 0;
+
+// DB/Menu function code exact ah match aaganum
+functionId = 'si-list';
+
+permission: FunctionPermission;
+isPermissionLoaded = false;
+isPageLoading = false;
 
   ngOnInit(): void {
        const today = new Date().toISOString().substring(0, 10);
     this.checkPeriodLockForDate(today);
     this.loadList();
+    this.loadPermission();
   }
+  loadPermission(): void {
+  if (!this.userId || this.userId <= 0) {
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+    this.isPermissionLoaded = true;
+
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'User not found. Please login again.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
+  }
+
+  this.isPageLoading = true;
+
+  this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+    next: (res: FunctionPermission) => {
+      this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+      this.isPageLoading = false;
+
+      if (this.canView()) {
+        const today = new Date().toISOString().substring(0, 10);
+        this.checkPeriodLockForDate(today);
+        this.loadList();
+      } else {
+        this.rows = [];
+        this.temp = [];
+      }
+    },
+    error: () => {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+      this.isPageLoading = false;
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Unable to load permission.',
+        confirmButtonColor: '#d33'
+      });
+    }
+  });
+}
+
+canView(): boolean {
+  return this.permissionService.hasView(this.permission);
+}
+
+canCreate(): boolean {
+  return this.permissionService.hasCreate(this.permission);
+}
+
+canEdit(): boolean {
+  return this.permissionService.hasEdit(this.permission);
+}
+
+canDelete(): boolean {
+  return this.permissionService.hasDelete(this.permission);
+}
 private checkPeriodLockForDate(dateStr: string): void {
     if (!dateStr) { return; }
 
@@ -139,25 +214,60 @@ private checkPeriodLockForDate(dateStr: string): void {
   }
 
   // ---- Row actions ----
-  goToCreate() { 
-     if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('create Purchase Requests');
-      return;
-    }
-    debugger
-    this.router.navigate(['/Sales/sales-Invoice-create']); }
-  edit(id: number) {
-     if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('delete Purchase Requests');
-      return;
-    }
-     this.router.navigate(['/Sales/sales-invoice/edit', id]); }
-  print(id: number) { this.router.navigate(['/sales/sales-invoice/print', id]); }
- delete(id: number) {
-   if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('delete Purchase Requests');
-      return;
-    }
+goToCreate() {
+  if (!this.canCreate()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'You do not have create permission.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
+  }
+
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Sales Invoices');
+    return;
+  }
+
+  this.router.navigate(['/Sales/sales-Invoice-create']);
+}
+
+edit(id: number) {
+  if (!this.canEdit()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'You do not have edit permission.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
+  }
+
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('edit Sales Invoices');
+    return;
+  }
+
+  this.router.navigate(['/Sales/sales-invoice/edit', id]);
+}
+
+delete(id: number) {
+  if (!this.canDelete()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'You do not have delete permission.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
+  }
+
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('delete Sales Invoices');
+    return;
+  }
+
   Swal.fire({
     title: 'Delete this invoice?',
     text: 'This action cannot be undone.',
@@ -167,11 +277,10 @@ private checkPeriodLockForDate(dateStr: string): void {
     cancelButtonText: 'Cancel',
     confirmButtonColor: '#d33',
     cancelButtonColor: '#6b7280',
-    reverseButtons: true,
+    reverseButtons: true
   }).then(result => {
     if (!result.isConfirmed) return;
 
-    // Optional: show a small loading state
     Swal.fire({
       title: 'Deleting…',
       allowOutsideClick: false,
@@ -185,7 +294,7 @@ private checkPeriodLockForDate(dateStr: string): void {
           title: 'Deleted',
           text: 'Invoice has been deleted.'
         });
-        this.loadList(); // refresh table
+        this.loadList();
       },
       error: _ => {
         Swal.fire({

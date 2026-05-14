@@ -75,6 +75,7 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     private taxCodeService: TaxCodeService,
     private stockIssueService: StockIssueService,
     private customerService: CustomerMasterService,
+    public returnCreditService: CreditNoteService
   ) { }
 
   ngOnInit(): void {
@@ -84,26 +85,28 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
       this.cnId = idStr ? +idStr : null;
 
       forkJoin({
-        doList: this.doSvc.getAll(),
+        doList: this.returnCreditService.getAvailableDeliveryOrdersForCreditNote(),
         taxCodes: this.taxCodeService.getTaxCode(),
         reasons: this.stockIssueService.getAllStockissue(),
         customers: this.customerService.GetAllCustomerDetails()
       })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: (bag: any) => {
-            this.doList = bag?.doList ?? [];
-            this.taxCodes = (bag?.taxCodes?.data ?? []).map((t: any) => ({
-              id: +t.id,
-              taxName: t.taxName ?? t.name ?? `#${t.id}`
-            }));
-            this.reasons = (bag?.reasons?.data ?? []);
-            this.customers = (bag?.customers?.data ?? []);
+        next: (bag: any) => {
+  this.doList = bag?.doList?.data ?? [];
 
-            if (this.isEdit && this.cnId) {
-              this.loadForEdit(this.cnId);
-            }
-          },
+  this.taxCodes = (bag?.taxCodes?.data ?? []).map((t: any) => ({
+    id: +t.id,
+    taxName: t.taxName ?? t.name ?? `#${t.id}`
+  }));
+
+  this.reasons = bag?.reasons?.data ?? [];
+  this.customers = bag?.customers?.data ?? [];
+
+  if (this.isEdit && this.cnId) {
+    this.loadForEdit(this.cnId);
+  }
+},
           error: _ => Swal.fire({ icon: 'error', title: 'Load failed', text: 'Init data' })
         });
     });

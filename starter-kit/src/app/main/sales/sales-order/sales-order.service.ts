@@ -114,4 +114,7 @@ insertSO(data: any): Observable<ResponseResult<number>> {
   getForSalesInvoice() {
     return this.http.get<ResponseResult>(this.url + SalesOrderApiUrls.forsalesinvoice);
 }
+getAvailableSoForSalesInvoice() {
+  return this.http.get<any>(`${this.url}/SalesInvoice/available-so`);
+}
 }

@@ -27,16 +27,21 @@
       <!-- Delivery Order (only source) -->
       <div class="col-lg-4 col-md-6">
         <label class="form-label prl-label">Delivery Order</label>
-        <ng-select class="custom-ng-select" [items]="doList" bindValue="id" bindLabel="doNumber" [(ngModel)]="doId"
-          placeholder="Select DO…" [clearable]="true" [searchable]="true" [virtualScroll]="true" [appendTo]="'body'"
-          (change)="onDoChanged()" [disabled]="isEdit" [ngModelOptions]="{standalone:true}">
-          <ng-template ng-option-tmp let-d="item">
-            <div class="d-flex flex-column">
-              <span class="fw-600">{{ d?.doNumber }}</span>
-              <small class="text-muted">#{{ d?.id }} • {{ d?.customerName }}</small>
-            </div>
-          </ng-template>
-        </ng-select>
+      <ng-select
+  class="custom-ng-select"
+  [items]="doList"
+  bindValue="id"
+  bindLabel="doNumber"
+  [(ngModel)]="doId"
+  placeholder="Select DO…"
+  [clearable]="true"
+  [searchable]="true"
+  [virtualScroll]="true"
+  [appendTo]="'body'"
+  (change)="onDoChanged()"
+  [disabled]="isEdit"
+  [ngModelOptions]="{standalone:true}">
+</ng-select>
       </div>
 
       <div class="col-lg-4 col-md-6">

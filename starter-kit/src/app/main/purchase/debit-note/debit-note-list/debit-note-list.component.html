@@ -43,6 +43,7 @@
                             </button> -->
                             <button
                   (click)="openCreate()"
+                  *ngIf="canCreate()"
                   class="btn m-1 d-inline-flex align-items-center"
                   style="background-color:#2E5F73;color:white;gap:6px;"
                   [disabled]="isPeriodLocked"
@@ -122,9 +123,11 @@
                             <!-- Normal state -->
                             <ng-template #actionsEnabled>
                                 <i class="fas fa-pen text-success mr-2" style="cursor: pointer;"
+                                *ngIf="canEdit()"
                                     (click)="editDetails(row)">
                                 </i>
                                 <i class="fas fa-trash text-danger" style="cursor: pointer;"
+                                 *ngIf="canDelete()"
                                     (click)="deleteDetails(row.id)">
                                 </i>
                             </ng-template>

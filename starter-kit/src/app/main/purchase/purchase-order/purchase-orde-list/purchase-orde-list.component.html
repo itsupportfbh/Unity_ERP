@@ -327,7 +327,7 @@
               <button class="icon-btn"
                       type="button"
                       [disabled]="row.approvalStatus !== 2"
-                        *ngIf="canEditPO"
+                         *ngIf="canExportPO"
                       (click)="openEmailConfirm(row)"
                       title="Email">
                 <i class="fas fa-envelope"></i>
@@ -336,7 +336,9 @@
               <!-- Print -->
               <button class="icon-btn"
                       type="button"
+                      *ngIf="canPrintPO"
                       (click)="openPoPdfPreview(row)"
+
                       title="Print">
                 <i class="fas fa-print"></i>
               </button>

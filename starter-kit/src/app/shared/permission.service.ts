@@ -90,4 +90,13 @@ export class PermissionService {
 hasReject(permission: FunctionPermission | null | undefined): boolean {
   return !!permission?.reject;
 }
+
+  hasExport(permission: FunctionPermission | null | undefined): boolean {
+    return !!permission?.export;
+  }
+
+    hasPrint(permission: FunctionPermission | null | undefined): boolean {
+    return !!permission?.print;
+  }
+
 }

@@ -8,6 +8,7 @@ import { StockTakeService } from '../stock-take.service'
 import { ItemMasterService } from '../../item-master/item-master.service';
 import { BinService } from '../../../master/bin/bin.service'
 import { StockIssueService } from 'app/main/master/stock-issue/stock-issue.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-stock-take-list',
@@ -44,20 +45,94 @@ export class StockTakeListComponent implements OnInit {
   binList: any;
   reasonList: any
 
+  functionId = 'stocktake-list';
+  
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+
   constructor(private stockTakeService: StockTakeService, private router: Router,private StockissueService: StockIssueService,
     private datePipe: DatePipe, private itemMasterService: ItemMasterService,private BinService: BinService,
-  ) { this.userId = localStorage.getItem('id'); }
+    private permissionService: PermissionService
+  ) { this.userId = localStorage.getItem('id');
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+   }
   ngOnInit(): void {
-    this.loadRequests();
-    this.itemMasterService.getAllItemMaster().subscribe((res: any) => {
-      this.itemList = res.data;
-    })
-    this.BinService.getAllBin().subscribe((res: any) => {
-      this.binList = res.data;
-    })
-    this.StockissueService.getAllStockissue().subscribe((res: any) => {
-      this.reasonList = res.data;
-    })
+    this.loadPermission();
+  }
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+        console.log('Permission:', this.permission);
+        console.log('Can Export:', this.canExport());
+
+        if (this.canView()) {
+            this.loadRequests();
+            this.itemMasterService.getAllItemMaster().subscribe((res: any) => {
+              this.itemList = res.data;
+            })
+            this.BinService.getAllBin().subscribe((res: any) => {
+              this.binList = res.data;
+            })
+            this.StockissueService.getAllStockissue().subscribe((res: any) => {
+              this.reasonList = res.data;
+            })
+        } else {
+          this.rows = [];
+          // this.isDisplay = false;
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+  canExport(): boolean {
+    return this.permissionService.hasExport(this.permission);
   }
   filterUpdate(event) {
 

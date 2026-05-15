@@ -101,12 +101,12 @@
                         <!-- <td class="text-muted">{{ r.onHand ?? 0 }}</td> -->
                         <td>
                             <input type="number" class="form-control" [(ngModel)]="r.countedQty"
-                                (ngModelChange)="onCountChange(r)" min="0" placeholder="0" />
+                                (ngModelChange)="onCountChange(r)" min="0" step="0.0001" placeholder="0" />
                             <div *ngIf="r._error" class="small text-danger mt-1">{{ r._error }}</div>
                         </td>
                         <td>
                             <input type="number" class="form-control" [(ngModel)]="r.badCountedQty"
-                                (ngModelChange)="onUnCountChange(r)" min="0" placeholder="0" />
+                                (ngModelChange)="onUnCountChange(r)" min="0" step="0.0001" placeholder="0" />
                             <div *ngIf="r._error" class="small text-danger mt-1">{{ r._error }}</div>
                         </td>
                         <!-- <td><ng-select [items]="reasonList" bindLabel="stockIssuesNames" bindValue="id" [(ngModel)]="r.reason"
@@ -115,7 +115,7 @@
                         <!-- stock-take-list.component.html OR stock-take.component.html -->
                         <td>
                             <ng-select [items]="reasonList" bindLabel="stockIssuesNames" bindValue="id" [(ngModel)]="r.reasonId"
-                                 placeholder="Item" class="w-100">
+                                 placeholder="Item" class="w-100"  (change)="onCheckReview()">
                             </ng-select>
 
                         </td>

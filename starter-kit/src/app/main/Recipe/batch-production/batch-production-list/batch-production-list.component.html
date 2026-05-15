@@ -1,6 +1,6 @@
-<div class="content-wrapper p-0">
+<div *ngIf="isPermissionLoaded; else loadingTemplate"  class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper">
+    <section *ngIf="canView(); else noAccessTemplate" class="users-list-wrapper">
       <div class="card">
 
         <!-- ==================== HEADER ROW ==================== -->
@@ -41,6 +41,7 @@
 
               <!-- Add -->
               <button
+               *ngIf="canCreate()"
                 type="button"
                 (click)="goToCreate()"
                 class="btn bp-addbtn"
@@ -121,10 +122,10 @@
               <div class="bp-actions">
 
                 <!-- Execute/Edit -->
-                <i class="fas fa-pen text-primary"
+                <!-- <i *ngIf="canEdit()" class="fas fa-pen text-primary"
                    style="cursor:pointer;"
                    (click)="editBatch(row.id)"
-                   title="Open / Execute"></i>
+                   title="Open / Execute"></i> -->
 
                 <!-- Food Preparation Complete ✅ (NEW) -->
                 <button
@@ -137,15 +138,15 @@
                   <!-- <span>{{ getFoodPrepLabel(row) }}</span> -->
                 </button>
                 <!-- Post -->
-                <i class="fas fa-check-circle text-success"
+                <!-- <i class="fas fa-check-circle text-success"
                    style="cursor:pointer;"
                    (click)="quickPost(row)"
                    [style.opacity]="(row.status || '').toLowerCase() === 'posted' ? 0.35 : 1"
                    [style.pointerEvents]="(row.status || '').toLowerCase() === 'posted' ? 'none' : 'auto'"
-                   title="Post to Inventory"></i>
+                   title="Post to Inventory"></i> -->
 
                 <!-- Delete -->
-                <i class="fas fa-trash text-danger"
+                <i *ngIf="canDelete()" class="fas fa-trash text-danger"
                    style="cursor:pointer;"
                    (click)="deleteBatch(row.id)"
                    title="Delete"></i>
@@ -227,3 +228,23 @@
 
   </div>
 </div>
+
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

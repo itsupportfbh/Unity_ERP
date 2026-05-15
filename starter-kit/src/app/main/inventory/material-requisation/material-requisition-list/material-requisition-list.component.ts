@@ -2,6 +2,8 @@ import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { Router } from '@angular/router';
 import { MaterialRequisitionService } from '../material-requisition.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import Swal from 'sweetalert2';
 
 type MaterialReqLine = {
   id: number;
@@ -52,15 +54,88 @@ export class MaterialRequisitionListComponent implements OnInit {
   selectedReq: MaterialReqRow | null = null;
   private modalRef?: NgbModalRef;
 
+   userId: number = 0;
+    functionId = 'mr-list';
+    
+      permission: FunctionPermission;
+      isPermissionLoaded = false;
+      isPageLoading = false;
   constructor(
     private modalService: NgbModal,
     private router: Router,
-    private materialRequisition: MaterialRequisitionService
-  ) {}
+    private materialRequisition: MaterialRequisitionService,
+    private permissionService: PermissionService
+  ) 
+  {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   ngOnInit(): void {
-    this.loadMaterialRequisition();
+    this.loadPermission();
   }
+
+
+    loadPermission(): void {
+      if (!this.userId || this.userId <= 0) {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+  
+        Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'User not found. Please login again.',
+          confirmButtonColor: '#0e3a4c'
+        });
+        return;
+      }
+  
+      this.isPageLoading = true;
+  
+      this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+        next: (res: FunctionPermission) => {
+          this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+  
+          if (this.canView()) {
+            this.loadMaterialRequisition();  
+          } else {
+            this.rows = [];
+            // this.isDisplay = false;
+          }
+        },
+        error: (err) => {
+          console.error('Permission load error:', err);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+  
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Unable to load permission.',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    }
+  
+    canView(): boolean {
+      return this.permissionService.hasView(this.permission);
+    }
+  
+    canCreate(): boolean {
+      return this.permissionService.hasCreate(this.permission);
+    }
+  
+    canEdit(): boolean {
+      return this.permissionService.hasEdit(this.permission);
+    }
+  
+    canDelete(): boolean {
+      return this.permissionService.hasDelete(this.permission);
+    }
 
   rowIdentity = (row: MaterialReqRow) => row.gridKey;
 

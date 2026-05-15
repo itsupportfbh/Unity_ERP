@@ -2,6 +2,8 @@ import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { StackOverviewService } from '../stack-overview.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import Swal from 'sweetalert2';
 
 /** Raw row from API (per bin / per warehouse row) */
 interface ApiStockRow {
@@ -78,15 +80,88 @@ export class StackOverviewListComponent implements OnInit {
   loading = false;
   errorMsg: string | null = null;
 
+     userId: number = 0;
+      functionId = 'mr-list';
+      
+        permission: FunctionPermission;
+        isPermissionLoaded = false;
+        isPageLoading = false;
+
   constructor(
     private router: Router,
     private stockService: StackOverviewService,
-    private modal: NgbModal
-  ) {}
+    private modal: NgbModal,
+     private permissionService: PermissionService
+  ) 
+  {
+     this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   ngOnInit(): void {
-    this.loadMasterItem();
+    this.loadPermission();
   }
+
+  loadPermission(): void {
+      if (!this.userId || this.userId <= 0) {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+  
+        Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'User not found. Please login again.',
+          confirmButtonColor: '#0e3a4c'
+        });
+        return;
+      }
+  
+      this.isPageLoading = true;
+  
+      this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+        next: (res: FunctionPermission) => {
+          this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+  
+          if (this.canView()) {
+            this.loadMasterItem();  
+          } else {
+            this.rows = [];
+            // this.isDisplay = false;
+          }
+        },
+        error: (err) => {
+          console.error('Permission load error:', err);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+  
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Unable to load permission.',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    }
+  
+    canView(): boolean {
+      return this.permissionService.hasView(this.permission);
+    }
+  
+    canCreate(): boolean {
+      return this.permissionService.hasCreate(this.permission);
+    }
+  
+    canEdit(): boolean {
+      return this.permissionService.hasEdit(this.permission);
+    }
+  
+    canDelete(): boolean {
+      return this.permissionService.hasDelete(this.permission);
+    }
 
   /** Stable identity for ngx-datatable */
   rowIdentity = (row: ItemWarehouseRow) => row.gridKey;

@@ -34,6 +34,7 @@
 
             <button
               (click)="goToCreateItem()"
+              *ngIf="canCreate()"
               class="btn m-1 d-inline-flex align-items-center"
               style="background-color:#2E5F73; color:white; gap:6px;">
               <i class="fas fa-plus-circle"></i>

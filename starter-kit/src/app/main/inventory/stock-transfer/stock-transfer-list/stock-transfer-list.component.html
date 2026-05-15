@@ -116,17 +116,20 @@
           </ngx-datatable-column>
 
           <!-- Action -->
-          <ngx-datatable-column name="Action" [width]="110" [sortable]="false" [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <button type="button"
-                      class="btn btn-sm btn-icon"
-                      [disabled]="row.statusNum !== 1"
-                      [title]="row.statusNum === 1 ? 'Edit' : 'Edit only for Pending (1)'"
-                      (click)="editTransfer(row); $event.stopPropagation();">
-                <i data-feather="edit-2"></i>
-              </button>
-            </ng-template>
-          </ngx-datatable-column>
+   <ngx-datatable-column name="Action" [width]="110" [sortable]="false" [canAutoResize]="false">
+  <ng-template ngx-datatable-cell-template let-row="row">
+    <button
+      type="button"
+      class="action-edit-btn"
+      *ngIf="canCreate()"
+      [disabled]="row.statusNum !== 1"
+      [title]="row.statusNum === 1 ? 'Edit' : 'Edit only for Pending'"
+      (click)="editTransfer(row); $event.stopPropagation();">
+
+      <i class="fa fa-pencil action-edit-icon"></i>
+    </button>
+  </ng-template>
+</ngx-datatable-column>
 
         </ngx-datatable>
       </div>

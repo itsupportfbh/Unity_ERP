@@ -178,7 +178,7 @@
           <div class="uwso-help">Transfer will use selected From Warehouse.</div>
         </div>
 
-        <!-- Selected From Outlet -->
+
         <div class="uwso-field">
           <label class="uwso-label">
             <i class="fas fa-check-circle" aria-hidden="true"></i>
@@ -201,13 +201,12 @@
         </div>
       </div>
 
-      <!-- Error -->
+
       <div *ngIf="!loading && errorMsg" class="uwso-error">
         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
         <span>{{ errorMsg }}</span>
       </div>
 
-      <!-- ✅ Transfer error text -->
       <div *ngIf="!loading && transferErrorText" class="uwso-error" style="background:#fff7ed;border-color:#fdba74;color:#9a3412;">
         <i class="fas fa-info-circle" aria-hidden="true"></i>
         <span>{{ transferErrorText }}</span>
@@ -215,8 +214,8 @@
     </div>
   </div>
 
-  <!-- ===== Summary + MR Lines ===== -->
-  <div class="uwso-2col uwso-section" *ngIf="mrLines?.length">
+
+  <!-- <div class="uwso-2col uwso-section" *ngIf="mrLines?.length">
 
     <div class="uwso-card">
       <div class="uwso-card-body uwso-summary">
@@ -280,7 +279,7 @@
               <th class="t-end">Received</th>
               <th class="t-end">Remaining</th>
 
-              <!-- ✅ NEW -->
+
               <th class="t-end">Avail</th>
               <th>Status</th>
               <th class="t-end">Transfer Qty</th>
@@ -299,7 +298,6 @@
                 <span class="uwso-badge-num">{{ l.remainingQty }}</span>
               </td>
 
-              <!-- ✅ NEW -->
               <td class="t-end t-num">
                 <span
                   class="uwso-badge-av"
@@ -346,7 +344,7 @@
         </table>
       </div>
 
-      <!-- ✅ Helper note -->
+
       <div class="uwso-help" style="padding:10px 14px;">
         <i class="fas fa-info-circle" aria-hidden="true"></i>
         Transfer button will be enabled if <b>at least one line</b> has Transfer Qty &gt; 0.
@@ -354,7 +352,7 @@
       </div>
     </div>
 
-  </div>
+  </div> -->
 
   <!-- ===== Stock Table ===== -->
   <div class="uwso-card uwso-section">

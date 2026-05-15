@@ -43,7 +43,7 @@
                 Stock Transfer List
               </button>
 
-              <button class="btn mrq-btn-primary" type="button" (click)="goToCreateForm()">
+              <button class="btn mrq-btn-primary" type="button" (click)="goToCreateForm()" *ngIf="canCreate()">
                 <i class="fas fa-plus-circle mr-50"></i>
                 <span>New Request</span>
               </button>
@@ -155,6 +155,7 @@
                 class="mrq-icon-btn"
                 title="Edit"
                 (click)="row.status === 1 && editReq(row)"
+                *ngIf="canEdit()"
                 [disabled]="row.status !== 1"
                 [ngClass]="{ 'is-disabled': row.status !== 1 }">
                 <i class="fas fa-pen"></i>

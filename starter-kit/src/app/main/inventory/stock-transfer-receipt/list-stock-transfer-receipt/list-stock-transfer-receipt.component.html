@@ -114,6 +114,7 @@
               type="button"
               class="rcx-btn primary"
               (click)="openReceiveModal(row)"
+              *ngIf="canCreate()"
               [disabled]="row.status !== 'IN_TRANSIT'"
               [class.disabled]="row.status !== 'IN_TRANSIT'">
               <i class="fas fa-box-open"></i>
@@ -250,6 +251,7 @@
 
       <button type="button"
               class="rcm-btn primary"
+              *ngIf="canCreate()"
               (click)="confirmReceive()"
               [disabled]="!canConfirmReceive()">
         <i class="fas fa-check-circle"></i>

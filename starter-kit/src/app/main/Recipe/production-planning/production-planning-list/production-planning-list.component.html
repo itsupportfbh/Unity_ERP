@@ -110,15 +110,15 @@
               <div style="display:flex;justify-content:center;gap:12px;align-items:center;">
 
                   <!-- PDF icon -->
-              <i *ngIf="canExport()" class="fas fa-file-pdf text-danger"
+              <i  class="fas fa-file-pdf text-danger"
                 style="cursor:pointer;font-size:18px;"
                 (click)="downloadPdf(row.id)"
                 title="Download PDF"></i>
                 <!-- Edit icon -->
-                <i *ngIf="canEdit()" class="fas fa-pen text-primary"
+                <!-- <i *ngIf="canEdit()" class="fas fa-pen text-primary"
                    style="cursor:pointer;"
                    (click)="edit(row.id)"
-                   title="Edit"></i>
+                   title="Edit"></i> -->
 
                 <!-- Delete icon -->
                 <i  *ngIf="canDelete()" class="fas fa-trash text-danger"

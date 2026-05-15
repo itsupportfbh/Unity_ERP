@@ -349,7 +349,7 @@ createPR(): void {
             // ✅ only update status, do not call full updatePlan()
             this.api.updatePlanStatus(planId, {
               status: 0,
-              updatedBy: (localStorage.getItem('username') || '').trim() || 'admin'
+               updatedBy: Number(localStorage.getItem('id') || 0)
             }).subscribe({
               next: () => {
                 Swal.fire('Success', 'PR created from recipe shortage', 'success')

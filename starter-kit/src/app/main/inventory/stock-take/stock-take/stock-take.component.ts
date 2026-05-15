@@ -161,28 +161,83 @@ export class StockTakeComponent implements OnInit {
     console.log('Exporting mobile tasks for', this.lines.length, 'lines');
   }
 
-  onCountChange(r: StockTakeLine): void {
-    this.showStockReview = false
-    const n = Math.floor(Number(r.countedQty));
-    if (!Number.isFinite(n) || n < 0) {
-      r.countedQty = null;
-      r._error = 'Enter a valid number (≥ 0)';
-    } else {
-      r.countedQty = n;
-      r._error = null;
-    }
+  // onCountChange(r: StockTakeLine): void {
+  //   this.showStockReview = false
+  //   const n = Math.floor(Number(r.countedQty));
+  //   if (!Number.isFinite(n) || n < 0) {
+  //     r.countedQty = null;
+  //     r._error = 'Enter a valid number (≥ 0)';
+  //   } else {
+  //     r.countedQty = n;
+  //     r._error = null;
+  //   }
+  // }
+  // onUnCountChange(r: StockTakeLine): void {
+  //    this.showStockReview = false
+  //   const n = Math.floor(Number(r.badCountedQty));
+  //   if (!Number.isFinite(n) || n < 0) {
+  //     r.badCountedQty = null;
+  //     r._error = 'Enter a valid number (≥ 0)';
+  //   } else {
+  //     r.badCountedQty = n;
+  //     r._error = null;
+  //   }
+  // }
+  private normalizeQty(value: any): number | null {
+  if (value === null || value === undefined || value === '') return 0;
+
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return null;
+
+  return Number(n.toFixed(4)); // decimal allow
+}
+
+onCountChange(r: StockTakeLine): void {
+  this.showStockReview = false
+  const n = this.normalizeQty(r.countedQty);
+
+  if (n === null) {
+    r.countedQty = null;
+    r._error = 'Enter a valid number (≥ 0)';
+    return;
   }
-  onUnCountChange(r: StockTakeLine): void {
-     this.showStockReview = false
-    const n = Math.floor(Number(r.badCountedQty));
-    if (!Number.isFinite(n) || n < 0) {
-      r.badCountedQty = null;
-      r._error = 'Enter a valid number (≥ 0)';
-    } else {
-      r.badCountedQty = n;
-      r._error = null;
-    }
+
+  r.countedQty = n;
+  r._error = null;
+  this.syncReviewRow(r);
+}
+
+onUnCountChange(r: StockTakeLine): void {
+  this.showStockReview = false
+  const n = this.normalizeQty(r.badCountedQty);
+
+  if (n === null) {
+    r.badCountedQty = null;
+    r._error = 'Enter a valid number (≥ 0)';
+    return;
   }
+
+  r.badCountedQty = n;
+  r._error = null;
+  this.syncReviewRow(r);
+}
+
+private syncReviewRow(line: StockTakeLine): void {
+  const idx = this.reviewRows.findIndex(x =>
+    x.id === line.id &&
+    x.itemId === line.itemId &&
+    x.binId === line.binId
+  );
+
+  if (idx >= 0) {
+    this.reviewRows[idx] = {
+      ...this.reviewRows[idx],
+      ...line,
+      selected: this.reviewRows[idx].selected ?? false
+    };
+    this.reviewRows = [...this.reviewRows];
+  }
+}
 
   removeLine(i: number): void { this.lines.splice(i, 1); }
 

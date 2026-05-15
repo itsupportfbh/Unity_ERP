@@ -1,7 +1,7 @@
-<div class="content-wrapper p-0">
+<div *ngIf="isPermissionLoaded; else loadingTemplate"  class="content-wrapper p-0">
     <div class="content-body">
         <!-- User List -->
-        <section class="users-list-wrapper">
+        <section *ngIf="canView(); else noAccessTemplate" class="users-list-wrapper">
             <div class="card">
                 <div class="row">
                     <div class="col-md-6 col-12">
@@ -29,7 +29,7 @@
                                     class="form-control ml-25" (keyup)="filterUpdate($event)"
                                     (search)="filterUpdate($event)" /></label>
 
-                            <button (click)="openCreate()" class="btn m-1 d-inline-flex align-items-center"
+                            <button *ngIf="canCreate()" (click)="openCreate()" class="btn m-1 d-inline-flex align-items-center"
                                 style="background-color:#2E5F73; color:white; gap:4px;">
                                 <i data-feather="plus-circle" class="w-4 h-4"></i>
                                 <span>Add</span>
@@ -89,20 +89,20 @@
                     <ngx-datatable-column name="Action" [width]="120">
                         <ng-template let-row="row" ngx-datatable-cell-template>
                             <!-- Actions -->
-                            <i class="fas fa-pen me-3" [ngClass]="row.status === 3 ? 'text-muted' : 'text-primary'"
+                            <i *ngIf="canEdit()" class="fas fa-pen me-3" [ngClass]="row.status === 3 ? 'text-muted' : 'text-primary'"
                                 [style.pointer-events]="row.status === 3 ? 'none' : 'auto'"
                                 [attr.title]="row.status === 3 ? 'Cannot edit (Posted)' : 'Edit'"
                                 (click)="row.status === 3 ? null : editStockTake(row)">
                             </i>
 
-                            <i class="fas fa-trash me-3" [ngClass]="row.status === 3 ? 'text-muted' : 'text-danger'"
+                            <i  *ngIf="canDelete()" class="fas fa-trash me-3" [ngClass]="row.status === 3 ? 'text-muted' : 'text-danger'"
                                 [style.pointer-events]="row.status === 3 ? 'none' : 'auto'"
                                 [attr.title]="row.status === 3 ? 'Cannot delete (Posted)' : 'Delete'"
                                 (click)="row.status === 3 ? null : deleteStockTake(row.id)">
                             </i>
 
 
-                            <button *ngIf="row.status === 2" class="btn btn-sm btn-success" title="Post inventory"
+                            <button *ngIf="canEdit() && row.status === 2" class="btn btn-sm btn-success" title="Post inventory"
                                 [disabled]="row._posting" (click)="post(row)">
                                 <i class="fas fa-upload"></i> Post
                             </button>
@@ -240,3 +240,23 @@
         </div>
     </div>
 </div>
+
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

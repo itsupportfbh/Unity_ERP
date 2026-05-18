@@ -1,5 +1,6 @@
+<div *ngIf="isPermissionLoaded; else loadingTemplate"  class="content-wrapper p-0">
 <!-- stock-cogs.component.html -->
-<div class="cogs-page">
+<div *ngIf="canView(); else noAccessTemplate" class="cogs-page">
 
   <!-- ✅ KPI ROW (4 boxes) -->
   <div class="kpi-row">
@@ -168,3 +169,24 @@
     </div>
   </div>
 </div>
+</div>
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>
+

@@ -238,7 +238,6 @@ export class StockTakeListComponent implements OnInit {
     this.showLinesModal = true;
   }
   getBinName(id: number | string | null) {
-    debugger
     const x = this.binList.find(i => i.id === id);
     return x?.binName ?? String(id ?? '');
   }
@@ -323,7 +322,6 @@ export class StockTakeListComponent implements OnInit {
     });
   }
    getReason(id: number | string | null) {
-    debugger
     const x = this.reasonList.find(i => i.id === id);
     return x?.stockIssuesNames ?? String(id ?? '');
   }

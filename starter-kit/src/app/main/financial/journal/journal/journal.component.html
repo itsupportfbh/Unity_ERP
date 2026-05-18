@@ -23,6 +23,7 @@
               <div class="d-flex align-items-center">
                 <button
                   (click)="newJournal()"
+                  *ngIf="canCreate()"
                   class="btn m-1 d-inline-flex align-items-center"
                   style="background-color:#2E5F73;color:white;gap:6px;"
                   [disabled]="isPeriodLocked"
@@ -175,6 +176,7 @@
                 <div class="d-flex justify-content-end mt-2">
                   <button
                     type="button"
+                     *ngIf="canPost()"
                     class="btn d-inline-flex align-items-center justify-content-center"
                     style="
                       background-color:#2E5F73;
@@ -188,6 +190,7 @@
                       min-width:140px;
                     "
                     [disabled]="isPeriodLocked || !journalList || !journalList.length"
+                      
                     (click)="submit()">
                     <i class="fas fa-check-circle" style="font-size:14px;"></i>
                     <span>Post</span>

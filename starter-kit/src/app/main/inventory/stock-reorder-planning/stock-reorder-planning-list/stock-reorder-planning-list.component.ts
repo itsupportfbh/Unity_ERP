@@ -7,6 +7,8 @@ import { ColumnMode, DatatableComponent } from '@swimlane/ngx-datatable';
 import { DatePipe } from '@angular/common';
 import * as feather from 'feather-icons';
 import { ReorderPlanningService } from '../stock-reorder-planning.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import Swal from 'sweetalert2';
 
 const METHOD_NAME: Record<number, string> = { 1: 'MinMax', 2: 'ROP', 3: 'MRP' };
 
@@ -44,25 +46,96 @@ export class StockReorderPlanningListComponent implements OnInit, AfterViewInit,
 
   rows: any[] = [];
   tempData: any[] = [];
-  userId: any = localStorage.getItem('id');
+  userId: any 
 
   // Modal
   showLinesModal = false;
   modalLines: PreviewRow[] = [];
+  functionId = 'reorder-list';
+    
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
 
   constructor(
     private reorderPlanningService: ReorderPlanningService,
     private router: Router,
-    private datePipe: DatePipe
-  ) {}
+    private datePipe: DatePipe, private permissionService: PermissionService
+  ) {this.userId = localStorage.getItem('id');
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);}
 
-  ngOnInit(): void { this.loadRequests(); }
+  ngOnInit(): void { this.loadPermission(); }
   ngAfterViewInit(): void { feather.replace(); }
   ngAfterViewChecked(): void { feather.replace(); }
 
   private N(v: any, d = 0): number {
     const n = Number(v);
     return Number.isFinite(n) ? n : d;
+  }
+  loadPermission(): void {
+      if (!this.userId || this.userId <= 0) {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+
+        Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'User not found. Please login again.',
+          confirmButtonColor: '#0e3a4c'
+        });
+        return;
+      }
+
+      this.isPageLoading = true;
+
+      this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+        next: (res: FunctionPermission) => {
+          this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+          console.log('Permission:', this.permission);
+          console.log('Can Export:', this.canExport());
+
+          if (this.canView()) {
+              this.loadRequests();
+          } else {
+            this.rows = [];
+            // this.isDisplay = false;
+          }
+        },
+        error: (err) => {
+          console.error('Permission load error:', err);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Unable to load permission.',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+  canExport(): boolean {
+    return this.permissionService.hasExport(this.permission);
   }
 
   loadRequests(): void {

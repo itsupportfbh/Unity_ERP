@@ -5,6 +5,8 @@ import { WarehouseService } from 'app/main/master/warehouse/warehouse.service';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import Swal from 'sweetalert2';
 
 type TabKey = 'table' | 'chart' | 'formula';
 type WarehouseDto = {
@@ -33,20 +35,96 @@ export class StockCogsComponent implements OnInit {
   binId?: number;
 
   // Data
+  userId: any;
   report?: CogsReport;
+  functionId = 'stockcogs';
+    
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
 
-  constructor(private api: CogsReportService, private whApi: WarehouseService) {}
+  constructor(private api: CogsReportService, private whApi: WarehouseService,
+    private permissionService: PermissionService
+  ) {
+    this.userId = localStorage.getItem('id');
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
 
   ngOnInit(): void {
-    this.loadWarehouses(() => {
-    this.load();
-  });
+  this.loadPermission();
+  }
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+        console.log('Permission:', this.permission);
+        console.log('Can Export:', this.canExport());
+
+        if (this.canView()) {
+            this.loadWarehouses(() => {
+            this.load();
+            });
+        } else {
+           this.report = {} as CogsReport;
+          // this.isDisplay = false;
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+  canExport(): boolean {
+    return this.permissionService.hasExport(this.permission);
   }
 
   load(): void {
     this.loading = true;
 
-    this.api.getCogs(this.fromDate, this.toDate, this.warehouseId, this.binId).subscribe({
+    this.api.getCogs(this.fromDate, this.toDate, this.warehouseId ?? undefined, this.binId).subscribe({
       next: (res: any) => {
         this.report = res?.data;
 

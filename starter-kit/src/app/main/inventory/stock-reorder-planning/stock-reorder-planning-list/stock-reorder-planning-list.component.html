@@ -1,6 +1,6 @@
-<div class="content-wrapper p-0">
+<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper">
+    <section *ngIf="canView(); else noAccessTemplate" class="users-list-wrapper">
       <div class="card">
         <div class="row">
           <div class="col-md-6 col-12">
@@ -29,7 +29,7 @@
                        class="form-control ml-25" (keyup)="filterUpdate($event)" (search)="filterUpdate($event)"/>
               </label>
 
-              <button (click)="openCreate()" class="btn m-1 d-inline-flex align-items-center"
+              <button *ngIf="canCreate()" (click)="openCreate()" class="btn m-1 d-inline-flex align-items-center"
                       style="background-color:#2E5F73;color:white;gap:4px;">
                 <i data-feather="plus-circle" class="w-4 h-4"></i>
                 <span>Add</span>
@@ -150,3 +150,23 @@
     </div>
   </div>
 </div>
+
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

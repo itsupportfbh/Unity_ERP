@@ -49,11 +49,15 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
         this.coreConfig = config;
       });
 
-    this.isCollapsed = !!this._coreSidebarService.getSidebarRegistry('menu')?.collapsed;
+    this.isCollapsed =
+      !!this._coreSidebarService.getSidebarRegistry('menu')?.collapsed;
 
     this.loadMenu(this._router.url);
 
-    window.addEventListener('menu-permission-updated', this.onMenuPermissionUpdated);
+    window.addEventListener(
+      'menu-permission-updated',
+      this.onMenuPermissionUpdated
+    );
 
     this._router.events
       .pipe(
@@ -116,7 +120,10 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
     try {
       const raw = localStorage.getItem('approvalRoles');
       const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
+
+      return Array.isArray(parsed)
+        ? parsed.map((x: any) => String(x).trim())
+        : [];
     } catch {
       return [];
     }
@@ -124,7 +131,6 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
 
   private filterMenu(items: any[]): any[] {
     const allowedMenuIds = this.getAllowedMenuIds();
-    const approvalRoles = this.getApprovalRoles();
 
     const allowedSet = new Set(
       (allowedMenuIds || []).map(x => String(x).trim().toLowerCase())
@@ -138,27 +144,46 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
 
         const itemId = String(item.id || '').trim().toLowerCase();
 
-        const hasTeamRules = Array.isArray(item.teams) && item.teams.length > 0;
+        /**
+         * ✅ IMPORTANT:
+         * department-menu-access should show for ALL roles.
+         * It will show even if:
+         * - allowedMenuIds does not contain it
+         * - approvalRoles is not Super Admin
+         * - teams / approvalRoles restriction exists in menu config
+         */
+        const isDepartmentMenuAccess = itemId === 'department-menu-access';
+
+        const children = item.children
+          ? this.filterMenu(item.children)
+          : undefined;
+
+        const hasVisibleChildren =
+          Array.isArray(children) && children.length > 0;
+
+        const selfAllowed = allowedSet.has(itemId);
+
+        const hasTeamRules =
+          Array.isArray(item.teams) && item.teams.length > 0;
+
         const hasApprovalRules =
-          Array.isArray(item.approvalRoles) && item.approvalRoles.length > 0;
+          Array.isArray(item.approvalRoles) &&
+          item.approvalRoles.length > 0;
 
         const authAllowed =
           !hasTeamRules && !hasApprovalRules
             ? true
-            : this._auth.canShowMenu(item.teams || [], item.approvalRoles || []);
-
-        const superAdminExtraAccess =
-          item.id === 'department-menu-access' &&
-          approvalRoles.includes('Super Admin');
-
-        const children = item.children ? this.filterMenu(item.children) : undefined;
-        const hasVisibleChildren = Array.isArray(children) && children.length > 0;
-
-        const selfAllowed = allowedSet.has(itemId);
+            : this._auth.canShowMenu(
+                item.teams || [],
+                item.approvalRoles || []
+              );
 
         const finalAllowed =
-          authAllowed &&
-          (selfAllowed || hasVisibleChildren || superAdminExtraAccess);
+          isDepartmentMenuAccess ||
+          (
+            authAllowed &&
+            (selfAllowed || hasVisibleChildren)
+          );
 
         if (!finalAllowed) {
           return null;
@@ -207,6 +232,7 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
         }
 
         const url = (n.url || '').toLowerCase();
+
         const activeUrls: string[] = (n.activeUrls || []).map((x: string) =>
           (x || '').toLowerCase()
         );
@@ -216,7 +242,8 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
           return current === u || current.startsWith(u + '/');
         };
 
-        const isMatch = matchUrl(url) || activeUrls.some(a => matchUrl(a));
+        const isMatch =
+          matchUrl(url) || activeUrls.some(a => matchUrl(a));
 
         if (isMatch) {
           n.active = true;
@@ -253,13 +280,22 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
       });
 
     this._coreConfigService.setConfig(
-      { layout: { menu: { collapsed: !this.isCollapsed } } },
+      {
+        layout: {
+          menu: {
+            collapsed: !this.isCollapsed
+          }
+        }
+      },
       { emitEvent: true }
     );
   }
 
   ngOnDestroy(): void {
-    window.removeEventListener('menu-permission-updated', this.onMenuPermissionUpdated);
+    window.removeEventListener(
+      'menu-permission-updated',
+      this.onMenuPermissionUpdated
+    );
 
     this._unsubscribeAll.next(null);
     this._unsubscribeAll.complete();

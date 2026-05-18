@@ -17,6 +17,7 @@ export interface FunctionPermission {
   cancel: boolean;
   print: boolean;
   export: boolean;
+  post: boolean;
 }
 
 @Injectable({
@@ -45,7 +46,8 @@ export class PermissionService {
             reject: !!(p.reject ?? p.Reject),
             cancel: !!(p.cancel ?? p.Cancel),
             print: !!(p.print ?? p.Print),
-            export: !!(p.export ?? p.Export)
+            export: !!(p.export ?? p.Export),
+             post: !!(p.post ?? p.post),
           } as FunctionPermission;
         })
       );
@@ -63,7 +65,8 @@ export class PermissionService {
       reject: false,
       cancel: false,
       print: false,
-      export: false
+      export: false,
+      post: false
     };
   }
 
@@ -97,6 +100,11 @@ hasReject(permission: FunctionPermission | null | undefined): boolean {
 
     hasPrint(permission: FunctionPermission | null | undefined): boolean {
     return !!permission?.print;
+  }
+
+  
+    hasPost(permission: FunctionPermission | null | undefined): boolean {
+    return !!permission?.post;
   }
 
 }

@@ -42,7 +42,9 @@
               <button
                 class="btn m-1"
                 style="background-color: #2E5F73; color: white;"
-                (click)="toggleSidebar('app-chartofaccountcreate')">
+                (click)="toggleSidebar('app-chartofaccountcreate')"
+                *ngIf="canCreate()"
+                >
                 <i data-feather="plus"
                    class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
                 <span class="d-none d-sm-inline-block">Add</span>
@@ -123,11 +125,17 @@
               <i
                 class="fas fa-pen text-blue-600 mr-2"
                 style="cursor:pointer"
-                (click)="edit(row.id)"></i>
+                   *ngIf="canEdit()"
+                (click)="edit(row.id)"
+             
+                ></i>
               <i
                 class="fas fa-trash text-danger"
                 style="cursor:pointer"
-                (click)="confirmDeleteCoa(row.id)"></i>
+                        *ngIf="canDelete()"
+                (click)="confirmDeleteCoa(row.id)"
+        
+                ></i>
             </ng-template>
           </ngx-datatable-column>
         </ngx-datatable>

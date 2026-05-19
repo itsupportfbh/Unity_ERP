@@ -1,6 +1,6 @@
-<div class="content-wrapper p-0">
+<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper">
+    <section  *ngIf="canView(); else noAccessTemplate" class="users-list-wrapper">
       <div class="card shadow-sm">
 
         <!-- ===== Header ===== -->
@@ -10,13 +10,13 @@
           </h4>
 
           <div class="d-flex align-items-center gst-export">
-            <button class="btn btn-outline-secondary btn-sm" type="button" (click)="exportToPdf()"
+            <button *ngIf="canExport()"  class="btn btn-outline-secondary btn-sm" type="button" (click)="exportToPdf()"
               [disabled]="!displayRows?.length">
               <i class="far fa-file-pdf me-25"></i>
               <span>PDF</span>
             </button>
 
-            <button class="btn btn-outline-secondary btn-sm" type="button" (click)="exportToExcel()"
+            <button *ngIf="canExport()" class="btn btn-outline-secondary btn-sm" type="button" (click)="exportToExcel()"
               [disabled]="!displayRows?.length">
               <i class="far fa-file-excel me-25"></i>
               <span>Excel</span>
@@ -322,3 +322,22 @@
     </section>
   </div>
 </div>
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

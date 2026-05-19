@@ -8,6 +8,7 @@
       <button class="btn btn-outline-secondary btn-sm"
               type="button"
               (click)="exportToPdf()"
+              *ngIf="canExport()"
               [disabled]="!filteredRows?.length">
         <i class="far fa-file-pdf me-25"></i>
         <span>PDF</span>
@@ -16,6 +17,7 @@
       <button class="btn btn-outline-secondary btn-sm"
               type="button"
               (click)="exportToExcel()"
+               *ngIf="canExport()"
               [disabled]="!filteredRows?.length">
         <i class="far fa-file-excel me-25"></i>
         <span>Excel</span>

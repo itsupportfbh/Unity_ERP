@@ -69,6 +69,10 @@ userId: number = 0;
   ocrOpen = false;
   isPartialAsked = false;
 
+
+  advanceAmount = 0;
+balancePayableAfterAdvance = 0;
+advanceRows: any[] = [];
   trackByLine = (index: number) => index;
 
   constructor(
@@ -190,6 +194,52 @@ userId: number = 0;
 
     return `Already invoice ${g.previousPinNo || ''} created for previous GRN ${g.previousGrnNo || ''} under this same PO. Please approve & post that invoice to A/P before selecting this GRN.`;
   }
+
+  private checkSupplierAdvanceForSelectedGrn(): void {
+  const grnNos = (this.selectedGrnNos || []).join(',');
+
+  this.advanceAmount = 0;
+  this.balancePayableAfterAdvance = Number(this.grandTotal || 0);
+  this.advanceRows = [];
+
+  if (!grnNos) return;
+
+  this.api.getSupplierAdvanceByGrnNos(grnNos).subscribe({
+    next: (res: any) => {
+      const rows = res?.data || res || [];
+      this.advanceRows = rows;
+
+      this.advanceAmount = rows.reduce(
+        (sum: number, x: any) => sum + Number(x.balanceAmount || 0),
+        0
+      );
+
+      if (this.advanceAmount <= 0) return;
+
+      const invoiceAmount = Number(this.grandTotal || 0);
+      this.balancePayableAfterAdvance = Math.max(invoiceAmount - this.advanceAmount, 0);
+
+      Swal.fire({
+        icon: 'info',
+        title: 'Supplier Advance Available',
+        html: `
+          <div style="text-align:left;font-size:14px">
+            <p>Advance Amount: <b>${this.advanceAmount.toFixed(2)}</b></p>
+            <p>Invoice Amount: <b>${invoiceAmount.toFixed(2)}</b></p>
+            <hr/>
+            <p style="font-size:16px">
+              Balance Payable: <b>${this.balancePayableAfterAdvance.toFixed(2)}</b>
+            </p>
+          </div>
+        `,
+        confirmButtonText: 'OK'
+      });
+    },
+    error: () => {
+      Swal.fire('Error', 'Failed to check supplier advance.', 'error');
+    }
+  });
+}
 
   private showGrnBlockedWarning(g: GRNHeader): void {
     Swal.fire({
@@ -340,6 +390,7 @@ userId: number = 0;
       this.recalcAllLines();
       this.recalcHeaderFromLines();
       this.isPartialAsked = false;
+      this.checkSupplierAdvanceForSelectedGrn();
       return;
     }
 

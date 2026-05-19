@@ -5,6 +5,8 @@ import feather from 'feather-icons';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import Swal from 'sweetalert2';
 
 
 interface TbNode extends TrialBalance {
@@ -59,13 +61,88 @@ export class TrialBalanceReportComponent implements OnInit {
   currentPage = 1;
   totalRows = 0;
 
-  constructor(private reportsService: ReportsService) { }
+  userId: any;
+  functionId = 'tb';
+    
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
 
-  ngOnInit(): void { }
+  constructor(private reportsService: ReportsService,private permissionService: PermissionService) {
+    this.userId = localStorage.getItem('id');
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+   }
+
+  ngOnInit(): void { this.loadPermission(); }
 
   ngAfterViewInit() {
     feather.replace();
   }
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+        console.log('Permission:', this.permission);
+        console.log('Can Export:', this.canExport());
+
+        if (this.canView()) {
+           
+        } else {
+          
+          // this.isDisplay = false;
+        }
+      },
+      error: (err) => {
+        console.error('Permission load error:', err);
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+canView(): boolean {
+  return this.permissionService.hasView(this.permission);
+}
+
+canCreate(): boolean {
+  return this.permissionService.hasCreate(this.permission);
+}
+
+canEdit(): boolean {
+  return this.permissionService.hasEdit(this.permission);
+}
+
+canDelete(): boolean {
+  return this.permissionService.hasDelete(this.permission);
+}
+canExport(): boolean {
+  return this.permissionService.hasExport(this.permission);
+}
 
   // ================== RUN TB ==================
   runTB(): void {

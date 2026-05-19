@@ -19,7 +19,7 @@ interface GRNHeader {
   tax?: number;
 }
 
-type LineRow = { item?: string; qty?: number; price?: number; remarks?: string };
+type LineRow = { item?: string; qty?: number; price?: number; remarks?: string ,taxPct?: number;};
 
 @Component({
   selector: 'app-debit-note-create',
@@ -113,6 +113,7 @@ export class DebitNoteCreateComponent implements OnInit {
 
     this.grnService.getAvailableForPinCreate().subscribe({
       next: (res: any) => {
+        debugger
         const raw = res?.data ?? res ?? [];
         this.grnList = raw.map((x: any) => this.mapGrn(x));
         this.grnFiltered = [...this.grnList];
@@ -252,7 +253,8 @@ private fillRowsFromGrn(g: GRNHeader): void {
       item: itemText,
       qty: varianceQty,
       price: price,
-      remarks: ''
+      remarks: '',
+      taxPct: this.toNumber(g.tax ?? 0),
     } as LineRow;
   });
 

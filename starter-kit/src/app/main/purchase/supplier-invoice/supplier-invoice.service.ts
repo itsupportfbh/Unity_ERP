@@ -56,4 +56,10 @@ export class SupplierInvoiceService {
   markDebitNote(pinId: number): Observable<any> {
     return this.http.post(`${this.url}/SupplierInvoicePin/MarkDebitNote/${pinId}`, {});
   }
+
+  getSupplierAdvanceByGrnNos(grnNos: string) {
+  return this.http.get<any>(
+    `${this.url}/finance/ap/supplier-advance-by-grn?grnNos=${encodeURIComponent(grnNos)}`
+  );
+}
 }

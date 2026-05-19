@@ -4,140 +4,134 @@
   <div class="content-body">
     <section class="users-list-wrapper">
       <div class="card ap-card">
+
         <!-- ================= PAGE HEADER ================= -->
         <div class="row">
           <div class="col-12 d-flex justify-content-between align-items-center">
-            <h4 class="card-text page-title">
-              Accounts Payable
-            </h4>
+            <h4 class="card-text page-title">Accounts Payable</h4>
           </div>
         </div>
 
         <!-- ================= TABS ================= -->
-      <ul class="nav nav-tabs ap-tabs mt-1" role="tablist">
-  <li class="nav-item">
-    <a
-      class="nav-link"
-      [ngClass]="{ 'active': activeTab === 'invoices' }"
-      (click)="setTab('invoices')">
-      Supplier Invoices
-    </a>
-  </li>
+        <ul class="nav nav-tabs ap-tabs mt-1" role="tablist">
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [ngClass]="{ 'active': activeTab === 'invoices' }"
+              (click)="setTab('invoices')">
+              Supplier Invoices
+            </a>
+          </li>
 
-  <li class="nav-item">
-    <a
-      class="nav-link"
-      [ngClass]="{ 'active': activeTab === 'payments' }"
-      (click)="setTab('payments')">
-      Payments
-    </a>
-  </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [ngClass]="{ 'active': activeTab === 'payments' }"
+              (click)="setTab('payments')">
+              Payments
+            </a>
+          </li>
 
-  <li class="nav-item">
-    <a
-      class="nav-link"
-      [ngClass]="{ 'active': activeTab === 'aging' }"
-      (click)="setTab('aging')">
-      Aging
-    </a>
-  </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [ngClass]="{ 'active': activeTab === 'aging' }"
+              (click)="setTab('aging')">
+              Aging
+            </a>
+          </li>
 
-  <!-- ⭐ NEW: Supplier Advances tab -->
-  <li class="nav-item">
-    <a
-      class="nav-link"
-      [ngClass]="{ 'active': activeTab === 'advances' }"
-      (click)="setTab('advances')">
-      Advances
-    </a>
-  </li>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [ngClass]="{ 'active': activeTab === 'advances' }"
+              (click)="setTab('advances')">
+              Advances
+            </a>
+          </li>
 
-  <li class="nav-item">
-    <a
-      class="nav-link"
-      [ngClass]="{ 'active': activeTab === 'match' }"
-      (click)="setTab('match')">
-      3-Way Match
-    </a>
-  </li>
-</ul>
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              [ngClass]="{ 'active': activeTab === 'match' }"
+              (click)="setTab('match')">
+              3-Way Match
+            </a>
+          </li>
+        </ul>
 
-
-        <!-- ================= TAB CONTENT ================= -->
         <div class="tab-content p-1">
 
           <!-- ===================================================== -->
-          <!--  SUPPLIER INVOICES TAB                                -->
+          <!-- SUPPLIER INVOICES TAB -->
           <!-- ===================================================== -->
           <div
             class="tab-pane"
             [ngClass]="{ 'active show': activeTab === 'invoices' }"
             *ngIf="activeTab === 'invoices'">
 
-            <!-- Summary cards -->
-            <div class="ap-summary-row row no-gutters">
-              <!-- Total Invoice -->
-              <div class="col-xl-3 col-md-6 col-12">
-                <div class="ap-summary-card ap-summary-total">
-                  <div class="ap-summary-icon">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                  </div>
-                  <div class="ap-summary-text">
-                    <div class="label">Total Invoice Amount</div>
-                    <div class="value">
-                      {{ totalInvAmount | number:'1.2-2' }}
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <div class="ap-summary-row row no-gutters">
+  <div class="col-xl col-md-6 col-12">
+    <div class="ap-summary-card ap-summary-total">
+      <div class="ap-summary-icon">
+        <i class="fas fa-file-invoice-dollar"></i>
+      </div>
+      <div class="ap-summary-text">
+        <div class="label">Total Invoice Amount</div>
+        <div class="value">{{ totalInvAmount | number:'1.2-2' }}</div>
+      </div>
+    </div>
+  </div>
 
-              <!-- Total Paid -->
-              <div class="col-xl-3 col-md-6 col-12">
-                <div class="ap-summary-card ap-summary-paid">
-                  <div class="ap-summary-icon">
-                    <i class="fas fa-wallet"></i>
-                  </div>
-                  <div class="ap-summary-text">
-                    <div class="label">Total Paid</div>
-                    <div class="value">
-                      {{ totalInvPaid | number:'1.2-2' }}
-                    </div>
-                  </div>
-                </div>
-              </div>
+  <div class="col-xl col-md-6 col-12">
+    <div class="ap-summary-card ap-summary-paid">
+      <div class="ap-summary-icon">
+        <i class="fas fa-wallet"></i>
+      </div>
+      <div class="ap-summary-text">
+        <div class="label">Total Paid</div>
+        <div class="value">{{ totalInvPaid | number:'1.2-2' }}</div>
+      </div>
+    </div>
+  </div>
 
-              <!-- Total Debit Notes -->
-              <div class="col-xl-3 col-md-6 col-12">
-                <div class="ap-summary-card ap-summary-debit">
-                  <div class="ap-summary-icon">
-                    <i class="fas fa-file-invoice"></i>
-                  </div>
-                  <div class="ap-summary-text">
-                    <div class="label">Total Debit Notes</div>
-                    <div class="value">
-                      {{ totalInvDebitNote | number:'1.2-2' }}
-                    </div>
-                  </div>
-                </div>
-              </div>
+  <div class="col-xl col-md-6 col-12">
+    <div class="ap-summary-card ap-summary-debit">
+      <div class="ap-summary-icon">
+        <i class="fas fa-file-invoice"></i>
+      </div>
+      <div class="ap-summary-text">
+        <div class="label">Total Debit Notes</div>
+        <div class="value">{{ totalInvDebitNote | number:'1.2-2' }}</div>
+      </div>
+    </div>
+  </div>
 
-              <!-- Net Outstanding -->
-              <div class="col-xl-3 col-md-6 col-12">
-                <div class="ap-summary-card ap-summary-outstanding">
-                  <div class="ap-summary-icon">
-                    <i class="fas fa-balance-scale"></i>
-                  </div>
-                  <div class="ap-summary-text">
-                    <div class="label">Net Outstanding</div>
-                    <div class="value">
-                      {{ totalInvOutstanding | number:'1.2-2' }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+  <div class="col-xl col-md-6 col-12">
+    <div class="ap-summary-card ap-summary-paid">
+      <div class="ap-summary-icon">
+        <i class="fas fa-hand-holding-usd"></i>
+      </div>
+      <div class="ap-summary-text">
+        <div class="label">Advance Applied</div>
+        <div class="value">{{ totalInvAdvance | number:'1.2-2' }}</div>
+      </div>
+    </div>
+  </div>
 
-            <!-- Search -->
+  <div class="col-xl col-md-6 col-12">
+    <div class="ap-summary-card ap-summary-outstanding">
+      <div class="ap-summary-icon">
+        <i class="fas fa-balance-scale"></i>
+      </div>
+      <div class="ap-summary-text">
+        <div class="label">Net Outstanding</div>
+        <div class="value">{{ totalInvOutstanding | number:'1.2-2' }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
             <div class="row mb-1">
               <div class="col-md-6 col-12 ml-auto">
                 <div class="d-flex justify-content-md-end justify-content-start ap-search-label">
@@ -154,7 +148,6 @@
               </div>
             </div>
 
-            <!-- Main table: one row per supplier -->
             <div class="table-responsive ap-table-wrap">
               <table class="table mb-0 ap-table">
                 <thead>
@@ -164,12 +157,14 @@
                     <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Invoice Count</th>
                     <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
                     <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Paid</th>
-                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Outstanding</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Debit Note</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Advance</th>
+                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Payable</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   <ng-container *ngFor="let g of pagedSupplierGroups">
-                    <!-- Supplier summary row -->
                     <tr>
                       <td class="text-center align-middle">
                         <button
@@ -186,26 +181,18 @@
                           </i>
                         </button>
                       </td>
-                      <td class="font-weight-semibold">
-                        {{ g.supplierName }}
-                      </td>
-                      <td class="text-right">
-                        {{ g.invoices.length }}
-                      </td>
-                      <td class="text-right">
-                        {{ g.totalGrandTotal | number:'1.2-2' }}
-                      </td>
-                      <td class="text-right">
-                        {{ g.totalPaid | number:'1.2-2' }}
-                      </td>
-                      <td class="text-right text-brand font-weight-bold">
-                        {{ g.totalOutstanding | number:'1.2-2' }}
-                      </td>
+
+                      <td class="font-weight-semibold">{{ g.supplierName }}</td>
+                      <td class="text-right">{{ g.invoices.length }}</td>
+                      <td class="text-right">{{ g.totalGrandTotal | number:'1.2-2' }}</td>
+                      <td class="text-right text-success">{{ g.totalPaid | number:'1.2-2' }}</td>
+                      <td class="text-right text-danger">{{ g.totalDebitNote | number:'1.2-2' }}</td>
+<td class="text-right text-success">{{ g.totalAdvance | number:'1.2-2' }}</td>
+                      <td class="text-right text-brand font-weight-bold">{{ g.totalPayable | number:'1.2-2' }}</td>
                     </tr>
 
-                    <!-- Detail table: invoices + separate debit note row -->
                     <tr *ngIf="isSupplierExpanded(g.supplierId)">
-                      <td colspan="6" class="p-0">
+                      <td colspan="8" class="p-0">
                         <div class="ap-inner-wrap">
                           <table class="table mb-0 ap-table ap-inner-table">
                             <thead>
@@ -215,27 +202,24 @@
                                 <th style="background-color:#2E5F73; color:#ffffff;">Due Date</th>
                                 <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
                                 <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Paid</th>
+                                <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Debit Note</th>
+                                <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Advance</th>
                                 <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Outstanding</th>
                                 <th style="background-color:#2E5F73; color:#ffffff;" class="text-center">Status</th>
-                                
                               </tr>
                             </thead>
+
                             <tbody>
                               <ng-container *ngFor="let inv of g.invoices">
-                                <!-- Invoice row -->
                                 <tr>
                                   <td>{{ inv.invoiceNo }}</td>
                                   <td>{{ inv.invoiceDate | date:'dd-MMM-yyyy' }}</td>
                                   <td>{{ inv.dueDate | date:'dd-MMM-yyyy' }}</td>
-                                  <td class="text-right">
-                                    {{ inv.grandTotal | number:'1.2-2' }}
-                                  </td>
-                                  <td class="text-right">
-                                    {{ inv.paidAmount | number:'1.2-2' }}
-                                  </td>
-                                  <td class="text-right">
-                                    {{ inv.outstandingAmount | number:'1.2-2' }}
-                                  </td>
+                                  <td class="text-right">{{ inv.grandTotal | number:'1.2-2' }}</td>
+                                  <td class="text-right text-success">{{ inv.paidAmount | number:'1.2-2' }}</td>
+                                  <td class="text-right text-danger">{{ inv.debitNoteAmount | number:'1.2-2' }}</td>
+                                  <td class="text-right text-success">{{ inv.advanceAmount | number:'1.2-2' }}</td>
+                                  <td class="text-right font-weight-bold">{{ inv.outstandingAmount | number:'1.2-2' }}</td>
                                   <td class="text-center">
                                     <span
                                       class="badge status-pill"
@@ -243,16 +227,10 @@
                                       {{ getInvoiceStatusTextByAmounts(inv) }}
                                     </span>
                                   </td>
-                                  
                                 </tr>
 
-                                <!-- Debit note row -->
                                 <tr *ngIf="inv.debitNoteAmount > 0" class="ap-dn-row">
-                                  <td>
-                                    <span *ngIf="inv.debitNoteNo">
-                                      {{ inv.debitNoteNo }}
-                                    </span>
-                                  </td>
+                                  <td>{{ inv.debitNoteNo }}</td>
                                   <td>{{ inv.debitNoteDate | date:'dd-MMM-yyyy' }}</td>
                                   <td></td>
                                   <td class="text-right text-danger">
@@ -261,13 +239,11 @@
                                   <td class="text-right text-success">
                                     {{ inv.debitNoteAmount | number:'1.2-2' }}
                                   </td>
-                                  <td class="text-right">0.00</td>
-                                  <td class="text-center">
+                                  <td colspan="4" class="text-center">
                                     <span class="badge status-pill badge-secondary">
                                       Debit Note
                                     </span>
                                   </td>
-                                  <td></td>
                                 </tr>
                               </ng-container>
                             </tbody>
@@ -278,7 +254,7 @@
                   </ng-container>
 
                   <tr *ngIf="supplierGroups.length === 0">
-                    <td colspan="6" class="text-center text-muted py-2">
+                    <td colspan="8" class="text-center text-muted py-2">
                       No AP invoices found.
                     </td>
                   </tr>
@@ -286,7 +262,6 @@
               </table>
             </div>
 
-            <!-- Invoices pagination -->
             <div
               class="d-flex justify-content-between align-items-center mt-1"
               *ngIf="supplierGroups.length > invPageSize">
@@ -315,11 +290,10 @@
                 </li>
               </ul>
             </div>
-
           </div>
 
           <!-- ===================================================== -->
-          <!--  PAYMENTS TAB (LIST + CREATE)                         -->
+          <!-- PAYMENTS TAB -->
           <!-- ===================================================== -->
           <div
             class="tab-pane"
@@ -330,10 +304,12 @@
             <div class="ap-table-wrap" *ngIf="!showPaymentForm">
               <div class="d-flex justify-content-between align-items-center mb-1">
                 <h6 class="sub-title mb-0">Supplier Payments</h6>
+
                 <button
                   type="button"
                   class="btn btn-brand"
                   (click)="openNewPayment()"
+                  *ngIf="canCreate()"
                   [disabled]="isPeriodLocked">
                   <i class="fas fa-plus mr-25"></i>
                   New Payment
@@ -354,6 +330,7 @@
                       <th style="background-color:#2E5F73; color:#ffffff;">Notes</th>
                     </tr>
                   </thead>
+
                   <tbody>
                     <tr *ngFor="let p of pagedPayments">
                       <td>{{ p.paymentNo }}</td>
@@ -365,6 +342,7 @@
                       <td>{{ p.referenceNo }}</td>
                       <td>{{ p.notes }}</td>
                     </tr>
+
                     <tr *ngIf="payments.length === 0">
                       <td colspan="8" class="text-center text-muted py-2">
                         No payments posted yet.
@@ -374,7 +352,6 @@
                 </table>
               </div>
 
-              <!-- Payments list pagination -->
               <div
                 class="d-flex justify-content-between align-items-center mt-1"
                 *ngIf="payments.length > payListPageSize">
@@ -407,9 +384,9 @@
 
             <!-- CREATE MODE -->
             <div class="ap-form-row row" *ngIf="showPaymentForm">
-              <!-- Header + Back button -->
               <div class="col-12 d-flex justify-content-between align-items-center mb-1">
                 <h6 class="sub-title mb-0">New Supplier Payment</h6>
+
                 <button
                   type="button"
                   class="btn btn-outline-secondary btn-sm"
@@ -419,12 +396,10 @@
                 </button>
               </div>
 
-              <!-- Supplier + totals -->
               <div class="col-md-3 col-12">
                 <div class="form-group">
                   <label>Supplier <span class="text-danger">*</span></label>
 
-                  <!-- SEARCHABLE SUPPLIER DROPDOWN -->
                   <ng-select
                     [(ngModel)]="paySupplierId"
                     name="paySupplier"
@@ -444,19 +419,29 @@
                   <div class="sup-total-pill">
                     Inv: {{ supTotalInvoice | number:'1.2-2' }}
                   </div>
+
                   <div class="sup-total-pill text-success">
                     Paid: {{ supTotalPaid | number:'1.2-2' }}
                   </div>
+
                   <div class="sup-total-pill text-danger">
                     Debit Note: {{ supTotalDebitNote | number:'1.2-2' }}
                   </div>
+
+                  <div class="sup-total-pill text-success">
+                    Advance: {{ supTotalAdvance | number:'1.2-2' }}
+                  </div>
+
                   <div class="sup-total-pill text-brand font-weight-bold">
                     Net OS: {{ supTotalNetOutstanding | number:'1.2-2' }}
+                  </div>
+
+                  <div class="sup-total-pill text-brand font-weight-bold">
+                    Payable: {{ supTotalPayable | number:'1.2-2' }}
                   </div>
                 </div>
               </div>
 
-              <!-- Date -->
               <div class="col-md-2 col-12 mt-1">
                 <div class="form-group">
                   <label>Date</label>
@@ -469,7 +454,6 @@
                 </div>
               </div>
 
-              <!-- Method -->
               <div class="col-md-2 col-12 mt-1">
                 <div class="form-group">
                   <label>Method</label>
@@ -486,7 +470,6 @@
                 </div>
               </div>
 
-              <!-- Bank (only for Bank Transfer / Cheque) -->
               <div class="col-md-3 col-12 mt-1" *ngIf="payMethodId === 2 || payMethodId === 3">
                 <div class="form-group">
                   <label>Bank Account <span class="text-danger">*</span></label>
@@ -497,8 +480,10 @@
                     name="bankAccount"
                     (change)="onBankChange()">
                     <option [ngValue]="null">-- Select Bank --</option>
-                    <option *ngFor="let b of bankAccounts" [ngValue]="b.id">
-                      {{ b.headName }}
+                    <option
+                      *ngFor="let b of bankAccounts"
+                      [ngValue]="b.id || b.bankId || b.BankId">
+                      {{ b.headName || b.bankName || b.BankName }}
                     </option>
                   </select>
 
@@ -507,6 +492,7 @@
                       Available:
                       <strong>{{ bankAvailableBalance | number:'1.2-2' }}</strong>
                     </div>
+
                     <div *ngIf="payAmount > 0">
                       After Payment:
                       <strong>{{ bankBalanceAfterPayment | number:'1.2-2' }}</strong>
@@ -515,7 +501,6 @@
                 </div>
               </div>
 
-              <!-- Amount -->
               <div class="col-md-2 col-12 mt-1">
                 <div class="form-group">
                   <label>Amount <span class="text-danger">*</span></label>
@@ -530,7 +515,6 @@
                 </div>
               </div>
 
-              <!-- Reference -->
               <div class="col-md-3 col-12 mt-1">
                 <div class="form-group">
                   <label>Reference No</label>
@@ -543,7 +527,6 @@
                 </div>
               </div>
 
-              <!-- Notes -->
               <div class="col-md-7 col-12 mt-1">
                 <div class="form-group">
                   <label>Notes</label>
@@ -556,7 +539,6 @@
                 </div>
               </div>
 
-              <!-- Actions -->
               <div class="col-md-5 col-12 mt-1 d-flex align-items-end justify-content-md-end">
                 <button
                   type="button"
@@ -564,17 +546,18 @@
                   (click)="cancelPaymentForm()">
                   Clear
                 </button>
+
                 <button
                   type="button"
                   style="background-color: #2E5F73; color: white;"
                   class="btn"
-                  (click)="postPayment()">
+                  (click)="postPayment()"
+                   *ngIf="canCreate()">
                   <i class="fas fa-check-circle mr-25"></i>
                   Post Payment
                 </button>
               </div>
 
-              <!-- Supplier invoice list with checkboxes + DN row -->
               <div class="col-12 mt-1" *ngIf="supplierInvoicesAll.length">
                 <div class="table-responsive ap-table-wrap">
                   <table class="table mb-0 ap-table">
@@ -591,14 +574,15 @@
                         <th style="background-color:#2E5F73; color:#ffffff;">Due Date</th>
                         <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
                         <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Paid</th>
-                        <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Outstanding</th>
+                        <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Debit Note</th>
+                        <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Advance</th>
+                        <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Payable</th>
                         <th style="background-color:#2E5F73; color:#ffffff;" class="text-center">Status</th>
                       </tr>
                     </thead>
 
                     <tbody>
                       <ng-container *ngFor="let si of pagedSupplierInvoices">
-                        <!-- Invoice row with checkbox -->
                         <tr>
                           <td class="text-center align-middle">
                             <input
@@ -606,12 +590,18 @@
                               [(ngModel)]="si.isSelected"
                               (ngModelChange)="onInvoiceCheckboxChange(si, $event)" />
                           </td>
+
                           <td>{{ si.invoiceNo }}</td>
                           <td>{{ si.invoiceDate | date:'dd-MMM-yyyy' }}</td>
                           <td>{{ si.dueDate | date:'dd-MMM-yyyy' }}</td>
                           <td class="text-right">{{ si.grandTotal | number:'1.2-2' }}</td>
-                          <td class="text-right">{{ si.paidAmount | number:'1.2-2' }}</td>
-                          <td class="text-right">{{ si.outstandingAmount | number:'1.2-2' }}</td>
+                          <td class="text-right text-success">{{ si.paidAmount | number:'1.2-2' }}</td>
+                          <td class="text-right text-danger">{{ si.debitNoteAmount | number:'1.2-2' }}</td>
+                          <td class="text-right text-success">{{ si.advanceAmount | number:'1.2-2' }}</td>
+                          <td class="text-right font-weight-bold">
+                            {{ si.payableAfterAdvance | number:'1.2-2' }}
+                          </td>
+
                           <td class="text-center">
                             <span
                               class="badge status-pill"
@@ -621,14 +611,9 @@
                           </td>
                         </tr>
 
-                        <!-- Separate Debit Note row under amount -->
                         <tr *ngIf="si.debitNoteAmount > 0" class="ap-dn-row">
                           <td></td>
-                          <td>
-                            <span *ngIf="si.debitNoteNo">
-                              {{ si.debitNoteNo }}
-                            </span>
-                          </td>
+                          <td>{{ si.debitNoteNo }}</td>
                           <td>{{ si.debitNoteDate | date:'dd-MMM-yyyy' }}</td>
                           <td></td>
                           <td class="text-right text-danger">
@@ -637,8 +622,7 @@
                           <td class="text-right text-success">
                             {{ si.debitNoteAmount | number:'1.2-2' }}
                           </td>
-                          <td class="text-right">0.00</td>
-                          <td class="text-center">
+                          <td colspan="4" class="text-center">
                             <span class="badge status-pill badge-secondary">
                               Debit Note
                             </span>
@@ -647,7 +631,7 @@
                       </ng-container>
 
                       <tr *ngIf="!supplierInvoicesAll.length">
-                        <td colspan="8" class="text-center text-muted py-2">
+                        <td colspan="10" class="text-center text-muted py-2">
                           No invoices for this supplier.
                         </td>
                       </tr>
@@ -655,7 +639,6 @@
                   </table>
                 </div>
 
-                <!-- Supplier invoices (payment) pagination -->
                 <div
                   class="d-flex justify-content-between align-items-center mt-1"
                   *ngIf="supplierInvoicesAll.length > payInvPageSize">
@@ -684,14 +667,12 @@
                     </li>
                   </ul>
                 </div>
-
               </div>
-
             </div>
           </div>
 
           <!-- ===================================================== -->
-          <!--  AGING TAB                                            -->
+          <!-- AGING TAB -->
           <!-- ===================================================== -->
           <div
             class="tab-pane"
@@ -701,7 +682,7 @@
           </div>
 
           <!-- ===================================================== -->
-          <!--  3-WAY MATCH TAB                                      -->
+          <!-- MATCH TAB -->
           <!-- ===================================================== -->
           <div
             class="tab-pane"
@@ -710,9 +691,7 @@
 
             <div class="ap-table-wrap">
               <div class="d-flex justify-content-between align-items-center mb-1">
-                <h6 class="sub-title mb-0">
-                  PO vs GRN vs Supplier Invoice
-                </h6>
+                <h6 class="sub-title mb-0">PO vs GRN vs Supplier Invoice</h6>
               </div>
 
               <div class="table-responsive">
@@ -728,6 +707,7 @@
                       <th style="background-color:#2E5F73; color:#ffffff;" class="text-center">Status</th>
                     </tr>
                   </thead>
+
                   <tbody>
                     <tr *ngFor="let m of pagedMatchRows">
                       <td>{{ m.poNo }}</td>
@@ -744,6 +724,7 @@
                         </span>
                       </td>
                     </tr>
+
                     <tr *ngIf="matchRows.length === 0">
                       <td colspan="7" class="text-center text-muted py-2">
                         No match data available.
@@ -753,7 +734,6 @@
                 </table>
               </div>
 
-              <!-- Match pagination -->
               <div
                 class="d-flex justify-content-between align-items-center mt-1"
                 *ngIf="matchRows.length > matchPageSize">
@@ -782,134 +762,121 @@
                   </li>
                 </ul>
               </div>
-
             </div>
-
           </div>
-<!-- ===================================================== -->
-<!--  ADVANCES TAB (Supplier Advances)                     -->
-<!-- ===================================================== -->
-<div
-  class="tab-pane"
-  [ngClass]="{ 'active show': activeTab === 'advances' }"
-  *ngIf="activeTab === 'advances'">
 
-  <div class="ap-table-wrap">
-    <div class="d-flex justify-content-between align-items-center mb-1">
-      <h6 class="sub-title mb-0">Supplier Advances</h6>
+          <!-- ===================================================== -->
+          <!-- ADVANCES TAB -->
+          <!-- ===================================================== -->
+          <div
+            class="tab-pane"
+            [ngClass]="{ 'active show': activeTab === 'advances' }"
+            *ngIf="activeTab === 'advances'">
 
-      <!-- New Advance button (you will wire to a form later) -->
-     <button
-  type="button"
-  class="btn btn-outline-primary btn-sm ml-50"
-  (click)="router.navigate(['/financial/ap-advance'])">
-  <i class="fas fa-plus mr-25"></i>
-  New Advance
-</button>
+            <div class="ap-table-wrap">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <h6 class="sub-title mb-0">Supplier Advances</h6>
 
-    </div>
+                <button
+                  type="button"
+                  class="btn btn-outline-primary btn-sm ml-50"
+                  (click)="openNewAdvance()"
+                   *ngIf="canCreate()">
+                  <i class="fas fa-plus mr-25"></i>
+                  New Advance
+                </button>
+              </div>
 
-    <!-- Summary row (optional) -->
-    <div class="d-flex flex-wrap mb-1">
-      <div class="sup-total-pill mr-1">
-        Total Advance: {{ totalAdvanceAmount | number:'1.2-2' }}
-      </div>
-      <div class="sup-total-pill text-success mr-1">
-        Utilised: {{ totalAdvanceUtilised | number:'1.2-2' }}
-      </div>
-      <div class="sup-total-pill text-brand font-weight-bold mr-1">
-        Balance: {{ totalAdvanceBalance | number:'1.2-2' }}
-      </div>
-    </div>
+              <div class="d-flex flex-wrap mb-1">
+                <div class="sup-total-pill mr-1">
+                  Total Advance: {{ totalAdvanceAmount | number:'1.2-2' }}
+                </div>
+                <div class="sup-total-pill text-success mr-1">
+                  Utilised: {{ totalAdvanceUtilised | number:'1.2-2' }}
+                </div>
+                <div class="sup-total-pill text-brand font-weight-bold mr-1">
+                  Balance: {{ totalAdvanceBalance | number:'1.2-2' }}
+                </div>
+              </div>
 
-    <!-- Advances table -->
-    <div class="table-responsive">
-      <table class="table mb-0 ap-table">
-        <thead>
-          <tr>
-            <th style="background-color:#2E5F73; color:#ffffff;">Advance No</th>
-            <th style="background-color:#2E5F73; color:#ffffff;">Supplier</th>
-            <th style="background-color:#2E5F73; color:#ffffff;">Advance Date</th>
-            <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Original Amount</th>
-            <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Utilised</th>
-            <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Balance</th>
-            <th style="background-color:#2E5F73; color:#ffffff;">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let a of pagedSupplierAdvances">
-            <td>{{ a.advanceNo }}</td>
-            <td>{{ a.supplierName }}</td>
-            <td>{{ a.advanceDate | date:'dd-MMM-yyyy' }}</td>
-            <td class="text-right">
-              {{ a.originalAmount | number:'1.2-2' }}
-            </td>
-            <td class="text-right text-success">
-              {{ a.utilisedAmount | number:'1.2-2' }}
-            </td>
-            <td class="text-right text-brand font-weight-bold">
-              {{ a.balanceAmount | number:'1.2-2' }}
-            </td>
-            <td>
-              <span class="badge status-pill"
-                    [ngClass]="a.balanceAmount > 0 ? 'badge-primary' : 'badge-secondary'">
-                {{ a.balanceAmount > 0 ? 'Open' : 'Fully Applied' }}
-              </span>
-            </td>
-          </tr>
+              <div class="table-responsive">
+                <table class="table mb-0 ap-table">
+                  <thead>
+                    <tr>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Advance No</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Supplier</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Advance Date</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Original Amount</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Utilised</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Balance</th>
+                      <th style="background-color:#2E5F73; color:#ffffff;">Status</th>
+                    </tr>
+                  </thead>
 
-          <tr *ngIf="supplierAdvances.length === 0">
-            <td colspan="7" class="text-center text-muted py-2">
-              No supplier advances found.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+                  <tbody>
+                    <tr *ngFor="let a of pagedSupplierAdvances">
+                      <td>{{ a.advanceNo }}</td>
+                      <td>{{ a.supplierName }}</td>
+                      <td>{{ a.advanceDate | date:'dd-MMM-yyyy' }}</td>
+                      <td class="text-right">{{ a.originalAmount | number:'1.2-2' }}</td>
+                      <td class="text-right text-success">{{ a.utilisedAmount | number:'1.2-2' }}</td>
+                      <td class="text-right text-brand font-weight-bold">{{ a.balanceAmount | number:'1.2-2' }}</td>
+                      <td>
+                        <span
+                          class="badge status-pill"
+                          [ngClass]="a.balanceAmount > 0 ? 'badge-primary' : 'badge-secondary'">
+                          {{ a.balanceAmount > 0 ? 'Open' : 'Fully Applied' }}
+                        </span>
+                      </td>
+                    </tr>
 
-    <!-- Advances pagination -->
-    <div
-      class="d-flex justify-content-between align-items-center mt-1"
-      *ngIf="supplierAdvances.length > advPageSize">
-      <div class="text-muted small">
-        Showing
-        {{ (advPage - 1) * advPageSize + 1 }}
-        –
-        {{ Math.min(advPage * advPageSize, supplierAdvances.length) }}
-        of {{ supplierAdvances.length }} advances
-      </div>
+                    <tr *ngIf="supplierAdvances.length === 0">
+                      <td colspan="7" class="text-center text-muted py-2">
+                        No supplier advances found.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
-      <ul class="pagination pagination-sm mb-0">
-        <li class="page-item" [class.disabled]="advPage === 1">
-          <a class="page-link" (click)="advGoToPage(advPage - 1)">«</a>
-        </li>
+              <div
+                class="d-flex justify-content-between align-items-center mt-1"
+                *ngIf="supplierAdvances.length > advPageSize">
+                <div class="text-muted small">
+                  Showing
+                  {{ (advPage - 1) * advPageSize + 1 }}
+                  –
+                  {{ Math.min(advPage * advPageSize, supplierAdvances.length) }}
+                  of {{ supplierAdvances.length }} advances
+                </div>
 
-        <li
-          class="page-item"
-          *ngFor="let p of [].constructor(advTotalPages); let idx = index"
-          [class.active]="advPage === (idx + 1)">
-          <a class="page-link" (click)="advGoToPage(idx + 1)">{{ idx + 1 }}</a>
-        </li>
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" [class.disabled]="advPage === 1">
+                    <a class="page-link" (click)="advGoToPage(advPage - 1)">«</a>
+                  </li>
 
-        <li class="page-item" [class.disabled]="advPage === advTotalPages">
-          <a class="page-link" (click)="advGoToPage(advPage + 1)">»</a>
-        </li>
-      </ul>
-    </div>
+                  <li
+                    class="page-item"
+                    *ngFor="let p of [].constructor(advTotalPages); let idx = index"
+                    [class.active]="advPage === (idx + 1)">
+                    <a class="page-link" (click)="advGoToPage(idx + 1)">{{ idx + 1 }}</a>
+                  </li>
 
-  </div>
-</div>
+                  <li class="page-item" [class.disabled]="advPage === advTotalPages">
+                    <a class="page-link" (click)="advGoToPage(advPage + 1)">»</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
 
         </div>
-        <!-- /TAB CONTENT -->
       </div>
     </section>
   </div>
 </div>
 
-<!-- ========================================================= -->
-<!--  EMAIL MODAL (app-invoice-email)                         -->
-<!-- ========================================================= -->
+<!-- EMAIL MODAL -->
 <div
   class="modal fade"
   tabindex="-1"
@@ -917,13 +884,21 @@
   [ngClass]="{ 'show d-block': showEmailModal }"
   *ngIf="showEmailModal"
   (click)="onEmailModalBackdropClick($event)">
-  <div class="modal-dialog modal-lg modal-dialog-centered" role="document" (click)="$event.stopPropagation()">
+  <div
+    class="modal-dialog modal-lg modal-dialog-centered"
+    role="document"
+    (click)="$event.stopPropagation()">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
           Email Supplier Invoice
         </h5>
-        <button type="button" class="close" aria-label="Close" (click)="closeEmailModal()">
+
+        <button
+          type="button"
+          class="close"
+          aria-label="Close"
+          (click)="closeEmailModal()">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>

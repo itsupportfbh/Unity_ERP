@@ -53,11 +53,17 @@
               </label>
             </div>
 
-            <div *ngIf="isPeriodLocked"
-                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
-                 style="font-size:0.8rem;">
-              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
-            </div>
+          <div
+  *ngIf="hasLockedRows"
+  class="alert alert-warning py-1 px-2 mx-2 mb-2"
+  style="font-size:0.8rem;">
+  Some credit notes belong to locked GST period. Edit/Delete disabled.
+</div>
+       <div *ngIf="hasGlPostedRows"
+     class="alert alert-danger mx-2 mb-2"
+     style="font-size:0.85rem;">
+  GL posted supplier invoice exists. Add button disabled.
+</div>
           </div>
 
           <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
@@ -78,13 +84,15 @@
                 *ngIf="canCreate()"
                 class="btn m-1 d-inline-flex align-items-center"
                 style="background-color:#2E5F73;color:white;gap:6px;"
-                [disabled]="isPeriodLocked"
-                [attr.title]="isPeriodLocked
-                  ? (currentPeriodName ? ('Period ' + currentPeriodName + ' is locked') : 'Accounting period is locked')
+                [disabled]="isRowLocked(row)"
+                [title]="hasGlPostedRows ? 'GL Posted invoice exists. Add disabled.' : 'Add Supplier Invoice'"
+                [attr.title]="isRowLocked(row)
+                  ? (currentPeriodName ? ('GST Period ' + currentPeriodName + ' is locked') : 'GST period is locked')
                   : 'Create Supplier Invoice'">
                 <i data-feather="plus-circle" class="w-4 h-4"></i>
                 <span>Add</span>
               </button>
+       
             </div>
           </div>
         </div>
@@ -160,14 +168,22 @@
 
             </ng-template>
           </ngx-datatable-column>
-
+<!-- <ngx-datatable-column name="GL Status" [width]="120">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <span
+      class="badge badge-pill"
+      [ngClass]="row.glPosted ? 'badge-success' : 'badge-warning'">
+      {{ row.glPosted ? 'GL Posted' : 'Pending' }}
+    </span>
+  </ng-template>
+</ngx-datatable-column> -->
           <!-- 3-Way Match -->
           <ngx-datatable-column name="3-Way Match" [width]="170">
             <ng-template let-row="row" ngx-datatable-cell-template>
               <button
                 type="button"
                 class="btn btn-sm btn-outline-primary"
-                [disabled]="isPeriodLocked || +row.status === 3 || (row.listStatusCode === 3 && row.linkedWithInvoiceNo)"
+               [disabled]="isPeriodLocked || isRowLocked(row) || row.glPosted || +row.status === 3 || (row.listStatusCode === 3 && row.linkedWithInvoiceNo)"
                 (click)="openMatchModal(row)">
                 3-Way Match
               </button>
@@ -180,15 +196,15 @@
 
               <ng-container *ngIf="isActionDisabled(row); else actionsEnabled">
                 <i class="fas fa-pen text-gray-300 mr-2"
-                   [attr.title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
+                  [attr.title]="row.glPosted ? 'Already Posted to GL' : isPeriodLocked ? 'Period locked' : isRowLocked(row) ? 'GST period locked' : 'Disabled'"></i>
                 <i class="fas fa-trash text-gray-300"
-                   [attr.title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
+                  [attr.title]="row.glPosted ? 'Already Posted to GL' : isPeriodLocked ? 'Period locked' : isRowLocked(row) ? 'GST period locked' : 'Disabled'"></i>
               </ng-container>
 
               <ng-template #actionsEnabled>
                 <i class="fas fa-pen text-blue-600 cursor-pointer mr-2"
                    title="Edit"
-                   *ngIf="row.canEdit && !isPeriodLocked && canEdit()"
+                   *ngIf="row.canEdit && !isPeriodLocked && !isRowLocked(row) && canEdit()"
                    (click)="editInvoice(row.id)"></i>
 
                 <i class="fas fa-trash text-danger cursor-pointer"

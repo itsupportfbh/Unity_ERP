@@ -1,14 +1,15 @@
-// debit-note-list.component.ts
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import Swal from 'sweetalert2';
 import { ColumnMode, DatatableComponent } from '@swimlane/ngx-datatable';
-import { CoreSidebarService } from '@core/components/core-sidebar/core-sidebar.service';
-import { DatePipe } from '@angular/common';
+import * as feather from 'feather-icons';
+
 import { DebitNoteService } from '../debit-note.service';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
-import * as feather from 'feather-icons';
+import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+
 export interface PeriodStatusDto {
   isLocked: boolean;
   periodName?: string;
@@ -17,16 +18,6 @@ export interface PeriodStatusDto {
   endDate?: string;
 }
 
-// this matches what you showed
-export interface PeriodStatusResponseRaw {
-  isSuccess?: boolean;
-  isLocked?: boolean;
-  periodName?: string;
-  startDate?: string;
-  endDate?: string;
-  // in case backend later wraps in data
-  data?: PeriodStatusDto | null;
-}
 @Component({
   selector: 'app-debit-note-list',
   templateUrl: './debit-note-list.component.html',
@@ -35,57 +26,65 @@ export interface PeriodStatusResponseRaw {
   providers: [DatePipe]
 })
 export class DebitNoteListComponent implements OnInit {
-
   @ViewChild(DatatableComponent) table!: DatatableComponent;
 
   rows: any[] = [];
   tempData: any[] = [];
 
   searchValue = '';
-  ColumnMode = ColumnMode;
   selectedOption = 10;
+  ColumnMode = ColumnMode;
 
-  // modal state
   showLinesModal = false;
   modalLines: any[] = [];
   modalTotal = 0;
-isPeriodLocked = false;
+
+  isPeriodLocked = false;
   currentPeriodName = '';
 
-    userId: number;
-    
-        functionId = 'dn-list';
-      
-        permission: FunctionPermission;
-          isPermissionLoaded = false;
-          isPageLoading = false;
-  
+  lockedRowMap: { [key: number]: boolean } = {};
+
+  userId = 0;
+  functionId = 'dn-list';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+
   constructor(
     private debitNoteService: DebitNoteService,
     private router: Router,
-    private _coreSidebarService: CoreSidebarService,
     private datePipe: DatePipe,
     private periodService: PeriodCloseService,
-     private permissionService : PermissionService
+    private permissionService: PermissionService,
+    private gstLockService: GstLockService
   ) {
     this.userId = Number(localStorage.getItem('id') || 0);
-          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
   ngOnInit(): void {
-     const today = new Date().toISOString().substring(0, 10);
+    const today = new Date().toISOString().substring(0, 10);
     this.checkPeriodLockForDate(today);
     this.loadPermission();
   }
+
   ngAfterViewInit(): void {
-      feather.replace();
+    feather.replace();
+  }
+
+  ngAfterViewChecked(): void {
+    feather.replace();
+  }
+
+  get hasLockedRows(): boolean {
+    return Object.values(this.lockedRowMap || {}).some(x => x === true);
+  }
+
+  private checkPeriodLockForDate(dateStr: string): void {
+    if (!dateStr) {
+      return;
     }
-  
-    ngAfterViewChecked(): void {
-      feather.replace();
-    }
-private checkPeriodLockForDate(dateStr: string): void {
-    if (!dateStr) { return; }
 
     this.periodService.getStatusForDateWithName(dateStr).subscribe({
       next: (res: PeriodStatusDto | null) => {
@@ -93,202 +92,369 @@ private checkPeriodLockForDate(dateStr: string): void {
         this.currentPeriodName = res?.periodName || '';
       },
       error: () => {
-        // if fails, UI side don’t hard-lock; backend will still protect
         this.isPeriodLocked = false;
         this.currentPeriodName = '';
       }
     });
   }
 
-  private showPeriodLockedSwal(action: string): void {
-    Swal.fire(
-      'Period Locked',
-      this.currentPeriodName
-        ? `Period "${this.currentPeriodName}" is locked. You cannot ${action} in this period.`
-        : `Selected accounting period is locked. You cannot ${action}.`,
-      'warning'
-    );
-  }
- loadRequests(): void {
-  this.debitNoteService.getAll().subscribe({
-    next: (res: any) => {
-      const data = res?.data || res || [];
+  checkRowsGstLock(rows: any[], dateField: string, idField: string = 'id'): void {
+    this.lockedRowMap = {};
 
-      this.rows = data.map((req: any) => ({
-        ...req,
-        // make sure we ALWAYS have "status" in lower-case for the grid
-        status: req.status ?? req.Status ?? 0,
-        // your HTML uses row.poDate – map it from server fields
-        poDate: req.poDate || req.noteDate || req.createdDate
-      }));
+    if (!rows || !rows.length) {
+      return;
+    }
 
-      this.tempData = [...this.rows];
+    rows.forEach(row => {
+      const id = Number(row[idField] ?? 0);
+      const docDate = row[dateField];
 
-      if (this.table) {
-        this.table.offset = 0;
+      if (!id || !docDate) {
+        this.lockedRowMap[id] = false;
+        return;
       }
 
-      // 👉 Quick debug
-      console.log('DebitNote rows:', this.rows);
-    },
-    error: (err: any) => console.error('Error loading debit note list', err)
-  });
-}
-
-
-  filterUpdate(event: any): void {
-    const val = (event.target.value || '').toLowerCase();
-
-    const temp = this.tempData.filter((d) => {
-      const poDate = this.datePipe.transform(d.poDate, 'dd-MM-yyyy')?.toLowerCase() || '';
-
-      if ((d.debitNoteNo || '').toLowerCase().includes(val) || !val) return true;
-      if ((d.name || d.supplierName || '').toLowerCase().includes(val) || !val) return true;
-      if ((d.reason || '').toLowerCase().includes(val) || !val) return true;
-      if (poDate.includes(val) || !val) return true;
-      return false;
+      this.gstLockService.check(docDate).subscribe({
+        next: (res: any) => {
+          this.lockedRowMap[id] = !!res?.locked;
+        },
+        error: () => {
+          this.lockedRowMap[id] = false;
+        }
+      });
     });
-
-    this.rows = temp;
-    if (this.table) this.table.offset = 0;
   }
 
-    loadPermission(): void {
-            if (!this.userId || this.userId <= 0) {
-              this.permission = this.permissionService.getEmptyPermission(this.functionId);
-              this.isPermissionLoaded = true;
-        
-              Swal.fire({
-                icon: 'warning',
-                title: 'Access Denied',
-                text: 'User not found. Please login again.',
-                confirmButtonColor: '#0e3a4c'
-              });
-              return;
-            }
-        
-            this.isPageLoading = true;
-        
-            this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
-              next: (res: FunctionPermission) => {
-                this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
-                this.isPermissionLoaded = true;
-                this.isPageLoading = false;
-        
-                if (this.canView()) {
-                  this.loadRequests();
-                } else {
-                  this.rows = [];
-                  // this.isDisplay = false;
-                }
-              },
-              error: (err) => {
-                console.error('Permission load error:', err);
-                this.permission = this.permissionService.getEmptyPermission(this.functionId);
-                this.isPermissionLoaded = true;
-                this.isPageLoading = false;
-        
-                Swal.fire({
-                  icon: 'error',
-                  title: 'Error',
-                  text: 'Unable to load permission.',
-                  confirmButtonColor: '#d33'
-                });
-              }
-            });
-          }
-        
-          canView(): boolean {
-            return this.permissionService.hasView(this.permission);
-          }
-        
-          canCreate(): boolean {
-            return this.permissionService.hasCreate(this.permission);
-          }
-        
-          canEdit(): boolean {
-            return this.permissionService.hasEdit(this.permission);
-          }
-        
-          canDelete(): boolean {
-            return this.permissionService.hasDelete(this.permission);
-          }
-  
-          canApprove(): boolean{
-            return this.permissionService.hasApprove(this.permission);
-          }
-  openCreate(): void {
-     if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('create Purchase Requests');
-      return;
+  isRowLocked(row: any): boolean {
+    if (!row) {
+      return false;
     }
-    this.router.navigate(['/purchase/create-debitnote']);
+
+    return !!this.lockedRowMap[Number(row.id)];
   }
 
-  editDetails(row: any): void {
-     if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('edit Purchase Requests');
-      return;
-    }
-    this.router.navigate(['/purchase/edit-debitnote', row.id]);
-  }
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
 
-  deleteDetails(id: number): void {
-     if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('delete Purchase Requests');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
       return;
     }
-    Swal.fire({
-      title: 'Are you sure?',
-      text: 'This will permanently delete the Debit Note.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.debitNoteService.delete(id).subscribe({
-          next: () => {
-            this.loadRequests();
-            Swal.fire('Deleted!', 'Debit Note has been deleted.', 'success');
-          },
-          error: (err) => {
-            console.error('Error deleting debit note', err);
-            Swal.fire('Error', 'Failed to delete debit note.', 'error');
-          }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.loadRequests();
+        } else {
+          this.rows = [];
+          this.tempData = [];
+          this.lockedRowMap = {};
+        }
+      },
+      error: () => {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
         });
       }
     });
   }
 
- openLinesModal(row: any): void {
-  let lines: any[] = [];
-
-  try {
-    // support both camelCase and PascalCase JSON fields
-    const raw = row.linesJson || row.LinesJson || '[]';
-    lines = JSON.parse(raw);
-  } catch {
-    lines = [];
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
   }
 
-  this.modalLines = lines || [];
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
 
-  // compute total = sum(qty * price)
-  this.modalTotal = this.modalLines.reduce(
-    (sum, l) =>
-      sum +
-      (Number(l.qty) || 0) * (Number(l.price) || 0),
-    0
-  );
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
 
-  this.showLinesModal = true;
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+
+  canApprove(): boolean {
+    return this.permissionService.hasApprove(this.permission);
+  }
+
+  loadRequests(): void {
+    this.debitNoteService.getAll().subscribe({
+      next: (res: any) => {
+        const data = res?.data || res || [];
+
+        this.rows = (data || []).map((x: any) => ({
+          ...x,
+          id: Number(x.id ?? x.Id ?? 0),
+          debitNoteNo: x.debitNoteNo ?? x.DebitNoteNo ?? '',
+          name: x.name ?? x.supplierName ?? x.SupplierName ?? x.Name ?? '',
+          supplierName: x.supplierName ?? x.SupplierName ?? x.name ?? x.Name ?? '',
+          reason: x.reason ?? x.Reason ?? '',
+          status: Number(x.status ?? x.Status ?? 0),
+          poDate: x.poDate ?? x.noteDate ?? x.NoteDate ?? x.invoiceDate ?? x.InvoiceDate ?? x.createdDate ?? x.CreatedDate ?? null,
+          linesJson: x.linesJson ?? x.LinesJson ?? '[]',
+          glPosted: x.glPosted === true || x.GlPosted === true || x.glPosted === 1 || x.GlPosted === 1,
+glPostedDate: x.glPostedDate ?? x.GlPostedDate ?? null,
+glJournalId: x.glJournalId ?? x.GlJournalId ?? null,
+        }));
+
+        this.tempData = [...this.rows];
+        this.checkRowsGstLock(this.rows, 'poDate');
+
+        if (this.table) {
+          this.table.offset = 0;
+        }
+      },
+      error: () => {
+        this.rows = [];
+        this.tempData = [];
+        this.lockedRowMap = {};
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Failed',
+          text: 'Unable to load debit notes.'
+        });
+      }
+    });
+  }
+
+  isGlPosted(row: any): boolean {
+  return row?.glPosted === true;
 }
+
+  filterUpdate(event: any): void {
+    const val = (event?.target?.value ?? this.searchValue ?? '').toString().toLowerCase().trim();
+
+    this.rows = this.tempData.filter(d => {
+      const poDate = this.datePipe.transform(d.poDate, 'dd-MM-yyyy')?.toLowerCase() || '';
+
+      return !val ||
+        (d.debitNoteNo || '').toLowerCase().includes(val) ||
+        (d.name || '').toLowerCase().includes(val) ||
+        (d.supplierName || '').toLowerCase().includes(val) ||
+        (d.reason || '').toLowerCase().includes(val) ||
+        poDate.includes(val);
+    });
+
+    this.checkRowsGstLock(this.rows, 'poDate');
+
+    if (this.table) {
+      this.table.offset = 0;
+    }
+  }
+
+  private showPeriodLockedSwal(action: string): void {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Period Locked',
+      text: this.currentPeriodName
+        ? `Period "${this.currentPeriodName}" is locked. You cannot ${action}.`
+        : `Selected accounting period is locked. You cannot ${action}.`
+    });
+  }
+
+  private showGstLockedSwal(): void {
+    Swal.fire({
+      icon: 'warning',
+      title: 'GST Locked',
+      text: 'This debit note belongs to locked GST period.'
+    });
+  }
+
+  openCreate(): void {
+      if (this.hasGlPostedRows) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'GL Posted',
+      text: 'Already one Debit Note is GL posted. New Debit Note creation is disabled.'
+    });
+    return;
+  }
+    if (!this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (this.isPeriodLocked) {
+      this.showPeriodLockedSwal('create debit note');
+      return;
+    }
+
+    this.router.navigate(['/purchase/create-debitnote']);
+  }
+
+  editDetails(row: any): void {
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (this.isPeriodLocked) {
+      this.showPeriodLockedSwal('edit debit note');
+      return;
+    }
+if (this.isGlPosted(row)) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'GL Posted',
+    text: 'This debit note is already posted to GL.'
+  });
+  return;
+}
+    if (this.isRowLocked(row)) {
+      this.showGstLockedSwal();
+      return;
+    }
+
+    this.router.navigate(['/purchase/edit-debitnote', row.id]);
+  }
+
+  deleteDetails(row: any): void {
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (this.isPeriodLocked) {
+      this.showPeriodLockedSwal('delete debit note');
+      return;
+    }
+if (this.isGlPosted(row)) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'GL Posted',
+    text: 'This debit note is already posted to GL.'
+  });
+  return;
+}
+    if (this.isRowLocked(row)) {
+      this.showGstLockedSwal();
+      return;
+    }
+
+    Swal.fire({
+      title: 'Delete this debit note?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel'
+    }).then(result => {
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      this.debitNoteService.delete(row.id).subscribe({
+        next: () => {
+          Swal.fire('Deleted', 'Debit note deleted successfully.', 'success');
+          this.loadRequests();
+        },
+        error: (err: any) => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Delete failed',
+            text: err?.error?.message || 'Unable to delete debit note.'
+          });
+        }
+      });
+    });
+  }
+
+isActionDisabled(row: any): boolean {
+  if (!row) {
+    return true;
+  }
+
+  if (this.isGlPosted(row)) {
+    return true;
+  }
+
+  if (this.isPeriodLocked || this.isRowLocked(row)) {
+    return true;
+  }
+
+  if (+row.status === 2 || +row.status === 3 || +row.status === 4) {
+    return true;
+  }
+
+  return false;
+}
+
+  openLinesModal(row: any): void {
+    let lines: any[] = [];
+
+    try {
+      const raw = row.linesJson || row.LinesJson || '[]';
+      lines = Array.isArray(raw) ? raw : JSON.parse(raw);
+    } catch {
+      lines = [];
+    }
+
+    this.modalLines = (lines || []).map((l: any) => ({
+      item: l.item ?? l.itemName ?? l.ItemName ?? '-',
+      qty: Number(l.qty ?? l.Qty ?? 0),
+      price: Number(l.price ?? l.unitPrice ?? l.Price ?? l.UnitPrice ?? 0),
+      remarks: l.remarks ?? l.Remarks ?? '',
+      dcNoteNo: l.dcNoteNo ?? l.DcNoteNo ?? ''
+    }));
+
+    this.modalTotal = this.modalLines.reduce(
+      (sum, l) => sum + (Number(l.qty) || 0) * (Number(l.price) || 0),
+      0
+    );
+
+    this.showLinesModal = true;
+  }
 
   closeLinesModal(): void {
     this.showLinesModal = false;
     this.modalLines = [];
     this.modalTotal = 0;
   }
+  get hasGlPostedRows(): boolean {
+  return (this.rows || []).some((x: any) =>
+    x.glPosted === true ||
+    x.GlPosted === true ||
+    x.glPosted === 1 ||
+    x.GlPosted === 1
+  );
+}
 }

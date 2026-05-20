@@ -531,15 +531,15 @@ canSaveWithPermission(): boolean {
   private loadDropdowns() {
     this.soSrv.getSOByStatus(2).subscribe((res: any) => {
       const arr = res?.data ?? res ?? [];
-      this.soList = (arr || []).map((r: any) => ({
-        id: Number(r.id ?? r.Id),
-        salesOrderNo: String(r.salesOrderNo ?? r.SalesOrderNo ?? r.soNumber ?? ''),
-        customerName: String(r.customerName ?? r.CustomerName ?? ''),
-        customerId: r.customerId != null ? Number(r.customerId ?? r.CustomerId) : null,
-        isCashSales: !!(r.isCashSales ?? r.IsCashSales),
-        isPoCreated: r.isPoCreated === true,
-        canCreateDeliveryOrder: r.canCreateDeliveryOrder === true
-      }));
+     this.soList = (arr || []).map((r: any) => ({
+  id: Number(r.id ?? r.Id),
+  salesOrderNo: String(r.salesOrderNo ?? r.SalesOrderNo ?? r.soNumber ?? ''),
+  customerName: String(r.customerName ?? r.CustomerName ?? ''),
+  customerId: r.customerId != null ? Number(r.customerId ?? r.CustomerId) : null,
+  isCashSales: !!(r.isCashSales ?? r.IsCashSales),
+  isPoCreated: this.toBool(r.isPoCreated ?? r.IsPoCreated),
+  canCreateDeliveryOrder: this.toBool(r.canCreateDeliveryOrder ?? r.CanCreateDeliveryOrder)
+}));
 
       if (this.isEdit && this.selectedSoId) {
         this.ensureSelectedSoInList(this.selectedSoId);
@@ -564,7 +564,9 @@ canSaveWithPermission(): boolean {
       }));
     });
   }
-
+private toBool(value: any): boolean {
+  return value === true || value === 1 || value === '1' || value === 'true';
+}
   private ensureSelectedSoInList(soId: number | null) {
     if (!soId) return;
 
@@ -753,19 +755,21 @@ onSoChanged(selectedSoOrId: any) {
     return;
   }
 
-  const canCreateDO = selectedSo.canCreateDeliveryOrder === true;
+ const canCreateDO = this.toBool(selectedSo.canCreateDeliveryOrder);
 
-  if (!canCreateDO) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'PO Not Created',
-      text: 'Purchase Order is not created for this Sales Order. Please create PO first.'
-    });
+if (!canCreateDO) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'PO Pending',
+    text: 'Purchase Order is pending for this Sales Order. Please create PO first.'
+  });
 
-    this.selectedSoId = null;
-    this.routeText = '';
-    return;
-  }
+  this.selectedSoId = null;
+  this.routeText = '';
+  this.soLines = [];
+  this.totalDeliverQty = 0;
+  return;
+}
 
   this.soSrv.getSOById(soId).subscribe((res: any) => {
     const dto = res?.data ?? res ?? {};

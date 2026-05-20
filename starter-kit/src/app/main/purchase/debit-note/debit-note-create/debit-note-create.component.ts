@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { SupplierInvoiceService } from '../../supplier-invoice/supplier-invoice.service';
 import { DebitNoteService, DebitNoteDto } from '../debit-note.service';
 import { PurchaseGoodreceiptService } from '../../purchase-goodreceipt/purchase-goodreceipt.service';
+import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
 
 interface GRNHeader {
   id: number;
@@ -51,20 +52,26 @@ export class DebitNoteCreateComponent implements OnInit {
   grnList: GRNHeader[] = [];
   grnFiltered: GRNHeader[] = [];
   selectedGrnNos: string[] = [];
+isGstLocked = false;
+gstLockMessage = '';
+
+isGlPosted = false;
 
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private pinSvc: SupplierInvoiceService,
     private dnSvc: DebitNoteService,
-    private grnService: PurchaseGoodreceiptService
+    private grnService: PurchaseGoodreceiptService,
+    private gstLockService: GstLockService
   ) {
     this.userId = localStorage.getItem('id') ?? 'System';
   }
 
   ngOnInit(): void {
-    this.setToday();
-    this.loadGrnsForCreate();
+     this.setToday();
+  this.checkGstLock();
+  this.loadGrnsForCreate();
 
     // EDIT mode
     this.route.paramMap.subscribe(pm => {
@@ -89,7 +96,24 @@ export class DebitNoteCreateComponent implements OnInit {
       }
     });
   }
+checkGstLock(): void {
+  if (!this.noteDate) {
+    this.isGstLocked = false;
+    this.gstLockMessage = '';
+    return;
+  }
 
+  this.gstLockService.check(this.noteDate).subscribe({
+    next: (res: any) => {
+      this.isGstLocked = !!res?.locked;
+      this.gstLockMessage = res?.message || '';
+    },
+    error: () => {
+      this.isGstLocked = false;
+      this.gstLockMessage = '';
+    }
+  });
+}
   // -------------------------
   // UI grid class
   // -------------------------
@@ -348,6 +372,13 @@ private fillRowsFromGrn(g: GRNHeader): void {
     this.dnSvc.getById(id).subscribe({
       next: (res: any) => {
         const d = res?.data || res;
+        this.isGlPosted = !!(
+  d.glPosted ??
+  d.GlPosted ??
+  d.isGlPosted ??
+  d.IsGlPosted ??
+  false
+);
         if (!d) return;
 
         this.dnId = d.id ?? d.Id ?? id;
@@ -434,7 +465,8 @@ private fillRowsFromGrn(g: GRNHeader): void {
       status: post ? 1 : 0,
       createdBy: this.userId,
       updatedBy: this.userId,
-      countryId:(localStorage.getItem('countryId') || 1)
+      countryId:(localStorage.getItem('countryId') || 1),
+      createdDate: new Date(),
     };
 
     const request$ = this.isEdit && this.dnId

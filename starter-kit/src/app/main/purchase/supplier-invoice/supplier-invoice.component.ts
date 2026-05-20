@@ -1,5 +1,10 @@
 import {
-  Component, HostListener, OnDestroy, OnInit, ViewEncapsulation, ChangeDetectorRef
+  Component,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewEncapsulation,
+  ChangeDetectorRef
 } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -8,6 +13,7 @@ import Swal from 'sweetalert2';
 import { SupplierInvoiceService } from './supplier-invoice.service';
 import { PurchaseGoodreceiptService } from '../purchase-goodreceipt/purchase-goodreceipt.service';
 import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
+import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
 
 interface GRNHeader {
   id: number;
@@ -57,7 +63,7 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
 
   selectedGrnNos: string[] = [];
   minDate = '';
-userId: number = 0;
+  userId: number = 0;
 
   subTotal = 0;
   discountTotal = 0;
@@ -69,11 +75,15 @@ userId: number = 0;
   ocrOpen = false;
   isPartialAsked = false;
 
-
   advanceAmount = 0;
-balancePayableAfterAdvance = 0;
-advanceRows: any[] = [];
+  balancePayableAfterAdvance = 0;
+  advanceRows: any[] = [];
+
   trackByLine = (index: number) => index;
+
+  isGstLocked = false;
+  isGlPosted = false;
+  gstLockMessage = '';
 
   constructor(
     private fb: FormBuilder,
@@ -82,10 +92,11 @@ advanceRows: any[] = [];
     private router: Router,
     private route: ActivatedRoute,
     private coaService: ChartofaccountService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private gstLockService: GstLockService
   ) {
-     const storedUserId = localStorage.getItem('id');
-  this.userId = storedUserId ? Number(storedUserId) : 0;
+    const storedUserId = localStorage.getItem('id');
+    this.userId = storedUserId ? Number(storedUserId) : 0;
 
     this.form = this.fb.group({
       id: [0],
@@ -109,14 +120,17 @@ advanceRows: any[] = [];
   }
 
   ngOnInit(): void {
+    this.checkGstLock();
     document.body.classList.add('pin-supplier-invoice-page');
     this.setMinDate();
     this.loadAccountHeads();
 
     this.route.paramMap.subscribe(pm => {
       const id = Number(pm.get('id') || 0);
-      if (id > 0) this.loadInvoice(id);
-      else {
+      if (id > 0) {
+        this.loadInvoice(id);
+      } else {
+        this.isGlPosted = false;
         this.loadGrnsForCreate();
         this.seedEmptyLine();
       }
@@ -125,6 +139,48 @@ advanceRows: any[] = [];
 
   ngOnDestroy(): void {
     document.body.classList.remove('pin-supplier-invoice-page');
+  }
+
+  checkGstLock(): void {
+    const date = this.form.get('invoiceDate')?.value;
+
+    if (!date) {
+      this.isGstLocked = false;
+      return;
+    }
+
+    this.gstLockService.check(date).subscribe({
+      next: (res: any) => {
+        this.isGstLocked = !!res?.locked;
+        this.gstLockMessage = res?.message || '';
+      },
+      error: () => {
+        this.isGstLocked = false;
+        this.gstLockMessage = '';
+      }
+    });
+  }
+
+  private isInvoiceBlocked(): boolean {
+    if (this.isGstLocked) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'GST Locked',
+        text: this.gstLockMessage || 'GST period is locked. Supplier invoice cannot be changed.'
+      });
+      return true;
+    }
+
+    if (this.isGlPosted) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'GL Posted',
+        text: 'This Supplier Invoice is already GL posted. You cannot edit or post it again.'
+      });
+      return true;
+    }
+
+    return false;
   }
 
   private loadGrnsForCreate(): void {
@@ -196,50 +252,50 @@ advanceRows: any[] = [];
   }
 
   private checkSupplierAdvanceForSelectedGrn(): void {
-  const grnNos = (this.selectedGrnNos || []).join(',');
+    const grnNos = (this.selectedGrnNos || []).join(',');
 
-  this.advanceAmount = 0;
-  this.balancePayableAfterAdvance = Number(this.grandTotal || 0);
-  this.advanceRows = [];
+    this.advanceAmount = 0;
+    this.balancePayableAfterAdvance = Number(this.grandTotal || 0);
+    this.advanceRows = [];
 
-  if (!grnNos) return;
+    if (!grnNos) return;
 
-  this.api.getSupplierAdvanceByGrnNos(grnNos).subscribe({
-    next: (res: any) => {
-      const rows = res?.data || res || [];
-      this.advanceRows = rows;
+    this.api.getSupplierAdvanceByGrnNos(grnNos).subscribe({
+      next: (res: any) => {
+        const rows = res?.data || res || [];
+        this.advanceRows = rows;
 
-      this.advanceAmount = rows.reduce(
-        (sum: number, x: any) => sum + Number(x.balanceAmount || 0),
-        0
-      );
+        this.advanceAmount = rows.reduce(
+          (sum: number, x: any) => sum + Number(x.balanceAmount || 0),
+          0
+        );
 
-      if (this.advanceAmount <= 0) return;
+        if (this.advanceAmount <= 0) return;
 
-      const invoiceAmount = Number(this.grandTotal || 0);
-      this.balancePayableAfterAdvance = Math.max(invoiceAmount - this.advanceAmount, 0);
+        const invoiceAmount = Number(this.grandTotal || 0);
+        this.balancePayableAfterAdvance = Math.max(invoiceAmount - this.advanceAmount, 0);
 
-      Swal.fire({
-        icon: 'info',
-        title: 'Supplier Advance Available',
-        html: `
-          <div style="text-align:left;font-size:14px">
-            <p>Advance Amount: <b>${this.advanceAmount.toFixed(2)}</b></p>
-            <p>Invoice Amount: <b>${invoiceAmount.toFixed(2)}</b></p>
-            <hr/>
-            <p style="font-size:16px">
-              Balance Payable: <b>${this.balancePayableAfterAdvance.toFixed(2)}</b>
-            </p>
-          </div>
-        `,
-        confirmButtonText: 'OK'
-      });
-    },
-    error: () => {
-      Swal.fire('Error', 'Failed to check supplier advance.', 'error');
-    }
-  });
-}
+        Swal.fire({
+          icon: 'info',
+          title: 'Supplier Advance Available',
+          html: `
+            <div style="text-align:left;font-size:14px">
+              <p>Advance Amount: <b>${this.advanceAmount.toFixed(2)}</b></p>
+              <p>Invoice Amount: <b>${invoiceAmount.toFixed(2)}</b></p>
+              <hr/>
+              <p style="font-size:16px">
+                Balance Payable: <b>${this.balancePayableAfterAdvance.toFixed(2)}</b>
+              </p>
+            </div>
+          `,
+          confirmButtonText: 'OK'
+        });
+      },
+      error: () => {
+        Swal.fire('Error', 'Failed to check supplier advance.', 'error');
+      }
+    });
+  }
 
   private showGrnBlockedWarning(g: GRNHeader): void {
     Swal.fire({
@@ -256,11 +312,15 @@ advanceRows: any[] = [];
   }
 
   onGrnFocus(): void {
+    if (this.isInvoiceBlocked()) return;
+
     this.grnFiltered = [...this.grnList];
     this.grnOpen = true;
   }
 
   onGrnSearch(e: any): void {
+    if (this.isInvoiceBlocked()) return;
+
     const q = (e?.target?.value || '').toLowerCase();
     this.grnSearch = q;
 
@@ -297,6 +357,8 @@ advanceRows: any[] = [];
   }
 
   toggleGrn(g: GRNHeader): void {
+    if (this.isInvoiceBlocked()) return;
+
     const currentIds: number[] = (this.form.value.grnIds || []).map((x: any) => Number(x));
     const before = [...currentIds];
 
@@ -362,6 +424,8 @@ advanceRows: any[] = [];
   }
 
   removeGrnByNo(grnNo: string): void {
+    if (this.isInvoiceBlocked()) return;
+
     const currentIds: number[] = (this.form.value.grnIds || []).map((x: any) => Number(x));
     const toRemove = this.grnList.find(x => x.grnNo === grnNo);
     if (!toRemove) return;
@@ -386,7 +450,17 @@ advanceRows: any[] = [];
         amount: 0
       }, { emitEvent: false });
 
-      this.replaceLinesWith([{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
+      this.replaceLinesWith([
+        {
+          item: '',
+          qty: 1,
+          unitPrice: 0,
+          discountPct: 0,
+          location: '',
+          taxMode: 'EXCLUSIVE'
+        }
+      ]);
+
       this.recalcAllLines();
       this.recalcHeaderFromLines();
       this.isPartialAsked = false;
@@ -414,11 +488,22 @@ advanceRows: any[] = [];
     this.recalcAllLines();
     this.recalcHeaderFromLines();
     this.isPartialAsked = false;
+    this.checkSupplierAdvanceForSelectedGrn();
   }
 
   private seedEmptyLine(): void {
     if (this.lines.length === 0) {
-      this.replaceLinesWith([{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
+      this.replaceLinesWith([
+        {
+          item: '',
+          qty: 1,
+          unitPrice: 0,
+          discountPct: 0,
+          location: '',
+          taxMode: 'EXCLUSIVE'
+        }
+      ]);
+
       this.recalcAllLines();
       this.recalcHeaderFromLines();
     }
@@ -426,7 +511,16 @@ advanceRows: any[] = [];
 
   private mergeLinesFromMultipleGrns(grns: GRNHeader[]): void {
     if (!grns || grns.length === 0) {
-      this.replaceLinesWith([{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
+      this.replaceLinesWith([
+        {
+          item: '',
+          qty: 1,
+          unitPrice: 0,
+          discountPct: 0,
+          location: '',
+          taxMode: 'EXCLUSIVE'
+        }
+      ]);
       return;
     }
 
@@ -460,17 +554,41 @@ advanceRows: any[] = [];
     });
 
     const grouped = this.groupSameItemSumQty(merged);
-    this.replaceLinesWith(grouped.length ? grouped : [{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
+
+    this.replaceLinesWith(
+      grouped.length
+        ? grouped
+        : [
+            {
+              item: '',
+              qty: 1,
+              unitPrice: 0,
+              discountPct: 0,
+              location: '',
+              taxMode: 'EXCLUSIVE'
+            }
+          ]
+    );
   }
 
   private groupSameItemSumQty(lines: PinLine[]): PinLine[] {
     const map = new Map<string, PinLine>();
 
     lines.forEach(l => {
-      const key = (l.item || '').trim().toLowerCase() + '|' + (l.unitPrice || 0) + '|' + (l.taxMode || 'EXCLUSIVE');
+      const key =
+        (l.item || '').trim().toLowerCase() +
+        '|' +
+        (l.unitPrice || 0) +
+        '|' +
+        (l.taxMode || 'EXCLUSIVE');
+
       const ex = map.get(key);
-      if (!ex) map.set(key, { ...l });
-      else ex.qty = +(ex.qty + (l.qty || 0));
+
+      if (!ex) {
+        map.set(key, { ...l });
+      } else {
+        ex.qty = +(ex.qty + (l.qty || 0));
+      }
     });
 
     return Array.from(map.values());
@@ -518,16 +636,28 @@ advanceRows: any[] = [];
     const taxPct = this.toNumber(this.form.get('tax')?.value);
     const rate = taxPct / 100;
 
-    if (mode === 'ZERO' || !rate) return { taxAmt: 0, lineGrand: +base.toFixed(2) };
+    if (mode === 'ZERO' || !rate) {
+      return {
+        taxAmt: 0,
+        lineGrand: +base.toFixed(2)
+      };
+    }
 
     if (mode === 'EXCLUSIVE') {
       const taxAmt = +(base * rate).toFixed(2);
-      return { taxAmt, lineGrand: +(base + taxAmt).toFixed(2) };
+      return {
+        taxAmt,
+        lineGrand: +(base + taxAmt).toFixed(2)
+      };
     }
 
     const netBase = +(base / (1 + rate)).toFixed(2);
     const taxAmt = +(base - netBase).toFixed(2);
-    return { taxAmt, lineGrand: +base.toFixed(2) };
+
+    return {
+      taxAmt,
+      lineGrand: +base.toFixed(2)
+    };
   }
 
   private recalcLine(i: number): void {
@@ -549,15 +679,21 @@ advanceRows: any[] = [];
   }
 
   private recalcAllLines(): void {
-    for (let i = 0; i < this.lines.length; i++) this.recalcLine(i);
+    for (let i = 0; i < this.lines.length; i++) {
+      this.recalcLine(i);
+    }
   }
 
   onCellChange(i: number): void {
+    if (this.isInvoiceBlocked()) return;
+
     this.recalcLine(i);
     this.recalcHeaderFromLines();
   }
 
   async onCellChange1(i: number): Promise<void> {
+    if (this.isInvoiceBlocked()) return;
+
     const fg = this.lines.at(i) as FormGroup;
 
     const qty = this.toNumber(fg.get('qty')?.value);
@@ -589,11 +725,15 @@ advanceRows: any[] = [];
   }
 
   onLineTaxChange(i: number): void {
+    if (this.isInvoiceBlocked()) return;
+
     this.recalcLine(i);
     this.recalcHeaderFromLines();
   }
 
   onTaxChange(): void {
+    if (this.isInvoiceBlocked()) return;
+
     this.recalcAllLines();
     this.recalcHeaderFromLines();
   }
@@ -628,13 +768,17 @@ advanceRows: any[] = [];
   }
 
   save(action: 'HOLD' | 'POST' = 'POST'): void {
+    if (this.isInvoiceBlocked()) return;
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
     const v = this.form.value;
-    const grnIds = (v.grnIds || []).map((x: any) => Number(x)).filter((n: number) => n > 0);
+    const grnIds = (v.grnIds || [])
+      .map((x: any) => Number(x))
+      .filter((n: number) => n > 0);
 
     if (!grnIds.length) {
       Swal.fire('Select GRN', 'At least one GRN must be selected.', 'warning');
@@ -685,6 +829,14 @@ advanceRows: any[] = [];
         const d = res?.data ?? res;
         if (!d) return;
 
+        this.isGlPosted = !!(
+          d.glPosted ??
+          d.GlPosted ??
+          d.isGlPosted ??
+          d.IsGlPosted ??
+          false
+        );
+
         this.form.patchValue({
           id: d.id,
           invoiceNo: d.invoiceNo,
@@ -699,11 +851,20 @@ advanceRows: any[] = [];
           tax: this.toNumber(d.taxPct ?? d.taxPercent ?? d.taxRate ?? d.tax)
         }, { emitEvent: false });
 
+        this.checkGstLock();
+
         this.grnSearch = d.grnNos || '';
-        this.selectedGrnNos = (d.grnNos || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        this.selectedGrnNos = (d.grnNos || '')
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean);
 
         let lines: any[] = [];
-        try { lines = JSON.parse(d.linesJson || '[]'); } catch { lines = []; }
+        try {
+          lines = JSON.parse(d.linesJson || '[]');
+        } catch {
+          lines = [];
+        }
 
         const mappedLines: PinLine[] = (lines || []).map(l => ({
           item: l.item || '',
@@ -715,7 +876,20 @@ advanceRows: any[] = [];
           taxMode: (l.taxMode || 'EXCLUSIVE') as TaxMode
         }));
 
-        this.replaceLinesWith(mappedLines.length ? mappedLines : [{ item: '', qty: 1, unitPrice: 0, discountPct: 0, location: '', taxMode: 'EXCLUSIVE' }]);
+        this.replaceLinesWith(
+          mappedLines.length
+            ? mappedLines
+            : [
+                {
+                  item: '',
+                  qty: 1,
+                  unitPrice: 0,
+                  discountPct: 0,
+                  location: '',
+                  taxMode: 'EXCLUSIVE'
+                }
+              ]
+        );
 
         this.recalcAllLines();
         this.recalcHeaderFromLines();
@@ -726,7 +900,9 @@ advanceRows: any[] = [];
 
   @HostListener('document:click', ['$event'])
   onDocClick(ev: MouseEvent): void {
-    if (!(ev.target as HTMLElement).closest('.grn-combobox')) this.grnOpen = false;
+    if (!(ev.target as HTMLElement).closest('.grn-combobox')) {
+      this.grnOpen = false;
+    }
   }
 
   goToSupplierInvoice(): void {
@@ -736,18 +912,27 @@ advanceRows: any[] = [];
   loadAccountHeads(): void {
     this.coaService.getAllChartOfAccount().subscribe((res: any) => {
       const data = (res?.data || []).filter((x: any) => x.isActive === true);
-      this.parentHeadList = data.map((head: any) => ({ value: Number(head.id), label: head.headName }));
+      this.parentHeadList = data.map((head: any) => ({
+        value: Number(head.id),
+        label: head.headName
+      }));
     });
   }
 
   private setMinDate(): void {
     const d = new Date();
-    this.minDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    this.minDate =
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   private toNumber(v: any): number {
     if (v === null || v === undefined) return 0;
-    const s = String(v).replace(/[,]/g, '').replace(/\$/g, '').replace(/SGD/gi, '').trim();
+    const s = String(v)
+      .replace(/[,]/g, '')
+      .replace(/\$/g, '')
+      .replace(/SGD/gi, '')
+      .trim();
+
     const n = Number(s);
     return isNaN(n) ? 0 : n;
   }
@@ -757,13 +942,22 @@ advanceRows: any[] = [];
     if (Array.isArray(raw)) return raw;
 
     let val = raw;
+
     for (let i = 0; i < 3; i++) {
       if (Array.isArray(val)) return val;
+
       if (typeof val === 'string') {
         const s = val.trim();
         if (!s) return [];
-        try { val = JSON.parse(s); continue; } catch { return []; }
+
+        try {
+          val = JSON.parse(s);
+          continue;
+        } catch {
+          return [];
+        }
       }
+
       return Array.isArray(val) ? val : [];
     }
 
@@ -771,10 +965,12 @@ advanceRows: any[] = [];
   }
 
   openOcr(): void {
+    if (this.isInvoiceBlocked()) return;
     this.ocrOpen = true;
   }
 
   onOcrApplied(_res: any): void {
+    if (this.isInvoiceBlocked()) return;
     this.ocrOpen = false;
   }
 }

@@ -130,5 +130,23 @@ export class GstReturnsService {
 
   return this.http.get<GstDetailRow[]>(`${this.baseUrl}/details`, { params });
 }
-
+reopenReturn(id: number) {
+  return this.http.post<GstReturnDto>(`${this.baseUrl}/reopen/${id}`, {});
+}
+exportExcel(periodId: number) {
+  return this.http.get(`${this.baseUrl}/export-excel/${periodId}`, {
+    responseType: 'blob'
+  });
+}
+markFiled(id: number, filingNo: string) {
+  return this.http.post<GstReturnDto>(`${this.baseUrl}/mark-filed/${id}`, {
+    filingNo
+  });
+}
+postToGl(id: number) {
+  return this.http.post<GstReturnDto>(
+    `${this.baseUrl}/${id}/post-to-gl`,
+    {}
+  );
+}
 }

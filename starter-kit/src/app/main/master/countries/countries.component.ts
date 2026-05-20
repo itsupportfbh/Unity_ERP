@@ -24,7 +24,7 @@ export class CountriesComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   public id = 0;
   public countryName = '';
-  public gstPercentage = '';
+  public gstPercentage = 0;
 
   isDisplay = false;
   modeHeader: string = 'Add Country';
@@ -153,7 +153,7 @@ export class CountriesComponent implements OnInit, AfterViewInit, AfterViewCheck
   reset(): void {
     this.modeHeader = this.isEditMode ? 'Edit Country' : 'Create Country';
     this.countryName = '';
-    this.gstPercentage = '';
+    this.gstPercentage = 0;
     this.id = 0;
   }
 
@@ -171,7 +171,7 @@ export class CountriesComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   CreateCountry(): void {
-    if (!this.countryName || !this.gstPercentage) {
+    if (!this.countryName) {
       Swal.fire({
         icon: 'warning',
         title: 'Warning',
@@ -302,7 +302,7 @@ export class CountriesComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.countryValue = arg?.data;
         this.id = this.countryValue?.id || 0;
         this.countryName = this.countryValue?.countryName || '';
-        this.gstPercentage = this.countryValue?.gstPercentage || '';
+        this.gstPercentage = this.countryValue?.gstPercentage || 0;
 
         this.isDisplay = true;
         this.resetButton = false;

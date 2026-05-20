@@ -11,10 +11,12 @@
   <div class="dnCard">
     <h2 class="dnTitle">Debit Note / Returns</h2>
 
-    <!-- HEADER ROW (same row like screenshot) -->
+    <div *ngIf="isGlPosted" class="alert alert-danger mb-2">
+      This Debit Note is already GL posted. You cannot edit or post it again.
+    </div>
+
     <div class="dnHdrGrid">
 
-      <!-- GRN # (wide combobox) -->
       <div class="dnField dnCol--grn grn-combobox">
         <label class="dnLabel">GRN #</label>
 
@@ -26,20 +28,19 @@
             (input)="onGrnSearch($event)"
             (focus)="onGrnFocus()"
             placeholder="Search"
-            [attr.aria-expanded]="grnOpen"
-          />
+            [disabled]="isGstLocked || isGlPosted" />
 
           <button
             type="button"
             class="dnCaretBtn"
             (click)="grnOpen = !grnOpen"
-            aria-label="Toggle GRN list">
+            aria-label="Toggle GRN list"
+            [disabled]="isGstLocked || isGlPosted">
             <i class="fas fa-chevron-down"></i>
           </button>
         </div>
 
-        <!-- Dropdown -->
-        <div *ngIf="grnOpen" class="dnDropdown">
+        <div *ngIf="grnOpen && !isGstLocked && !isGlPosted" class="dnDropdown">
           <div class="dnDropHead">Choose GRN</div>
 
           <button
@@ -62,20 +63,20 @@
         </div>
       </div>
 
-      <!-- Supplier -->
       <div class="dnField dnCol--sup">
         <label class="dnLabel">Supplier</label>
         <input
           class="dnInput dnInput--readonly"
           [value]="supplierDisplay"
-          readonly
-        />
+          readonly />
       </div>
 
-      <!-- Reason -->
       <div class="dnField dnCol--reason">
         <label class="dnLabel">Reason</label>
-        <select class="dnInput" [(ngModel)]="reason">
+        <select
+          class="dnInput"
+          [(ngModel)]="reason"
+          [disabled]="isGstLocked || isGlPosted">
           <option value="">Select</option>
           <option value="Short supply">Short supply</option>
           <option value="Price difference">Price difference</option>
@@ -83,15 +84,23 @@
         </select>
       </div>
 
-      <!-- Date -->
       <div class="dnField dnCol--date">
         <label class="dnLabel">Date</label>
-        <input type="date" class="dnInput" [(ngModel)]="noteDate" />
+
+        <input
+          type="date"
+          class="dnInput"
+          [(ngModel)]="noteDate"
+          (change)="checkGstLock()"
+          [disabled]="isGstLocked || isGlPosted" />
+
+        <div *ngIf="isGstLocked" class="alert alert-warning mt-2">
+          {{ gstLockMessage || 'GST period is locked. Debit note cannot be changed.' }}
+        </div>
       </div>
 
     </div>
 
-    <!-- Lines table (kept your table) -->
     <div class="dnTableWrap">
       <table class="dnTable">
         <thead>
@@ -111,23 +120,45 @@
 
           <tr *ngFor="let r of retRows; let i = index; trackBy: trackByIndex">
             <td>
-              <input class="dnCellInput" [(ngModel)]="retRows[i].item" [name]="'item_' + i" />
+              <input
+                class="dnCellInput"
+                [(ngModel)]="retRows[i].item"
+                [name]="'item_' + i"
+                [disabled]="isGstLocked || isGlPosted" />
             </td>
 
             <td>
-              <input type="number" class="dnCellInput" [(ngModel)]="retRows[i].qty" [name]="'qty_' + i" />
+              <input
+                type="number"
+                class="dnCellInput"
+                [(ngModel)]="retRows[i].qty"
+                [name]="'qty_' + i"
+                [disabled]="isGstLocked || isGlPosted" />
             </td>
 
             <td>
-              <input type="number" class="dnCellInput" [(ngModel)]="retRows[i].price" [name]="'price_' + i" />
+              <input
+                type="number"
+                class="dnCellInput"
+                [(ngModel)]="retRows[i].price"
+                [name]="'price_' + i"
+                [disabled]="isGstLocked || isGlPosted" />
             </td>
 
             <td>
-              <input class="dnCellInput" [(ngModel)]="retRows[i].remarks" [name]="'remarks_' + i" />
+              <input
+                class="dnCellInput"
+                [(ngModel)]="retRows[i].remarks"
+                [name]="'remarks_' + i"
+                [disabled]="isGstLocked || isGlPosted" />
             </td>
 
             <td class="tRight">
-              <button type="button" class="dnRemoveBtn" (click)="retRemoveRow(i)">
+              <button
+                type="button"
+                class="dnRemoveBtn"
+                (click)="retRemoveRow(i)"
+                [disabled]="isGstLocked || isGlPosted">
                 Remove
               </button>
             </td>
@@ -136,15 +167,35 @@
       </table>
 
       <div class="dnTableFoot">
-        <button type="button" class="dnAddBtn" (click)="retAddRow()">+ Add line</button>
-        <div class="dnTotal">Total: {{ totalAmount | number:'1.2-2' }}</div>
+        <button
+          type="button"
+          class="dnAddBtn"
+          (click)="retAddRow()"
+          [disabled]="isGstLocked || isGlPosted">
+          + Add line
+        </button>
+
+        <div class="dnTotal">
+          Total: {{ totalAmount | number:'1.2-2' }}
+        </div>
       </div>
     </div>
 
-    <!-- Footer buttons -->
     <div class="dnActions">
-      <button class="btn btn-outline-secondary" type="button" (click)="goToDebitNoteList()">Cancel</button>
-      <button class="btn btn-primary" type="button" (click)="save(true)">Post Debit Note</button>
+      <button
+        class="btn btn-outline-secondary"
+        type="button"
+        (click)="goToDebitNoteList()">
+        Cancel
+      </button>
+
+      <button
+        class="btn btn-primary"
+        type="button"
+        (click)="save(true)"
+        [disabled]="isGstLocked || isGlPosted">
+        Post Debit Note
+      </button>
     </div>
 
   </div>

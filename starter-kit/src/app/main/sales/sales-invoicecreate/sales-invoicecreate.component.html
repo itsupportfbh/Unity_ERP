@@ -16,16 +16,21 @@
     </div>
 
     <div class="d-flex gap-2 prl-head-actions">
-      <button class="btn prl-btn-primary"
-              (click)="save()"
-              [disabled]="!invoiceDate || ( !isEdit && (!sourceId || lines.length===0) )">
-        {{ isEdit ? 'Save Header' : 'Create Invoice' }}
-      </button>
-      <button *ngIf="isEdit"
-              class="btn btn-outline-primary prl-btn-outline"
-              (click)="saveNewLines()">
-        Save New Lines
-      </button>
+   <button class="btn prl-btn-primary"
+        (click)="save()"
+        [disabled]="isGstLocked || isGlPosted || !invoiceDate || ( !isEdit && (!sourceId || lines.length===0) )">
+
+  {{ isEdit ? 'Update Invoice' : 'Create Invoice' }}
+
+</button>
+     <button *ngIf="isEdit"
+        class="btn btn-outline-primary prl-btn-outline"
+        (click)="saveNewLines()"
+        [disabled]="isGstLocked || isGlPosted">
+
+  Save New Lines
+
+</button>
     </div>
   </div>
 
@@ -108,10 +113,18 @@
       <!-- Invoice Date -->
       <div class="col-lg-3 col-md-6">
         <label class="form-label prl-label">Invoice Date</label>
-        <input type="date"
-               class="form-control prl-input"
-               [(ngModel)]="invoiceDate"
-               [ngModelOptions]="{standalone:true}">
+      <input type="date"
+       class="form-control prl-input"
+       [(ngModel)]="invoiceDate"
+       (change)="checkGstLock()"
+       [disabled]="isGstLocked || isGlPosted"
+       [ngModelOptions]="{standalone:true}">
+       <div *ngIf="isGstLocked" class="alert alert-warning mt-2">
+  {{ gstLockMessage || 'GST period is locked. You cannot change this invoice.' }}
+</div>
+<div *ngIf="isGlPosted" class="alert alert-dark mt-2">
+  This Sales Invoice is already GL posted. You cannot edit it.
+</div>
       </div>
 
       <!-- Customer (read-only) -->
@@ -126,7 +139,13 @@
 
     <!-- ================= LINES TABLE ================= -->
     <div class="d-flex justify-content-end mt-2">
-      <button class="btn btn-outline-primary prl-btn-outline" (click)="addLine()">+ Add Line</button>
+    <button class="btn btn-outline-primary prl-btn-outline"
+        (click)="addLine()"
+        [disabled]="isGstLocked || isGlPosted">
+
+  + Add Line
+
+</button>
     </div>
 
     <div class="table-responsive mt-2 prl-table-wrap si-compact">
@@ -313,10 +332,13 @@
 
             <!-- Remove -->
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-danger prl-btn-outline"
-                      (click)="removeLine(i)">
-                <i class="fa fa-times"></i>
-              </button>
+             <button class="btn btn-sm btn-outline-danger prl-btn-outline"
+        (click)="removeLine(i)"
+        [disabled]="isGstLocked || isGlPosted">
+
+  <i class="fa fa-times"></i>
+
+</button>
             </td>
           </tr>
 

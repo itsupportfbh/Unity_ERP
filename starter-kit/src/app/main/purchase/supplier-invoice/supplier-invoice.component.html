@@ -12,7 +12,10 @@
         3-way match: PO · GRN · PIN
       </span>
 
-      <button type="button" class="pinX__btn pinX__btn--brand" (click)="openOcr()">
+      <button type="button"
+        class="pinX__btn pinX__btn--brand"
+        (click)="openOcr()"
+        [disabled]="isGstLocked">
         <i class="fas fa-file-upload"></i>
         <span>OCR Upload</span>
       </button>
@@ -57,15 +60,13 @@
   <label class="pinX__label">GRN #</label>
 
   <div class="pinX__combo">
-    <input
-      type="text"
-      class="pinX__input pinX__input--withCaret"
-      [value]="grnSearch"
-      (input)="onGrnSearch($event)"
-      (focus)="onGrnFocus()"
-      placeholder="Search GRN…"
-      [attr.aria-expanded]="grnOpen"
-    />
+  <input type="text"
+       class="pinX__input pinX__input--withCaret"
+       [value]="grnSearch"
+       (input)="onGrnSearch($event)"
+       (focus)="onGrnFocus()"
+       placeholder="Search GRN…"
+       [disabled]="isGstLocked" />
 
     <button
       type="button"
@@ -123,7 +124,14 @@
             <!-- Invoice Date -->
             <div class="pinX__field">
               <label class="pinX__label">Invoice Date</label>
-              <input type="date" class="pinX__input" [min]="minDate" formControlName="invoiceDate" />
+             <input type="date"
+       class="pinX__input"
+       [min]="minDate"
+       formControlName="invoiceDate"
+       (change)="checkGstLock()" />
+       <div *ngIf="isGstLocked" class="alert alert-warning mt-1">
+  {{ gstLockMessage || 'GST period is locked. Supplier invoice cannot be changed.' }}
+</div>
             </div>
 
             <!-- Amount -->

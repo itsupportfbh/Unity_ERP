@@ -26,6 +26,7 @@ export interface DebitNoteDto {
   createdBy?: any;
   updatedBy?: any;
   countryId?:any;
+  createdDate?: Date;
 }
 
 @Injectable({

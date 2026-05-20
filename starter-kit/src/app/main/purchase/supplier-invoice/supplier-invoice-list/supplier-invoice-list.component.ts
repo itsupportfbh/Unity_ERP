@@ -1,49 +1,9 @@
-import {
-  Component,
-  OnInit,
-  ViewChild,
-  ViewEncapsulation,
-  AfterViewInit,
-  AfterViewChecked
-} from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
-import { ColumnMode, DatatableComponent } from '@swimlane/ngx-datatable';
 import Swal from 'sweetalert2';
 import { SupplierInvoiceService } from '../supplier-invoice.service';
-import * as feather from 'feather-icons';
-import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
-
-export interface ThreeWayMatch {
-  poId: number;
-  poNo: string;
-  poQty: number;
-  poPrice: number;
-  poTotal: number;
-
-  grnCount: number;
-  grnNos: string;
-  grnReceivedQty: number;
-  pendingReceiveQty: number; // ✅ new
-  grnStatus: string;
-
-  pinId: number;
-  pinNo: string;
-  pinQty: number;
-  pinTotal: number;
-
-  totalInvoicedQty: number;
-  lastPinId: number;
-  isLastPinInGroup: boolean;
-
-  pinMatch: boolean;
-  mismatchLabel?: string | null;
-}
-
-export interface PeriodStatusDto {
-  isLocked: boolean;
-  periodName?: string;
-}
+import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
 
 @Component({
   selector: 'app-supplier-invoice-list',
@@ -51,492 +11,510 @@ export interface PeriodStatusDto {
   styleUrls: ['./supplier-invoice-list.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class SupplierInvoiceListComponent implements OnInit, AfterViewInit, AfterViewChecked {
-
-  @ViewChild(DatatableComponent) table!: DatatableComponent;
+export class SupplierInvoiceListComponent implements OnInit {
 
   rows: any[] = [];
-  tempData: any[] = [];
-  searchValue = '';
-  ColumnMode = ColumnMode;
-  selectedOption = 10;
+  temp: any[] = [];
 
-  // KPI
+  selectedOption = 10;
+  searchValue = '';
+
   totalPending = 0;
   autoMatched = 0;
   mismatched = 0;
   awaitingApproval = 0;
 
-  // Lines modal
   showLinesModal = false;
   modalLines: any[] = [];
   modalTotalQty = 0;
   modalTotalAmt = 0;
 
-  // Match modal
   showMatchModal = false;
+  threeWay: any = null;
   currentRow: any = null;
-  threeWay: ThreeWayMatch | null = null;
-  matchIssues: string[] = [];
-  pinMismatchLabel: string | null = null;
   isPosting = false;
 
-  // Period Lock
-  isPeriodLocked = false;
-  currentPeriodName = '';
+  lockedRowMap: { [key: number]: boolean } = {};
 
-    userId: number;
-  
-      functionId = 'pin-list';
-    
-      permission: FunctionPermission;
-        isPermissionLoaded = false;
-        isPageLoading = false;
+  userId = 0;
+  functionId = 'pin-list';
 
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
 
   constructor(
     private api: SupplierInvoiceService,
     private router: Router,
-    private periodService: PeriodCloseService,
-       private permissionService : PermissionService
+    private permissionService: PermissionService,
+    private gstLockService: GstLockService
   ) {
-       this.userId = Number(localStorage.getItem('id') || 0);
-          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
   ngOnInit(): void {
-    const today = new Date().toISOString().substring(0, 10);
-    this.checkPeriodLockForDate(today);
     this.loadPermission();
   }
 
-  ngAfterViewInit(): void { feather.replace(); }
-  ngAfterViewChecked(): void { feather.replace(); }
+  get hasLockedRows(): boolean {
+    return Object.values(this.lockedRowMap || {}).some(x => x === true);
+  }
 
-  private checkPeriodLockForDate(dateStr: string): void {
-    if (!dateStr) return;
+  checkRowsGstLock(rows: any[], dateField: string, idField: string = 'id'): void {
+    this.lockedRowMap = {};
 
-    this.periodService.getStatusForDateWithName(dateStr).subscribe({
-      next: (res: PeriodStatusDto | null) => {
-        this.isPeriodLocked = !!res?.isLocked;
-        this.currentPeriodName = res?.periodName || '';
+    if (!rows || !rows.length) {
+      return;
+    }
+
+    rows.forEach(row => {
+      const id = row[idField];
+      const docDate = row[dateField];
+
+      if (!id || !docDate) {
+        this.lockedRowMap[id] = false;
+        return;
+      }
+
+      this.gstLockService.check(docDate).subscribe({
+        next: (res: any) => {
+          this.lockedRowMap[id] = !!res?.locked;
+        },
+        error: () => {
+          this.lockedRowMap[id] = false;
+        }
+      });
+    });
+  }
+
+  isRowLocked(row: any): boolean {
+    if (!row) {
+      return false;
+    }
+
+    return !!this.lockedRowMap[row.id];
+  }
+
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.loadList();
+        } else {
+          this.rows = [];
+          this.temp = [];
+          this.lockedRowMap = {};
+        }
       },
       error: () => {
-        this.isPeriodLocked = false;
-        this.currentPeriodName = '';
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }
 
-  private showPeriodLockedSwal(action: string): void {
-    Swal.fire(
-      'Period Locked',
-      this.currentPeriodName
-        ? `Period "${this.currentPeriodName}" is locked. You cannot ${action} in this period.`
-        : `Selected accounting period is locked. You cannot ${action}.`,
-      'warning'
-    );
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
   }
 
-loadInvoices(): void {
-  this.api.getAll().subscribe({
-    next: (res: any) => {
-      const data = res?.data || res || [];
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
 
-      const mapped = (data || []).map((x: any) => {
-        // ✅ SAFE bool
-        const rawMatch = (x.pinMatch ?? x.PinMatch);
-        const pinMatch = (rawMatch === true || rawMatch === 1 || rawMatch === '1' || rawMatch === 'true');
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
 
-        return {
-          id: x.id,
-          invoiceNo: x.invoiceNo,
-          invoiceDate: x.invoiceDate,
-          amount: this.toNumber(x.amount),
-          tax: this.toNumber(x.tax),
-          currencyId: x.currencyId,
-          status: Number(x.status ?? 0),
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
 
-          supplierId: x.supplierId,
-          supplierName: x.supplierName,
+  canApprove(): boolean {
+    return this.permissionService.hasApprove(this.permission);
+  }
 
-          // ✅ GRN info
-          grnNos: x.grnNos ?? '',
-          grnCount: Number(x.grnCount ?? 0),
-grnInvoiceNos:x.grnInvoiceNos,
-          // ✅ List status (IMPORTANT)
-          listStatusCode: Number(x.listStatusCode ?? 0),
-          listStatusLabel: x.listStatusLabel ?? '',
-          linkedWithInvoiceNo: x.linkedWithInvoiceNo ?? null,
+  loadList(): void {
+    this.api.getAll().subscribe({
+      next: (res: any) => {
+        const list = res?.data ?? res ?? [];
 
-          // ✅ action flags (from API)
-          canEdit: (x.canEdit === true || x.canEdit === 1 || x.canEdit === 'true'),
-          canApproveToAp: (x.canApproveToAp === true || x.canApproveToAp === 1 || x.canApproveToAp === 'true'),
+        this.rows = (list || []).map((x: any) => ({
+          ...x,
+          id: Number(x.id ?? x.Id ?? 0),
+          invoiceNo: x.invoiceNo ?? x.InvoiceNo ?? '',
+          grnInvoiceNos: x.grnInvoiceNos ?? x.GrnInvoiceNos ?? '',
+          grnNos: x.grnNos ?? x.GrnNos ?? '',
+          invoiceDate: x.invoiceDate ?? x.InvoiceDate ?? null,
+          amount: Number(x.amount ?? x.Amount ?? 0),
+          tax: Number(x.tax ?? x.Tax ?? 0),
+          status: Number(x.status ?? x.Status ?? 0),
+          listStatusCode: Number(x.listStatusCode ?? x.ListStatusCode ?? x.status ?? 0),
+          listStatusLabel: x.listStatusLabel ?? x.ListStatusLabel ?? '',
+          statusLabel: x.statusLabel ?? x.StatusLabel ?? '',
+          linkedWithInvoiceNo: x.linkedWithInvoiceNo ?? x.LinkedWithInvoiceNo ?? '',
+          canEdit: x.canEdit !== false,
+          canApproveToAp: x.canApproveToAp === true || x.canApproveToAp === 1,
+          glPosted: x.glPosted === true || x.GlPosted === true || x.glPosted === 1 || x.GlPosted === 1,
+glPostedDate: x.glPostedDate ?? x.GlPostedDate ?? null,
+glJournalId: x.glJournalId ?? x.GlJournalId ?? null,
+        }));
 
-          // ✅ match ui
-          pinMatch,
-          matchStatus: x.matchStatus ?? (pinMatch ? 'OK' : 'MISMATCH'),
-          mismatchLabel: x.mismatchLabel ?? null,
+        this.temp = [...this.rows];
 
-          // json
-          linesJson: x.linesJson || '[]',
+        this.calculateKpis();
+        this.checkRowsGstLock(this.rows, 'invoiceDate');
+      },
+      error: () => {
+        this.rows = [];
+        this.temp = [];
+        this.lockedRowMap = {};
+        this.calculateKpis();
 
-          // partial
-          isPartialInvoice: (x.isPartialInvoice === true || x.isPartialInvoice === 1 || x.isPartialInvoice === 'true')
-        };
-      });
-
-      this.rows = mapped;
-      this.tempData = [...mapped];
-
-      if (this.table) this.table.offset = 0;
-
-      this.recalcSummary();
-    },
-    error: (e) => console.error(e)
-  });
+        Swal.fire({
+          icon: 'error',
+          title: 'Failed',
+          text: 'Unable to load supplier invoices.'
+        });
+      }
+    });
+  }
+isGlPosted(row: any): boolean {
+  return row?.glPosted === true;
 }
 
-  loadPermission(): void {
-          if (!this.userId || this.userId <= 0) {
-            this.permission = this.permissionService.getEmptyPermission(this.functionId);
-            this.isPermissionLoaded = true;
-      
-            Swal.fire({
-              icon: 'warning',
-              title: 'Access Denied',
-              text: 'User not found. Please login again.',
-              confirmButtonColor: '#0e3a4c'
-            });
-            return;
-          }
-      
-          this.isPageLoading = true;
-      
-          this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
-            next: (res: FunctionPermission) => {
-              this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
-              this.isPermissionLoaded = true;
-              this.isPageLoading = false;
-      
-              if (this.canView()) {
-                this.loadInvoices();
-              } else {
-                this.rows = [];
-                // this.isDisplay = false;
-              }
-            },
-            error: (err) => {
-              console.error('Permission load error:', err);
-              this.permission = this.permissionService.getEmptyPermission(this.functionId);
-              this.isPermissionLoaded = true;
-              this.isPageLoading = false;
-      
-              Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Unable to load permission.',
-                confirmButtonColor: '#d33'
-              });
-            }
-          });
-        }
-      
-        canView(): boolean {
-          return this.permissionService.hasView(this.permission);
-        }
-      
-        canCreate(): boolean {
-          return this.permissionService.hasCreate(this.permission);
-        }
-      
-        canEdit(): boolean {
-          return this.permissionService.hasEdit(this.permission);
-        }
-      
-        canDelete(): boolean {
-          return this.permissionService.hasDelete(this.permission);
-        }
+isActionDisabled(row: any): boolean {
+  if (!row) return true;
 
-        canApprove(): boolean{
-          return this.permissionService.hasApprove(this.permission);
-        }
-         
-private toNumber(v: any): number {
-  const n = Number(v);
-  return isNaN(n) ? 0 : n;
+  if (this.isGlPosted(row)) return true;
+
+  if (this.isRowLocked(row)) return true;
+
+  if (Number(row.status) === 3) return true;
+
+  if (Number(row.listStatusCode) === 3 && row.linkedWithInvoiceNo) return true;
+
+  return false;
 }
 
-private recalcSummary(): void {
-  const all = this.rows || [];
-  this.totalPending = all.filter(r => +r.status !== 3).length;
-  this.awaitingApproval = all.filter(r => +r.status === 2).length;
+canShowDelete(row: any): boolean {
+  if (!row) return false;
 
-  this.autoMatched = all.filter(r => +r.status !== 3 && r.pinMatch === true).length;
-  this.mismatched  = all.filter(r => +r.status !== 3 && r.pinMatch === false).length;
+  if (this.isGlPosted(row)) return false;
+
+  if (this.isRowLocked(row)) return false;
+
+  if (Number(row.status) === 3) return false;
+
+  return true;
 }
+  calculateKpis(): void {
+    const list = this.temp || [];
 
- 
+    this.totalPending = list.filter(x => Number(x.status) !== 3).length;
+    this.autoMatched = list.filter(x =>
+      Number(x.listStatusCode) === 3 ||
+      String(x.listStatusLabel || '').toLowerCase().includes('matched')
+    ).length;
+
+    this.mismatched = list.filter(x =>
+      String(x.listStatusLabel || '').toLowerCase().includes('mismatch')
+    ).length;
+
+    this.awaitingApproval = list.filter(x =>
+      Number(x.status) === 0 ||
+      Number(x.status) === 1
+    ).length;
+  }
 
   filterUpdate(event: any): void {
-    const val = (event?.target?.value || '').toLowerCase().trim();
+    const val = (event?.target?.value ?? this.searchValue ?? '').toString().toLowerCase().trim();
 
-    if (!val) {
-      this.rows = [...this.tempData];
-      if (this.table) this.table.offset = 0;
+    this.rows = this.temp.filter(d =>
+      !val ||
+      (d.invoiceNo || '').toLowerCase().includes(val) ||
+      (d.grnInvoiceNos || '').toLowerCase().includes(val) ||
+      (d.grnNos || '').toLowerCase().includes(val) ||
+      (d.listStatusLabel || '').toLowerCase().includes(val)
+    );
+
+    this.checkRowsGstLock(this.rows, 'invoiceDate');
+  }
+
+ goToCreate(): void {
+  if (this.hasGlPostedRows) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'GL Posted',
+      text: 'Already one Supplier Invoice is GL posted. New invoice creation is disabled.'
+    });
+    return;
+  }
+
+  this.router.navigate(['/purchase/supplier-invoice']);
+}
+
+  editInvoice(id: number): void {
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
       return;
     }
 
-    this.rows = this.tempData.filter(d =>
-      (d.invoiceNo || '').toLowerCase().includes(val) ||
-      String(d.amount || '').toLowerCase().includes(val) ||
-      this.statusText(+d.status).toLowerCase().includes(val) ||
-      (d.invoiceDate ? new Date(d.invoiceDate).toLocaleDateString().toLowerCase() : '').includes(val)
-    );
+    const row =
+      this.rows.find(x => x.id === id) ||
+      this.temp.find(x => x.id === id);
 
-    if (this.table) this.table.offset = 0;
-  }
-
-  statusText(s: number): string {
-    return s === 0 ? 'Draft'
-      : s === 1 ? 'Hold'
-      : s === 2 ? 'Debit Note Created'
-      : s === 3 ? 'Posted to A/P'
-      : 'Unknown';
-  }
-
-  // ================= NAV =================
-
-  goToCreate(): void {
-    if (this.isPeriodLocked) { this.showPeriodLockedSwal('create Supplier Invoice'); return; }
-    this.router.navigate(['/purchase/Create-SupplierInvoice']);
-  }
-
-  editInvoice(id: number): void {
-    if (this.isPeriodLocked) { this.showPeriodLockedSwal('edit Supplier Invoice'); return; }
+    if (row && this.isRowLocked(row)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'GST Locked',
+        text: 'This supplier invoice belongs to locked GST period.'
+      });
+      return;
+    }
+if (row && this.isGlPosted(row)) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'GL Posted',
+    text: 'This supplier invoice is already posted to GL.'
+  });
+  return;
+}
     this.router.navigate(['/purchase/Edit-SupplierInvoice', id]);
   }
 
   deleteInvoice(id: number): void {
-    if (this.isPeriodLocked) { this.showPeriodLockedSwal('delete Supplier Invoice'); return; }
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
+    const row =
+      this.rows.find(x => x.id === id) ||
+      this.temp.find(x => x.id === id);
+
+    if (row && this.isRowLocked(row)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'GST Locked',
+        text: 'This supplier invoice belongs to locked GST period.'
+      });
+      return;
+    }
+if (row && this.isGlPosted(row)) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'GL Posted',
+    text: 'This supplier invoice is already posted to GL.'
+  });
+  return;
+}
     Swal.fire({
-      title: 'Are you sure?',
-      text: 'This will permanently delete the supplier invoice.',
+      title: 'Delete this supplier invoice?',
+      text: 'This action cannot be undone.',
       icon: 'warning',
       showCancelButton: true,
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel',
       confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
-    }).then(r => {
-      if (!r.isConfirmed) return;
+      cancelButtonColor: '#6b7280'
+    }).then(result => {
+      if (!result.isConfirmed) {
+        return;
+      }
 
       this.api.delete(id).subscribe({
         next: () => {
-          this.loadInvoices();
-          Swal.fire('Deleted!', 'Supplier invoice has been deleted.', 'success');
+          Swal.fire('Deleted', 'Supplier invoice deleted successfully.', 'success');
+          this.loadList();
         },
-        error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Delete failed', 'error')
+        error: (err) => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Delete failed',
+            text: err?.error?.message || 'Unable to delete supplier invoice.'
+          });
+        }
       });
     });
   }
 
-  // ================= LINES MODAL =================
+ 
 
   openLinesModal(row: any): void {
-    let lines: any[] = [];
-    try { lines = JSON.parse(row?.linesJson || '[]'); } catch { lines = []; }
-
-    this.modalLines = lines;
-
-    this.modalTotalQty = lines.reduce((s, l) => s + (Number(l?.qty) || 0), 0);
-
-   this.modalTotalAmt = (lines || []).reduce((s: number, l: any) => {
-  // ✅ prefer lineGrandTotal (with tax)
-  const grand = l?.lineGrandTotal != null ? Number(l.lineGrandTotal) : null;
-
-  if (grand != null && !isNaN(grand)) return s + grand;
-
-  // fallback: if grand not present, fallback to lineTotal or qty*unit
-  const qty = Number(l?.qty) || 0;
-  const unit = l?.unitPrice != null ? Number(l.unitPrice) : Number(l?.price || 0);
-  const base = l?.lineTotal != null ? Number(l.lineTotal) : (qty * unit);
-
-  return s + (isNaN(base) ? 0 : base);
-}, 0);
-
     this.showLinesModal = true;
+    this.modalLines = [];
+    this.modalTotalQty = 0;
+    this.modalTotalAmt = 0;
+
+    let lines: any[] = [];
+
+    try {
+      if (Array.isArray(row.lines)) {
+        lines = row.lines;
+      } else if (row.linesJson) {
+        lines = JSON.parse(row.linesJson || '[]');
+      } else if (row.LinesJson) {
+        lines = JSON.parse(row.LinesJson || '[]');
+      }
+    } catch {
+      lines = [];
+    }
+
+    this.modalLines = (lines || []).map((l: any) => ({
+      item: l.item ?? l.itemName ?? l.ItemName ?? '-',
+      location: l.location ?? l.Location ?? '-',
+      qty: Number(l.qty ?? l.Qty ?? 0),
+      unitPrice: Number(l.unitPrice ?? l.price ?? l.UnitPrice ?? l.Price ?? 0),
+      discountPct: Number(l.discountPct ?? l.DiscountPct ?? 0),
+      taxAmt: Number(l.taxAmt ?? l.taxAmount ?? l.TaxAmount ?? 0),
+      lineGrandTotal: Number(
+        l.lineGrandTotal ??
+        l.lineTotal ??
+        l.amount ??
+        ((Number(l.qty ?? 0) * Number(l.unitPrice ?? l.price ?? 0)))
+      )
+    }));
+
+    this.modalTotalQty = this.modalLines.reduce((s, l) => s + Number(l.qty || 0), 0);
+    this.modalTotalAmt = this.modalLines.reduce((s, l) => s + Number(l.lineGrandTotal || 0), 0);
   }
 
-  closeLinesModal(): void { this.showLinesModal = false; }
+  closeLinesModal(): void {
+    this.showLinesModal = false;
+    this.modalLines = [];
+    this.modalTotalQty = 0;
+    this.modalTotalAmt = 0;
+  }
 
-  // ================= 3-WAY MATCH =================
-
-openMatchModal(row: any): void {
-  this.currentRow = row;
-  this.showMatchModal = true;
-  this.threeWay = null;
-  this.pinMismatchLabel = null;
-  this.matchIssues = [];
-
-  this.api.getThreeWayMatch(row.id).subscribe({
-    next: (res: any) => {
-      const x = res?.data ?? res ?? null;
-      if (!x) return;
-
-      // normalize booleans
-      const pinMatch = (x.pinMatch === true || x.pinMatch === 1 || x.pinMatch === '1' || x.pinMatch === 'true');
-      const isLast = (x.isLastPinInGroup === true || x.isLastPinInGroup === 1 || x.isLastPinInGroup === '1' || x.isLastPinInGroup === 'true');
-
-     this.threeWay = {
-  poId: x.poId,
-  poNo: x.poNo,
-  poQty: Number(x.poQty ?? 0),
-  poPrice: Number(x.poPrice ?? 0),
-  poTotal: Number(x.poTotal ?? 0),
-
-  grnCount: Number(x.grnCount ?? 0),
-  grnNos: x.grnNos ?? '',
-  grnReceivedQty: Number(x.grnReceivedQty ?? 0),
-  pendingReceiveQty: Number(x.pendingReceiveQty ?? 0), // ✅
-  grnStatus: x.grnStatus ?? 'OK',
-
-  pinId: x.pinId,
-  pinNo: x.pinNo,
-  pinQty: Number(x.pinQty ?? 0),
-  pinTotal: Number(x.pinTotal ?? 0),
-
-  totalInvoicedQty: Number(x.totalInvoicedQty ?? 0),
-  lastPinId: Number(x.lastPinId ?? 0),
-  isLastPinInGroup: this.toBool(x.isLastPinInGroup),
-
-  pinMatch: this.toBool(x.pinMatch),
-  mismatchLabel: x.mismatchLabel ?? null
-};
-
-      // mismatch label + issues
-      this.pinMismatchLabel = x.mismatchLabel ?? (pinMatch ? null : 'Mismatch');
-
-      const issues: string[] = [];
-      if (Math.abs(this.threeWay.grnReceivedQty - this.threeWay.poQty) > 0.0001) {
-        issues.push(`GRN vs PO Qty mismatch (${this.threeWay.grnReceivedQty} vs ${this.threeWay.poQty})`);
-      }
-      if (Math.abs(this.threeWay.pinQty - this.threeWay.grnReceivedQty) > 0.0001) {
-        issues.push(`PIN vs GRN Qty mismatch (${this.threeWay.pinQty} vs ${this.threeWay.grnReceivedQty})`);
-      }
-
-      // group status info
-      if (!this.threeWay.isLastPinInGroup) {
-        issues.push(`Linked: This is not last invoice. Last PIN ID: ${this.threeWay.lastPinId}`);
-      }
-
-      this.matchIssues = issues;
-
-      // ✅ IMPORTANT: canApproveToAp only for last invoice and all qty invoiced equals GRN
-      const canApprove =
-        this.threeWay.isLastPinInGroup &&
-        Math.abs(this.threeWay.totalInvoicedQty - this.threeWay.grnReceivedQty) <= 0.0001 &&
-        this.threeWay.pinMatch === true;
-
-      // row-level flag used by Approve button disable
-      this.currentRow.canApproveToAp = canApprove;
-    },
-    error: (e) => console.error(e)
+  openMatchModal(row: any): void {
+    debugger
+    if (this.isRowLocked(row)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'GST Locked',
+        text: 'This supplier invoice belongs to locked GST period.'
+      });
+      return;
+    }
+if (this.isGlPosted(row)) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'GL Posted',
+    text: 'This supplier invoice is already posted to GL.'
   });
+  return;
 }
-private toBool(v: any): boolean {
-  if (v === true) return true;
-  if (v === false) return false;
-
-  // number
-  if (v === 1 || v === '1') return true;
-  if (v === 0 || v === '0') return false;
-
-  // string
-  if (typeof v === 'string') {
-    const s = v.trim().toLowerCase();
-    if (s === 'true' || s === 'yes' || s === 'y') return true;
-    if (s === 'false' || s === 'no' || s === 'n') return false;
-  }
-
-  return false;
-}
-  closeMatchModal(): void {
-    this.showMatchModal = false;
-    this.currentRow = null;
+    this.currentRow = row;
     this.threeWay = null;
-    this.matchIssues = [];
-    this.pinMismatchLabel = null;
-    this.isPosting = false;
-  }
+    this.showMatchModal = true;
 
-  goToDebitNote(): void {
-    if (!this.currentRow) return;
-    this.router.navigate(['/purchase/create-debitnote'], { queryParams: { pinId: this.currentRow.id } });
-    this.closeMatchModal();
-  }
-
-  approveAndPostToAp(): void {
-    if (!this.currentRow) return;
-
-    this.isPosting = true;
-    this.api.postToAp(this.currentRow.id).subscribe({
-      next: () => {
-        this.isPosting = false;
-        this.closeMatchModal();
-        this.loadInvoices();
-        Swal.fire('Posted', 'Invoice posted to A/P.', 'success');
+    this.api.getThreeWayMatch(row.id).subscribe({
+      next: (res: any) => {
+        this.threeWay = res?.data ?? res ?? null;
       },
       error: () => {
-        this.isPosting = false;
-        Swal.fire('Error', 'Failed to post to A/P.', 'error');
+        this.threeWay = null;
+        Swal.fire({
+          icon: 'error',
+          title: 'Failed',
+          text: 'Unable to load 3-way match.'
+        });
       }
     });
   }
-isPartialRow(row: any): boolean {
-  const v = row?.isPartialInvoice ?? row?.IsPartialInvoice;
-  return v === true || v === 'true' || v === 1 || v === '1';
+
+  closeMatchModal(): void {
+    this.showMatchModal = false;
+    this.threeWay = null;
+    this.currentRow = null;
+  }
+
+  approveAndPostToAp(): void {
+    if (!this.currentRow) {
+      return;
+    }
+
+    if (this.isRowLocked(this.currentRow)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'GST Locked',
+        text: 'This supplier invoice belongs to locked GST period.'
+      });
+      return;
+    }
+
+    if (!this.canApprove()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have approve permission.'
+      });
+      return;
+    }
+
+    this.isPosting = true;
+
+    this.api.postToAp(this.currentRow.id).subscribe({
+      next: () => {
+        this.isPosting = false;
+        Swal.fire('Posted', 'Supplier invoice posted to A/P successfully.', 'success');
+        this.closeMatchModal();
+        this.loadList();
+      },
+      error: (err) => {
+        this.isPosting = false;
+        Swal.fire({
+          icon: 'error',
+          title: 'Posting failed',
+          text: err?.error?.message || 'Unable to post supplier invoice to A/P.'
+        });
+      }
+    });
+  }
+  get hasGlPostedRows(): boolean {
+  return (this.rows || []).some((x: any) =>
+    x.glPosted === true ||
+    x.GlPosted === true ||
+    x.glPosted === 1 ||
+    x.GlPosted === 1
+  );
 }
-
-isActionDisabled(row: any): boolean {
-  const status = Number(row?.status || 0);
-
-  if (this.isPeriodLocked) return true;     // locked => all disabled
-  if (status === 3) return true;            // posted => all disabled
-
-  // ✅ status=2 normally disabled, BUT partial should still allow edit
-  if (status === 2 && this.isPartialRow(row)) return false;
-
-  // status=2 not partial => disable
-  if (status === 2) return true;
-
-  return false; // others enabled
-}
-
-canShowEdit(row: any): boolean {
-  const status = Number(row?.status || 0);
-
-  if (this.isPeriodLocked) return false;
-  if (status === 3) return false;
-
-  // ✅ partial => always show edit (even if status=2)
-  if (this.isPartialRow(row)) return true;
-
-  // (optional) hold => show edit
-  return status === 1;
-}
-
-canShowDelete(row: any): boolean {
-  const status = Number(row?.status || 0);
-
-  if (this.isPeriodLocked) return false;
-  if (status === 3) return false;
-
-  // ✅ partial => usually DON'T allow delete (safe)
-  if (this.isPartialRow(row)) return false;
-
-  // allow delete only in Hold
-  return status === 1;
-}
-
 }

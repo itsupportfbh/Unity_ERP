@@ -17,7 +17,7 @@ import { DeliveryOrderService } from '../deliveryorder/deliveryorder.service';
 import { ItemsService } from 'app/main/master/items/items.service';
 import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
 import { ArInvoiceService } from 'app/main/financial/AR/Invoice/invoice-service';
-
+import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
 /* ========== Local UI types ========== */
 interface SimpleItem {
   id: number;
@@ -95,6 +95,10 @@ export class SalesInvoicecreateComponent implements OnInit, OnDestroy {
   selectedAdvanceId: number | null = null;
   advanceApplyAmount = 0;
   advanceTotalApplied = 0;
+isGstLocked = false;
+gstLockMessage = '';
+
+isGlPosted = false;
 
   constructor(
     private api: SalesInvoiceService,
@@ -105,15 +109,30 @@ export class SalesInvoicecreateComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private coaService: ChartofaccountService,
-    private arService: ArInvoiceService
+    private arService: ArInvoiceService,
+    private gstLockService: GstLockService
   ) {}
+private showApiError(err: any): void {
+  const msg =
+    err?.error?.message ||
+    err?.error?.Message ||
+    err?.error?.resultMessage ||
+    err?.error?.data?.message ||
+    err?.error?.messageText ||
+    'GST period is locked. Cannot save this document.';
 
+  Swal.fire({
+    icon: 'warning',
+    title: 'GST Locked',
+    text: msg
+  });
+}
   // ============================================================
   // Lifecycle
   // ============================================================
   ngOnInit(): void {
     this.loadAccountHeads();
-
+this.checkGstLock();
     this.route.paramMap
       .pipe(takeUntil(this.destroy$))
       .subscribe(pm => {
@@ -170,12 +189,48 @@ this.doList = doRaw.map((d: any) => ({
           });
       });
   }
+private isInvoiceBlocked(): boolean {
+  if (this.isGstLocked) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'GST Locked',
+      text: this.gstLockMessage || 'GST period is locked. You cannot change this invoice.'
+    });
+    return true;
+  }
 
+  if (this.isGlPosted) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'GL Posted',
+      text: 'This Sales Invoice is already posted to GL. You cannot edit it.'
+    });
+    return true;
+  }
+
+  return false;
+}
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
+checkGstLock(): void {
+  if (!this.invoiceDate) {
+    this.isGstLocked = false;
+    return;
+  }
 
+  this.gstLockService.check(this.invoiceDate).subscribe({
+    next: (res: any) => {
+      this.isGstLocked = !!res?.locked;
+      this.gstLockMessage = res?.message || '';
+    },
+    error: () => {
+      this.isGstLocked = false;
+      this.gstLockMessage = '';
+    }
+  });
+}
   // ============================================================
   // Helpers
   // ============================================================
@@ -373,6 +428,7 @@ this.doList = doRaw.map((d: any) => ({
   }
 
   private loadForEdit(id: number) {
+    
     this.api.get(id).subscribe({
       next: (res: ApiResponse) => {
         if (!this.isOk(res)) {
@@ -382,6 +438,10 @@ this.doList = doRaw.map((d: any) => ({
 
         const data = res.data || {};
         const hdr = data.header || {};
+        this.isGlPosted =
+  !!(hdr.glPosted ?? hdr.GlPosted ?? hdr.isGlPosted ?? hdr.IsGlPosted ?? false);
+
+this.checkGstLock();
         const rows = data.lines || [];
 
         this.invoiceNo = hdr.invoiceNo || null;
@@ -624,28 +684,35 @@ this.doList = doRaw.map((d: any) => ({
     });
   }
 
-  addLine() {
-    const row: UiLine = {
-      sourceLineId: null,
-      itemId: 0,
-      itemName: '',
-      uom: null,
-      qty: null as any,
-      unitPrice: 0,
-      discountPct: 0,
-      gstPct: 0,
-      tax: 'Zero-Rated',      // default 0% GST
-      taxCodeId: null,
-      description: '',
-      lineAmount: 0,
-      taxAmount: 0,
-      budgetLineId: 0,
-    };
-    if (this.isEdit) row.__new = true;
-    this.applyTaxCode(row);
-    this.lines.push(row);
-    this.recalc();
-  }
+addLine() {
+
+  if (this.isInvoiceBlocked()) return;
+
+  const row: UiLine = {
+    sourceLineId: null,
+    itemId: 0,
+    itemName: '',
+    uom: null,
+    qty: null as any,
+    unitPrice: 0,
+    discountPct: 0,
+    gstPct: 0,
+    tax: 'Zero-Rated',
+    taxCodeId: null,
+    description: '',
+    lineAmount: 0,
+    taxAmount: 0,
+    budgetLineId: 0,
+  };
+
+  if (this.isEdit) row.__new = true;
+
+  this.applyTaxCode(row);
+
+  this.lines.push(row);
+
+  this.recalc();
+}
 
   onItemChanged(index: number, itemId: number | null) {
     const line = this.lines[index];
@@ -765,6 +832,7 @@ this.doList = doRaw.map((d: any) => ({
   // Edit: persist lines in place
   // ============================================================
   onCellChanged(line: UiLine) {
+     if (this.isInvoiceBlocked()) return;
     const { gross, tax } = this.calcLineAmounts(line);
     const qty = Number(line.qty || 0);
     const price = Number(line.unitPrice || 0);
@@ -816,7 +884,7 @@ this.doList = doRaw.map((d: any) => ({
     if (!this.isEdit || !this.siId) {
       return;
     }
-
+if (this.isInvoiceBlocked()) return;
     const pending = this.lines.filter(l => l.__new && Number(l.qty || 0) > 0);
     if (!pending.length) {
       Swal.fire({ icon: 'info', title: 'Nothing to add' });
@@ -888,6 +956,7 @@ this.doList = doRaw.map((d: any) => ({
   }
 
   removeLine(ix: number): void {
+     if (this.isInvoiceBlocked()) return;
     const row = this.lines[ix];
 
     if (!this.isEdit || !row?.id) {
@@ -922,93 +991,136 @@ this.doList = doRaw.map((d: any) => ({
   // ============================================================
   // Save
   // ============================================================
-  save(): void {
-    if (!this.invoiceDate) {
-      Swal.fire({ icon: 'warning', title: 'Invoice Date is required' });
+ save(): void {
+
+  if (this.isInvoiceBlocked()) return;
+
+  if (!this.invoiceDate) {
+    Swal.fire({ icon: 'warning', title: 'Invoice Date is required' });
+    return;
+  }
+
+  // CREATE
+  if (!this.isEdit) {
+
+    if (!this.sourceId || this.lines.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing data',
+        text: 'Select a source and add at least one line.'
+      });
       return;
     }
 
-    // CREATE
-    if (!this.isEdit) {
-      if (!this.sourceId || this.lines.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Missing data', text: 'Select a source and add at least one line.' });
-        return;
-      }
+    this.recalc();
 
-      this.recalc();
+    const advanceAdjustments =
+      (this.selectedAdvanceId && this.advanceApplyAmount > 0)
+        ? [{
+            advanceId: this.selectedAdvanceId,
+            amount: this.advanceApplyAmount
+          }]
+        : [];
 
-      const advanceAdjustments =
-        (this.selectedAdvanceId && this.advanceApplyAmount > 0)
-          ? [{ advanceId: this.selectedAdvanceId, amount: this.advanceApplyAmount }]
-          : [];
+    const req: any = {
+      sourceType: this.sourceType,
+      soId: this.sourceType === 1 ? this.sourceId : null,
+      doId: this.sourceType === 2 ? this.sourceId : null,
+      invoiceDate: this.invoiceDate,
+      subtotal: this.subtotal,
+      shippingCost: Number(this.shipping || 0),
+      taxAmount: this.totalTax,
+      total: this.total,
+      remarks: this.remarks || 'Test',
+      advanceAdjustments,
 
-      const req: any = {
-        sourceType: this.sourceType,
-        soId: this.sourceType === 1 ? this.sourceId : null,
-        doId: this.sourceType === 2 ? this.sourceId : null,
-        invoiceDate: this.invoiceDate,
-        subtotal: this.subtotal,
-        shippingCost: Number(this.shipping || 0),
-        taxAmount: this.totalTax,              // 🔹 header total GST
-        total: this.total,
-        remarks: this.remarks || 'Test',
-        advanceAdjustments,
-        lines: this.lines.map(l => {
-          const { gross, tax } = this.calcLineAmounts(l);
+      lines: this.lines.map(l => {
 
-          this.applyTaxCode(l);
+        const { gross, tax } = this.calcLineAmounts(l);
 
-          return {
-            sourceLineId: l.sourceLineId ?? null,
-            itemId: l.itemId ?? 0,
-            itemName: l.itemName ?? null,
-            uom: l.uom ?? null,
-            qty: Number(l.qty || 0),
-            unitPrice: Number(l.unitPrice || 0),
-            discountPct: Number(l.discountPct || 0),
-            gstPct: l.gstPct,
-            tax: l.tax,
-            taxAmount: tax,                  // 🔹 per line
-            taxCodeId: l.taxCodeId ?? null,
-            lineAmount: gross,
-            description:
-              (l.description && l.description.trim().length > 0)
-                ? l.description
-                : (l.itemName ?? null),
-            budgetLineId: l.budgetLineId != null ? Number(l.budgetLineId) : null
-          } as SiCreateLine;
-        }),
-        advanceId: this.selectedAdvanceId || null,
-  advanceApplyAmount:
-    this.advanceApplyAmount && this.advanceApplyAmount > 0
-      ? this.advanceApplyAmount
-      : null
-      };
+        this.applyTaxCode(l);
 
-      this.api.create(req)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (res: ApiResponse) => {
-            if (this.isOk(res)) {
-              Swal.fire({
-                icon: 'success',
-                title: 'Created',
-                text: `Invoice created successfully`
-              });
-              this.router.navigate(['/Sales/Sales-Invoice-list']);
-            } else {
-              Swal.fire({ icon: 'error', title: 'Error', text: (res as any)?.message || 'Failed to create' });
-            }
-          },
-           error: (err) => {
+        return {
+          sourceLineId: l.sourceLineId ?? null,
+          itemId: l.itemId ?? 0,
+          itemName: l.itemName ?? null,
+          uom: l.uom ?? null,
+          qty: Number(l.qty || 0),
+          unitPrice: Number(l.unitPrice || 0),
+          discountPct: Number(l.discountPct || 0),
+          gstPct: l.gstPct,
+          tax: l.tax,
+          taxAmount: tax,
+          taxCodeId: l.taxCodeId ?? null,
+          lineAmount: gross,
+
+          description:
+            (l.description && l.description.trim().length > 0)
+              ? l.description
+              : (l.itemName ?? null),
+
+          budgetLineId:
+            l.budgetLineId != null
+              ? Number(l.budgetLineId)
+              : null
+
+        } as SiCreateLine;
+
+      }),
+
+      advanceId: this.selectedAdvanceId || null,
+
+      advanceApplyAmount:
+        this.advanceApplyAmount && this.advanceApplyAmount > 0
+          ? this.advanceApplyAmount
+          : null
+    };
+
+    this.api.create(req)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+
+        next: (res: ApiResponse) => {
+
+          if (this.isOk(res)) {
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Created',
+              text: `Invoice created successfully`
+            });
+
+            this.router.navigate(['/Sales/Sales-Invoice-list']);
+
+          } else {
+
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: (res as any)?.message || 'Failed to create'
+            });
+
+          }
+        },
+
+        error: (err) => {
+
           let msg = 'Failed to create invoice.';
 
           if (typeof err?.error === 'string') {
-            const match = err.error.match(/System\.Exception:\s*(.*?)(?:\r?\n\s*at|\r?\n|$)/);
+
+            const match = err.error.match(
+              /System\.Exception:\s*(.*?)(?:\r?\n\s*at|\r?\n|$)/
+            );
+
             msg = match?.[1]?.trim() || err.error;
+
           } else if (err?.error?.message) {
+
             msg = err.error.message;
+
           } else if (err?.message) {
+
             msg = err.message;
           }
 
@@ -1018,26 +1130,47 @@ this.doList = doRaw.map((d: any) => ({
             text: msg
           });
         }
-        });
-      return;
-    }
-
-    // EDIT: header update (for now only date)
-    if (!this.siId) return;
-
-    this.api.updateHeader(this.siId, { invoiceDate: this.invoiceDate })
-      .subscribe({
-        next: (r) => {
-          if (this.isOk(r)) {
-            Swal.fire({ icon: 'success', title: 'Header updated' });
-          } else {
-            Swal.fire({ icon: 'error', title: 'Update failed', text: (r as any)?.message || '' });
-          }
-        },
-        error: () =>
-          Swal.fire({ icon: 'error', title: 'Failed to update header' })
       });
+
+    return;
   }
+
+  // EDIT
+
+  if (!this.siId) return;
+
+  this.api.updateHeader(this.siId, {
+    invoiceDate: this.invoiceDate
+  })
+  .subscribe({
+
+    next: (r) => {
+
+      if (this.isOk(r)) {
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Header updated'
+        });
+
+      } else {
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Update failed',
+          text: (r as any)?.message || ''
+        });
+
+      }
+    },
+
+    error: () =>
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed to update header'
+      })
+  });
+}
 
   netPortion(line: UiLine): number {
     const { net } = this.calcLineAmounts(line);

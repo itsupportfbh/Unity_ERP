@@ -9,6 +9,7 @@ import { CreditNoteService } from '../return-credit.service';
 import { StockIssueService } from 'app/main/master/stock-issue/stock-issue.service';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
 
 export interface PeriodStatusDto {
   isLocked: boolean;
@@ -31,9 +32,9 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
   rows: any[] = [];
   tempData: any[] = [];
 
-  public ColumnMode = ColumnMode;
-  public selectedOption = 10;
-  public searchValue = '';
+  ColumnMode = ColumnMode;
+  selectedOption = 10;
+  searchValue = '';
 
   showLinesModal = false;
   modalLines: any[] = [];
@@ -49,7 +50,9 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
   isPeriodLocked = false;
   currentPeriodName = '';
 
-  userId: number = 0;
+  lockedRowMap: { [key: number]: boolean } = {};
+
+  userId = 0;
   functionId = 'cn-list';
 
   permission: FunctionPermission;
@@ -63,7 +66,8 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
     private stockissueService: StockIssueService,
     private route: ActivatedRoute,
     private periodService: PeriodCloseService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private gstLockService: GstLockService
   ) {
     this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -79,6 +83,45 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
 
   ngAfterViewChecked(): void {
     feather.replace();
+  }
+
+  get hasLockedRows(): boolean {
+    return Object.values(this.lockedRowMap || {}).some(x => x === true);
+  }
+
+  checkRowsGstLock(rows: any[], dateField: string, idField: string = 'id'): void {
+    this.lockedRowMap = {};
+
+    if (!rows || !rows.length) {
+      return;
+    }
+
+    rows.forEach(row => {
+      const id = Number(row[idField] ?? 0);
+      const docDate = row[dateField];
+
+      if (!id || !docDate) {
+        this.lockedRowMap[id] = false;
+        return;
+      }
+
+      this.gstLockService.check(docDate).subscribe({
+        next: (res: any) => {
+          this.lockedRowMap[id] = !!res?.locked;
+        },
+        error: () => {
+          this.lockedRowMap[id] = false;
+        }
+      });
+    });
+  }
+
+  isRowLocked(row: any): boolean {
+    if (!row) {
+      return false;
+    }
+
+    return !!this.lockedRowMap[Number(row.id)];
   }
 
   loadPermission(): void {
@@ -119,6 +162,7 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
         } else {
           this.rows = [];
           this.tempData = [];
+          this.lockedRowMap = {};
         }
       },
       error: () => {
@@ -164,7 +208,9 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
   }
 
   private checkPeriodLockForDate(dateStr: string): void {
-    if (!dateStr) return;
+    if (!dateStr) {
+      return;
+    }
 
     this.periodService.getStatusForDateWithName(dateStr).subscribe({
       next: (res: PeriodStatusDto | null) => {
@@ -188,31 +234,49 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
     );
   }
 
+  private showGstLockedSwal(): void {
+    Swal.fire({
+      icon: 'warning',
+      title: 'GST Locked',
+      text: 'This credit note belongs to locked GST period.'
+    });
+  }
+
   loadList(): void {
     this.api.getCreditNote().subscribe({
       next: (res: any) => {
-        const list = res?.data ?? [];
+        const list = res?.data ?? res ?? [];
 
-        this.rows = list.map((r: any) => ({
-          id: +r.id,
-          creditNoteNo: r.creditNoteNo,
+        this.rows = (list || []).map((r: any) => ({
+          id: Number(r.id ?? r.Id ?? 0),
+          creditNoteNo: r.creditNoteNo ?? r.CreditNoteNo ?? '',
           doNumber: r.doNumber ?? r.DoNumber ?? '',
           siNumber: r.siNumber ?? r.SiNumber ?? '',
-          customerName: r.customerName ?? '',
-          creditNoteDate: r.creditNoteDate,
-          status: r.status ?? 1,
-          subtotal: +r.subtotal || 0,
-          lineItems: r.lines ?? []
+          customerName: r.customerName ?? r.CustomerName ?? '',
+          creditNoteDate: r.creditNoteDate ?? r.CreditNoteDate ?? null,
+          status: Number(r.status ?? r.Status ?? 1),
+          subtotal: Number(r.subtotal ?? r.Subtotal ?? 0),
+          lineItems: r.lines ?? r.Lines ?? r.lineItems ?? r.LineItems ?? [],
+          glPosted: r.glPosted === true || r.GlPosted === true || r.glPosted === 1 || r.GlPosted === 1
         }));
 
         this.tempData = [...this.rows];
+        this.checkRowsGstLock(this.rows, 'creditNoteDate');
 
         if (this.initialCnParam) {
           this.searchValue = this.initialCnParam;
           this.filterUpdate(null);
         }
+
+        if (this.table) {
+          this.table.offset = 0;
+        }
       },
       error: () => {
+        this.rows = [];
+        this.tempData = [];
+        this.lockedRowMap = {};
+
         Swal.fire({
           icon: 'error',
           title: 'Failed',
@@ -228,15 +292,15 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
     this.rows = this.tempData.filter(d => {
       const cnDate = this.datePipe.transform(d.creditNoteDate, 'dd-MM-yyyy')?.toLowerCase() || '';
 
-      return (
-        !val ||
+      return !val ||
         (d.creditNoteNo || '').toLowerCase().includes(val) ||
         (d.doNumber || '').toLowerCase().includes(val) ||
         (d.siNumber || '').toLowerCase().includes(val) ||
         (d.customerName || '').toLowerCase().includes(val) ||
-        cnDate.includes(val)
-      );
+        cnDate.includes(val);
     });
+
+    this.checkRowsGstLock(this.rows, 'creditNoteDate');
 
     if (this.table) {
       this.table.offset = 0;
@@ -245,8 +309,15 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
 
   statusText(v: any): string {
     const code = Number(v);
-    if (code === 2) return 'Approved';
-    if (code === 3) return 'Posted';
+
+    if (code === 2) {
+      return 'Approved';
+    }
+
+    if (code === 3) {
+      return 'Posted';
+    }
+
     return 'Draft';
   }
 
@@ -264,6 +335,22 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
     return { background: '#fff7e6', color: '#b45309' };
   }
 
+isActionDisabled(row: any): boolean {
+  if (!row) {
+    return true;
+  }
+
+  if (this.isPeriodLocked || this.isRowLocked(row) || this.isGlPosted(row)) {
+    return true;
+  }
+
+  if (+row.status === 2 || +row.status === 3) {
+    return true;
+  }
+
+  return false;
+}
+
   openLinesModal(row: any): void {
     let lines: any[] = [];
 
@@ -276,13 +363,13 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
     }
 
     this.modalLines = (lines || []).map(l => ({
-      itemName: l.itemName,
-      uom: l.uom,
-      deliveredQty: l.deliveredQty,
-      returnedQty: l.returnedQty,
-      reasonName: l.reasonName,
-      reasonId: l.reasonId,
-      restockDispositionId: l.restockDispositionId
+      itemName: l.itemName ?? l.ItemName ?? '-',
+      uom: l.uom ?? l.Uom ?? l.UOM ?? '-',
+      deliveredQty: Number(l.deliveredQty ?? l.DeliveredQty ?? 0),
+      returnedQty: Number(l.returnedQty ?? l.ReturnedQty ?? 0),
+      reasonName: l.reasonName ?? l.ReasonName ?? '',
+      reasonId: l.reasonId ?? l.ReasonId ?? null,
+      restockDispositionId: l.restockDispositionId ?? l.RestockDispositionId ?? null
     }));
 
     this.showLinesModal = true;
@@ -290,10 +377,13 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
 
   closeLinesModal(): void {
     this.showLinesModal = false;
+    this.modalLines = [];
   }
 
   reasonName(id?: number | null): string | null {
-    if (!id) return null;
+    if (!id) {
+      return null;
+    }
 
     const list = this.reasonList?.data ?? [];
     const found = list.find((x: any) => +x.id === +id);
@@ -306,24 +396,33 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
     return this.dispositionMap.get(key) ?? '-';
   }
 
-  openCreate(): void {
-    if (!this.canCreate()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Access Denied',
-        text: 'You do not have create permission.',
-        confirmButtonColor: '#0e3a4c'
-      });
-      return;
-    }
-
-    if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('create Credit Notes');
-      return;
-    }
-
-    this.router.navigate(['/Sales/Return-credit-create']);
+openCreate(): void {
+  if (!this.canCreate()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'You do not have create permission.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
   }
+
+  if (this.hasGlPostedRows) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'GL Posted',
+      text: 'GL posted Credit Note exists. Add button disabled.'
+    });
+    return;
+  }
+
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Credit Notes');
+    return;
+  }
+
+  this.router.navigate(['/Sales/Return-credit-create']);
+}
 
   edit(row: any): void {
     if (!this.canEdit()) {
@@ -351,10 +450,15 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
       return;
     }
 
+    if (this.isRowLocked(row)) {
+      this.showGstLockedSwal();
+      return;
+    }
+
     this.router.navigate(['/Sales/Return-credit-edit', row.id]);
   }
 
-  delete(id: number): void {
+  delete(row: any): void {
     if (!this.canDelete()) {
       Swal.fire({
         icon: 'warning',
@@ -365,8 +469,23 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
       return;
     }
 
+    if (+row?.status === 2 || +row?.status === 3) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cannot Delete',
+        text: 'Approved/Posted credit note cannot be deleted.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     if (this.isPeriodLocked) {
       this.showPeriodLockedSwal('delete Credit Notes');
+      return;
+    }
+
+    if (this.isRowLocked(row)) {
+      this.showGstLockedSwal();
       return;
     }
 
@@ -379,9 +498,11 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'Yes, delete it!'
     }).then(result => {
-      if (!result.isConfirmed) return;
+      if (!result.isConfirmed) {
+        return;
+      }
 
-      this.api.deleteCreditNote(id).subscribe({
+      this.api.deleteCreditNote(row.id).subscribe({
         next: () => {
           this.loadList();
           Swal.fire('Deleted!', 'Credit Note has been deleted.', 'success');
@@ -395,4 +516,19 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
       });
     });
   }
+  isGlPosted(row: any): boolean {
+  return row?.glPosted === true;
+}
+
+// isActionDisabled(row: any): boolean {
+//   return this.isRowLocked(row) || this.isGlPosted(row);
+// }
+get hasGlPostedRows(): boolean {
+  return (this.rows || []).some((x: any) =>
+    x.glPosted === true ||
+    x.GlPosted === true ||
+    x.glPosted === 1 ||
+    x.GlPosted === 1
+  );
+}
 }

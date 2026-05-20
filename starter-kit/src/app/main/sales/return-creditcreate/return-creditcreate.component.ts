@@ -10,6 +10,7 @@ import { DeliveryOrderService } from '../deliveryorder/deliveryorder.service';
 import { TaxCodeService } from 'app/main/master/taxcode/taxcode.service';
 import { StockIssueService } from 'app/main/master/stock-issue/stock-issue.service';
 import { CustomerMasterService } from 'app/main/businessPartners/customer-master/customer-master.service';
+import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
 
 type DoItem = {
   doLineId: number;
@@ -48,7 +49,6 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     { id: 2, name: 'SCRAP' },
   ];
 
-  // header
   doId: number | null = null;
   doNumber: string | null = null;
   siId: number | null = null;
@@ -65,6 +65,10 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
   doPool: DoItem[] = [];
   availableItems: DoItem[] = [];
 
+  isGstLocked = false;
+  isGlPosted = false;
+  gstLockMessage = '';
+
   trackByLine = (_: number, r: CnLine) => r?.id ?? r?.doLineId ?? r?.itemId ?? _;
 
   constructor(
@@ -75,10 +79,13 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     private taxCodeService: TaxCodeService,
     private stockIssueService: StockIssueService,
     private customerService: CustomerMasterService,
+    private gstLockService: GstLockService,
     public returnCreditService: CreditNoteService
   ) { }
 
   ngOnInit(): void {
+    this.checkGstLock();
+
     this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(pm => {
       const idStr = pm.get('id');
       this.isEdit = !!idStr;
@@ -92,21 +99,21 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
       })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-        next: (bag: any) => {
-  this.doList = bag?.doList?.data ?? [];
+          next: (bag: any) => {
+            this.doList = bag?.doList?.data ?? [];
 
-  this.taxCodes = (bag?.taxCodes?.data ?? []).map((t: any) => ({
-    id: +t.id,
-    taxName: t.taxName ?? t.name ?? `#${t.id}`
-  }));
+            this.taxCodes = (bag?.taxCodes?.data ?? []).map((t: any) => ({
+              id: +t.id,
+              taxName: t.taxName ?? t.name ?? `#${t.id}`
+            }));
 
-  this.reasons = bag?.reasons?.data ?? [];
-  this.customers = bag?.customers?.data ?? [];
+            this.reasons = bag?.reasons?.data ?? [];
+            this.customers = bag?.customers?.data ?? [];
 
-  if (this.isEdit && this.cnId) {
-    this.loadForEdit(this.cnId);
-  }
-},
+            if (this.isEdit && this.cnId) {
+              this.loadForEdit(this.cnId);
+            }
+          },
           error: _ => Swal.fire({ icon: 'error', title: 'Load failed', text: 'Init data' })
         });
     });
@@ -117,12 +124,64 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // =============  EDIT LOAD  =============
+  checkGstLock(): void {
+    if (!this.creditNoteDate) {
+      this.isGstLocked = false;
+      this.gstLockMessage = '';
+      return;
+    }
+
+    this.gstLockService.check(this.creditNoteDate).subscribe({
+      next: (res: any) => {
+        this.isGstLocked = !!res?.locked;
+        this.gstLockMessage = res?.message || '';
+      },
+      error: () => {
+        this.isGstLocked = false;
+        this.gstLockMessage = '';
+      }
+    });
+  }
+
+  private isCreditNoteBlocked(showAlert = true): boolean {
+    if (this.isGstLocked) {
+      if (showAlert) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'GST Locked',
+          text: this.gstLockMessage || 'GST period is locked. Credit note cannot be changed.'
+        });
+      }
+      return true;
+    }
+
+    if (this.isGlPosted) {
+      if (showAlert) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'GL Posted',
+          text: 'This Credit Note is already GL posted. You cannot edit it.'
+        });
+      }
+      return true;
+    }
+
+    return false;
+  }
+
   private loadForEdit(id: number): void {
     this.api.getCreditNoteById(id).subscribe({
       next: (res: any) => {
         const data = res?.data;
         if (!data) { return; }
+
+        this.isGlPosted = !!(
+          data.glPosted ??
+          data.GlPosted ??
+          data.isGlPosted ??
+          data.IsGlPosted ??
+          false
+        );
 
         this.cnNo = data.creditNoteNo;
         this.doId = data.doId;
@@ -133,6 +192,8 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
         this.customerName = data.customerName;
         this.creditNoteDate = this.toDateInput(data.creditNoteDate);
         this.status = data.status ?? 1;
+
+        this.checkGstLock();
 
         this.lines = (data.lines ?? []).map((l: any) => ({
           id: l.id,
@@ -162,7 +223,6 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ======= date helpers =======
   private toDateInput(v: any): string {
     if (!v) return this.today();
     const d = typeof v === 'string' ? this.parseLocalYmd(v) : new Date(v);
@@ -186,8 +246,9 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     return this.formatYmdLocal(new Date());
   }
 
-  // =============  DO CHANGE  =============
   onDoChanged(): void {
+    if (this.isCreditNoteBlocked()) return;
+
     const row = this.doList.find(d => +d.id === +this.doId!);
     if (!row) {
       this.clearHeaderFromDo();
@@ -200,7 +261,6 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     this.customerId = row.customerId;
     this.customerName = this.customers?.find(c => c.customerId == this.customerId)?.customerName ?? '';
 
-    // load DO lines for this DO
     this.api.getLines(this.doId!, this.isEdit ? this.cnId : null).subscribe({
       next: (res: any) => {
         const raw = Array.isArray(res) ? res : [];
@@ -237,7 +297,6 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     this.subtotal = 0;
   }
 
-  // =============  AVAILABLE ITEMS FILTER  =============
   private refreshAvailable(): void {
     const used = new Set(
       this.lines
@@ -250,8 +309,9 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     );
   }
 
-  // =============  ROW OPS  =============
   addLine(): void {
+    if (this.isCreditNoteBlocked()) return;
+
     this.lines.push({
       doLineId: null,
       siId: this.siId ?? 0,
@@ -272,15 +332,17 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
       supplierId: null,
       binId: null
     });
+
     this.refreshAvailable();
   }
 
   onItemPicked(ix: number, pickedItemId: number | null): void {
+    if (this.isCreditNoteBlocked()) return;
+
     const row = this.lines[ix];
     if (!row) { return; }
 
     if (!pickedItemId) {
-      // clear line if needed
       return;
     }
 
@@ -308,13 +370,16 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
   }
 
   removeLine(ix: number): void {
+    if (this.isCreditNoteBlocked()) return;
+
     this.lines.splice(ix, 1);
     this.refreshAvailable();
     this.recalcAll();
   }
 
-  // =============  CALC (WITH GST)  =============
   recalc(i: number): void {
+    if (this.isCreditNoteBlocked(false)) return;
+
     const r = this.lines[i];
     if (!r) { return; }
 
@@ -327,7 +392,6 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     const taxFlag = (r.tax || '').toUpperCase();
     const hasTax = !!r.taxCodeId && gstPct > 0;
 
-    // base (discounted) amount
     const rawBase = r.returnedQty * unit * (1 - discPct / 100);
     const baseAmount = +rawBase.toFixed(2);
 
@@ -339,12 +403,10 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
       const gstAmount = +(baseAmount * (gstPct / 100)).toFixed(2);
       lineNet = baseAmount + gstAmount;
     } else {
-      // INCLUSIVE – base already includes GST
       lineNet = baseAmount;
     }
 
     r.lineNet = +lineNet.toFixed(2);
-
     this.subtotal = +this.lines.reduce((s, x) => s + (+x.lineNet || 0), 0).toFixed(2);
   }
 
@@ -352,18 +414,21 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     this.lines.forEach((_, i) => this.recalc(i));
   }
 
-  // =============  SAVE  =============
   save(status: number): void {
+    if (this.isCreditNoteBlocked()) return;
+
     this.status = status;
 
     if (!this.creditNoteDate) {
       Swal.fire({ icon: 'warning', title: 'Credit note date required' });
       return;
     }
+
     if (!this.doId) {
       Swal.fire({ icon: 'warning', title: 'Select a Delivery Order' });
       return;
     }
+
     if (this.lines.length === 0) {
       Swal.fire({ icon: 'warning', title: 'Add at least one line' });
       return;
@@ -413,6 +478,7 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
           Swal.fire({ icon: 'error', title: 'Save failed', text: res?.message || '' });
           return;
         }
+
         Swal.fire({ icon: 'success', title: this.isEdit ? 'Updated' : 'Created' });
         this.router.navigate(['/Sales/Return-credit-list']);
       },

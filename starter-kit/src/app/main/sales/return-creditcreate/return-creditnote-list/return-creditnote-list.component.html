@@ -3,35 +3,44 @@
     <div class="content-body">
       <section class="users-list-wrapper">
         <div class="card">
+
           <div class="row">
             <div class="col-md-6 col-12">
               <h4
                 class="card-text"
                 style="margin-left:.85rem;margin-top:.75rem;font-size:1.25rem;font-weight:600;color:#2E5F73;">
-
                 Credit Notes List
               </h4>
 
               <div class="d-flex justify-content-between align-items-center m-1">
                 <label class="d-flex align-items-center">
                   Show
-
                   <select class="form-control mx-25" [(ngModel)]="selectedOption">
                     <option [ngValue]="10">10</option>
                     <option [ngValue]="25">25</option>
                     <option [ngValue]="50">50</option>
                     <option [ngValue]="100">100</option>
                   </select>
-
                   entries
                 </label>
               </div>
 
               <div
+                *ngIf="hasLockedRows"
+                class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                style="font-size:0.8rem;">
+                Some credit notes belong to locked GST period. Edit/Delete disabled.
+              </div>
+<div
+  *ngIf="hasGlPostedRows"
+  class="alert alert-danger py-1 px-2 mx-2 mb-2"
+  style="font-size:0.8rem;">
+  GL posted Credit Note exists. Add/Edit/Delete disabled.
+</div>  
+              <div
                 *ngIf="isPeriodLocked"
                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
                 style="font-size:0.8rem;">
-
                 Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
               </div>
             </div>
@@ -46,23 +55,25 @@
                   placeholder="Search"
                   (keyup)="filterUpdate($event)"
                   (search)="filterUpdate($event)"
-                  style="flex:0 0 320px; max-width:40vw;" />
+                  style="flex:0 0 320px;max-width:40vw;" />
 
-                <button
-                  *ngIf="canCreate()"
-                  (click)="openCreate()"
-                  class="btn m-1 d-inline-flex align-items-center"
-                  style="background-color:#2E5F73;color:white;gap:6px;"
-                  [disabled]="isPeriodLocked"
-                  [attr.title]="isPeriodLocked
-                    ? (currentPeriodName
-                        ? 'Period ' + currentPeriodName + ' is locked'
-                        : 'Accounting period is locked')
-                    : 'Create Credit Note'">
-
-                  <i data-feather="plus-circle" class="w-4 h-4"></i>
-                  <span>Add</span>
-                </button>
+           <button
+  *ngIf="canCreate()"
+  type="button"
+  (click)="openCreate()"
+  class="btn m-1 d-inline-flex align-items-center"
+  style="background-color:#2E5F73;color:white;gap:6px;"
+  [disabled]="isPeriodLocked || hasGlPostedRows"
+  [attr.title]="hasGlPostedRows
+    ? 'GL posted Credit Note exists. Add disabled.'
+    : (isPeriodLocked
+      ? (currentPeriodName
+          ? 'Period ' + currentPeriodName + ' is locked'
+          : 'Accounting period is locked')
+      : 'Create Credit Note')">
+  <i data-feather="plus-circle" class="w-4 h-4"></i>
+  <span>Add</span>
+</button>
               </div>
             </div>
           </div>
@@ -84,21 +95,33 @@
               [sortable]="false"
               [draggable]="false"
               [canAutoResize]="false">
-
               <ng-template ngx-datatable-cell-template let-row="row">
                 <span
                   (click)="openLinesModal(row)"
                   title="View Details"
                   style="cursor:pointer;font-size:18px;color:#2E5F73;">
-
                   <i class="fas fa-eye"></i>
                 </span>
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="CN No" prop="creditNoteNo" [width]="140"></ngx-datatable-column>
-            <ngx-datatable-column name="DO No" prop="doNumber" [width]="120"></ngx-datatable-column>
-            <ngx-datatable-column name="SI No" prop="siNumber" [width]="120"></ngx-datatable-column>
+            <ngx-datatable-column name="CN No" prop="creditNoteNo" [width]="140">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.creditNoteNo || '-' }}
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="DO No" prop="doNumber" [width]="120">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.doNumber || '-' }}
+              </ng-template>
+            </ngx-datatable-column>
+
+            <ngx-datatable-column name="SI No" prop="siNumber" [width]="120">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.siNumber || '-' }}
+              </ng-template>
+            </ngx-datatable-column>
 
             <ngx-datatable-column name="Customer" prop="customerName" [width]="160">
               <ng-template let-row="row" ngx-datatable-cell-template>
@@ -114,6 +137,25 @@
               </ng-template>
             </ngx-datatable-column>
 
+            <!-- <ngx-datatable-column name="GST Lock" [width]="110">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <span
+                  class="badge badge-pill"
+                  [ngClass]="isRowLocked(row) ? 'badge-warning' : 'badge-light-success'">
+                  {{ isRowLocked(row) ? 'Locked' : 'Open' }}
+                </span>
+              </ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="GL Status" [width]="120">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <span
+      class="badge badge-pill"
+      [ngClass]="row.glPosted ? 'badge-success' : 'badge-warning'">
+      {{ row.glPosted ? 'GL Posted' : 'Pending' }}
+    </span>
+  </ng-template>
+</ngx-datatable-column> -->
+
             <ngx-datatable-column name="Status" [width]="120">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 <span class="badge" [ngStyle]="statusStyle(row.status)">
@@ -125,48 +167,55 @@
             <ngx-datatable-column
               *ngIf="canEdit() || canDelete()"
               name="Action"
-              [width]="80"
+              [width]="90"
               [sortable]="false">
-
               <ng-template let-row="row" ngx-datatable-cell-template>
-                <button
-                  *ngIf="canEdit()"
-                  type="button"
-                  class="btn btn-sm"
-                  [disabled]="row.status === 2 || row.status === 3 || isPeriodLocked"
-                  (click)="edit(row)"
-                  title="Edit"
-                  [ngStyle]="{
-                    cursor: row.status === 2 || row.status === 3 || isPeriodLocked ? 'not-allowed' : 'pointer',
-                    color: row.status === 2 || row.status === 3 || isPeriodLocked ? '#9ca3af' : '#2563eb',
-                    background: 'transparent',
-                    border: 'none',
-                    padding: 0,
-                    marginRight: '8px'
-                  }">
 
-                  <i class="fas fa-pen text-primary"></i>
-                </button>
+               <button
+  *ngIf="canEdit()"
+  type="button"
+  class="btn btn-sm"
+  [disabled]="isActionDisabled(row)"
+  (click)="edit(row)"
+  [attr.title]="isGlPosted(row) ? 'Already Posted to GL' : (isRowLocked(row) ? 'GST Period Locked' : 'Edit')"
+  [ngStyle]="{
+    cursor: isActionDisabled(row) ? 'not-allowed' : 'pointer',
+    color: isActionDisabled(row) ? '#9ca3af' : '#2563eb',
+    background: 'transparent',
+    border: 'none',
+    padding: 0,
+    marginRight: '8px'
+  }">
+  <i
+    class="fas fa-pen"
+    [ngClass]="isActionDisabled(row) ? 'text-gray-300' : 'text-primary'">
+  </i>
+</button>
 
                 <button
                   *ngIf="canDelete()"
                   type="button"
                   class="btn btn-sm"
-                  [disabled]="row.status === 2 || row.status === 3 || isPeriodLocked"
-                  (click)="delete(row.id)"
+                  [disabled]="isActionDisabled(row)"
+                  (click)="delete(row)"
+                  [attr.title]="isGlPosted(row) ? 'Already Posted to GL' : (isRowLocked(row) ? 'GST Period Locked' : 'Delete')"
                   title="Delete"
                   [ngStyle]="{
-                    cursor: row.status === 2 || row.status === 3 || isPeriodLocked ? 'not-allowed' : 'pointer',
-                    color: row.status === 2 || row.status === 3 || isPeriodLocked ? '#d1d5db' : '#dc2626',
+                    cursor: isActionDisabled(row) ? 'not-allowed' : 'pointer',
+                    color: isActionDisabled(row) ? '#d1d5db' : '#dc2626',
                     background: 'transparent',
                     border: 'none',
                     padding: 0
                   }">
-
-                  <i class="fas fa-trash text-danger"></i>
+                  <i
+                    class="fas fa-trash"
+                    [ngClass]="isActionDisabled(row) ? 'text-gray-300' : 'text-danger'">
+                  </i>
                 </button>
+
               </ng-template>
             </ngx-datatable-column>
+
           </ngx-datatable>
         </div>
       </section>
@@ -189,10 +238,10 @@
       </h3>
 
       <button
+        type="button"
         (click)="closeLinesModal()"
         aria-label="Close"
         style="border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#6b7280;">
-
         ×
       </button>
     </div>
@@ -237,9 +286,9 @@
 
     <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #eef2f7;">
       <button
+        type="button"
         (click)="closeLinesModal()"
         style="background:#2E5F73;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;">
-
         Close
       </button>
     </div>

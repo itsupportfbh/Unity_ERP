@@ -1,175 +1,173 @@
 <div *ngIf="isPermissionLoaded; else loadingTemplate">
   <div class="content-wrapper p-0" *ngIf="canView(); else noAccessTemplate">
-<div class="content-wrapper p-0">
-  <div class="content-body">
-    <section class="users-list-wrapper">
-      <div class="card">
+    <div class="content-body">
+      <section class="users-list-wrapper">
+        <div class="card">
 
-        <div class="row">
-          <!-- Title + page size -->
-          <div class="col-md-6 col-12">
-            <h4 class="card-text page-title">
-              Sales Invoice List
-            </h4>
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center gap-1">
-                Show
-                <select class="form-control mx-25" (change)="onLimitChange($event)">
-                  <option [selected]="selectedOption===10" value="10">10</option>
-                  <option [selected]="selectedOption===25" value="25">25</option>
-                  <option [selected]="selectedOption===50" value="50">50</option>
-                  <option [selected]="selectedOption===100" value="100">100</option>
-                </select>
-                entries
-              </label>
+          <div class="row">
+            <div class="col-md-6 col-12">
+              <h4 class="card-text page-title">
+                Sales Invoice List
+              </h4>
+
+              <div class="d-flex justify-content-between align-items-center m-1">
+                <label class="d-flex align-items-center gap-1">
+                  Show
+                  <select class="form-control mx-25" (change)="onLimitChange($event)">
+                    <option [selected]="selectedOption===10" value="10">10</option>
+                    <option [selected]="selectedOption===25" value="25">25</option>
+                    <option [selected]="selectedOption===50" value="50">50</option>
+                    <option [selected]="selectedOption===100" value="100">100</option>
+                  </select>
+                  entries
+                </label>
+              </div>
+
+            <div *ngIf="hasGlPostedRows"
+     class="alert alert-danger py-1 px-2 mx-2 mb-2"
+     style="font-size:0.8rem;">
+  Some invoices are already GL posted. Add/Edit/Delete disabled.
+</div>
             </div>
-             <div *ngIf="isPeriodLocked"
-                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
-                 style="font-size: 0.8rem;">
-              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
-            </div>
-          </div>
 
-          <!-- Search + buttons -->
-          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-              <label class="d-flex align-items-center ml-1 ml-md-0">
-                Search:
-                <input
-                  [(ngModel)]="searchValue"
-                  name="searchValue"
-                  type="search"
-                  class="form-control ml-25"
-                  (keyup)="filterUpdate($event)"
-                  (search)="filterUpdate($event)"
-                  placeholder="Invoice no / source ref"
-                />
-              </label>
+            <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
+              <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
+                <label class="d-flex align-items-center ml-1 ml-md-0">
+                  Search:
+                  <input
+                    [(ngModel)]="searchValue"
+                    name="searchValue"
+                    type="search"
+                    class="form-control ml-25"
+                    (keyup)="filterUpdate($event)"
+                    (search)="filterUpdate($event)"
+                    placeholder="Invoice no / source ref" />
+                </label>
 
-              <!-- <button
-                (click)="goToCreate()"
-                class="btn m-1 d-inline-flex align-items-center"
-                style="background-color:#2E5F73;color:white;gap:6px;">
-                <i class="fas fa-file-invoice"></i>
-                <span>Add</span>
-              </button> -->
-              <button
+    <button
   *ngIf="canCreate()"
   (click)="goToCreate()"
+  [disabled]="hasGlPostedRows"
   class="btn m-1 d-inline-flex align-items-center"
   style="background-color:#2E5F73;color:white;gap:6px;"
-  [disabled]="isPeriodLocked"
-  [attr.title]="isPeriodLocked
-    ? (currentPeriodName
-        ? 'Period ' + currentPeriodName + ' is locked'
-        : 'Accounting period is locked')
-    : 'Create Sales Invoice'">
+  [title]="hasGlPostedRows ? 'GL Posted invoice exists. Add disabled.' : 'Create Sales Invoice'">
   <i data-feather="plus-circle" class="w-4 h-4"></i>
   <span>Add</span>
 </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Main datatable -->
-        <ngx-datatable
-          class="bootstrap core-bootstrap"
-          [rows]="rows"
-          [rowHeight]="50"
-          [headerHeight]="50"
-          [footerHeight]="50"
-          [limit]="selectedOption"
-          [columnMode]="'force'"
-          [scrollbarH]="false"
-          [reorderable]="true">
+          <ngx-datatable
+            class="bootstrap core-bootstrap"
+            [rows]="rows"
+            [rowHeight]="50"
+            [headerHeight]="50"
+            [footerHeight]="50"
+            [limit]="selectedOption"
+            [columnMode]="'force'"
+            [scrollbarH]="false"
+            [reorderable]="true">
 
-          <!-- View lines -->
-          <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false" [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span (click)="openLinesModal(row)" title="View Details" class="eye">
-                <i class="fas fa-eye"></i>
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
+            <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false" [canAutoResize]="false">
+              <ng-template ngx-datatable-cell-template let-row="row">
+                <span (click)="openLinesModal(row)" title="View Details" class="eye">
+                  <i class="fas fa-eye"></i>
+                </span>
+              </ng-template>
+            </ngx-datatable-column>
 
-          <ngx-datatable-column name="Invoice No" prop="invoiceNo" [width]="160"></ngx-datatable-column>
+            <ngx-datatable-column name="Invoice No" prop="invoiceNo" [width]="160"></ngx-datatable-column>
 
-          <ngx-datatable-column name="Date" prop="invoiceDate" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.invoiceDate | date:'dd-MM-yyyy' }}
-            </ng-template>
-          </ngx-datatable-column>
+            <ngx-datatable-column name="Date" prop="invoiceDate" [width]="140">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ row.invoiceDate | date:'dd-MM-yyyy' }}
+              </ng-template>
+            </ngx-datatable-column>
 
-          <ngx-datatable-column name="Source" [width]="100">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ sourceLabel(row.sourceType) }}
-            </ng-template>
-          </ngx-datatable-column>
+            <ngx-datatable-column name="Source" [width]="100">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ sourceLabel(row.sourceType) }}
+              </ng-template>
+            </ngx-datatable-column>
 
-          <ngx-datatable-column name="Source Ref" prop="sourceRef"></ngx-datatable-column>
+            <ngx-datatable-column name="Source Ref" prop="sourceRef"></ngx-datatable-column>
 
-          <ngx-datatable-column name="Total" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="text-right">{{ row.total | number:'1.2-2' }}</div>
-            </ng-template>
-          </ngx-datatable-column>
-      <ngx-datatable-column
-  name="Action"
-  [width]="220"
-  [sortable]="false">
-
+            <ngx-datatable-column name="Total" [width]="140">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="text-right">{{ row.total | number:'1.2-2' }}</div>
+              </ng-template>
+            </ngx-datatable-column>
+<!-- <ngx-datatable-column name="GL Status" [width]="120">
   <ng-template let-row="row" ngx-datatable-cell-template>
-    <div class="si-action-icons">
-      <i
-        class="fas fa-envelope si-mail"
-        (click)="openEmailConfirm(row)"
-        title="Email">
-      </i>
 
-      <div class="si-print-wrap" title="Print">
-        <i
-          class="fas fa-print"
-          [ngClass]="row.printCount > 0 ? 'text-success' : 'text-info'"
-          (click)="printInvoice(row)">
-        </i>
+    <span *ngIf="row.glPosted"
+          class="badge badge-success">
+      GL Posted
+    </span>
 
-        <span
-          *ngIf="row.printCount > 0"
-          class="si-print-badge">
-          {{ row.printCount }}
-        </span>
-      </div>
+    <span *ngIf="!row.glPosted"
+          class="badge badge-warning">
+      Pending
+    </span>
 
-      <ng-container *ngIf="isPeriodLocked; else actionsEnabled">
-        <i *ngIf="canEdit()" class="fas fa-pen text-gray-300" title="Period Locked"></i>
-        <i *ngIf="canDelete()" class="fas fa-trash text-gray-300" title="Period Locked"></i>
-      </ng-container>
-
-      <ng-template #actionsEnabled>
-        <i
-          *ngIf="canEdit()"
-          class="fas fa-pen text-primary"
-          (click)="edit(row.id)"
-          title="Edit">
-        </i>
-
-        <i
-          *ngIf="canDelete()"
-          class="fas fa-trash text-danger"
-          (click)="delete(row.id)"
-          title="Delete">
-        </i>
-      </ng-template>
-    </div>
   </ng-template>
-</ngx-datatable-column>
-        </ngx-datatable>
-      </div>
-    </section>
+</ngx-datatable-column> -->
+            <ngx-datatable-column name="Action" [width]="220" [sortable]="false">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <div class="si-action-icons">
+
+                  <i class="fas fa-envelope si-mail"
+                     (click)="openEmailConfirm(row)"
+                     title="Email"></i>
+
+                  <div class="si-print-wrap" title="Print">
+                    <i class="fas fa-print"
+                       [ngClass]="row.printCount > 0 ? 'text-success' : 'text-info'"
+                       (click)="printInvoice(row)"></i>
+
+                    <span *ngIf="row.printCount > 0" class="si-print-badge">
+                      {{ row.printCount }}
+                    </span>
+                  </div>
+
+                 <ng-container *ngIf="!canModify(row); else actionsEnabled">
+
+  <i *ngIf="canEdit()"
+     class="fas fa-pen text-gray-300"
+     [title]="isGlPosted(row) ? 'Already Posted to GL' : 'GST Period Locked'">
+  </i>
+
+  <i *ngIf="canDelete()"
+     class="fas fa-trash text-gray-300"
+     [title]="isGlPosted(row) ? 'Already Posted to GL' : 'GST Period Locked'">
+  </i>
+
+</ng-container>
+
+                  <ng-template #actionsEnabled>
+                    <i *ngIf="canEdit()"
+                       class="fas fa-pen text-primary"
+                       (click)="edit(row.id)"
+                       title="Edit"></i>
+
+                    <i *ngIf="canDelete()"
+                       class="fas fa-trash text-danger"
+                       (click)="delete(row.id)"
+                       title="Delete"></i>
+                  </ng-template>
+
+                </div>
+              </ng-template>
+            </ngx-datatable-column>
+
+          </ngx-datatable>
+        </div>
+      </section>
+    </div>
   </div>
 </div>
-</div>
-</div>
+
 <ng-template #loadingTemplate>
   <div class="row">
     <div class="col-12">
@@ -189,6 +187,7 @@
     </div>
   </div>
 </ng-template>
+
 <!-- SI Lines Modal -->
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="overlay">
   <div (click)="$event.stopPropagation()" class="modal-card">
@@ -211,20 +210,23 @@
               <th class="ta-right">Line Total</th>
             </tr>
           </thead>
+
           <tbody>
             <tr *ngFor="let l of modalLines; let i = index" [class.zebra]="i % 2 === 0">
               <td>{{ l.itemName || ('#' + (l.itemId || '')) }}</td>
-               <td>{{ l.description }}</td>
+              <td>{{ l.description }}</td>
               <td>{{ l.uom || '-' }}</td>
               <td class="ta-right">{{ l.qty | number:'1.0-3' }}</td>
               <td class="ta-right">{{ l.unitPrice | number:'1.2-2' }}</td>
               <td class="ta-right">{{ (l.discountPct || 0) | number:'1.0-2' }}</td>
               <td class="ta-right">{{ lineTotal(l) | number:'1.2-2' }}</td>
             </tr>
+
             <tr *ngIf="!modalLines?.length">
-              <td colspan="6" class="empty">No lines</td>
+              <td colspan="7" class="empty">No lines</td>
             </tr>
           </tbody>
+
           <tfoot *ngIf="modalLines?.length">
             <tr>
               <td colspan="6" class="fw-800 ta-right">Total Amount</td>
@@ -240,6 +242,7 @@
     </div>
   </div>
 </div>
+
 <!-- EMAIL CONFIRM MODAL -->
 <div *ngIf="showEmailConfirmModal"
      (click)="closeEmailConfirmModal()"

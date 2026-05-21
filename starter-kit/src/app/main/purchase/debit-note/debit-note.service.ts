@@ -16,7 +16,7 @@ export interface DebitNoteDto {
   id?: number;
   supplierId: number;
   pinId?: number;
-  grnId?: number;
+  grnId?: number | null;
   referenceNo?: string;
   reason?: string;
   noteDate: string;        // 'yyyy-MM-dd'
@@ -84,4 +84,10 @@ export class DebitNoteService {
       this.url + DebitNoteApiUrls.GetDebitNoteSource + id
     );
   }
+   getMarkDebitNote(id: number): Observable<any> {
+  return this.http.post<any>(
+    this.url + DebitNoteApiUrls.MarkDebitNote + id,
+    {}
+  );
+}
 }

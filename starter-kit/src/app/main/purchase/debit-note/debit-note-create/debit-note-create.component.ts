@@ -4,23 +4,29 @@ import Swal from 'sweetalert2';
 
 import { SupplierInvoiceService } from '../../supplier-invoice/supplier-invoice.service';
 import { DebitNoteService, DebitNoteDto } from '../debit-note.service';
-import { PurchaseGoodreceiptService } from '../../purchase-goodreceipt/purchase-goodreceipt.service';
 import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
 
-interface GRNHeader {
+interface SupplierInvoiceOption {
   id: number;
-  grnNo: string;
-  poid: number;
-  poNo?: string | number;
+  invoiceNo: string;
+  grnInvoiceNos?: string;
   supplierId?: number;
   supplierName?: string;
-  grnJson?: any;      
-  poLines?: any;  // ✅ line JSON from GRN
-  currencyId?: number;
-  tax?: number;
 }
 
-type LineRow = { item?: string; qty?: number; price?: number; remarks?: string ,taxPct?: number;};
+type LineRow = {
+  item?: string;
+  totalQty?: number;
+  varianceQty?: number;
+  qty?: number;
+  price?: number;
+  remarks?: string;
+
+  taxPct?: number;
+  lineAmount?: number;
+  taxAmount?: number;
+  lineTotal?: number;
+};
 
 @Component({
   selector: 'app-debit-note-create',
@@ -33,8 +39,8 @@ export class DebitNoteCreateComponent implements OnInit {
   dnId?: number;
   isEdit = false;
 
-  pinId: number = 0;
-  grnId?: number;
+  pinId = 0;
+  grnId: number | null = null;
 
   supplierId: number | null = null;
   supplierName = '';
@@ -46,34 +52,31 @@ export class DebitNoteCreateComponent implements OnInit {
 
   retRows: LineRow[] = [];
 
-  // GRN dropdown
-  grnOpen = false;
-  grnSearch = '';
-  grnList: GRNHeader[] = [];
-  grnFiltered: GRNHeader[] = [];
-  selectedGrnNos: string[] = [];
-isGstLocked = false;
-gstLockMessage = '';
+  invoiceOpen = false;
+  invoiceSearch = '';
+  invoiceList: SupplierInvoiceOption[] = [];
+  invoiceFiltered: SupplierInvoiceOption[] = [];
+  selectedInvoiceNo = '';
 
-isGlPosted = false;
+  isGstLocked = false;
+  gstLockMessage = '';
+  isGlPosted = false;
 
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private pinSvc: SupplierInvoiceService,
     private dnSvc: DebitNoteService,
-    private grnService: PurchaseGoodreceiptService,
     private gstLockService: GstLockService
   ) {
     this.userId = localStorage.getItem('id') ?? 'System';
   }
 
   ngOnInit(): void {
-     this.setToday();
-  this.checkGstLock();
-  this.loadGrnsForCreate();
+    this.setToday();
+    this.checkGstLock();
+    this.loadInvoices();
 
-    // EDIT mode
     this.route.paramMap.subscribe(pm => {
       const idStr = pm.get('id');
       if (idStr) {
@@ -83,40 +86,37 @@ isGlPosted = false;
       }
     });
 
-    // CREATE mode from PIN
     this.route.queryParamMap.subscribe(p => {
       if (this.isEdit) return;
 
       this.pinId = Number(p.get('pinId') || 0);
       if (this.pinId > 0) {
         this.loadFromPin(this.pinId);
-        this.loadGrnsForEdit(this.pinId);
-      } else {
-        if (!this.retRows.length) this.retRows = [{}];
+      } else if (!this.retRows.length) {
+        this.retRows = [{}];
       }
     });
   }
-checkGstLock(): void {
-  if (!this.noteDate) {
-    this.isGstLocked = false;
-    this.gstLockMessage = '';
-    return;
-  }
 
-  this.gstLockService.check(this.noteDate).subscribe({
-    next: (res: any) => {
-      this.isGstLocked = !!res?.locked;
-      this.gstLockMessage = res?.message || '';
-    },
-    error: () => {
+  checkGstLock(): void {
+    if (!this.noteDate) {
       this.isGstLocked = false;
       this.gstLockMessage = '';
+      return;
     }
-  });
-}
-  // -------------------------
-  // UI grid class
-  // -------------------------
+
+    this.gstLockService.check(this.noteDate).subscribe({
+      next: (res: any) => {
+        this.isGstLocked = !!res?.locked;
+        this.gstLockMessage = res?.message || '';
+      },
+      error: () => {
+        this.isGstLocked = false;
+        this.gstLockMessage = '';
+      }
+    });
+  }
+
   gridColsClass(cols: number) {
     return {
       'grid grid-cols-1 gap-3': true,
@@ -129,262 +129,195 @@ checkGstLock(): void {
     };
   }
 
-  // -------------------------
-  // GRN list load
-  // -------------------------
-  private loadGrnsForCreate(): void {
-    if (!this.grnService?.getAvailableForPinCreate) return;
-
-    this.grnService.getAvailableForPinCreate().subscribe({
+  private loadInvoices(): void {
+    this.pinSvc.getAll().subscribe({
       next: (res: any) => {
-        debugger
         const raw = res?.data ?? res ?? [];
-        this.grnList = raw.map((x: any) => this.mapGrn(x));
-        this.grnFiltered = [...this.grnList];
+        this.invoiceList = raw.map((x: any) => this.mapInvoice(x));
+        this.invoiceFiltered = [...this.invoiceList];
 
-        if (this.grnId) {
-          const g = this.grnList.find(x => Number(x.id) === Number(this.grnId));
-          if (g) this.applySelectedGrn(g, true);
+        if (this.pinId > 0) {
+          const invoice = this.invoiceList.find(x => Number(x.id) === Number(this.pinId));
+          if (invoice) {
+            this.applySelectedInvoice(invoice, true);
+          }
         }
       },
-      error: (err) => console.error('Error loading GRNs (create)', err)
+      error: (err) => console.error('Error loading supplier invoices', err)
     });
   }
 
-  private loadGrnsForEdit(pinId: number): void {
-    if (!this.grnService?.getAvailableForPinEdit) return;
+  private mapInvoice(x: any): SupplierInvoiceOption {
+    const supplierRaw = x.supplierId ?? x.SupplierId;
 
-    this.grnService.getAvailableForPinEdit(pinId).subscribe({
-      next: (res: any) => {
-        const raw = res?.data ?? res ?? [];
-        this.grnList = raw.map((x: any) => this.mapGrn(x));
-        this.grnFiltered = [...this.grnList];
-
-        if (this.grnId) {
-          const g = this.grnList.find(x => Number(x.id) === Number(this.grnId));
-          if (g) this.applySelectedGrn(g, true);
-        }
-      },
-      error: (err) => console.error('Error loading GRNs (edit)', err)
-    });
-  }
-
-  private mapGrn(x: any): GRNHeader {
     return {
-      id: Number(x.id),
-      grnNo: x.grnNo,
-      poid: Number(x.poid || 0),
-      poNo: x.poNo,
-      supplierId: x.supplierId != null ? Number(x.supplierId) : undefined,
-      supplierName: x.supplierName,
-      grnJson: x.grnJson, 
-      poLines: x.poLines,// IMPORTANT
-      currencyId: x.currencyId != null ? Number(x.currencyId) : undefined,
-      tax: x.tax != null ? Number(x.tax) : undefined,
-
+      id: Number(x.id ?? x.Id ?? 0),
+      invoiceNo: x.invoiceNo ?? x.InvoiceNo ?? x.pinNo ?? x.PinNo ?? '',
+      grnInvoiceNos: x.grnInvoiceNos ?? x.GrnInvoiceNos ?? x.grnNos ?? x.GrnNos ?? '',
+      supplierId: supplierRaw != null ? Number(supplierRaw) : undefined,
+      supplierName: x.supplierName ?? x.SupplierName ?? x.name ?? x.Name ?? ''
     };
   }
 
-  // -------------------------
-  // GRN combobox UI
-  // -------------------------
-  onGrnFocus(): void {
-    this.grnFiltered = [...this.grnList];
-    this.grnOpen = true;
+  onInvoiceFocus(): void {
+    this.invoiceFiltered = [...this.invoiceList];
+    this.invoiceOpen = true;
   }
 
-  onGrnSearch(e: any): void {
-    const text = (e?.target?.value || '');
+  onInvoiceSearch(e: any): void {
+    const text = e?.target?.value || '';
     const q = text.toLowerCase();
-    this.grnSearch = text;
 
-    this.grnFiltered = (this.grnList || []).filter(g =>
-      (g.grnNo || '').toLowerCase().includes(q) ||
-      (g.poNo || '').toString().toLowerCase().includes(q) ||
-      (g.supplierName || '').toLowerCase().includes(q)
+    this.invoiceSearch = text;
+
+    this.invoiceFiltered = (this.invoiceList || []).filter(invoice =>
+      (invoice.invoiceNo || '').toLowerCase().includes(q) ||
+      (invoice.grnInvoiceNos || '').toLowerCase().includes(q) ||
+      (invoice.supplierName || '').toLowerCase().includes(q)
     );
 
-    this.grnOpen = true;
+    this.invoiceOpen = true;
   }
 
-  isGrnSelected(grnId: number): boolean {
-    return Number(this.grnId || 0) === Number(grnId || 0);
+  isInvoiceSelected(invoiceId: number): boolean {
+    return Number(this.pinId || 0) === Number(invoiceId || 0);
   }
 
-  toggleGrn(g: GRNHeader): void {
-    if (!g?.id) return;
+  toggleInvoice(invoice: SupplierInvoiceOption): void {
+    if (!invoice?.id) return;
 
-    // unselect
-    if (this.isGrnSelected(g.id)) {
-      this.clearSelectedGrn();
+    if (this.isInvoiceSelected(invoice.id)) {
+      this.clearSelectedInvoice();
       return;
     }
 
-    // supplier check (optional)
-    if (this.supplierId && g.supplierId && Number(this.supplierId) !== Number(g.supplierId)) {
-      Swal.fire('Invalid', 'Selected GRN supplier does not match current supplier.', 'warning');
-      return;
-    }
-
-    this.applySelectedGrn(g);
+    this.applySelectedInvoice(invoice, false);
   }
 
-  private applySelectedGrn(g: GRNHeader, keepExistingLines = false): void {
-    this.grnId = Number(g.id);
-    this.referenceNo = g.grnNo || '';
+  private applySelectedInvoice(invoice: SupplierInvoiceOption, keepExistingLines = false): void {
+    this.pinId = Number(invoice.id);
+    this.grnId = null;
 
-    this.supplierId = g.supplierId != null ? Number(g.supplierId) : this.supplierId;
-    this.supplierName = g.supplierName || this.supplierName;
+    this.referenceNo = invoice.invoiceNo || '';
+    this.supplierId = invoice.supplierId != null ? Number(invoice.supplierId) : null;
+    this.supplierName = invoice.supplierName || '';
 
-    this.grnSearch = g.grnNo || '';
-    this.selectedGrnNos = g.grnNo ? [g.grnNo] : [];
+    this.invoiceSearch = invoice.invoiceNo || '';
+    this.selectedInvoiceNo = invoice.invoiceNo || '';
+    this.invoiceOpen = false;
 
-    this.grnOpen = false;
-
-    // ✅ MAIN FIX: GRN select -> rows fill
     if (!keepExistingLines) {
-      this.fillRowsFromGrn(g);
+      this.loadFromPin(this.pinId);
     }
   }
 
-private fillRowsFromGrn(g: GRNHeader): void {
-  const grnItems = this.safeJsonArray(g.grnJson);
-  const poItems = this.safeJsonArray(g.poLines);
-
-  if (!grnItems.length) {
-    this.retRows = [{}];
-    return;
-  }
-
-  this.retRows = grnItems.map((x: any) => {
-    const code = (x.itemCode || '').toString().trim();
-    const name = (x.itemName || '').toString().trim();
-    const itemText = x.itemText || (name ? `${code} - ${name}` : code);
-
-    const poLine = poItems.find((p: any) => {
-      const poItem = (p.item || '').toString();
-      return poItem.includes(code);
-    });
-
-    const poQty = this.toNumber(poLine?.qty ?? 0);
-    const receivedQty = this.toNumber(x.qtyReceived ?? 0);
-
-    const varianceQty = Math.max(poQty - receivedQty, 0);
-
-    const price = this.toNumber(x.unitPrice ?? poLine?.price ?? 0);
-
-    return {
-      item: itemText,
-      qty: varianceQty,
-      price: price,
-      remarks: '',
-      taxPct: this.toNumber(g.tax ?? 0),
-    } as LineRow;
-  });
-
-  if (!this.retRows.length) this.retRows = [{}];
-}
-
-  removeGrnByNo(grnNo: string): void {
-    if (!grnNo) return;
-    if ((this.referenceNo || '') === grnNo || (this.selectedGrnNos?.[0] || '') === grnNo) {
-      this.clearSelectedGrn();
-    }
-  }
-
-  private clearSelectedGrn(): void {
-    this.grnId = undefined;
+  private clearSelectedInvoice(): void {
+    this.pinId = 0;
+    this.grnId = null;
     this.referenceNo = '';
-    this.grnSearch = '';
-    this.selectedGrnNos = [];
-    this.retRows = [{}]; // clear lines too (feel free to remove if you want keep)
+    this.invoiceSearch = '';
+    this.selectedInvoiceNo = '';
+    this.supplierId = null;
+    this.supplierName = '';
+    this.retRows = [{}];
   }
 
   @HostListener('document:click', ['$event'])
   onDocClick(ev: MouseEvent): void {
-    if (!(ev.target as HTMLElement).closest('.grn-combobox')) {
-      this.grnOpen = false;
+    if (!(ev.target as HTMLElement).closest('.invoice-combobox')) {
+      this.invoiceOpen = false;
     }
   }
 
-  // -------------------------
-  // PIN -> Debit Note source
-  // -------------------------
-  private loadFromPin(pinId: number) {
-    this.pinSvc.getDebitNoteSource(pinId).subscribe({
+  private loadFromPin(pinId: number): void {
+    this.pinSvc.getById(pinId).subscribe({
       next: (res: any) => {
-        const d = res?.data || res;
-        if (!d) return;
+        const d = res?.data ?? res;
 
-        this.pinId = d.PinId ?? d.pinId ?? pinId;
-
-        this.grnId = d.GrnId ?? d.grnId ?? undefined;
-        this.referenceNo = d.GrnNo ?? d.grnNo ?? d.PinNo ?? d.pinNo ?? '';
-
-        this.supplierId = d.SupplierId ?? d.supplierId ?? null;
-        this.supplierName = d.Name ?? d.name ?? '';
-
-        if (this.referenceNo) {
-          this.grnSearch = this.referenceNo;
-          this.selectedGrnNos = [this.referenceNo];
+        if (!d) {
+          this.retRows = [{}];
+          return;
         }
 
-        // lines from PIN source (price comes)
-        let lines: any[] = [];
-        try {
-          const raw = d.LinesJson ?? d.linesJson ?? '[]';
-          lines = JSON.parse(raw);
-        } catch { lines = []; }
+        this.pinId = Number(d.pinId ?? d.PinId ?? pinId);
+        this.grnId = d.grnId ?? d.GrnId ?? null;
 
-        this.retRows = (lines || []).map((l: any) => ({
-          item: l.item ?? '',
-          qty: 0, // will set from variance
-          price: this.toNumber(l.unitPrice ?? l.price ?? 0),
-          remarks: ''
-        }));
+        this.referenceNo =
+          d.pinNo ??
+          d.PinNo ??
+          d.invoiceNo ??
+          d.InvoiceNo ??
+          this.referenceNo;
 
-        if (!this.retRows.length) this.retRows = [{}];
+        this.supplierId =
+          d.supplierId ??
+          d.SupplierId ??
+          this.supplierId;
 
-        // variance qty
-        this.applyVarianceQty(this.pinId);
+        this.supplierName =
+          d.supplierName ??
+          d.SupplierName ??
+          d.name ??
+          d.Name ??
+          this.supplierName;
+
+        this.invoiceSearch = this.referenceNo;
+        this.selectedInvoiceNo = this.referenceNo;
+
+       const invoiceAmount = this.toNumber(d.amount ?? d.Amount ?? 0);
+const invoiceTax = this.toNumber(d.tax ?? d.Tax ?? 0);
+
+const headerTaxPct =
+  invoiceAmount > 0 && invoiceTax > 0
+    ? (invoiceTax / (invoiceAmount - invoiceTax)) * 100
+    : 0;
+
+const lines = this.extractLines(d);
+this.applySourceLines(lines, headerTaxPct);
       },
-      error: (err) => console.error('Error loading PIN source for debit note', err)
+      error: (err) => {
+        console.error('Error loading PIN source', err);
+        Swal.fire('Error', 'Unable to load invoice items.', 'error');
+        this.retRows = [{}];
+      }
     });
   }
 
-  private applyVarianceQty(pinId: number) {
+  private applyVarianceQty(pinId: number): void {
     this.pinSvc.getThreeWayMatch(pinId).subscribe({
       next: (mRes: any) => {
         const m = mRes?.data || mRes;
         if (!m) return;
 
         const variance = this.toNumber(m.grnVarianceQty ?? m.GrnVarianceQty ?? 0);
-        if (this.retRows.length > 0) this.retRows[0].qty = variance;
+
+        if (this.retRows.length > 0) {
+          this.retRows[0].varianceQty = variance;
+          this.retRows[0].qty = variance;
+          this.recalculateRow(this.retRows[0]);
+        }
       },
       error: (err) => console.error('Error loading 3-way match for variance qty', err)
     });
   }
 
-  // -------------------------
-  // EDIT load
-  // -------------------------
-  private loadDebitNote(id: number) {
+  private loadDebitNote(id: number): void {
     this.dnSvc.getById(id).subscribe({
       next: (res: any) => {
         const d = res?.data || res;
-        this.isGlPosted = !!(
-  d.glPosted ??
-  d.GlPosted ??
-  d.isGlPosted ??
-  d.IsGlPosted ??
-  false
-);
         if (!d) return;
+
+        this.isGlPosted = !!(
+          d.glPosted ??
+          d.GlPosted ??
+          d.isGlPosted ??
+          d.IsGlPosted ??
+          false
+        );
 
         this.dnId = d.id ?? d.Id ?? id;
         this.pinId = d.pinId ?? d.PinId ?? 0;
-
-        this.grnId = d.grnId ?? d.GrnId ?? undefined;
+        this.grnId = null;
         this.referenceNo = d.referenceNo ?? d.ReferenceNo ?? '';
 
         this.supplierId = d.supplierId ?? d.SupplierId ?? null;
@@ -400,27 +333,45 @@ private fillRowsFromGrn(g: GRNHeader): void {
         }
 
         if (this.referenceNo) {
-          this.grnSearch = this.referenceNo;
-          this.selectedGrnNos = [this.referenceNo];
+          this.invoiceSearch = this.referenceNo;
+          this.selectedInvoiceNo = this.referenceNo;
         }
 
         let lines: any[] = [];
         try {
           const rawLines = d.linesJson ?? d.LinesJson ?? '[]';
           lines = JSON.parse(rawLines);
-        } catch { lines = []; }
+        } catch {
+          lines = [];
+        }
 
-        this.retRows = (lines || []).map((l: any) => ({
-          item: l.item ?? '',
-          qty: this.toNumber(l.qty ?? 0),
-          price: this.toNumber(l.unitPrice ?? l.price ?? 0),
-          remarks: l.remarks ?? ''
-        }));
+        this.retRows = (lines || []).map((l: any) => {
+          const qty = this.toNumber(l.varianceQty ?? l.VarianceQty ?? l.qty ?? l.Qty ?? 0);
+          const totalQty = this.toNumber(l.totalQty ?? l.TotalQty ?? l.invoiceQty ?? l.InvoiceQty ?? qty);
+          const price = this.toNumber(l.price ?? l.Price ?? l.unitPrice ?? l.UnitPrice ?? 0);
+          const taxPct = this.toNumber(l.taxPct ?? l.TaxPct ?? l.taxPercentage ?? l.TaxPercentage ?? 0);
+
+          const lineAmount = qty * price;
+          const taxAmount = lineAmount * taxPct / 100;
+          const lineTotal = lineAmount + taxAmount;
+
+          return {
+            item: l.item ?? l.Item ?? l.itemName ?? l.ItemName ?? '',
+            totalQty,
+            varianceQty: qty,
+            qty,
+            price,
+            taxPct,
+            lineAmount,
+            taxAmount,
+            lineTotal,
+            remarks: l.remarks ?? l.Remarks ?? ''
+          };
+        });
 
         if (!this.retRows.length) this.retRows = [{}];
 
-        if (this.pinId > 0) this.loadGrnsForEdit(this.pinId);
-        else this.loadGrnsForCreate();
+        this.loadInvoices();
       },
       error: (err) => {
         console.error('Error loading debit note for edit', err);
@@ -429,44 +380,112 @@ private fillRowsFromGrn(g: GRNHeader): void {
     });
   }
 
-  // -------------------------
-  // Lines helpers
-  // -------------------------
-  retAddRow() { this.retRows = [...this.retRows, {}]; }
-  retRemoveRow(i: number) { this.retRows = this.retRows.filter((_, idx) => idx !== i); }
-  trackByIndex(index: number) { return index; }
-
-  get totalAmount(): number {
-    return (this.retRows || []).reduce((s, r) =>
-      s + (this.toNumber(r.qty) * this.toNumber(r.price)), 0);
+  retAddRow(): void {
+    this.retRows = [...this.retRows, {}];
   }
 
-  // -------------------------
-  // Save
-  // -------------------------
-  save(post: boolean = false) {
+  retRemoveRow(i: number): void {
+    this.retRows = this.retRows.filter((_, idx) => idx !== i);
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  onRowValueChange(row: LineRow): void {
+    this.recalculateRow(row);
+  }
+
+  private recalculateRow(row: LineRow): void {
+    const qty = this.toNumber(row.varianceQty ?? row.qty);
+    const price = this.toNumber(row.price);
+    const taxPct = this.toNumber(row.taxPct);
+
+    row.qty = qty;
+    row.varianceQty = qty;
+    row.price = price;
+    row.taxPct = taxPct;
+
+    row.lineAmount = qty * price;
+    row.taxAmount = row.lineAmount * taxPct / 100;
+    row.lineTotal = row.lineAmount + row.taxAmount;
+  }
+
+  getLineAmount(r: LineRow): number {
+    const qty = this.toNumber(r.varianceQty ?? r.qty);
+    const price = this.toNumber(r.price);
+    return qty * price;
+  }
+
+  getLineTax(r: LineRow): number {
+    const amount = this.getLineAmount(r);
+    const taxPct = this.toNumber(r.taxPct);
+    return amount * taxPct / 100;
+  }
+
+  getLineTotal(r: LineRow): number {
+    return this.getLineAmount(r) + this.getLineTax(r);
+  }
+
+  get totalAmount(): number {
+    return (this.retRows || []).reduce((s, r) => s + this.getLineAmount(r), 0);
+  }
+
+  get totalTaxAmount(): number {
+    return (this.retRows || []).reduce((s, r) => s + this.getLineTax(r), 0);
+  }
+
+  get totalNetAmount(): number {
+    return this.totalAmount + this.totalTaxAmount;
+  }
+
+  save(post: boolean = false): void {
     if (!this.supplierId) {
-      Swal.fire('Validation', 'Please select supplier.', 'warning');
+      Swal.fire('Validation', 'Please select supplier invoice.', 'warning');
       return;
     }
 
-    const linesJson = JSON.stringify(this.retRows || []);
+    const linesJson = JSON.stringify((this.retRows || []).map(r => {
+      const qty = this.toNumber(r.varianceQty ?? r.qty);
+      const price = this.toNumber(r.price);
+      const taxPct = this.toNumber(r.taxPct);
+
+      const lineAmount = qty * price;
+      const taxAmount = lineAmount * taxPct / 100;
+      const lineTotal = lineAmount + taxAmount;
+
+      return {
+        item: r.item ?? '',
+        totalQty: this.toNumber(r.totalQty),
+        qty,
+        varianceQty: qty,
+        price,
+        taxPct,
+        lineAmount,
+        taxAmount,
+        lineTotal,
+        remarks: r.remarks ?? ''
+      };
+    }));
 
     const payload: DebitNoteDto = {
       id: this.dnId,
       supplierId: this.supplierId,
       pinId: this.pinId || undefined,
-      grnId: this.grnId,
+      grnId: null,
       referenceNo: this.referenceNo,
       reason: this.reason,
       noteDate: this.noteDate,
-      amount: this.totalAmount,
+
+      // Tax include amount
+      amount: this.totalNetAmount,
+
       linesJson,
-      status: post ? 1 : 0,
+      status: post ? 2 : 0,
       createdBy: this.userId,
       updatedBy: this.userId,
-      countryId:(localStorage.getItem('countryId') || 1),
-      createdDate: new Date(),
+      countryId: localStorage.getItem('countryId') || 1,
+      createdDate: new Date()
     };
 
     const request$ = this.isEdit && this.dnId
@@ -476,6 +495,7 @@ private fillRowsFromGrn(g: GRNHeader): void {
     request$.subscribe({
       next: (res: any) => {
         const isSuccess = res?.isSuccess !== false;
+
         if (!isSuccess) {
           Swal.fire('Error', res?.message || 'Failed to save debit note.', 'error');
           return;
@@ -490,7 +510,7 @@ private fillRowsFromGrn(g: GRNHeader): void {
         };
 
         if (post && this.pinId > 0) {
-          this.pinSvc.markDebitNote(this.pinId).subscribe({
+          this.dnSvc.getMarkDebitNote(this.pinId).subscribe({
             next: () => finish(false),
             error: () => finish(true)
           });
@@ -505,7 +525,7 @@ private fillRowsFromGrn(g: GRNHeader): void {
     });
   }
 
-  goToDebitNoteList() {
+  goToDebitNoteList(): void {
     this.router.navigate(['/purchase/list-debitnote']);
   }
 
@@ -513,16 +533,71 @@ private fillRowsFromGrn(g: GRNHeader): void {
     return this.supplierName || 'Select supplier';
   }
 
-  // -------------------------
-  // Utils
-  // -------------------------
-  private setToday() {
+  private setToday(): void {
     const d = new Date();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
     this.noteDate = `${d.getFullYear()}-${mm}-${dd}`;
   }
 
+  private extractLines(source: any): any[] {
+    if (!source) return [];
+
+    if (Array.isArray(source.lines)) return source.lines;
+    if (Array.isArray(source.Lines)) return source.Lines;
+
+    const raw = source.LinesJson ?? source.linesJson ?? source.lines ?? source.Lines ?? '[]';
+    return this.safeJsonArray(raw);
+  }
+
+private applySourceLines(lines: any[], headerTaxPct: number = 0): void {
+  this.retRows = (lines || []).map((l: any) => {
+    const price = this.toNumber(
+      l.price ?? l.Price ??
+      l.unitPrice ?? l.UnitPrice ??
+      l.rate ?? l.Rate ?? 0
+    );
+
+    let taxPct = this.toNumber(
+      l.taxPct ?? l.TaxPct ??
+      l.taxPercentage ?? l.TaxPercentage ??
+      l.taxRate ?? l.TaxRate ??
+      l.gstPct ?? l.GstPct ??
+      l.gstRate ?? l.GstRate ?? 0
+    );
+
+    if (taxPct <= 0) {
+      taxPct = this.toNumber(headerTaxPct);
+    }
+
+    return {
+      item:
+        l.item ?? l.Item ??
+        l.itemName ?? l.ItemName ??
+        l.name ?? l.Name ??
+        l.description ?? l.Description ?? '',
+
+      totalQty: this.toNumber(
+        l.qty ?? l.Qty ??
+        l.quantity ?? l.Quantity ??
+        l.invoiceQty ?? l.InvoiceQty ?? 0
+      ),
+
+      varianceQty: 0,
+      qty: 0,
+      price,
+      taxPct,
+      lineAmount: 0,
+      taxAmount: 0,
+      lineTotal: 0,
+      remarks: l.remarks ?? l.Remarks ?? ''
+    };
+  });
+
+  if (!this.retRows.length) {
+    this.retRows = [{}];
+  }
+}
   private toNumber(v: any): number {
     if (v === null || v === undefined) return 0;
     const n = Number(String(v).replace(/[,]/g, '').trim());
@@ -534,15 +609,25 @@ private fillRowsFromGrn(g: GRNHeader): void {
     if (Array.isArray(raw)) return raw;
 
     let val = raw;
+
     for (let i = 0; i < 3; i++) {
       if (Array.isArray(val)) return val;
+
       if (typeof val === 'string') {
         const s = val.trim();
         if (!s) return [];
-        try { val = JSON.parse(s); continue; } catch { return []; }
+
+        try {
+          val = JSON.parse(s);
+          continue;
+        } catch {
+          return [];
+        }
       }
+
       return Array.isArray(val) ? val : [];
     }
+
     return Array.isArray(val) ? val : [];
   }
 }

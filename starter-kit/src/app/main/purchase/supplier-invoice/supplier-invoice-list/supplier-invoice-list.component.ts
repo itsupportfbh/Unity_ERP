@@ -278,7 +278,7 @@ canShowDelete(row: any): boolean {
     return;
   }
 
-  this.router.navigate(['/purchase/supplier-invoice']);
+  this.router.navigate(['/purchase/Create-SupplierInvoice']);
 }
 
   editInvoice(id: number): void {

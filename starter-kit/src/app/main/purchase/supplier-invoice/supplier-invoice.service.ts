@@ -54,6 +54,7 @@ export class SupplierInvoiceService {
 
   /** After DN created -> mark PIN as DN created (or update status) */
   markDebitNote(pinId: number): Observable<any> {
+    debugger
     return this.http.post(`${this.url}/SupplierInvoicePin/MarkDebitNote/${pinId}`, {});
   }
 

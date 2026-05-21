@@ -1,5 +1,3 @@
-<!-- src/app/main/purchase/debit-note/debit-note-create/debit-note-create.component.html -->
-
 <button
   type="button"
   class="btn dnBackBtn mb-1"
@@ -17,49 +15,49 @@
 
     <div class="dnHdrGrid">
 
-      <div class="dnField dnCol--grn grn-combobox">
-        <label class="dnLabel">GRN #</label>
+      <div class="dnField dnCol--grn invoice-combobox">
+        <label class="dnLabel">Supplier Invoice PIN</label>
 
         <div class="dnCombo">
           <input
             type="text"
             class="dnInput dnInput--withCaret"
-            [value]="grnSearch"
-            (input)="onGrnSearch($event)"
-            (focus)="onGrnFocus()"
-            placeholder="Search"
+            [value]="invoiceSearch"
+            (input)="onInvoiceSearch($event)"
+            (focus)="onInvoiceFocus()"
+            placeholder="Search invoice"
             [disabled]="isGstLocked || isGlPosted" />
 
           <button
             type="button"
             class="dnCaretBtn"
-            (click)="grnOpen = !grnOpen"
-            aria-label="Toggle GRN list"
+            (click)="invoiceOpen = !invoiceOpen"
+            aria-label="Toggle invoice list"
             [disabled]="isGstLocked || isGlPosted">
             <i class="fas fa-chevron-down"></i>
           </button>
         </div>
 
-        <div *ngIf="grnOpen && !isGstLocked && !isGlPosted" class="dnDropdown">
-          <div class="dnDropHead">Choose GRN</div>
+        <div *ngIf="invoiceOpen && !isGstLocked && !isGlPosted" class="dnDropdown">
+          <div class="dnDropHead">Choose Supplier Invoice</div>
 
           <button
             type="button"
             class="dnDropItem"
-            *ngFor="let g of grnFiltered"
-            (click)="toggleGrn(g)">
-            <span class="xNo">{{ g.grnNo }}</span>
+            *ngFor="let invoice of invoiceFiltered"
+            (click)="toggleInvoice(invoice)">
+            <span class="xNo">{{ invoice.invoiceNo }}</span>
 
-            <span class="xPo" *ngIf="g.poNo">
-              <span class="xSep">•</span> PO: {{ g.poNo }}
+            <span class="xPo" *ngIf="invoice.grnInvoiceNos">
+              <span class="xSep">-</span> GRN: {{ invoice.grnInvoiceNos }}
             </span>
 
-            <span class="xRight" *ngIf="isGrnSelected(g.id)">
+            <span class="xRight" *ngIf="isInvoiceSelected(invoice.id)">
               <i class="fas fa-check"></i>
             </span>
           </button>
 
-          <div *ngIf="!grnFiltered?.length" class="dnDropEmpty">No results</div>
+          <div *ngIf="!invoiceFiltered?.length" class="dnDropEmpty">No results</div>
         </div>
       </div>
 
@@ -106,6 +104,7 @@
         <thead>
           <tr>
             <th>Item</th>
+            <th>Total Qty</th>
             <th>Variance Qty</th>
             <th>Price</th>
             <th>Remarks</th>
@@ -115,7 +114,7 @@
 
         <tbody>
           <tr *ngIf="retRows.length === 0">
-            <td colspan="5" class="dnEmpty">No lines yet.</td>
+            <td colspan="6" class="dnEmpty">No lines yet.</td>
           </tr>
 
           <tr *ngFor="let r of retRows; let i = index; trackBy: trackByIndex">
@@ -131,8 +130,17 @@
               <input
                 type="number"
                 class="dnCellInput"
-                [(ngModel)]="retRows[i].qty"
-                [name]="'qty_' + i"
+                [(ngModel)]="retRows[i].totalQty"
+                [name]="'totalQty_' + i"
+                [disabled]="true" />
+            </td>
+
+            <td>
+              <input
+                type="number"
+                class="dnCellInput"
+                [(ngModel)]="retRows[i].varianceQty"
+                [name]="'varianceQty_' + i"
                 [disabled]="isGstLocked || isGlPosted" />
             </td>
 

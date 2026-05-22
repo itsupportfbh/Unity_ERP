@@ -22,7 +22,11 @@
                   entries
                 </label>
               </div>
-
+<div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+            </div>
             <div *ngIf="hasGlPostedRows"
      class="alert alert-danger py-1 px-2 mx-2 mb-2"
      style="font-size:0.8rem;">
@@ -48,6 +52,7 @@
   *ngIf="canCreate()"
   (click)="goToCreate()"
   [disabled]="hasGlPostedRows"
+  [disabled]="isPeriodLocked"
   class="btn m-1 d-inline-flex align-items-center"
   style="background-color:#2E5F73;color:white;gap:6px;"
   [title]="hasGlPostedRows ? 'GL Posted invoice exists. Add disabled.' : 'Create Sales Invoice'">
@@ -131,7 +136,7 @@
                     </span>
                   </div>
 
-                 <ng-container *ngIf="!canModify(row); else actionsEnabled">
+                 <ng-container *ngIf="!canModify(row)|| isPeriodLocked; else actionsEnabled">
 
   <i *ngIf="canEdit()"
      class="fas fa-pen text-gray-300"
@@ -149,12 +154,12 @@
                     <i *ngIf="canEdit()"
                        class="fas fa-pen text-primary"
                        (click)="edit(row.id)"
-                       title="Edit"></i>
+                        [title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
 
                     <i *ngIf="canDelete()"
                        class="fas fa-trash text-danger"
                        (click)="delete(row.id)"
-                       title="Delete"></i>
+                       [title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
                   </ng-template>
 
                 </div>

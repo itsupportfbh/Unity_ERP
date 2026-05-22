@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { MaterialRequisitionService } from '../material-requisition.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 import Swal from 'sweetalert2';
+import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
 
 type MaterialReqLine = {
   id: number;
@@ -60,11 +61,14 @@ export class MaterialRequisitionListComponent implements OnInit {
       permission: FunctionPermission;
       isPermissionLoaded = false;
       isPageLoading = false;
+       isPeriodLocked = false;
+  periodName = '';
   constructor(
     private modalService: NgbModal,
     private router: Router,
     private materialRequisition: MaterialRequisitionService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private periodLock: PeriodCloseService
   ) 
   {
     this.userId = Number(localStorage.getItem('id') || 0);
@@ -73,6 +77,7 @@ export class MaterialRequisitionListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPermission();
+    this.checkPeriodLockForToday();
   }
 
 
@@ -276,5 +281,19 @@ goStockOverview() {
 
 goStockTransfer() {
   this.router.navigate(['/Inventory/list-stocktransfer']);
+}
+   private checkPeriodLockForToday(): void {
+  const today = new Date().toISOString().substring(0, 10); // yyyy-MM-dd
+
+  this.periodLock.getStatusForDateWithName(today).subscribe({
+    next: status => {
+      this.isPeriodLocked = !!status?.isLocked;
+      this.periodName = status?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.periodName = '';
+    }
+  });
 }
 }

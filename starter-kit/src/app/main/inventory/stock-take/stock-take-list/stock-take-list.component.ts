@@ -9,6 +9,7 @@ import { ItemMasterService } from '../../item-master/item-master.service';
 import { BinService } from '../../../master/bin/bin.service'
 import { StockIssueService } from 'app/main/master/stock-issue/stock-issue.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
 
 @Component({
   selector: 'app-stock-take-list',
@@ -50,15 +51,17 @@ export class StockTakeListComponent implements OnInit {
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
-
+ isPeriodLocked = false;
+  periodName = '';
   constructor(private stockTakeService: StockTakeService, private router: Router,private StockissueService: StockIssueService,
     private datePipe: DatePipe, private itemMasterService: ItemMasterService,private BinService: BinService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService, private periodLock: PeriodCloseService
   ) { this.userId = localStorage.getItem('id');
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
    }
   ngOnInit(): void {
     this.loadPermission();
+    this.checkPeriodLockForToday();
   }
   loadPermission(): void {
     if (!this.userId || this.userId <= 0) {
@@ -325,7 +328,20 @@ export class StockTakeListComponent implements OnInit {
     const x = this.reasonList.find(i => i.id === id);
     return x?.stockIssuesNames ?? String(id ?? '');
   }
-   
+      private checkPeriodLockForToday(): void {
+  const today = new Date().toISOString().substring(0, 10); // yyyy-MM-dd
+
+  this.periodLock.getStatusForDateWithName(today).subscribe({
+    next: status => {
+      this.isPeriodLocked = !!status?.isLocked;
+      this.periodName = status?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.periodName = '';
+    }
+  });
+}
 }
 
 

@@ -1,5 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { PeriodCloseService, PeriodOption, PeriodStatus } from '../period-close-fx/period-close-fx.service';
+import {
+  PeriodCloseService,
+  PeriodOption,
+  PeriodStatus
+} from '../period-close-fx/period-close-fx.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -8,37 +13,102 @@ import Swal from 'sweetalert2';
   styleUrls: ['./period-close-fx.component.scss']
 })
 export class PeriodCloseFxComponent implements OnInit {
-
   periods: PeriodOption[] = [];
   selectedPeriodId: number | null = null;
 
-  fxRevalDate: string = '';
+  fxRevalDate = '';
   isLocking = false;
   isRunningFx = false;
   status: PeriodStatus | null = null;
+
+  userId: number = 0;
+
+  // DB/Menu function code exact ah match aaganum
+  functionId = 'period';
+
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+
+  constructor(
+    private periodService: PeriodCloseService,
+    private permissionService: PermissionService
+  ) {
+    this.userId = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
+
+  ngOnInit(): void {
+    this.loadPermission();
+  }
 
   get isLocked(): boolean {
     return !!this.status?.isLocked;
   }
 
-  // normally from auth service
-  isAdmin = true;
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
 
-  constructor(private periodService: PeriodCloseService) { }
+      Swal.fire('Access denied', 'User not found. Please login again.', 'warning');
+      return;
+    }
 
-  ngOnInit(): void {
-    this.loadPeriods();
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        if (this.canView()) {
+          this.loadPeriods();
+        }
+      },
+      error: () => {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading = false;
+
+        Swal.fire('Error', 'Unable to load permission.', 'error');
+      }
+    });
   }
 
-loadPeriods(): void {
-  this.periodService.getPeriods().subscribe({
-    next: (list) => {
-      this.periods = list || [];
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
 
-      if (this.periods.length) {
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+
+  canPost(): boolean {
+    return this.permissionService.hasPost
+      ? this.permissionService.hasPost(this.permission)
+      : !!(this.permission as any)?.post;
+  }
+
+  loadPeriods(): void {
+    this.periodService.getPeriods().subscribe({
+      next: (list) => {
+        this.periods = list || [];
+
+        if (!this.periods.length) {
+          this.selectedPeriodId = null;
+          this.status = null;
+          this.fxRevalDate = '';
+          return;
+        }
+
         const today = new Date();
 
-        // Find period that includes today's date
         const currentPeriod = this.periods.find(p => {
           const start = new Date(p.startDate);
           const end = new Date(p.endDate);
@@ -48,32 +118,29 @@ loadPeriods(): void {
         if (currentPeriod) {
           this.selectedPeriodId = currentPeriod.id;
         } else {
-          // fallback: pick the closest past period
-          const pastPeriods = this.periods.filter(p => new Date(p.endDate) < today);
+          const pastPeriods = this.periods
+            .filter(p => new Date(p.endDate) < today)
+            .sort((a, b) =>
+              new Date(b.endDate).getTime() - new Date(a.endDate).getTime()
+            );
 
-          if (pastPeriods.length > 0) {
-            const lastPast = pastPeriods[pastPeriods.length - 1];
-            this.selectedPeriodId = lastPast.id;
-          } else {
-            // fallback: first in list
-            this.selectedPeriodId = this.periods[0].id;
-          }
+          this.selectedPeriodId = pastPeriods.length ? pastPeriods[0].id : this.periods[0].id;
         }
 
         this.onPeriodChange(this.selectedPeriodId);
+      },
+      error: err => {
+        console.error('Error loading periods', err);
+        Swal.fire('Error', 'Failed to load periods.', 'error');
       }
-    },
-    error: err => {
-      console.error('Error loading periods', err);
-      Swal.fire('Error', 'Failed to load periods.', 'error');
-    }
-  });
-}
+    });
+  }
 
   onPeriodChange(id: number | null): void {
     if (!id) {
       this.selectedPeriodId = null;
       this.status = null;
+      this.fxRevalDate = '';
       return;
     }
 
@@ -82,8 +149,12 @@ loadPeriods(): void {
     this.periodService.getStatus(id).subscribe({
       next: s => {
         this.status = s;
-        if (s && s.periodEndDate) {
+
+        if (s?.periodEndDate) {
           this.fxRevalDate = s.periodEndDate.substring(0, 10);
+        } else {
+          const selected = this.periods.find(x => x.id === id);
+          this.fxRevalDate = selected?.endDate ? selected.endDate.substring(0, 10) : '';
         }
       },
       error: err => {
@@ -94,28 +165,37 @@ loadPeriods(): void {
   }
 
   onToggleLock(): void {
-    if (!this.selectedPeriodId || !this.isAdmin || !this.status) {
+    if (!this.selectedPeriodId) {
+      Swal.fire('No period selected', 'Please select a period first.', 'info');
+      return;
+    }
+
+    if (!this.canPost()) {
+      Swal.fire('Access denied', 'You do not have lock / unlock permission.', 'warning');
+      return;
+    }
+
+    if (!this.status) {
+      Swal.fire('Missing status', 'Please reload the selected period status.', 'warning');
       return;
     }
 
     const targetLock = !this.status.isLocked;
-    const title = targetLock ? 'Lock this period?' : 'Unlock this period?';
-    const text  = targetLock
-      ? 'After locking, posting in this period will be blocked.'
-      : 'After unlocking, users can post in this period again.';
 
     Swal.fire({
-      title,
-      text,
+      title: targetLock ? 'Lock this period?' : 'Unlock this period?',
+      text: targetLock
+        ? 'After locking, users cannot create, edit, delete, cancel, or post transactions in this period.'
+        : 'After unlocking, users can modify transactions in this period again.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: targetLock ? 'Yes, lock it' : 'Yes, unlock it',
       cancelButtonText: 'Cancel',
-      confirmButtonColor: '#d33',
+      confirmButtonColor: targetLock ? '#d33' : '#2E5F73',
       cancelButtonColor: '#6b7280',
       reverseButtons: true
     }).then(result => {
-      if (!result.isConfirmed) { return; }
+      if (!result.isConfirmed) return;
 
       this.isLocking = true;
 
@@ -127,7 +207,7 @@ loadPeriods(): void {
           Swal.fire({
             icon: 'success',
             title: targetLock ? 'Period locked' : 'Period unlocked',
-            text: s.periodLabel
+            text: s?.periodLabel
               ? `Period "${s.periodLabel}" has been ${targetLock ? 'locked' : 'unlocked'}.`
               : `Period has been ${targetLock ? 'locked' : 'unlocked'}.`
           });
@@ -135,21 +215,28 @@ loadPeriods(): void {
         error: err => {
           console.error('Error changing lock', err);
           this.isLocking = false;
-          Swal.fire('Error', 'Failed to change period lock status.', 'error');
+
+          const msg = err?.error?.message || 'Failed to change period lock status.';
+          Swal.fire('Error', msg, 'error');
         }
       });
     });
   }
 
   runFxRevaluation(): void {
+    if (!this.canCreate() && !this.canPost()) {
+      Swal.fire('Access denied', 'You do not have run GST computation permission.', 'warning');
+      return;
+    }
+
     if (!this.selectedPeriodId || !this.fxRevalDate) {
       Swal.fire('Missing data', 'Please choose a period and FX revaluation date.', 'warning');
       return;
     }
 
     Swal.fire({
-      title: 'Run FX revaluation?',
-      text: 'This may take some time and will revalue foreign currency balances.',
+      title: 'Run quarterly GST computation?',
+      text: 'This will compute GST for the selected period/date.',
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Yes, run',
@@ -158,7 +245,7 @@ loadPeriods(): void {
       cancelButtonColor: '#6b7280',
       reverseButtons: true
     }).then(result => {
-      if (!result.isConfirmed) { return; }
+      if (!result.isConfirmed) return;
 
       this.isRunningFx = true;
 
@@ -166,24 +253,48 @@ loadPeriods(): void {
         periodId: this.selectedPeriodId!,
         fxDate: this.fxRevalDate
       }).subscribe({
-        next: _ => {
+        next: () => {
           this.isRunningFx = false;
-          Swal.fire('Done', 'FX Revaluation completed successfully.', 'success');
+          Swal.fire('Done', 'Quarterly GST computation completed successfully.', 'success');
         },
-        error: err => {
-          console.error('Error running FX revaluation', err);
-          this.isRunningFx = false;
-          Swal.fire('Error', 'Error occurred while running FX revaluation.', 'error');
-        }
+       error: err => {
+  console.error('Error running FX revaluation', err);
+  this.isRunningFx = false;
+
+  const msg =
+    err?.error?.message ||
+    err?.error?.title ||
+    err?.error ||
+    err?.message ||
+    'Error occurred while running FX revaluation.';
+
+  if (msg.toString().toLowerCase().includes('already completed')) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Already Completed',
+      text: 'FX Revaluation already completed for this period and date. You can run it only one time.',
+      confirmButtonColor: '#2E5F73'
+    });
+    return;
+  }
+
+  Swal.fire('Error', msg, 'error');
+}
       });
     });
   }
 
   openTrialBalance(): void {
+    if (!this.canView()) {
+      Swal.fire('Access denied', 'You do not have view permission.', 'warning');
+      return;
+    }
+
     if (!this.selectedPeriodId) {
       Swal.fire('No period selected', 'Please select a period first.', 'info');
       return;
     }
+
     window.open(`/reports/trial-balance?periodId=${this.selectedPeriodId}`, '_blank');
   }
 }

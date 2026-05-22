@@ -4,6 +4,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { StackOverviewService } from '../stack-overview.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 import Swal from 'sweetalert2';
+import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
 
 /** Raw row from API (per bin / per warehouse row) */
 interface ApiStockRow {
@@ -86,12 +87,14 @@ export class StackOverviewListComponent implements OnInit {
         permission: FunctionPermission;
         isPermissionLoaded = false;
         isPageLoading = false;
-
+ isPeriodLocked = false;
+  periodName = '';
   constructor(
     private router: Router,
     private stockService: StackOverviewService,
     private modal: NgbModal,
-     private permissionService: PermissionService
+     private permissionService: PermissionService,
+     private periodLock: PeriodCloseService
   ) 
   {
      this.userId = Number(localStorage.getItem('id') || 0);
@@ -100,6 +103,7 @@ export class StackOverviewListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPermission();
+      this.checkPeriodLockForToday();
   }
 
   loadPermission(): void {
@@ -325,4 +329,18 @@ openViewModal(row: ItemWarehouseRow, tpl: any): void {
   goToCreateItem(): void {
     this.router.navigate(['/Inventory/create-stackoverview']);
   }
+   private checkPeriodLockForToday(): void {
+  const today = new Date().toISOString().substring(0, 10); // yyyy-MM-dd
+
+  this.periodLock.getStatusForDateWithName(today).subscribe({
+    next: status => {
+      this.isPeriodLocked = !!status?.isLocked;
+      this.periodName = status?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.periodName = '';
+    }
+  });
+}
 }

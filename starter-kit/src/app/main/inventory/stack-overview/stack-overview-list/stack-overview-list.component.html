@@ -35,6 +35,7 @@
             <button
               (click)="goToCreateItem()"
               *ngIf="canCreate()"
+              [disabled]="isPeriodLocked"
               class="btn m-1 d-inline-flex align-items-center"
               style="background-color:#2E5F73; color:white; gap:6px;">
               <i class="fas fa-plus-circle"></i>
@@ -43,7 +44,9 @@
           </div>
         </div>
       </div>
-
+ <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 m-1" style="font-size:0.8rem;">
+          Period <strong>{{ PeriodName || 'current' }}</strong> is locked.
+        </div>
       <!-- Loading / Error -->
       <div *ngIf="loading" class="px-3 pb-2 small text-muted">Loading items…</div>
       <div *ngIf="errorMsg" class="alert alert-danger mx-3 my-2">{{ errorMsg }}</div>

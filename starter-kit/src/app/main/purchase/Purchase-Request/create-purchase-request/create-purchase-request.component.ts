@@ -20,7 +20,10 @@ import { PurchaseService } from '../../purchase.service';
 import { PrDraftService } from '../pr-draft.service';
 import { CitiesService } from 'app/main/master/cities/cities.service';
 import { CountriesService } from 'app/main/master/countries/countries.service';
-
+import {
+  PeriodCloseService,
+  PeriodStatusDto
+} from 'app/main/financial/period-close-fx/period-close-fx.service';
 @Component({
   selector: 'app-create-purchase-request',
   templateUrl: './create-purchase-request.component.html',
@@ -112,7 +115,8 @@ export class CreatePurchaseRequestComponent implements OnInit, OnDestroy {
   userId: string;
   prid: number | null = null;
   isEditMode = false;
-
+isPeriodLocked = false;
+currentPeriodName = '';
   // Draft handling (server)
   private tempDraftId: number | null = null;
   private suppressAutosave = false;
@@ -150,7 +154,8 @@ export class CreatePurchaseRequestComponent implements OnInit, OnDestroy {
     private draft: PrDraftService,
     private itemsService: ItemsService, // used for createItem()
     private _cityService: CitiesService,
-    private _countriesService: CountriesService
+    private _countriesService: CountriesService,
+    private periodService: PeriodCloseService,
   ) {
     debugger
     this.userId = localStorage.getItem('id') || 'System';
@@ -1224,10 +1229,16 @@ selectModalItem(item: any) {
       }
     });
   }
+saveRequest() {
+  this.checkPeriodOpenBeforeSave(
+    this.isEditMode ? 'update Purchase Request' : 'create Purchase Request',
+    () => this.saveRequestActual()
+  );
+}
 
   // ---------------- Final save (Convert) ----------------
 
-  saveRequest() {
+  saveRequestActual() {
     if (this.tempDraftId) {
       this.draft.promote(this.tempDraftId, this.userId).subscribe({
         next: (res: any) => {
@@ -1500,5 +1511,39 @@ private findSameItemLocationIndex(line: any): number {
     return xItemKey === itemKey && xLocKey === locKey && !x?.isDraft;
   });
 }
+private showPeriodLockedSwal(action: string): void {
+  Swal.fire(
+    'Period Locked',
+    this.currentPeriodName
+      ? `Period "${this.currentPeriodName}" is locked. You cannot ${action} in this period.`
+      : `Selected accounting period is locked. You cannot ${action}.`,
+    'warning'
+  );
+}
 
+private checkPeriodOpenBeforeSave(action: string, callback: () => void): void {
+  const dateStr = this.prHeader?.neededBy;
+
+  if (!dateStr) {
+    Swal.fire('Required', 'Delivery Date is required.', 'warning');
+    return;
+  }
+
+  this.periodService.getStatusForDateWithName(dateStr).subscribe({
+    next: (res: PeriodStatusDto | null) => {
+      this.isPeriodLocked = !!res?.isLocked;
+      this.currentPeriodName = res?.periodName || '';
+
+      if (this.isPeriodLocked) {
+        this.showPeriodLockedSwal(action);
+        return;
+      }
+
+      callback();
+    },
+    error: () => {
+      Swal.fire('Error', 'Failed to validate accounting period.', 'error');
+    }
+  });
+}
 }

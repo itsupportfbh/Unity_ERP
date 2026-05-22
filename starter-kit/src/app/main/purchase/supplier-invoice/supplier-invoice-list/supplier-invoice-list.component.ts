@@ -4,6 +4,10 @@ import Swal from 'sweetalert2';
 import { SupplierInvoiceService } from '../supplier-invoice.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
+import {
+  PeriodCloseService,
+  PeriodStatusDto
+} from 'app/main/financial/period-close-fx/period-close-fx.service';
 
 @Component({
   selector: 'app-supplier-invoice-list',
@@ -42,21 +46,48 @@ export class SupplierInvoiceListComponent implements OnInit {
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
-
+isPeriodLocked = false;
+currentPeriodName = '';
   constructor(
     private api: SupplierInvoiceService,
     private router: Router,
     private permissionService: PermissionService,
-    private gstLockService: GstLockService
+    private gstLockService: GstLockService,
+    private periodService: PeriodCloseService
   ) {
     this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
   ngOnInit(): void {
+    const today = new Date().toISOString().substring(0, 10);
+  this.checkPeriodLockForDate(today);
     this.loadPermission();
   }
+private checkPeriodLockForDate(dateStr: string): void {
+  if (!dateStr) return;
 
+  this.periodService.getStatusForDateWithName(dateStr).subscribe({
+    next: (res: PeriodStatusDto | null) => {
+      this.isPeriodLocked = !!res?.isLocked;
+      this.currentPeriodName = res?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.currentPeriodName = '';
+    }
+  });
+}
+
+private showPeriodLockedSwal(action: string): void {
+  Swal.fire(
+    'Period Locked',
+    this.currentPeriodName
+      ? `Period "${this.currentPeriodName}" is locked. You cannot ${action} in this period.`
+      : `Selected accounting period is locked. You cannot ${action}.`,
+    'warning'
+  );
+}
   get hasLockedRows(): boolean {
     return Object.values(this.lockedRowMap || {}).some(x => x === true);
   }
@@ -277,6 +308,11 @@ canShowDelete(row: any): boolean {
     });
     return;
   }
+   if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Supplier Invoice');
+    return;
+  }
+
 
   this.router.navigate(['/purchase/Create-SupplierInvoice']);
 }
@@ -312,6 +348,11 @@ if (row && this.isGlPosted(row)) {
   });
   return;
 }
+ if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Supplier Invoice');
+    return;
+  }
+
     this.router.navigate(['/purchase/Edit-SupplierInvoice', id]);
   }
 
@@ -346,6 +387,11 @@ if (row && this.isGlPosted(row)) {
   });
   return;
 }
+ if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Supplier Invoice');
+    return;
+  }
+
     Swal.fire({
       title: 'Delete this supplier invoice?',
       text: 'This action cannot be undone.',
@@ -442,6 +488,11 @@ if (this.isGlPosted(row)) {
   });
   return;
 }
+ if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Supplier Invoice');
+    return;
+  }
+
     this.currentRow = row;
     this.threeWay = null;
     this.showMatchModal = true;
@@ -489,6 +540,11 @@ if (this.isGlPosted(row)) {
       });
       return;
     }
+     if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Supplier Invoice');
+    return;
+  }
+
 
     this.isPosting = true;
 

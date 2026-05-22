@@ -48,6 +48,11 @@
                 <span>Add</span>
               </button>
             </div>
+              <div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+            </div>
           </div>
 
           <ngx-datatable
@@ -124,50 +129,50 @@
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="Action" [width]="120" [sortable]="false">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="d-flex align-items-center">
-                  <i
-                    class="fas fa-print text-primary mr-2"
-                    style="cursor:pointer;"
-                    (click)="openPrint(row)"
-                    title="Print / PDF">
-                  </i>
+           <ngx-datatable-column name="Action" [width]="120" [sortable]="false">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <div class="d-flex align-items-center">
+      <i
+        class="fas fa-print text-primary mr-2"
+        style="cursor:pointer;"
+        (click)="openPrint(row)"
+        title="Print / PDF">
+      </i>
 
-                  <!-- <ng-container *ngIf="isRowLocked(row); else actionsEnabled">
-                    <i
-                      *ngIf="canEdit()"
-                      class="fas fa-pen text-muted mr-2"
-                      title="Disabled for approved/rejected SO">
-                    </i>
+      <ng-container *ngIf="isRowLocked(row) || isPeriodLocked; else actionsEnabled">
+        <i
+          *ngIf="canEdit()"
+          class="fas fa-pen text-muted mr-2"
+          [title]="isPeriodLocked ? 'Period locked' : 'Disabled for approved/rejected SO'">
+        </i>
 
-                    <i
-                      *ngIf="canDelete()"
-                      class="fas fa-trash text-muted"
-                      title="Disabled for approved/rejected SO">
-                    </i>
-                  </ng-container> -->
+        <i
+          *ngIf="canDelete()"
+          class="fas fa-trash text-muted"
+          [title]="isPeriodLocked ? 'Period locked' : 'Disabled for approved/rejected SO'">
+        </i>
+      </ng-container>
 
-                  <ng-template #actionsEnabled>
-                    <i
-                      *ngIf="canEdit()"
-                      class="fas fa-pen text-success mr-2"
-                      style="cursor:pointer;"
-                      (click)="editSO(row)"
-                      title="Edit">
-                    </i>
+      <ng-template #actionsEnabled>
+        <i
+          *ngIf="canEdit()"
+          class="fas fa-pen text-success mr-2"
+          style="cursor:pointer;"
+          (click)="editSO(row)"
+          title="Edit">
+        </i>
 
-                    <i
-                      *ngIf="canDelete()"
-                      class="fas fa-trash text-danger"
-                      style="cursor:pointer;"
-                      (click)="deleteSO(row.id)"
-                      title="Delete">
-                    </i>
-                  </ng-template>
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
+        <i
+          *ngIf="canDelete()"
+          class="fas fa-trash text-danger"
+          style="cursor:pointer;"
+          (click)="deleteSO(row.id)"
+          title="Delete">
+        </i>
+      </ng-template>
+    </div>
+  </ng-template>
+</ngx-datatable-column>
 
           </ngx-datatable>
         </div>

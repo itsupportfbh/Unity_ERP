@@ -6,13 +6,15 @@ import { CustomerMasterService } from 'app/main/businessPartners/customer-master
 import { SalesOrderService } from 'app/main/sales/sales-order/sales-order.service';
 import { AccountsPayableService } from '../../accounts-payable/accounts-payable.service';
 import { Router } from '@angular/router';
+import { PeriodCloseService } from '../../period-close-fx/period-close-fx.service';
 @Component({
   selector: 'app-ar-advance',
   templateUrl: './ar-advance.component.html',
   styleUrls: ['./ar-advance.component.scss']
 })
 export class ArAdvanceComponent implements OnInit {
-
+ isPeriodLocked = false;
+  periodName = '';
   customers: any[] = [];
   orders: any[] = [];
   openAdvances: any[] = [];
@@ -37,14 +39,29 @@ export class ArAdvanceComponent implements OnInit {
     private customerService: CustomerMasterService,
     private salesOrderService: SalesOrderService,
       private apSvc: AccountsPayableService,
-       private router: Router
+       private router: Router,
+       private periodLock: PeriodCloseService
   ) {}
 
   ngOnInit(): void {
     this.loadCustomers();
     this.loadBankAccounts();
+     this.checkPeriodLockForToday();
   }
+ private checkPeriodLockForToday(): void {
+  const today = new Date().toISOString().substring(0, 10); // yyyy-MM-dd
 
+  this.periodLock.getStatusForDateWithName(today).subscribe({
+    next: status => {
+      this.isPeriodLocked = !!status?.isLocked;
+      this.periodName = status?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.periodName = '';
+    }
+  });
+}
   /* ================== LOADERS ================== */
 
   loadCustomers() {
@@ -129,7 +146,16 @@ export class ArAdvanceComponent implements OnInit {
   /* ================== SAVE ================== */
 
   saveAdvance() {
-
+if (this.isPeriodLocked) {
+      Swal.fire(
+        'Period Locked',
+        this.periodName
+          ? `Period "${this.periodName}" is locked. You cannot create new receipts in this period.`
+          : 'Selected period is locked. You cannot create new receipts.',
+        'warning'
+      );
+      return;
+    }
     if (!this.model.customerId || !this.model.amount || this.model.amount <= 0) {
       Swal.fire('Validation', 'Select customer and enter valid amount', 'warning');
       return;

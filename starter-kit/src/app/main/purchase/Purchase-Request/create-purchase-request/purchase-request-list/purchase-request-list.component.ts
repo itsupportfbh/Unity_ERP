@@ -428,43 +428,41 @@ export class PurchaseRequestListComponent
   trackByAlertId(_: number, a: PurchaseAlert) {
     return a?.id ?? _;
   }
-   promoteDraft(id: number): void {
-    // If you want a confirm before opening, keep this; otherwise navigate directly.
-    Swal.fire({
-      title: 'Open draft?',
-      text: 'Continue editing this draft.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Open',
-      cancelButtonText: 'Cancel',
-      confirmButtonColor: '#2E5F73',
-      cancelButtonColor: '#6c757d',
-    }).then((r) => {
-      if (r.value) {
-        this.router.navigate(['/purchase/Create-PurchaseRequest'], { queryParams: { draftId: id } });
-      }
-    });
+ promoteDraft(id: number): void {
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('open Purchase Request drafts');
+    return;
   }
 
-  deleteDraft(id: number): void {
-    this.draftSvc.delete(id, this.userId).subscribe({
-      next: () => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Deleted',
-          text: 'Draft removed.',
-          confirmButtonColor: '#2E5F73',
-        });
-        this.loadDrafts();
-        this.refreshDraftCount();
-      },
-      error: () =>
-        Swal.fire({
-          icon: 'error',
-          title: 'Delete Failed',
-          text: 'Try again.',
-          confirmButtonColor: '#2E5F73',
-        }),
-    });
+  Swal.fire({
+    title: 'Open draft?',
+    text: 'Continue editing this draft.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Open',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#2E5F73',
+    cancelButtonColor: '#6c757d',
+  }).then((r) => {
+    if (r.value) {
+      this.router.navigate(['/purchase/Create-PurchaseRequest'], { queryParams: { draftId: id } });
+    }
+  });
+}
+
+deleteDraft(id: number): void {
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('delete Purchase Request drafts');
+    return;
   }
+
+  this.draftSvc.delete(id, this.userId).subscribe({
+    next: () => {
+      Swal.fire('Deleted', 'Draft removed.', 'success');
+      this.loadDrafts();
+      this.refreshDraftCount();
+    },
+    error: () => Swal.fire('Delete Failed', 'Try again.', 'error'),
+  });
+}
 }

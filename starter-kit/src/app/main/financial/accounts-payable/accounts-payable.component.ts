@@ -125,7 +125,7 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
         permission: FunctionPermission;
           isPermissionLoaded = false;
           isPageLoading = false;
-
+periodName = '';
   constructor(
     private apSvc: AccountsPayableService,
     private supplierSvc: SupplierService,

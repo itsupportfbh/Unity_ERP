@@ -4,7 +4,10 @@ import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
-
+import {
+  PeriodCloseService,
+  PeriodStatusDto
+} from 'app/main/financial/period-close-fx/period-close-fx.service';
 type SiListRow = {
   id: number;
   invoiceNo: string;
@@ -69,21 +72,48 @@ export class SalesinvoicelistComponent implements OnInit {
   isPageLoading = false;
 
   lockedRowMap: { [key: number]: boolean } = {};
-
+isPeriodLocked = false;
+currentPeriodName = '';
   constructor(
     private si: SalesInvoiceService,
     private router: Router,
     private permissionService: PermissionService,
-    private gstLockService: GstLockService
+    private gstLockService: GstLockService,
+      private periodService: PeriodCloseService
   ) {
     this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
   ngOnInit(): void {
+     const today = new Date().toISOString().substring(0, 10);
+  this.checkPeriodLockForDate(today);
     this.loadPermission();
   }
+private checkPeriodLockForDate(dateStr: string): void {
+  if (!dateStr) return;
 
+  this.periodService.getStatusForDateWithName(dateStr).subscribe({
+    next: (res: PeriodStatusDto | null) => {
+      this.isPeriodLocked = !!res?.isLocked;
+      this.currentPeriodName = res?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.currentPeriodName = '';
+    }
+  });
+}
+
+private showPeriodLockedSwal(action: string): void {
+  Swal.fire(
+    'Period Locked',
+    this.currentPeriodName
+      ? `Period "${this.currentPeriodName}" is locked. You cannot ${action} in this period.`
+      : `Selected accounting period is locked. You cannot ${action}.`,
+    'warning'
+  );
+}
   get hasLockedRows(): boolean {
     return Object.values(this.lockedRowMap || {}).some(x => x === true);
   }
@@ -255,7 +285,10 @@ goToCreate(): void {
     });
     return;
   }
-
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Quotation');
+    return;
+  }
   if (this.hasGlPostedRows) {
     Swal.fire({
       icon: 'warning',
@@ -278,7 +311,10 @@ goToCreate(): void {
       });
       return;
     }
-
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Quotation');
+    return;
+  }
     const row =
       this.rows.find(x => x.id === id) ||
       this.temp.find(x => x.id === id);
@@ -305,7 +341,10 @@ goToCreate(): void {
       });
       return;
     }
-
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Quotation');
+    return;
+  }
     const row =
       this.rows.find(x => x.id === id) ||
       this.temp.find(x => x.id === id);

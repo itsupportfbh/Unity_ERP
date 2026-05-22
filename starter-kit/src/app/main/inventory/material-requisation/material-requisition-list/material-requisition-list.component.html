@@ -43,7 +43,10 @@
                 Stock Transfer List
               </button>
 
-              <button class="btn mrq-btn-primary" type="button" (click)="goToCreateForm()" *ngIf="canCreate()">
+              <button class="btn mrq-btn-primary" type="button" (click)="goToCreateForm()" *ngIf="canCreate()"[disabled]="isPeriodLocked" [attr.title]="isPeriodLocked
+                 ? (periodName ? 'Period ' + periodName + ' is locked'
+                               : 'Period is locked') 
+                 : 'Create new request'">
                 <i class="fas fa-plus-circle mr-50"></i>
                 <span>New Request</span>
               </button>
@@ -52,7 +55,9 @@
           </div>
         </div>
       </div>
-
+ <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 m-1" style="font-size:0.8rem;">
+          Period <strong>{{ periodName || 'current' }}</strong> is locked.
+        </div>
       <!-- Loading / Error -->
       <div *ngIf="loading" class="px-3 pb-2 small text-muted">Loading…</div>
       <div *ngIf="errorMsg" class="alert alert-danger mx-3 my-2">{{ errorMsg }}</div>

@@ -391,8 +391,19 @@
               </td>
               <td style="padding:10px 12px;text-align:center;">
                 <div style="display:flex;justify-content:center;align-items:center;gap:8px;">
-                  <button class="btn btn-sm btn-primary" (click)="promoteDraft(d.id)">Open</button>
-                  <button class="btn btn-sm btn-outline-danger" (click)="deleteDraft(d.id)">Delete</button>
+                <button
+  class="btn btn-sm btn-primary"
+  (click)="promoteDraft(d.id)"
+  [disabled]="isPeriodLocked">
+  Open
+</button>
+
+<button
+  class="btn btn-sm btn-outline-danger"
+  (click)="deleteDraft(d.id)"
+  [disabled]="isPeriodLocked">
+  Delete
+</button>
                 </div>
               </td>
             </tr>

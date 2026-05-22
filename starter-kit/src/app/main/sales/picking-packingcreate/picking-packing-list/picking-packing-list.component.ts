@@ -14,7 +14,10 @@ import * as feather from 'feather-icons';
 
 import { PackingService } from '../picking-packing.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
-
+import {
+  PeriodCloseService,
+  PeriodStatusDto
+} from 'app/main/financial/period-close-fx/period-close-fx.service';
 @Component({
   selector: 'app-picking-packing-list',
   templateUrl: './picking-packing-list.component.html',
@@ -43,12 +46,14 @@ export class PickingPackingListComponent implements OnInit, AfterViewInit, After
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
-
+isPeriodLocked = false;
+currentPeriodName = '';
   constructor(
     private packingService: PackingService,
     private router: Router,
     private datePipe: DatePipe,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private periodService: PeriodCloseService
   ) {
     this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -83,7 +88,9 @@ export class PickingPackingListComponent implements OnInit, AfterViewInit, After
         this.isPageLoading = false;
 
         if (this.canView()) {
-          this.loadRequests();
+          const today = new Date().toISOString().substring(0, 10);
+this.checkPeriodLockForDate(today);
+this.loadRequests();
         }
       },
       error: () => {
@@ -94,7 +101,30 @@ export class PickingPackingListComponent implements OnInit, AfterViewInit, After
       }
     });
   }
+private checkPeriodLockForDate(dateStr: string): void {
+  if (!dateStr) return;
 
+  this.periodService.getStatusForDateWithName(dateStr).subscribe({
+    next: (res: PeriodStatusDto | null) => {
+      this.isPeriodLocked = !!res?.isLocked;
+      this.currentPeriodName = res?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.currentPeriodName = '';
+    }
+  });
+}
+
+private showPeriodLockedSwal(action: string): void {
+  Swal.fire(
+    'Period Locked',
+    this.currentPeriodName
+      ? `Period "${this.currentPeriodName}" is locked. You cannot ${action} in this period.`
+      : `Selected accounting period is locked. You cannot ${action}.`,
+    'warning'
+  );
+}
   canView(): boolean {
     return this.permissionService.hasView(this.permission);
   }
@@ -141,30 +171,48 @@ export class PickingPackingListComponent implements OnInit, AfterViewInit, After
     });
   }
 
-  openCreate(): void {
-    if (!this.canCreate()) {
-      Swal.fire('Access Denied', 'You do not have create permission.', 'warning');
-      return;
-    }
-
-    this.router.navigate(['/Sales/Picking-packing-create']);
+openCreate(): void {
+  if (!this.canCreate()) {
+    Swal.fire('Access Denied', 'You do not have create permission.', 'warning');
+    return;
   }
 
-  editPicking(row: any): void {
-    if (!this.canEdit()) {
-      Swal.fire('Access Denied', 'You do not have edit permission.', 'warning');
-      return;
-    }
-
-    this.router.navigateByUrl(`/Sales/Picking-packing-edit/${row.id}`);
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Picking & Packing');
+    return;
   }
+
+  this.router.navigate(['/Sales/Picking-packing-create']);
+}
+
+ editPicking(row: any): void {
+  if (!this.canEdit()) {
+    Swal.fire('Access Denied', 'You do not have edit permission.', 'warning');
+    return;
+  }
+
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('edit Picking & Packing');
+    return;
+  }
+
+  if (this.isRowLocked(row)) {
+    Swal.fire('Disabled', 'This Picking & Packing is already approved/rejected.', 'warning');
+    return;
+  }
+
+  this.router.navigateByUrl(`/Sales/Picking-packing-edit/${row.id}`);
+}
 
   deletePicking(id: number): void {
     if (!this.canDelete()) {
       Swal.fire('Access Denied', 'You do not have delete permission.', 'warning');
       return;
     }
-
+if (this.isPeriodLocked) {
+  this.showPeriodLockedSwal('delete Picking & Packing');
+  return;
+}
     Swal.fire({
       title: 'Are you sure?',
       text: 'This will permanently delete the Picking.',

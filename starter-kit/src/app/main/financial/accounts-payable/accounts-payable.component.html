@@ -315,7 +315,9 @@
                   New Payment
                 </button>
               </div>
-
+ <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 m-1" style="font-size:0.8rem;">
+          Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+        </div>
               <div class="table-responsive">
                 <table class="table mb-0 ap-table">
                   <thead>
@@ -781,6 +783,7 @@
                   type="button"
                   class="btn btn-outline-primary btn-sm ml-50"
                   (click)="openNewAdvance()"
+                  [disabled]="isPeriodLocked"
                    *ngIf="canCreate()">
                   <i class="fas fa-plus mr-25"></i>
                   New Advance
@@ -798,7 +801,9 @@
                   Balance: {{ totalAdvanceBalance | number:'1.2-2' }}
                 </div>
               </div>
-
+ <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 m-1" style="font-size:0.8rem;">
+          Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+        </div>
               <div class="table-responsive">
                 <table class="table mb-0 ap-table">
                   <thead>

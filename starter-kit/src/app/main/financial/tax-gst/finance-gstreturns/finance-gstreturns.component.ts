@@ -10,6 +10,7 @@ import {
 } from './gst-returns.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 import Swal from 'sweetalert2';
+import { PeriodCloseService } from '../../period-close-fx/period-close-fx.service';
 
 @Component({
   selector: 'app-finance-gstreturns',
@@ -42,11 +43,13 @@ export class FinanceGstreturnsComponent implements OnInit {
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
-
+ isPeriodLocked = false;
+  periodName = '';
   constructor(
     private gstService: GstReturnsService,
     private router: Router,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+       private periodLock: PeriodCloseService
   ) {
     this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -54,6 +57,7 @@ export class FinanceGstreturnsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPermission();
+    this.checkPeriodLockForToday();
   }
 
   loadPermission(): void {
@@ -553,22 +557,56 @@ get canShowApplyLock(): boolean {
     return Math.round((Number(value) || 0) * 100) / 100;
   }
 markAsFiled(): void {
-if (!this.model || this.statusNo !== 1) {
-  return;
-}
+  if (!this.model) {
+    return;
+  }
+
+  if (this.statusNo !== 1) {
+    Swal.fire(
+      'Warning',
+      'Only LOCKED GST return can be marked as filed.',
+      'warning'
+    );
+    return;
+  }
+
+  if (!this.canPost()) {
+    Swal.fire(
+      'Access Denied',
+      'You do not have permission to mark GST return as filed.',
+      'warning'
+    );
+    return;
+  }
 
   Swal.fire({
-    title: 'Mark GST Return as Filed',
+    title: 'Confirm GST Filing',
+    html: `
+      <div style="text-align:left;font-size:13px;">
+        <p>
+          Use this only after the GST F5 return is submitted in IRAS / GST portal.
+        </p>
+        <p>
+          Enter the submission / acknowledgement number for audit reference.
+        </p>
+      </div>
+    `,
     input: 'text',
-    inputLabel: 'Filing / Submission No',
-    inputPlaceholder: 'Enter filing number',
+    inputLabel: 'IRAS Submission / Acknowledgement No',
+    inputPlaceholder: 'Example: GST-F5-2026-Q1-0001',
     showCancelButton: true,
-    confirmButtonText: 'Mark Filed',
+    confirmButtonText: 'Confirm Filed',
+    cancelButtonText: 'Cancel',
     confirmButtonColor: '#2E5F73',
     inputValidator: (value) => {
-      if (!value) {
-        return 'Filing No is required';
+      if (!value || !value.trim()) {
+        return 'Submission / acknowledgement no is required';
       }
+
+      if (value.trim().length < 3) {
+        return 'Please enter a valid submission no';
+      }
+
       return null;
     }
   }).then(result => {
@@ -576,23 +614,31 @@ if (!this.model || this.statusNo !== 1) {
       return;
     }
 
+    const filingNo = String(result.value || '').trim();
+
     this.isSaving = true;
 
-    this.gstService.markFiled(this.model!.id, result.value).subscribe({
-  next: (updated) => {
-  this.model = updated || this.model;
+    this.gstService.markFiled(this.model!.id, filingNo).subscribe({
+      next: (updated) => {
+        this.model = updated || this.model;
 
-  if (this.model) {
-    (this.model as any).status = 2;
-    this.model.box8NetPayable = this.f5Net;
-  }
+        if (this.model) {
+          (this.model as any).status = 2;
+          (this.model as any).filingNo = filingNo;
+          this.model.box8NetPayable = this.f5Net;
+        }
 
-  this.isSaving = false;
+        this.isSaving = false;
 
-  Swal.fire('Filed', 'GST return marked as filed.', 'success');
-},
+        Swal.fire(
+          'Filed',
+          'GST return marked as filed successfully.',
+          'success'
+        );
+      },
       error: (err) => {
         this.isSaving = false;
+
         Swal.fire(
           'Failed',
           err?.error?.message || 'Unable to mark GST return as filed.',
@@ -656,5 +702,18 @@ if (!this.model || this.statusNo !== 2) {
     });
   });
 }
+ private checkPeriodLockForToday(): void {
+  const today = new Date().toISOString().substring(0, 10); // yyyy-MM-dd
 
+  this.periodLock.getStatusForDateWithName(today).subscribe({
+    next: status => {
+      this.isPeriodLocked = !!status?.isLocked;
+      this.periodName = status?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.periodName = '';
+    }
+  });
+}
 }

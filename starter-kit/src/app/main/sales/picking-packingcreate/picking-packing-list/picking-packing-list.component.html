@@ -23,6 +23,11 @@
                   entries
                 </label>
               </div>
+               <div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+            </div>
             </div>
 
             <div class="col-md-6 col-12 d-flex justify-content-md-end">
@@ -38,13 +43,17 @@
                   style="flex:0 0 320px; max-width:40vw;" />
 
                 <button
-                  *ngIf="canCreate()"
-                  (click)="openCreate()"
-                  class="btn d-inline-flex align-items-center flex-shrink-0"
-                  style="background-color:#2E5F73; color:white; gap:4px;">
-                  <i data-feather="plus-circle" class="w-4 h-4"></i>
-                  <span>Add</span>
-                </button>
+  *ngIf="canCreate()"
+  (click)="openCreate()"
+  class="btn d-inline-flex align-items-center flex-shrink-0"
+  style="background-color:#2E5F73; color:white; gap:4px;"
+  [disabled]="isPeriodLocked"
+  [attr.title]="isPeriodLocked
+    ? (currentPeriodName ? 'Period ' + currentPeriodName + ' is locked' : 'Accounting period is locked')
+    : 'Create Picking & Packing'">
+  <i data-feather="plus-circle" class="w-4 h-4"></i>
+  <span>Add</span>
+</button>
               </div>
             </div>
           </div>
@@ -98,27 +107,45 @@
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column
-              *ngIf="canEdit() || canDelete()"
-              name="Action"
-              [width]="120"
-              [sortable]="false">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <i
-                  *ngIf="canEdit()"
-                  class="fas fa-pen text-primary mr-2"
-                  style="cursor:pointer;"
-                  (click)="editPicking(row)">
-                </i>
+        <ngx-datatable-column
+  *ngIf="canEdit() || canDelete()"
+  name="Action"
+  [width]="120"
+  [sortable]="false">
+  <ng-template let-row="row" ngx-datatable-cell-template>
 
-                <i
-                  *ngIf="canDelete()"
-                  class="fas fa-trash text-danger"
-                  style="cursor:pointer;"
-                  (click)="deletePicking(row.id)">
-                </i>
-              </ng-template>
-            </ngx-datatable-column>
+    <ng-container *ngIf="isPeriodLocked || isRowLocked(row); else actionsEnabled">
+      <i
+        *ngIf="canEdit()"
+        class="fas fa-pen text-muted mr-2"
+        [title]="isPeriodLocked ? 'Period locked' : 'Disabled'">
+      </i>
+
+      <i
+        *ngIf="canDelete()"
+        class="fas fa-trash text-muted"
+        [title]="isPeriodLocked ? 'Period locked' : 'Disabled'">
+      </i>
+    </ng-container>
+
+    <ng-template #actionsEnabled>
+      <i
+        *ngIf="canEdit()"
+        class="fas fa-pen text-primary mr-2"
+        style="cursor:pointer;"
+        (click)="editPicking(row)">
+      </i>
+
+      <i
+        *ngIf="canDelete()"
+        class="fas fa-trash text-danger"
+        style="cursor:pointer;"
+        (click)="deletePicking(row.id)">
+      </i>
+    </ng-template>
+
+  </ng-template>
+</ngx-datatable-column>
           </ngx-datatable>
         </div>
       </section>

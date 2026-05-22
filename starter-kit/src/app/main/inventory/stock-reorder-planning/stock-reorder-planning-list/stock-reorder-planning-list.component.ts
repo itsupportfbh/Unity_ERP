@@ -9,6 +9,7 @@ import * as feather from 'feather-icons';
 import { ReorderPlanningService } from '../stock-reorder-planning.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 import Swal from 'sweetalert2';
+import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
 
 const METHOD_NAME: Record<number, string> = { 1: 'MinMax', 2: 'ROP', 3: 'MRP' };
 
@@ -56,15 +57,16 @@ export class StockReorderPlanningListComponent implements OnInit, AfterViewInit,
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
-
+ isPeriodLocked = false;
+  periodName = '';
   constructor(
     private reorderPlanningService: ReorderPlanningService,
     private router: Router,
-    private datePipe: DatePipe, private permissionService: PermissionService
+    private datePipe: DatePipe, private permissionService: PermissionService,private periodLock: PeriodCloseService
   ) {this.userId = localStorage.getItem('id');
     this.permission = this.permissionService.getEmptyPermission(this.functionId);}
 
-  ngOnInit(): void { this.loadPermission(); }
+  ngOnInit(): void { this.loadPermission(); this.checkPeriodLockForToday(); }
   ngAfterViewInit(): void { feather.replace(); }
   ngAfterViewChecked(): void { feather.replace(); }
 
@@ -205,4 +207,18 @@ export class StockReorderPlanningListComponent implements OnInit, AfterViewInit,
 }
 
   closeLinesModal(): void { this.showLinesModal = false; }
+       private checkPeriodLockForToday(): void {
+  const today = new Date().toISOString().substring(0, 10); // yyyy-MM-dd
+
+  this.periodLock.getStatusForDateWithName(today).subscribe({
+    next: status => {
+      this.isPeriodLocked = !!status?.isLocked;
+      this.periodName = status?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.periodName = '';
+    }
+  });
+}
 }

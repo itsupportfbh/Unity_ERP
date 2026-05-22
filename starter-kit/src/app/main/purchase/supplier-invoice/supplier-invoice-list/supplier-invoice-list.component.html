@@ -52,7 +52,11 @@
                 entries
               </label>
             </div>
-
+<div *ngIf="isPeriodLocked"
+                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
+                 style="font-size: 0.8rem;">
+              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+            </div>
           <div
   *ngIf="hasLockedRows"
   class="alert alert-warning py-1 px-2 mx-2 mb-2"
@@ -79,19 +83,20 @@
                   (search)="filterUpdate($event)" />
               </label>
 
-              <button
-                (click)="goToCreate()"
-                *ngIf="canCreate()"
-                class="btn m-1 d-inline-flex align-items-center"
-                style="background-color:#2E5F73;color:white;gap:6px;"
-                [disabled]="isRowLocked(row)"
-                [title]="hasGlPostedRows ? 'GL Posted invoice exists. Add disabled.' : 'Add Supplier Invoice'"
-                [attr.title]="isRowLocked(row)
-                  ? (currentPeriodName ? ('GST Period ' + currentPeriodName + ' is locked') : 'GST period is locked')
-                  : 'Create Supplier Invoice'">
-                <i data-feather="plus-circle" class="w-4 h-4"></i>
-                <span>Add</span>
-              </button>
+             <button
+  (click)="goToCreate()"
+  *ngIf="canCreate()"
+  class="btn m-1 d-inline-flex align-items-center"
+  style="background-color:#2E5F73;color:white;gap:6px;"
+  [disabled]="isPeriodLocked || hasGlPostedRows"
+  [attr.title]="hasGlPostedRows
+    ? 'GL Posted invoice exists. Add disabled.'
+    : isPeriodLocked
+      ? (currentPeriodName ? 'Period ' + currentPeriodName + ' is locked' : 'Accounting period is locked')
+      : 'Create Supplier Invoice'">
+  <i data-feather="plus-circle" class="w-4 h-4"></i>
+  <span>Add</span>
+</button>
        
             </div>
           </div>
@@ -344,12 +349,12 @@
 <div class="match-footer">
   <button
   *ngIf="canApprove()"
-    type="button"
-    class="btn btn-primary"
-    (click)="approveAndPostToAp()"
-    [disabled]="isPosting || !currentRow || !currentRow.canApproveToAp">
-    Approve &amp; Post to A/P
-  </button>
+  type="button"
+  class="btn btn-primary"
+  (click)="approveAndPostToAp()"
+  [disabled]="isPosting || isPeriodLocked || isRowLocked(currentRow) || !currentRow || !currentRow.canApproveToAp">
+  Approve &amp; Post to A/P
+</button>
 </div>
   </div>
 </div>

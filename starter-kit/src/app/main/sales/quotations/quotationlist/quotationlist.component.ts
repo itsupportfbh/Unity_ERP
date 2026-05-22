@@ -18,7 +18,10 @@ import { CurrencyService } from 'app/main/master/currency/currency.service';
 import { ItemsService } from 'app/main/master/items/items.service';
 import { UomService } from 'app/main/master/uom/uom.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
-
+import {
+  PeriodCloseService,
+  PeriodStatusDto
+} from 'app/main/financial/period-close-fx/period-close-fx.service';
 type QuotationRow = {
   id: number;
   number: string;
@@ -89,7 +92,8 @@ export class QuotationlistComponent implements OnInit, OnDestroy, AfterViewInit,
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
-
+isPeriodLocked = false;
+currentPeriodName = '';
   constructor(
     private router: Router,
     private quotationSvc: QuotationsService,
@@ -97,13 +101,16 @@ export class QuotationlistComponent implements OnInit, OnDestroy, AfterViewInit,
     private currencySvc: CurrencyService,
     private itemsSvc: ItemsService,
     private uomSvc: UomService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private periodService: PeriodCloseService
   ) {
     this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
   ngOnInit(): void {
+    const today = new Date().toISOString().substring(0, 10);
+  this.checkPeriodLockForDate(today);
     this.loadPermission();
   }
 
@@ -116,7 +123,30 @@ export class QuotationlistComponent implements OnInit, OnDestroy, AfterViewInit,
   ngAfterViewChecked(): void {
     feather.replace();
   }
+private checkPeriodLockForDate(dateStr: string): void {
+  if (!dateStr) return;
 
+  this.periodService.getStatusForDateWithName(dateStr).subscribe({
+    next: (res: PeriodStatusDto | null) => {
+      this.isPeriodLocked = !!res?.isLocked;
+      this.currentPeriodName = res?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.currentPeriodName = '';
+    }
+  });
+}
+
+private showPeriodLockedSwal(action: string): void {
+  Swal.fire(
+    'Period Locked',
+    this.currentPeriodName
+      ? `Period "${this.currentPeriodName}" is locked. You cannot ${action} in this period.`
+      : `Selected accounting period is locked. You cannot ${action}.`,
+    'warning'
+  );
+}
   loadPermission(): void {
     if (!this.userId || this.userId <= 0) {
       this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -646,19 +676,24 @@ export class QuotationlistComponent implements OnInit, OnDestroy, AfterViewInit,
     });
   }
 
-  goToCreate(): void {
-    if (!this.canCreate()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Access Denied',
-        text: 'You do not have create permission.',
-        confirmButtonColor: '#0e3a4c'
-      });
-      return;
-    }
-
-    this.router.navigate(['/Sales/Quotation-create']);
+goToCreate(): void {
+  if (!this.canCreate()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'You do not have create permission.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
   }
+
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('create Quotation');
+    return;
+  }
+
+  this.router.navigate(['/Sales/Quotation-create']);
+}
 
   editQuotation(id: number): void {
     if (!this.canEdit()) {
@@ -670,7 +705,10 @@ export class QuotationlistComponent implements OnInit, OnDestroy, AfterViewInit,
       });
       return;
     }
-
+  if (this.isPeriodLocked) {
+    this.showPeriodLockedSwal('edit Quotation');
+    return;
+  }
     this.router.navigate([`/Sales/Edit-quotation/${id}`]);
   }
 
@@ -684,7 +722,10 @@ export class QuotationlistComponent implements OnInit, OnDestroy, AfterViewInit,
       });
       return;
     }
-
+if (this.isPeriodLocked) {
+  this.showPeriodLockedSwal('delete Quotation');
+  return;
+}
     Swal.fire({
       icon: 'warning',
       title: 'Delete quotation?',

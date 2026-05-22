@@ -52,6 +52,11 @@
   <button
     type="button"
     class="btn btn-outline-primary btn-sm"
+     [disabled]="isPeriodLocked"
+  [attr.title]="isPeriodLocked
+                 ? (periodName ? 'Period ' + periodName + ' is locked'
+                               : 'Period is locked') 
+                 : 'Create new receipt'"
     (click)="goToNewAdvance()">
     <i class="fas fa-plus mr-25"></i>
     New Advance
@@ -69,7 +74,9 @@
     Utilised: {{ arTotalAdvanceUtilised | number:'1.2-2' }}
   </div>
 </div>
-
+ <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 m-1" style="font-size:0.8rem;">
+          Period <strong>{{ periodName || 'current' }}</strong> is locked.
+        </div>
 
             <!-- Advances table -->
             <div class="table-responsive">

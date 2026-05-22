@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AccountsPayableService } from 'app/main/financial/accounts-payable/accounts-payable.service';
+import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
 
 type ArTab = 'invoices' | 'receipts' | 'advance' | 'aging';
 
@@ -39,11 +40,13 @@ export class ARCombineComponent implements OnInit {
   arAdvPage = 1;
   arAdvPageSize = 20;
   arAdvTotalPages = 1;
-
+ isPeriodLocked = false;
+  periodName = '';
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private arService: AccountsPayableService
+    private arService: AccountsPayableService,
+    private periodLock: PeriodCloseService
   ) {}
 
   ngOnInit(): void {
@@ -61,8 +64,22 @@ export class ARCombineComponent implements OnInit {
     if (this.activeTab === 'advance') {
       this.loadArAdvances();
     }
+    this.checkPeriodLockForToday();
   }
+ private checkPeriodLockForToday(): void {
+  const today = new Date().toISOString().substring(0, 10); // yyyy-MM-dd
 
+  this.periodLock.getStatusForDateWithName(today).subscribe({
+    next: status => {
+      this.isPeriodLocked = !!status?.isLocked;
+      this.periodName = status?.periodName || '';
+    },
+    error: () => {
+      this.isPeriodLocked = false;
+      this.periodName = '';
+    }
+  });
+}
   setTab(tab: ArTab): void {
     this.activeTab = tab;
 

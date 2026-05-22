@@ -30,13 +30,19 @@
                                     (search)="filterUpdate($event)" /></label>
 
                             <button *ngIf="canCreate()" (click)="openCreate()" class="btn m-1 d-inline-flex align-items-center"
-                                style="background-color:#2E5F73; color:white; gap:4px;">
+                                style="background-color:#2E5F73; color:white; gap:4px;" [disabled]="isPeriodLocked"
+                                [attr.title]="isPeriodLocked
+                                    ? (periodName ? 'Period ' + periodName + ' is locked' : 'Period is locked')
+                                    : 'Create new stock take'">
                                 <i data-feather="plus-circle" class="w-4 h-4"></i>
                                 <span>Add</span>
                             </button>
                         </div>
                     </div>
                 </div>
+                <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 m-1" style="font-size:0.8rem;">
+          Period <strong>{{ periodName || 'current' }}</strong> is locked.
+        </div>
                 <ngx-datatable class="bootstrap core-bootstrap" [rows]="rows" [rowHeight]="50" [headerHeight]="50"
                     [footerHeight]="50" [limit]="selectedOption" [columnMode]="'force'" [scrollbarH]="true"
                     [reorderable]="true">

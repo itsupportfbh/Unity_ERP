@@ -16,7 +16,9 @@
   GL POSTED
 </span>
           </div>
-
+ <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 m-1" style="font-size:0.8rem;">
+          Period <strong>{{ PeriodName || 'current' }}</strong> is locked.
+        </div>
           <div class="gst-header-right d-flex flex-wrap align-items-center">
             <div class="gst-field mr-1 mb-50">
               <label class="mb-25" style="font-size:0.8rem;">Financial Year</label>
@@ -142,7 +144,7 @@
                   <button type="button"
                           class="btn btn-light btn-sm mr-50 mb-50"
                           (click)="matchWithSystem()"
-                          [disabled]="isLocked || !model || isSaving || !canEdit()">
+                          [disabled]="isLocked ||isPeriodLocked || !model || isSaving || !canEdit()">
                     <i class="fas fa-exchange-alt mr-25"></i>
                     Match with F5
                   </button>
@@ -191,7 +193,7 @@
   class="btn btn-dark btn-sm"
   *ngIf="isStatusFiled && canPost() && !model?.glPosted"
   (click)="postToGl()"
-  [disabled]="isSaving || !model">
+  [disabled]="isSaving || isPeriodLocked || !model">
   <i class="fas fa-book mr-25"></i>
   Post GST to GL
 </button>
@@ -200,6 +202,7 @@
   type="button"
   class="btn btn-success btn-sm"
   *ngIf="isStatusLocked && canPost()"
+  [disabled]="isSaving || isPeriodLocked || !model"
   (click)="markAsFiled()">
   Mark as Filed
 </button>
@@ -209,7 +212,7 @@
   class="btn btn-warning btn-sm"
   *ngIf="isStatusLocked && canPost()"
   (click)="reopenReturn()"
-  [disabled]="isSaving || !model">
+  [disabled]="isSaving || isPeriodLocked || !model">
   <i class="fas fa-unlock mr-25"></i>
   Reopen Return
 </button>
@@ -220,7 +223,7 @@
   *ngIf="canShowApplyLock"
   style="background-color:#2E5F73; border-color:#2E5F73;"
   (click)="applyAndLock()"
-  [disabled]="isSaving || !model">
+  [disabled]="isSaving || isPeriodLocked || !model">
   <i class="fas fa-lock mr-25"></i>
   {{ isSaving ? 'Saving...' : 'Apply & Lock Return' }}
 </button>

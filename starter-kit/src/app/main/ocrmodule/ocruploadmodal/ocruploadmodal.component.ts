@@ -48,7 +48,7 @@ export class OcruploadmodalComponent {
       reader.readAsDataURL(f);
     } else {
       // PDF selected
-      this.previewUrl = 'pdf';
+     this.previewUrl = '__pdf__'; 
     }
   }
 

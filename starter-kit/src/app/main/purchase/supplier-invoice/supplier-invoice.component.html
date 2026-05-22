@@ -327,9 +327,11 @@
   </form>
 </div>
 
+<!-- In supplier-invoice.component.html, find the OCR modal tag and make sure it's: -->
 <app-ocr-upload-modal
   [open]="ocrOpen"
-  [createdBy]="userId"
-  (closed)="ocrOpen=false"
+  [createdBy]="userId?.toString()"
+  [currencyId]="form.value.currencyId || 1"
+  (closed)="ocrOpen = false"
   (applied)="onOcrApplied($event)">
 </app-ocr-upload-modal>

@@ -63,6 +63,7 @@ private buildGroups(rows: ArInvoiceListItem[]): void {
         totalAmount: 0,
         totalPaid: 0,
         totalCreditNote: 0,
+        totalAdvance: 0,
         totalOutstanding: 0,
         netOutstanding: 0,
         invoices: [],
@@ -88,6 +89,7 @@ private buildGroups(rows: ArInvoiceListItem[]): void {
       g.invoices.push(r);
       g.totalAmount      += r.amount || 0;
       g.totalPaid        += r.paid || 0;
+      g.totalAdvance     += r.advanceAmount || 0;
       g.totalOutstanding += r.outstanding || 0;
     }
   }

@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AccountsPayableService } from 'app/main/financial/accounts-payable/accounts-payable.service';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import Swal from 'sweetalert2';
 
 type ArTab = 'invoices' | 'receipts' | 'advance' | 'aging';
 
@@ -42,28 +44,30 @@ export class ARCombineComponent implements OnInit {
   arAdvTotalPages = 1;
  isPeriodLocked = false;
   periodName = '';
+    userId: any;
+  functionId = 'ar';
+    
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private arService: AccountsPayableService,
-    private periodLock: PeriodCloseService
-  ) {}
+    private periodLock: PeriodCloseService,private permissionService: PermissionService
+
+  ) {this.userId = localStorage.getItem('id');
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);}
 
   ngOnInit(): void {
     this.route.queryParamMap.subscribe(params => {
-      const tab = params.get('tab') as ArTab | null;
-      if (tab) {
-        this.activeTab = tab;
-        if (tab === 'advance') {
-          this.loadArAdvances();
-        }
-      }
-    });
+              const tab = params.get('tab') as ArTab | null;
+              if (tab) {
+                this.activeTab = tab;
+              }
+            });
 
-    // Default load if initial tab is 'advance'
-    if (this.activeTab === 'advance') {
-      this.loadArAdvances();
-    }
+    this.loadPermission();
     this.checkPeriodLockForToday();
   }
  private checkPeriodLockForToday(): void {
@@ -80,12 +84,98 @@ export class ARCombineComponent implements OnInit {
     }
   });
 }
-  setTab(tab: ArTab): void {
+   setTab(tab: ArTab): void {
     this.activeTab = tab;
 
     if (tab === 'advance') {
-      this.loadArAdvances();
+      this.refreshPermissionAndLoadAdvance();
     }
+  }
+
+     loadPermission(): void {
+      if (!this.userId || this.userId <= 0) {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+  
+        Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'User not found. Please login again.',
+          confirmButtonColor: '#0e3a4c'
+        });
+        return;
+      }
+  
+      this.isPageLoading = true;
+  
+      this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+        next: (res: FunctionPermission) => {
+          this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+          console.log('Permission:', this.permission);
+          console.log('Can Export:', this.canExport());
+  
+        if (this.canView()) {
+            // Default load if initial tab is 'advance'
+            if (this.activeTab === 'advance') {
+              this.loadArAdvances();
+            }
+          } else {
+            
+            // this.isDisplay = false;
+          }
+        },
+        error: (err) => {
+          console.error('Permission load error:', err);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+  
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Unable to load permission.',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    }
+  refreshPermissionAndLoadAdvance(): void {
+      this.isPermissionLoaded = false;
+
+      this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+        next: (res: FunctionPermission) => {
+          this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+
+          if (this.canView()) {
+            this.loadArAdvances();
+          }
+        },
+        error: () => {
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+        }
+      });
+  }
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+  
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+  
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+  
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+  canExport(): boolean {
+    return this.permissionService.hasExport(this.permission);
   }
 
   // ================== ADVANCE LIST – LOAD & PAGING ==================

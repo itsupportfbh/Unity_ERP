@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 
 import { ReceiptService } from '../receipt-service';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
+import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 
 @Component({
   selector: 'app-receipt',
@@ -20,15 +21,89 @@ export class ReceiptComponent implements OnInit {
   isPeriodLocked = false;
   periodName = '';
 
+  userId: any;
+  functionId = 'ar';
+    
+  permission: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading = false;
+
   constructor(
     private router: Router,
     private receiptService: ReceiptService,
-    private periodLock: PeriodCloseService
-  ) {}
+    private periodLock: PeriodCloseService,
+    private permissionService: PermissionService
+  ) {this.userId = localStorage.getItem('id');
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);}
 
   ngOnInit(): void {
-    this.loadReceipts();
-    this.checkPeriodLockForToday();
+    this.loadPermission();
+  }
+  loadPermission(): void {
+      if (!this.userId || this.userId <= 0) {
+        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+  
+        Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'User not found. Please login again.',
+          confirmButtonColor: '#0e3a4c'
+        });
+        return;
+      }
+  
+      this.isPageLoading = true;
+  
+      this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+        next: (res: FunctionPermission) => {
+          this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+          console.log('Permission:', this.permission);
+          console.log('Can Export:', this.canExport());
+  
+        if (this.canView()) {
+           this.loadReceipts();
+           this.checkPeriodLockForToday();
+          } else {
+            
+            // this.isDisplay = false;
+          }
+        },
+        error: (err) => {
+          console.error('Permission load error:', err);
+          this.permission = this.permissionService.getEmptyPermission(this.functionId);
+          this.isPermissionLoaded = true;
+          this.isPageLoading = false;
+  
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Unable to load permission.',
+            confirmButtonColor: '#d33'
+          });
+        }
+      });
+    }
+  
+  canView(): boolean {
+    return this.permissionService.hasView(this.permission);
+  }
+  
+  canCreate(): boolean {
+    return this.permissionService.hasCreate(this.permission);
+  }
+  
+  canEdit(): boolean {
+    return this.permissionService.hasEdit(this.permission);
+  }
+  
+  canDelete(): boolean {
+    return this.permissionService.hasDelete(this.permission);
+  }
+  canExport(): boolean {
+    return this.permissionService.hasExport(this.permission);
   }
 
   // ---------- Period lock ----------

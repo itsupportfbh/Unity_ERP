@@ -1,6 +1,6 @@
-<div class="content-wrapper p-0">
+<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper">
+    <section *ngIf="canView(); else noAccessTemplate"  class="users-list-wrapper">
       <div class="card">
 
         <!-- Header -->
@@ -21,7 +21,7 @@
 
           <!-- Right: New Receipt button -->
           <div class="col-md-6 col-12 d-flex justify-content-md-end justify-content-start pb-1 pb-md-0">
-            <button
+            <button *ngIf="canCreate()"
   class="btn btn-brand"
   (click)="goCreate()"
   [disabled]="isPeriodLocked"
@@ -71,8 +71,8 @@
                 </td>
                 <td class="text-center">
                   <div class="actions">
-                    <i class="fas fa-pen text-primary" title="Edit" (click)="edit(r.id)"></i>
-                    <i class="fas fa-trash text-danger" title="Delete" (click)="delete(r.id)"></i>
+                    <i *ngIf="canEdit()" class="fas fa-pen text-primary" title="Edit" (click)="edit(r.id)"></i>
+                    <i *ngIf="canDelete()" class="fas fa-trash text-danger" title="Delete" (click)="delete(r.id)"></i>
                   </div>
                 </td>
               </tr>
@@ -90,3 +90,22 @@
     </section>
   </div>
 </div>
+<ng-template #loadingTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-info mt-2">
+        Loading permission...
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #noAccessTemplate>
+  <div class="content-wrapper p-0">
+    <div class="content-body">
+      <div class="alert alert-warning mt-2">
+        You do not have permission to view this screen.
+      </div>
+    </div>
+  </div>
+</ng-template>

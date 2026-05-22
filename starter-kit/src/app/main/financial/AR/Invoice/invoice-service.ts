@@ -24,6 +24,7 @@ export interface ArInvoiceListItem {
     customerCreditNoteDate?: string | null;
     customerCreditStatus?: number;
       referenceNo?: string | null;
+      advanceAmount?: number;
 }
 
 /** Grouped by customer for UI */
@@ -45,6 +46,7 @@ export interface ArCustomerGroup {
     creditNoteNo?: string | null;
     creditNoteDate?: string | null;
     creditNoteStatus?: number;
+    totalAdvance: number;
 }
 
 @Injectable({ providedIn: 'root' })

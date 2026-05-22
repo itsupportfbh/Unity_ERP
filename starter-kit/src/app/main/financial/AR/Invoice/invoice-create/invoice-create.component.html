@@ -71,6 +71,7 @@
                                     <th class="text-end">Amount</th>
                                     <th class="text-end">Paid</th>
                                     <th class="text-end">Credit Note</th>
+                                    <th class="text-end">Advance</th>
                                     <th class="text-end">Outstanding</th>
                                 </tr>
                             </thead>
@@ -90,6 +91,7 @@
                                         <td class="text-end">{{ g.totalAmount | number:'1.2-2' }}</td>
                                         <td class="text-end">{{ g.totalPaid | number:'1.2-2' }}</td>
                                         <td class="text-end">{{ g.totalCreditNote | number:'1.2-2' }}</td>
+                                        <td class="text-end">{{ g.totalAdvance | number:'1.2-2' }}</td>
                                         <td class="text-end">
                                             {{ g.netOutstanding | number:'1.2-2' }}
                                         </td>
@@ -98,7 +100,7 @@
                                     <!-- child invoice rows -->
                                     <!-- child invoice rows -->
                                     <tr *ngIf="g.expanded">
-                                        <td colspan="7" class="p-0">
+                                        <td colspan="8" class="p-0">
                                             <table class="table mb-0 inner-table">
                                                 <thead>
                                                     <tr>
@@ -107,6 +109,7 @@
                                                         <th>Due Date</th>
                                                         <th class="text-end">Amount</th>
                                                         <th class="text-end">Paid</th>
+                                                        <th class="text-end">Advance</th>
                                                         <th class="text-end">Outstanding</th>
                                                         <th class="text-end">Status</th>
                                                     </tr>
@@ -124,6 +127,9 @@
                                                         </td>
                                                         <td class="text-end">{{ r.amount | number:'1.2-2' }}</td>
                                                         <td class="text-end">{{ r.paid | number:'1.2-2' }}</td>
+                                                        <td class="text-end text-success">
+                                                                {{ r.advanceAmount | number:'1.2-2' }}
+                                                                </td>
                                                         <td class="text-end" [ngClass]="{
           'text-success': r.outstanding === 0,
           'text-danger': r.outstanding > 0
@@ -178,7 +184,8 @@
                                                             : 0) | number:'1.2-2'
                                                             }}
                                                         </td>
-
+                                                        <!-- Advance -->
+                                                        <td class="text-end">0.00</td>
                                                         <!-- Outstanding -->
                                                         <td class="text-end">
                                                             {{
@@ -218,7 +225,7 @@
                                 </ng-container>
 
                                 <tr *ngIf="filteredGroups.length === 0">
-                                    <td colspan="7" class="text-center py-3">
+                                    <td colspan="8" class="text-center py-3">
                                         No customers / invoices found.
                                     </td>
                                 </tr>
@@ -226,7 +233,7 @@
 
                             <tbody *ngIf="loading">
                                 <tr>
-                                    <td colspan="7" class="text-center py-3">
+                                    <td colspan="8" class="text-center py-3">
                                         Loading...
                                     </td>
                                 </tr>

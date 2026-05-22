@@ -188,3 +188,30 @@ $brand: #2e5f73;
   color: #6c757d;
   margin-top: -2px;
 }
+.ar-card {
+  overflow: hidden;
+}
+
+.table-responsive {
+  overflow-x: hidden;
+}
+
+.invoice-table,
+.inner-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.invoice-table th,
+.invoice-table td,
+.inner-table th,
+.inner-table td {
+  white-space: normal;
+  word-break: break-word;
+  padding: 0.55rem;
+  font-size: 13px;
+}
+
+.ar-print-btn {
+  padding: 2px 8px;
+}

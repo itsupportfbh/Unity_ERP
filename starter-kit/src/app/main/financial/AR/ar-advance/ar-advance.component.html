@@ -39,7 +39,7 @@
           type="checkbox"
           id="orderSpecific"
           [(ngModel)]="isOrderSpecific"
-          (change)="onToggleOrderSpecific()">
+          (change)="onToggleOrderSpecific($event)">
         <label class="form-check-label small" for="orderSpecific">
           Link to Sales Order
         </label>
@@ -81,7 +81,7 @@
 
     <div class="col-md-3 col-12 mb-1">
       <label class="form-label small">Payment Mode</label>
-      <select class="form-control" [(ngModel)]="model.paymentMode">
+      <select class="form-control" [(ngModel)]="model.paymentMode" (change)="onPaymentModeChange()">
         <option value="Bank">Bank</option>
         <option value="Cash">Cash</option>
         <option value="UPI">UPI</option>
@@ -89,7 +89,7 @@
     </div>
 
     <!-- BANK DROPDOWN -->
-    <div class="col-md-3 col-12 mb-1">
+    <div class="col-md-3 col-12 mb-1" *ngIf="model.paymentMode === 'Bank'">
       <label class="form-label small">Bank Account</label>
       <select
         class="form-control"

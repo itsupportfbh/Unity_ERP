@@ -96,14 +96,16 @@ export class ArAdvanceComponent implements OnInit {
     this.loadOpenAdvances();
   }
 
-  onToggleOrderSpecific() {
-    this.model.salesOrderId = null;
-    this.orders = [];
+   onToggleOrderSpecific(event?: any): void {
+  this.isOrderSpecific = event?.target?.checked === true;
 
-    if (this.isOrderSpecific && this.model.customerId) {
-      this.loadOrdersForCustomer();
-    }
+  this.model.salesOrderId = null;
+  this.orders = [];
+
+  if (this.isOrderSpecific && this.model.customerId) {
+    this.loadOrdersForCustomer();
   }
+}
 
   loadOrdersForCustomer() {
     if (!this.model.customerId) return;
@@ -156,19 +158,29 @@ if (this.isPeriodLocked) {
       );
       return;
     }
-    if (!this.model.customerId || !this.model.amount || this.model.amount <= 0) {
+   if (!this.model.customerId || !this.model.amount || this.model.amount <= 0) {
       Swal.fire('Validation', 'Select customer and enter valid amount', 'warning');
       return;
     }
+    if (this.isOrderSpecific !== true) {
+  Swal.fire('Validation', 'Please tick Link to Sales Order', 'warning');
+  return;
+}
+    const salesOrderId = Number(this.model.salesOrderId ?? 0);
 
-    if (!this.model.bankAccountId) {
-      Swal.fire('Validation', 'Select bank account', 'warning');
-      return;
-    }
+if (this.isOrderSpecific === true && salesOrderId <= 0) {
+  Swal.fire('Validation', 'Select sales order', 'warning');
+  return;
+}
+
+   if (this.model.paymentMode === 'Bank' && !this.model.bankAccountId) {
+  Swal.fire('Validation', 'Select bank account', 'warning');
+  return;
+}
 
     const payload = {
       customerId: this.model.customerId,
-      salesOrderId: this.isOrderSpecific ? this.model.salesOrderId : null,
+      salesOrderId: this.isOrderSpecific === true ? salesOrderId : null,
       advanceDate: this.model.advanceDate,
       amount: this.model.amount,
       bankAccountId: this.model.bankAccountId,
@@ -185,6 +197,8 @@ if (this.isPeriodLocked) {
         this.model.amount = null;
         this.model.remarks = '';
         this.loadOpenAdvances();
+        this.router.navigate(['/financial/AR'])
+
       },
       error: _ => {
         this.saving = false;
@@ -194,5 +208,11 @@ if (this.isPeriodLocked) {
   }
     goBack(): void {
     this.router.navigate(['/financial/AR']);
+  }
+
+  onPaymentModeChange(): void {
+    if (this.model.paymentMode !== 'Bank') {
+      this.model.bankAccountId = null;
+    }
   }
 }

@@ -186,6 +186,7 @@
                   <th class="text-end">OverDue Days</th>
                   <th class="text-end">Original</th>
                   <th class="text-end">Paid</th>
+                  <th class="text-end">Advance</th>
                   <th class="text-end">Credit</th>
                   <th class="text-end">Balance</th>
                   <th class="text-center">Email</th>
@@ -199,6 +200,7 @@
                   <td class="text-end">{{ d.ageDays }}</td>
                   <td class="text-end">{{ d.originalAmount | number : '1.2-2' }}</td>
                   <td class="text-end">{{ d.paidAmount    | number : '1.2-2' }}</td>
+                  <td class="text-end">{{ d.advanceAmount | number : '1.2-2' }}</td>
                   <td class="text-end">{{ d.creditAmount  | number : '1.2-2' }}</td>
                   <td class="text-end fw-bold">{{ d.balance | number : '1.2-2' }}</td>
 

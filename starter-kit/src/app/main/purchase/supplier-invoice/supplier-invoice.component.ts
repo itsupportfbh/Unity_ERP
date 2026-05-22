@@ -14,6 +14,7 @@ import { SupplierInvoiceService } from './supplier-invoice.service';
 import { PurchaseGoodreceiptService } from '../purchase-goodreceipt/purchase-goodreceipt.service';
 import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
 import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
+import { OcrResponse } from 'app/main/ocrmodule/ocrservice.service';
 
 interface GRNHeader {
   id: number;
@@ -969,8 +970,23 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     this.ocrOpen = true;
   }
 
-  onOcrApplied(_res: any): void {
-    if (this.isInvoiceBlocked()) return;
-    this.ocrOpen = false;
+onOcrApplied(res: OcrResponse): void {
+  if (this.isInvoiceBlocked()) return;
+
+  if (res?.parsed) {
+    const p = res.parsed;
+
+    this.form.patchValue({
+      invoiceNo:    p.invoiceNo    || this.form.value.invoiceNo,
+      invoiceDate:  p.invoiceDate  ? p.invoiceDate.substring(0, 10) : this.form.value.invoiceDate,
+      supplierName: p.supplierName || this.form.value.supplierName,
+      tax:          p.taxPercent   ?? this.form.value.tax,
+    }, { emitEvent: false });
+
+    this.recalcAllLines();
+    this.recalcHeaderFromLines();
   }
+
+  this.ocrOpen = false;
+}
 }

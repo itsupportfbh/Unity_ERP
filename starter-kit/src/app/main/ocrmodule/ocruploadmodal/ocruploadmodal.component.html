@@ -21,7 +21,7 @@
 
         <div class="ocr-row">
           <label class="ocr-label">Upload (PDF / Image)</label>
-          <input class="ocr-input" type="file" accept="image/*,.pdf" (change)="onPick($event)" />
+          <input class="ocr-input" type="file" accept="image/*,.pdf" (change)="onPick($event)" (click)="$any($event.target).value = null" />
           <div class="ocr-file" *ngIf="file">{{ file.name }}</div>
         </div>
 

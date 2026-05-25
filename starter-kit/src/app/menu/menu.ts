@@ -333,6 +333,8 @@ export const ALL_MENU: CoreMenu[] = [
 
       { id: 'tax', title: 'Tax & Gst', type: 'item', icon: 'circle', url: '/financial/tax-gst' },
       { id: 'period', title: 'Period-close', type: 'item', icon: 'circle', url: '/financial/Period-close' },
+       { id: 'year-end', title: 'Year End Close', type: 'item', icon: 'circle', url: '/financial/year-close' },
+
 
       { id: 'tb', title: 'Trail Balance', type: 'item', icon: 'circle', url: '/financial/report' },
       { id: 'reports', title: 'Reports', type: 'item', icon: 'circle', url: '/financial/finance-report' },

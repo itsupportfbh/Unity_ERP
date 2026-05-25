@@ -43,7 +43,8 @@ export const locale = {
           INVOICEEMAIL:'InvoiceEmail' , 
           Report:'Report',
           FinanceReport:'finance-report',
-          OpeningBalance: 'Opening-balance' 
+          OpeningBalance: 'Opening-balance' ,
+          YEARCLOSE:'year-close'
       },
 
       BUSINESSPARTNERS: {

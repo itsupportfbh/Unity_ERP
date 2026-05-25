@@ -1,0 +1,220 @@
+<!-- year-end-close.component.html -->
+<div *ngIf="isPermissionLoaded; else loadingTpl">
+  <div *ngIf="canView(); else noAccessTpl">
+
+    <div class="card shadow-sm">
+      <div class="card-header border-0 pb-0">
+        <h3 class="mb-0" style="color:#2E5F73;">
+          <i class="fas fa-calendar-check mr-50"></i>
+          Year End Close
+        </h3>
+      </div>
+
+      <div class="card-body">
+
+        <!-- FY Selection -->
+        <div class="row align-items-end mb-2">
+
+          <div class="col-md-4 mb-1">
+            <label class="form-label fw-600">Financial Year</label>
+            <select
+              class="form-control"
+              [(ngModel)]="fyStartYear"
+              (ngModelChange)="onFyYearSelect($event)">
+              <option [ngValue]="null">-- Select Financial Year --</option>
+              <option *ngFor="let y of fyYears" [ngValue]="y.startYear">
+                {{ y.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-3 mb-1">
+            <label class="form-label fw-600">Close Date</label>
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="closeDate"
+              [disabled]="!fyStartYear">
+          </div>
+
+          <div class="col-md-5 mb-1 d-flex align-items-end" style="gap:8px;">
+            <button
+              class="btn btn-outline-primary btn-sm"
+              (click)="loadPreview()"
+              [disabled]="!fyStartYear || !closeDate || isLoadingPreview">
+              <i class="fas fa-eye mr-25"></i>
+              Preview P&amp;L
+            </button>
+
+            <button
+              class="btn btn-sm"
+              style="background-color:#2E5F73;border-color:#2E5F73;color:white;"
+              (click)="runYearEndClose()"
+              [disabled]="isRunning || !fyStartYear || !closeDate || status?.isClosed || !canPost()">
+              <i class="fas fa-lock mr-25"></i>
+              {{ isRunning ? 'Running...' : 'Run Year End Close' }}
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Status Banner -->
+        <div *ngIf="isLoadingStatus" class="text-center p-2">
+          Loading status...
+        </div>
+
+        <div *ngIf="!isLoadingStatus && status?.isClosed" class="alert alert-success py-1 px-2 mb-2">
+          <i class="fas fa-check-circle mr-50"></i>
+          <strong>FY {{ status?.fyStartYear }}-{{ status?.fyEndYear }}</strong> already closed.
+          Journal: <strong>{{ status?.journalNo }}</strong> |
+          Net P&amp;L: <strong>{{ status?.netProfitLoss | number:'1.2-2' }}</strong>
+        </div>
+
+        <div *ngIf="!isLoadingStatus && fyStartYear && !status?.isClosed"
+             class="alert alert-warning py-1 px-2 mb-2">
+          <i class="fas fa-exclamation-triangle mr-50"></i>
+          FY {{ fyStartYear }}-{{ fyEndYear }} is <strong>not yet closed.</strong>
+        </div>
+
+        <!-- Preview Table -->
+        <div *ngIf="showPreview">
+
+          <div *ngIf="isLoadingPreview" class="text-center p-2">
+            Loading preview...
+          </div>
+
+          <div *ngIf="!isLoadingPreview && previewRows.length > 0">
+
+            <div class="row">
+
+              <!-- Income -->
+              <div class="col-md-6 mb-1">
+                <div class="card border-0 shadow-sm">
+                  <div class="card-header py-1"
+                       style="background:#2E5F73;color:white;font-weight:600;">
+                    Income Accounts
+                  </div>
+                  <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height:300px;overflow-y:auto;">
+                      <table class="table table-sm table-hover mb-0">
+                        <thead>
+                          <tr>
+                            <th>Account</th>
+                            <th class="text-right">Net Balance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let r of incomeRows">
+                            <td>{{ r.headName }}</td>
+                            <td class="text-right text-success">
+                              {{ r.netBalance | number:'1.2-2' }}
+                            </td>
+                          </tr>
+                        </tbody>
+                        <tfoot>
+                          <tr class="font-weight-bold">
+                            <td>Total Income</td>
+                            <td class="text-right text-success">
+                              {{ totalIncome | number:'1.2-2' }}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Expense -->
+              <div class="col-md-6 mb-1">
+                <div class="card border-0 shadow-sm">
+                  <div class="card-header py-1"
+                       style="background:#d33;color:white;font-weight:600;">
+                    Expense Accounts
+                  </div>
+                  <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height:300px;overflow-y:auto;">
+                      <table class="table table-sm table-hover mb-0">
+                        <thead>
+                          <tr>
+                            <th>Account</th>
+                            <th class="text-right">Net Balance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let r of expenseRows">
+                            <td>{{ r.headName }}</td>
+                            <td class="text-right text-danger">
+                              {{ r.netBalance | number:'1.2-2' }}
+                            </td>
+                          </tr>
+                        </tbody>
+                        <tfoot>
+                          <tr class="font-weight-bold">
+                            <td>Total Expense</td>
+                            <td class="text-right text-danger">
+                              {{ totalExpense | number:'1.2-2' }}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Net P&L Summary -->
+            <div class="card border-0 shadow-sm mb-1">
+              <div class="card-body py-1 px-2">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="font-weight-bold">Net Profit / Loss</span>
+                  <span class="font-weight-bold"
+                        [ngClass]="netPL >= 0 ? 'text-success' : 'text-danger'"
+                        style="font-size:1.1rem;">
+                    {{ netPL | number:'1.2-2' }}
+                    <span *ngIf="netPL >= 0">(Profit)</span>
+                    <span *ngIf="netPL < 0">(Loss)</span>
+                  </span>
+                </div>
+                <small class="text-muted">
+                  Will be transferred to <strong>Profit &amp; Loss A/c</strong> (Retained Earnings)
+                </small>
+              </div>
+            </div>
+
+          </div>
+
+          <div *ngIf="!isLoadingPreview && previewRows.length === 0"
+               class="alert alert-info">
+            No Income/Expense entries found for this period.
+          </div>
+
+        </div>
+
+        <!-- Result after close -->
+        <div *ngIf="result" class="alert alert-success mt-1">
+          <strong>Year End Close Completed!</strong><br/>
+          Journal: <strong>{{ result.journalNo }}</strong> |
+          Income: {{ result.totalIncome | number:'1.2-2' }} |
+          Expense: {{ result.totalExpense | number:'1.2-2' }} |
+          Net P&amp;L: <strong>{{ result.netProfitLoss | number:'1.2-2' }}</strong>
+        </div>
+
+     
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div class="text-center p-3">Loading permission...</div>
+</ng-template>
+
+<ng-template #noAccessTpl>
+  <div class="alert alert-warning mt-2">
+    You do not have permission to view this screen.
+  </div>
+</ng-template>

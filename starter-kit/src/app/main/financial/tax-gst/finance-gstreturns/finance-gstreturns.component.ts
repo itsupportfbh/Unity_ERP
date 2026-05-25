@@ -57,7 +57,7 @@ export class FinanceGstreturnsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPermission();
-    this.checkPeriodLockForToday();
+   // this.checkPeriodLockForToday();
   }
 
   loadPermission(): void {
@@ -116,13 +116,11 @@ export class FinanceGstreturnsComponent implements OnInit {
   }
 
 get statusNo(): number {
-  const s = String((this.model as any)?.status || '').trim().toUpperCase();
-
-  if (s === 'OPEN' || s === 'DRAFT' || s === '0') return 0;
-  if (s === 'LOCKED' || s === '1') return 1;
+  if ((this.model as any)?.glPosted === true) return 3;
+  const s = String((this.model as any)?.status ?? '').trim().toUpperCase();
+  if (s === 'GLPOSTED') return 3;
   if (s === 'FILED' || s === '2') return 2;
-  if (s === 'GLPOSTED' || (this.model as any)?.glPosted === true) return 3;
-
+  if (s === 'LOCKED' || s === '1') return 1;
   return 0;
 }
 
@@ -238,6 +236,7 @@ get canShowApplyLock(): boolean {
 
         this.selectedPeriodId = periodToSelect.id;
         this.loadPeriodReturn(this.selectedPeriodId);
+        this.checkPeriodLock(this.selectedPeriodId);
       },
       error: (err) => {
         console.error('Error loading GST periods for year', err);
@@ -258,6 +257,7 @@ get canShowApplyLock(): boolean {
 
     this.selectedPeriodId = periodId;
     this.loadPeriodReturn(periodId);
+    this.checkPeriodLock(periodId);
   }
 
   private loadPeriodReturn(periodId: number): void {
@@ -318,7 +318,7 @@ get canShowApplyLock(): boolean {
   this.model = updated || this.model;
 
   if (this.model) {
-    this.model.status = 1 as any;
+   (this.model as any).status = 'LOCKED';
     this.model.box8NetPayable = this.f5Net;
   }
 
@@ -346,7 +346,7 @@ get canShowApplyLock(): boolean {
   this.model = updated || this.model;
 
   if (this.model) {
-    (this.model as any).status = 'OPEN';
+   (this.model as any).status = 'OPEN';
     this.model.box8NetPayable = this.f5Net;
   }
 
@@ -408,6 +408,7 @@ get canShowApplyLock(): boolean {
 
     if (this.selectedPeriodId) {
       this.loadPeriodReturn(this.selectedPeriodId);
+      this.checkPeriodLock(this.selectedPeriodId);
     }
   }
 
@@ -470,6 +471,7 @@ get canShowApplyLock(): boolean {
         this.editAdj = null;
         this.loadAdjustments();
         this.loadPeriodReturn(this.selectedPeriodId!);
+        this.checkPeriodLock(this.selectedPeriodId!); 
       },
       error: (err) => console.error('Error saving GST adjustment', err)
     });
@@ -493,6 +495,7 @@ get canShowApplyLock(): boolean {
 
         this.loadAdjustments();
         this.loadPeriodReturn(this.selectedPeriodId!);
+        this.checkPeriodLock(this.selectedPeriodId!);
       },
       error: (err) => console.error('Error deleting GST adjustment', err)
     });
@@ -623,7 +626,7 @@ markAsFiled(): void {
         this.model = updated || this.model;
 
         if (this.model) {
-          (this.model as any).status = 2;
+          (this.model as any).status = 'FILED';
           (this.model as any).filingNo = filingNo;
           this.model.box8NetPayable = this.f5Net;
         }
@@ -702,18 +705,31 @@ if (!this.model || this.statusNo !== 2) {
     });
   });
 }
- private checkPeriodLockForToday(): void {
-  const today = new Date().toISOString().substring(0, 10); // yyyy-MM-dd
+//  private checkPeriodLockForToday(): void {
+//   const today = new Date().toISOString().substring(0, 10); // yyyy-MM-dd
 
-  this.periodLock.getStatusForDateWithName(today).subscribe({
+//   this.periodLock.getStatusForDateWithName(today).subscribe({
+//     next: status => {
+//       this.isPeriodLocked = !!status?.isLocked;
+//       this.periodName = status?.periodName || '';
+//     },
+//     error: () => {
+//       this.isPeriodLocked = false;
+//       this.periodName = '';
+//     }
+//   });
+// }
+private checkPeriodLock(periodId: number): void {
+  const selected = this.periods.find(p => p.id === periodId);
+  if (!selected) return;
+  
+  // Use period's start date instead of today
+  this.periodLock.getStatusForDateWithName(selected.startDate).subscribe({
     next: status => {
       this.isPeriodLocked = !!status?.isLocked;
       this.periodName = status?.periodName || '';
     },
-    error: () => {
-      this.isPeriodLocked = false;
-      this.periodName = '';
-    }
+    error: () => { this.isPeriodLocked = false; }
   });
 }
 }

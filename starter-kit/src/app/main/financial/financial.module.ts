@@ -38,6 +38,7 @@ import { CollectionForecastComponent } from './reports/collection-forecast/colle
 import { OpeningBalanceComponent } from './opening-balance/opening-balance/opening-balance.component';
 import { ArAdvanceComponent } from './AR/ar-advance/ar-advance.component';
 import { ApAdvanceComponent } from './accounts-payable/ap-advance/ap-advance.component';
+import { YearEndCloseComponent } from './year-end-close/year-end-close.component';
 
 const routes: Routes = [
   { path: 'ChartOfAccount', component: ChartofaccountComponent },
@@ -66,6 +67,7 @@ const routes: Routes = [
 { path: 'ap-aging', component: APAgingComponent },
 { path: 'ap-advance', component: ApAdvanceComponent },
 { path: 'ar-advance', component: ArAdvanceComponent },
+{ path: 'year-close', component: YearEndCloseComponent },
 ];
 
 @NgModule({
@@ -99,7 +101,8 @@ const routes: Routes = [
     OpeningBalanceComponent,
     AccountsPayableComponent,
    ArAdvanceComponent,
-   ApAdvanceComponent
+   ApAdvanceComponent,
+   YearEndCloseComponent
   ],
   imports: [
     CommonModule,

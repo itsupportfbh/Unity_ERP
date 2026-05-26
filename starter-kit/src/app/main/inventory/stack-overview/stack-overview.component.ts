@@ -72,12 +72,22 @@ interface MrLine {
   id?: number;
   materialReqId?: number;
   itemId?: number;
-  itemCode?: string;     // SKU
+
+  itemCode?: string;
   itemName?: string;
+
   uomId?: number;
   uomName?: string;
-  qty?: number;          // OLD Requested
-  receivedQty?: number;  // Received
+  qty?: number;
+
+  baseUomId?: number;
+  baseUomName?: string;
+
+  conversionFactor?: number;
+  uomFactor?: number;
+  baseQty?: number;
+
+  receivedQty?: number;
 }
 
 type MrLineStatus = 'READY' | 'PARTIAL' | 'SHORT';
@@ -86,19 +96,24 @@ interface MrLineVM {
   itemId: number;
   sku: string;
   itemName: string;
-  uomName: string;
+
+  enteredQty: number;
+  enteredUomName: string;
+
+  baseUomId: number | null;
+  baseUomName: string;
+  conversionFactor: number;
 
   oldRequestedQty: number;
-  requestedQty: number;  // NEW requested = old - received
+  requestedQty: number;
   receivedQty: number;
   remainingQty: number;
 
-  // ✅ NEW for shortage handling
-  availQty: number;         // total available in selected From outlet (MR sku)
-  maxTransferQty: number;   // min(remaining, availQty)
-  transferQty: number;      // user editable
-  shortageQty: number;      // remaining - avail (if positive)
-  status: MrLineStatus;     // READY / PARTIAL / SHORT
+  availQty: number;
+  maxTransferQty: number;
+  transferQty: number;
+  shortageQty: number;
+  status: MrLineStatus;
 }
 
 interface MrListItem {
@@ -129,6 +144,8 @@ export class StackOverviewComponent implements OnInit {
   mrList: MrListItem[] = [];
   fromOutletOptions: FromOutletOption[] = [];
 
+  private mrRawList: any[] = [];
+
   transferredMrIds = new Set<number>();
 
   selectedMrId: number | null = null;
@@ -146,15 +163,12 @@ export class StackOverviewComponent implements OnInit {
   requesterName: string | null = null;
   reqDate: string | null = null;
 
-  // ✅ MR lines (remaining-only)
   mrLines: MrLineVM[] = [];
   totalRemainingQty: number = 0;
 
-  // Stock
   rows: StockRow[] = [];
   filteredRows: StockRow[] = [];
 
-  // ✅ Summary counters
   shortageCount: number = 0;
   transferableLineCount: number = 0;
 
@@ -197,51 +211,64 @@ export class StackOverviewComponent implements OnInit {
     this.warehouseService.getWarehouse().subscribe({
       next: (res: any) => {
         const data = Array.isArray(res?.data) ? res.data : [];
+
         this.warehouses = data.map((w: any) => ({
           id: Number(w.id),
           name: w.name || w.warehouseName || `WH-${w.id}`
         }));
+
+        this.destinationOutletName = this.getWarehouseNameById(this.destinationOutletId);
+        this.selectedFromOutletName = this.getWarehouseNameById(this.selectedFromOutletId);
+
         this.rebuildFromOutletOptions();
       },
       error: (err) => console.error('Error loading warehouses', err)
     });
   }
 
-  private loadMrList(): void {
-    this.mrService.GetMaterialRequest().subscribe({
-      next: (res: any) => {
-        const data = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+private loadMrList(): void {
+  this.mrService.GetMaterialRequest().subscribe({
+    next: (res: any) => {
+      const data = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
 
-        const list: MrListItem[] = (data || []).map((x: any) => {
-          const id = Number(x.id ?? x.mrqId ?? 0);
-          const mrqNo = String(x.reqNo ?? x.mrqNo ?? x.mrNo ?? `MRQ-${id}`);
-          const outletId = x.outletId ?? x.OutletId ?? null;
+      this.mrRawList = data || [];
 
-          const completed = this.isMrCompleted(x);
-          const remaining = this.calcMrRemaining(x);
+      const list: MrListItem[] = (data || []).map((x: any) => {
+        const id = Number(x.id ?? x.Id ?? x.mrqId ?? x.MrqId ?? 0);
+        const mrqNo = String(x.reqNo ?? x.ReqNo ?? x.mrqNo ?? x.MrqNo ?? x.mrNo ?? `MRQ-${id}`);
+        const outletId = x.outletId ?? x.OutletId ?? null;
 
-          return {
-            id,
-            mrqNo,
-            outletId: outletId != null ? Number(outletId) : null,
-            display: mrqNo,
-            isCompleted: completed,
-            remainingQty: remaining
-          };
-        });
+        const completed = this.isMrCompleted(x);
+        const remaining = this.calcMrRemaining(x);
 
-        // ✅ Completed MR remove
-        this.mrList = list.filter(m => !m.isCompleted);
+        return {
+          id,
+          mrqNo,
+          outletId: outletId != null ? Number(outletId) : null,
+          display: mrqNo,
+          isCompleted: completed,
+          remainingQty: remaining
+        };
+      });
 
-        if (this.selectedMrId) {
-          const found = this.mrList.find(m => Number(m.id) === Number(this.selectedMrId));
-          if (!found) this.resetAll();
-        }
-      },
-      error: (err) => console.error('Failed to load MRQ list', err)
-    });
-  }
+      // ✅ Hide completed MRQ + already transferred MRQ
+      this.mrList = list.filter(m =>
+        Number(m.id) > 0 &&
+        !m.isCompleted &&
+        !this.transferredMrIds.has(Number(m.id))
+      );
 
+      if (this.selectedMrId) {
+        const found = this.mrList.find(m => Number(m.id) === Number(this.selectedMrId));
+        if (!found) this.resetAll();
+      }
+    },
+    error: (err) => {
+      console.error('Failed to load MRQ list', err);
+      this.mrList = [];
+    }
+  });
+}
   private loadStockRows(): void {
     this.loading = true;
     this.errorMsg = null;
@@ -252,10 +279,13 @@ export class StackOverviewComponent implements OnInit {
           this.rows = res.data.map((item: ApiItemRow) => this.toStockRow(item));
           this.applyGrid();
           this.rebuildFromOutletOptions();
-          this.recalcMrAvailability(); // ✅
+          this.recalcMrAvailability();
         } else {
+          this.rows = [];
+          this.filteredRows = [];
           this.errorMsg = 'No stock data found.';
         }
+
         this.loading = false;
       },
       error: (err) => {
@@ -297,12 +327,17 @@ export class StackOverviewComponent implements OnInit {
 
     const supplierName =
       String((api as any).supplierName ?? (api as any).SupplierName ?? '').trim() || '-';
+
     const supplierId = (api as any).supplierId ?? (api as any).SupplierId ?? null;
 
-    const warehouseId = Number((api as any).warehouseId ?? (api as any).WarehouseId ?? 0) || undefined;
-    const binId = Number((api as any).binId ?? (api as any).BinId ?? 0) || undefined;
+    const warehouseId =
+      Number((api as any).warehouseId ?? (api as any).WarehouseId ?? 0) || undefined;
 
-    const itemId = Number((api as any).itemId ?? (api as any).ItemId ?? 0) || undefined;
+    const binId =
+      Number((api as any).binId ?? (api as any).BinId ?? 0) || undefined;
+
+    const itemId =
+      Number((api as any).itemId ?? (api as any).ItemId ?? 0) || undefined;
 
     const idKey = [
       (api as any).id ?? '',
@@ -335,14 +370,47 @@ export class StackOverviewComponent implements OnInit {
 
   /* ===================== MR HELPERS ===================== */
 
+private getSelectedMrDto(mrId: number): any {
+  return (this.mrRawList || []).find(x =>
+    Number(x.id ?? x.Id ?? x.mrqId ?? x.MrqId ?? 0) === Number(mrId)
+  ) || null;
+}
+
+private getLineBaseQty(l: any): number {
+  const baseQty = Number(
+    l?.baseQty ??
+    l?.BaseQty ??
+    l?.baseQuantity ??
+    l?.BaseQuantity ??
+    0
+  );
+
+  if (baseQty > 0) {
+    return Number(baseQty.toFixed(4));
+  }
+
+  const qty = Number(l?.qty ?? l?.Qty ?? 0);
+
+  const factor = Number(
+    l?.conversionFactor ??
+    l?.ConversionFactor ??
+    l?.uomFactor ??
+    l?.UomFactor ??
+    1
+  );
+
+  return Number((qty * (factor > 0 ? factor : 1)).toFixed(4));
+}
+
   private isMrCompleted(dto: any): boolean {
     const lines: MrLine[] = dto?.lines ?? dto?.lineItemsList ?? dto?.items ?? [];
     if (!Array.isArray(lines) || lines.length === 0) return false;
 
     return lines.every(l => {
-      const req = Number(l?.qty ?? 0);
-      const rec = Number(l?.receivedQty ?? 0);
-      return req > 0 && rec >= req;
+      const reqBase = this.getLineBaseQty(l);
+      const recBase = Number(l?.receivedQty ?? 0);
+
+      return reqBase > 0 && recBase >= reqBase;
     });
   }
 
@@ -350,17 +418,14 @@ export class StackOverviewComponent implements OnInit {
     const lines: MrLine[] = dto?.lines ?? dto?.lineItemsList ?? dto?.items ?? [];
     if (!Array.isArray(lines) || lines.length === 0) return 0;
 
-    return lines.reduce((sum, l) => {
-      const req = Number(l?.qty ?? 0);
-      const rec = Number(l?.receivedQty ?? 0);
-      return sum + Math.max(0, req - rec);
-    }, 0);
+    return Number(lines.reduce((sum, l) => {
+      const reqBase = this.getLineBaseQty(l);
+      const recBase = Number(l?.receivedQty ?? 0);
+
+      return sum + Math.max(0, reqBase - recBase);
+    }, 0).toFixed(4));
   }
 
-  /**
-   * ✅ requestedQty (newRequestedQty) = oldQty - receivedQty
-   * remainingQty = requestedQty
-   */
   private buildMrLines(dto: any): MrLineVM[] {
     const lines: MrLine[] = dto?.lines ?? dto?.lineItemsList ?? dto?.items ?? [];
     const out: MrLineVM[] = [];
@@ -369,29 +434,50 @@ export class StackOverviewComponent implements OnInit {
       const itemId = Number(l?.itemId ?? 0);
       const sku = String(l?.itemCode ?? '').trim();
       const itemName = String(l?.itemName ?? '').trim();
-      const uomName = String(l?.uomName ?? '').trim();
 
-      const oldReq = Number(l?.qty ?? 0);
-      const rec = Number(l?.receivedQty ?? 0);
+      const enteredQty = Number(l?.qty ?? 0);
+      const enteredUomName = String(l?.uomName ?? '').trim();
 
-      const newReq = Math.max(0, oldReq - rec);
-      if (!itemId || !sku || newReq <= 0) continue;
+      const baseUomId =
+        l?.baseUomId != null ? Number(l.baseUomId) : null;
+
+      const baseUomName =
+        String(l?.baseUomName ?? '').trim();
+
+      const conversionFactor =
+        Number(l?.conversionFactor ?? l?.uomFactor ?? 1) || 1;
+
+      const baseRequestedQty = this.getLineBaseQty(l);
+
+      const receivedBaseQty = Number(l?.receivedQty ?? 0);
+
+      const remainingBaseQty = Number(
+        Math.max(0, baseRequestedQty - receivedBaseQty).toFixed(4)
+      );
+
+      if (!itemId || !sku || remainingBaseQty <= 0) continue;
 
       out.push({
         itemId,
         sku,
         itemName: itemName || sku,
-        uomName: uomName || '',
-        oldRequestedQty: oldReq,
-        requestedQty: newReq,
-        receivedQty: rec,
-        remainingQty: newReq,
 
-        // ✅ init (will be recalculated when from outlet changes)
+        enteredQty,
+        enteredUomName,
+
+        baseUomId,
+        baseUomName,
+        conversionFactor,
+
+        oldRequestedQty: baseRequestedQty,
+        requestedQty: remainingBaseQty,
+        receivedQty: receivedBaseQty,
+        remainingQty: remainingBaseQty,
+
         availQty: 0,
         maxTransferQty: 0,
         transferQty: 0,
-        shortageQty: newReq,
+        shortageQty: remainingBaseQty,
         status: 'SHORT'
       });
     }
@@ -401,11 +487,23 @@ export class StackOverviewComponent implements OnInit {
 
   private getMrSkuSetLower(): Set<string> {
     const set = new Set<string>();
+
     for (const l of (this.mrLines || [])) {
       const s = (l.sku || '').toLowerCase().trim();
       if (s) set.add(s);
     }
+
     return set;
+  }
+
+  getReqBaseQtyBySku(sku: string | null | undefined): number {
+    const key = String(sku ?? '').toLowerCase().trim();
+
+    const line = (this.mrLines || []).find(x =>
+      String(x.sku ?? '').toLowerCase().trim() === key
+    );
+
+    return Number(line?.remainingQty ?? line?.requestedQty ?? 0);
   }
 
   /* ===================== EVENTS ===================== */
@@ -422,14 +520,18 @@ export class StackOverviewComponent implements OnInit {
 
     this.mrService.GetMaterialRequestById(Number(mrId)).subscribe({
       next: (res: any) => {
-        const dto = res?.data ?? res ?? {};
+        const apiDto = res?.data ?? res ?? {};
+        const listDto = this.getSelectedMrDto(Number(mrId));
 
-        // Completed => block
+        const dto = Array.isArray(apiDto?.lines) && apiDto.lines.length
+          ? apiDto
+          : (listDto || apiDto);
+
         if (this.isMrCompleted(dto)) {
           Swal.fire({
             icon: 'warning',
             title: 'MRQ Completed',
-            text: 'Received Qty already equals Requested Qty. This MRQ cannot be used again.'
+            text: 'Received Qty already equals Requested Base Qty. This MRQ cannot be used again.'
           }).then(() => {
             this.resetAll();
             this.loadMrList();
@@ -450,15 +552,17 @@ export class StackOverviewComponent implements OnInit {
         this.requesterName = String(dto.requesterName ?? dto.RequesterName ?? '');
         this.reqDate = String(dto.reqDate ?? dto.date ?? '');
 
-        // build MR lines (remaining-only)
         this.mrLines = this.buildMrLines(dto);
-        this.totalRemainingQty = this.mrLines.reduce((s, x) => s + Number(x.remainingQty ?? 0), 0);
+
+        this.totalRemainingQty = Number(
+          this.mrLines.reduce((s, x) => s + Number(x.remainingQty ?? 0), 0).toFixed(4)
+        );
 
         if (!this.mrLines.length || this.totalRemainingQty <= 0) {
           Swal.fire({
             icon: 'warning',
             title: 'No Remaining Qty',
-            text: 'This MRQ has no remaining quantity to transfer.'
+            text: 'This MRQ has no remaining base quantity to transfer.'
           }).then(() => {
             this.resetAll();
             this.loadMrList();
@@ -466,7 +570,6 @@ export class StackOverviewComponent implements OnInit {
           return;
         }
 
-        // Prevent FromOutlet == destination
         if (this.selectedFromOutletId != null && this.destinationOutletId != null) {
           if (Number(this.selectedFromOutletId) === Number(this.destinationOutletId)) {
             this.selectedFromOutletId = null;
@@ -476,7 +579,7 @@ export class StackOverviewComponent implements OnInit {
 
         this.rebuildFromOutletOptions();
         this.applyGrid();
-        this.recalcMrAvailability(); // ✅
+        this.recalcMrAvailability();
       },
       error: (err) => {
         console.error('Failed to load MRQ detail', err);
@@ -491,6 +594,7 @@ export class StackOverviewComponent implements OnInit {
 
   onFromOutletChanged(fromId: any): void {
     const idNum = fromId == null || fromId === '' ? null : Number(fromId);
+
     if (!idNum || Number.isNaN(idNum)) {
       this.selectedFromOutletId = null;
       this.selectedFromOutletName = null;
@@ -501,7 +605,7 @@ export class StackOverviewComponent implements OnInit {
 
     this.applyGrid();
     this.rebuildFromOutletOptions();
-    this.recalcMrAvailability(); // ✅
+    this.recalcMrAvailability();
   }
 
   onTransferQtyChanged(line: MrLineVM): void {
@@ -509,15 +613,19 @@ export class StackOverviewComponent implements OnInit {
     const safe = Number.isFinite(v) ? v : 0;
 
     const capped = Math.max(0, Math.min(safe, Number(line.maxTransferQty ?? 0)));
-    line.transferQty = capped;
+    line.transferQty = Number(capped.toFixed(4));
   }
 
   /* ===================== FROM OUTLET OPTIONS ===================== */
 
   private rebuildFromOutletOptions(): void {
-    const reqTotal = Number(this.totalRemainingQty ?? 0);
-    const skuSet = this.getMrSkuSetLower();
+    const reqTotal = Number(
+      (this.mrLines || []).reduce((sum, x) => {
+        return sum + Number(x.remainingQty ?? x.requestedQty ?? 0);
+      }, 0).toFixed(4)
+    );
 
+    const skuSet = this.getMrSkuSetLower();
     const onHandByWhId = new Map<number, number>();
 
     if (skuSet.size) {
@@ -528,7 +636,10 @@ export class StackOverviewComponent implements OnInit {
         const wid = Number(r.warehouseId ?? 0);
         if (!wid) continue;
 
-        onHandByWhId.set(wid, (onHandByWhId.get(wid) ?? 0) + Number(r.onHand ?? 0));
+        onHandByWhId.set(
+          wid,
+          Number(((onHandByWhId.get(wid) ?? 0) + Number(r.onHand ?? 0)).toFixed(4))
+        );
       }
     }
 
@@ -545,7 +656,7 @@ export class StackOverviewComponent implements OnInit {
         name,
         reqQty: reqTotal,
         onHand,
-        label: `${name} | Req: ${reqTotal} | OnHand: ${onHand}`
+        label: `${name} | Req Base Qty: ${reqTotal} | OnHand: ${onHand}`
       };
     });
   }
@@ -555,19 +666,19 @@ export class StackOverviewComponent implements OnInit {
   private applyGrid(): void {
     let filtered = [...this.rows];
 
-    // MR SKUs filter
     const skuSet = this.getMrSkuSetLower();
+
     if (skuSet.size) {
-      filtered = filtered.filter(r => skuSet.has((r.sku ?? '').toLowerCase().trim()));
+      filtered = filtered.filter(r =>
+        skuSet.has((r.sku ?? '').toLowerCase().trim())
+      );
     }
 
-    // exclude destination by ID
     if (this.destinationOutletId != null) {
       const destId = Number(this.destinationOutletId);
       filtered = filtered.filter(r => Number(r.warehouseId ?? -999) !== destId);
     }
 
-    // only selected From outlet
     if (this.selectedFromOutletId != null) {
       const fromId = Number(this.selectedFromOutletId);
       filtered = filtered.filter(r => Number(r.warehouseId ?? -999) === fromId);
@@ -576,23 +687,23 @@ export class StackOverviewComponent implements OnInit {
     this.filteredRows = filtered;
   }
 
-  /* ===================== NEW: AVAILABILITY CALC ===================== */
+  /* ===================== AVAILABILITY CALC ===================== */
 
   private recalcMrAvailability(): void {
-    // if no MR lines, clear
     if (!this.mrLines?.length) {
       this.shortageCount = 0;
       this.transferableLineCount = 0;
       return;
     }
 
-    // build map sku -> total available in selected from outlet
     const availBySku = new Map<string, number>();
 
     for (const r of (this.filteredRows || [])) {
       const sku = (r.sku ?? '').toLowerCase().trim();
       if (!sku) continue;
-      availBySku.set(sku, (availBySku.get(sku) ?? 0) + Number(r.available ?? 0));
+
+      const current = Number(availBySku.get(sku) ?? 0);
+      availBySku.set(sku, Number((current + Number(r.available ?? 0)).toFixed(4)));
     }
 
     let shortage = 0;
@@ -602,12 +713,12 @@ export class StackOverviewComponent implements OnInit {
       const skuLower = (l.sku ?? '').toLowerCase().trim();
       const avail = Number(availBySku.get(skuLower) ?? 0);
 
-      l.availQty = avail;
+      l.availQty = Number(avail.toFixed(4));
 
       const remaining = Number(l.remainingQty ?? 0);
-      l.maxTransferQty = Math.max(0, Math.min(remaining, avail));
+      l.maxTransferQty = Number(Math.max(0, Math.min(remaining, avail)).toFixed(4));
 
-      l.shortageQty = Math.max(0, remaining - avail);
+      l.shortageQty = Number(Math.max(0, remaining - avail).toFixed(4));
 
       if (avail <= 0) {
         l.status = 'SHORT';
@@ -615,14 +726,23 @@ export class StackOverviewComponent implements OnInit {
         shortage++;
       } else if (avail >= remaining) {
         l.status = 'READY';
-        // default transfer qty = full remaining (only if empty or too big)
-        if (!l.transferQty || l.transferQty > l.maxTransferQty) l.transferQty = l.maxTransferQty;
+
+        if (!l.transferQty || l.transferQty > l.maxTransferQty) {
+          l.transferQty = l.maxTransferQty;
+        }
+
         transferable++;
       } else {
         l.status = 'PARTIAL';
-        if (!l.transferQty || l.transferQty > l.maxTransferQty) l.transferQty = l.maxTransferQty;
+
+        if (!l.transferQty || l.transferQty > l.maxTransferQty) {
+          l.transferQty = l.maxTransferQty;
+        }
+
         transferable++;
       }
+
+      l.transferQty = Number((l.transferQty ?? 0).toFixed(4));
     }
 
     this.shortageCount = shortage;
@@ -634,17 +754,42 @@ export class StackOverviewComponent implements OnInit {
   canTransfer(): boolean {
     this.transferErrorText = null;
 
-    if (!this.selectedMrId) return (this.transferErrorText = 'Select a Material Requisition.'), false;
-    if (!this.destinationOutletId) return (this.transferErrorText = 'Destination outlet not found.'), false;
-    if (!this.selectedFromOutletId) return (this.transferErrorText = 'Select From Outlet.'), false;
-    if (!this.destinationBinId) return (this.transferErrorText = 'Destination Bin not found.'), false;
+    if (!this.selectedMrId) {
+      this.transferErrorText = 'Select a Material Requisition.';
+      return false;
+    }
 
-    if (!this.mrLines?.length) return (this.transferErrorText = 'No MR lines found.'), false;
-    if (Number(this.totalRemainingQty ?? 0) <= 0) return (this.transferErrorText = 'No remaining qty to transfer.'), false;
+    if (!this.destinationOutletId) {
+      this.transferErrorText = 'Destination outlet not found.';
+      return false;
+    }
 
-    // ✅ key rule: allow if at least one line has transferQty > 0
+    if (!this.selectedFromOutletId) {
+      this.transferErrorText = 'Select From Outlet.';
+      return false;
+    }
+
+    if (!this.destinationBinId) {
+      this.transferErrorText = 'Destination Bin not found.';
+      return false;
+    }
+
+    if (!this.mrLines?.length) {
+      this.transferErrorText = 'No MR lines found.';
+      return false;
+    }
+
+    if (Number(this.totalRemainingQty ?? 0) <= 0) {
+      this.transferErrorText = 'No remaining qty to transfer.';
+      return false;
+    }
+
     const anyTransfer = (this.mrLines || []).some(l => Number(l.transferQty ?? 0) > 0);
-    if (!anyTransfer) return (this.transferErrorText = 'Enter Transfer Qty for at least one line.'), false;
+
+    if (!anyTransfer) {
+      this.transferErrorText = 'Enter Transfer Qty for at least one line.';
+      return false;
+    }
 
     return true;
   }
@@ -658,34 +803,46 @@ export class StackOverviewComponent implements OnInit {
     const toBinId = Number(this.destinationBinId ?? 0);
 
     const now = new Date();
-    const userId = 1001;
+    const userId = Number(localStorage.getItem('id') ?? 0) || 1001;
 
     const payload: any[] = [];
     const shortageSkus: Array<{ sku: string; itemName: string; need: number; avail: number }> = [];
 
     for (const line of (this.mrLines || [])) {
+      const wantBaseQty = Number(line.transferQty ?? 0);
 
-      const want = Number(line.transferQty ?? 0);
-      if (!want || want <= 0) continue; // ✅ skip shortage / zero lines
+      if (!wantBaseQty || wantBaseQty <= 0) continue;
 
       const skuLower = (line.sku || '').toLowerCase().trim();
-      let remainingToAllocate = want;
+      let remainingToAllocate = wantBaseQty;
 
       const candidates = (this.filteredRows || [])
         .filter(r => ((r.sku ?? '').toLowerCase().trim() === skuLower))
         .filter(r => Number(r.available ?? 0) > 0)
         .sort((a, b) => Number(b.available ?? 0) - Number(a.available ?? 0));
 
-      const totalAvail = candidates.reduce((s, r) => s + Number(r.available ?? 0), 0);
+      const totalAvail = Number(
+        candidates.reduce((s, r) => s + Number(r.available ?? 0), 0).toFixed(4)
+      );
 
       if (!candidates.length || totalAvail <= 0) {
-        shortageSkus.push({ sku: line.sku, itemName: line.itemName, need: want, avail: 0 });
-        continue; // ✅ do NOT stop transfer
+        shortageSkus.push({
+          sku: line.sku,
+          itemName: line.itemName,
+          need: wantBaseQty,
+          avail: 0
+        });
+        continue;
       }
 
       if (totalAvail < remainingToAllocate) {
-        // user asked more than available (shouldn't happen due to maxTransferQty, but safe)
-        shortageSkus.push({ sku: line.sku, itemName: line.itemName, need: want, avail: totalAvail });
+        shortageSkus.push({
+          sku: line.sku,
+          itemName: line.itemName,
+          need: wantBaseQty,
+          avail: totalAvail
+        });
+
         remainingToAllocate = totalAvail;
       }
 
@@ -693,8 +850,9 @@ export class StackOverviewComponent implements OnInit {
         if (remainingToAllocate <= 0) break;
 
         const avail = Number(match.available ?? 0);
-        const takeQty = Math.min(remainingToAllocate, avail);
-        remainingToAllocate -= takeQty;
+        const takeBaseQty = Number(Math.min(remainingToAllocate, avail).toFixed(4));
+
+        remainingToAllocate = Number((remainingToAllocate - takeBaseQty).toFixed(4));
 
         payload.push({
           ItemId: Number(line.itemId ?? 0),
@@ -713,9 +871,18 @@ export class StackOverviewComponent implements OnInit {
           RequestedQty: Number(line.requestedQty ?? 0),
           OldRequestedQty: Number(line.oldRequestedQty ?? 0),
           ReceivedQty: Number(line.receivedQty ?? 0),
-          TransferQty: Number(takeQty),
-          TransferNo:'',
+
+          TransferQty: takeBaseQty,
+
+          EnteredQty: Number(line.enteredQty ?? 0),
+          EnteredUomName: line.enteredUomName ?? '',
+          BaseUomId: line.baseUomId,
+          BaseUomName: line.baseUomName ?? '',
+          ConversionFactor: Number(line.conversionFactor ?? 1),
+
+          TransferNo: '',
           isApproved: true,
+
           CreatedBy: userId,
           CreatedDate: now,
           UpdatedBy: userId,
@@ -726,7 +893,7 @@ export class StackOverviewComponent implements OnInit {
           Sku: line.sku ?? match.sku ?? '',
           Remarks: '',
 
-          SupplierId: (match.supplierId == null ? null : Number(match.supplierId)),
+          SupplierId: match.supplierId == null ? null : Number(match.supplierId),
           IsSupplierBased: false
         });
       }
@@ -736,7 +903,7 @@ export class StackOverviewComponent implements OnInit {
       Swal.fire({
         icon: 'warning',
         title: 'Nothing to Transfer',
-        text: 'No transferable lines found (all lines shortage or Transfer Qty is 0).'
+        text: 'No transferable lines found. All lines are shortage or Transfer Qty is 0.'
       });
       return;
     }
@@ -767,6 +934,7 @@ export class StackOverviewComponent implements OnInit {
       error: (err) => {
         this.loading = false;
         console.error('Transfer failed', err);
+
         Swal.fire({
           icon: 'error',
           title: 'Transfer Failed',
@@ -780,6 +948,7 @@ export class StackOverviewComponent implements OnInit {
 
   private getWarehouseNameById(id: number | null | undefined): string | null {
     if (!id) return null;
+
     const w = this.warehouses.find(x => Number(x.id) === Number(id));
     return w ? w.name : null;
   }
@@ -805,12 +974,13 @@ export class StackOverviewComponent implements OnInit {
 
     this.shortageCount = 0;
     this.transferableLineCount = 0;
+    this.transferErrorText = null;
 
     this.rebuildFromOutletOptions();
     this.applyGrid();
   }
 
-  goToStockOverviewList() {
+  goToStockOverviewList(): void {
     this.router.navigate(['/Inventory/list-stackoverview']);
   }
 }

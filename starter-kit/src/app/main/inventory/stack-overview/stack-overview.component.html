@@ -1,6 +1,6 @@
 <div class="uwso-page">
 
-  <!-- ===== Sticky Top Bar (Transfer button ALWAYS visible) ===== -->
+  <!-- ===== Sticky Top Bar ===== -->
   <div class="uwso-topbar">
     <div class="uwso-top-left">
       <button class="uwso-back" type="button" (click)="goToStockOverviewList()">
@@ -13,6 +13,7 @@
           <i class="fas fa-layer-group" aria-hidden="true"></i>
           <span>Stock Overview</span>
         </div>
+
         <div class="uwso-h2">
           <i class="fas fa-random" aria-hidden="true"></i>
           <span>Material Requisition based transfer</span>
@@ -27,8 +28,10 @@
         <b>{{ selectedMrNo || ('MRQ-' + selectedMrId) }}</b>
       </div>
 
-      <!-- ✅ Shortage chip -->
-      <div class="uwso-chip soft" *ngIf="selectedMrId && shortageCount > 0" style="border-color:#f59e0b;">
+      <div
+        class="uwso-chip soft"
+        *ngIf="selectedMrId && shortageCount > 0"
+        style="border-color:#f59e0b;">
         <i class="fas fa-exclamation-triangle" aria-hidden="true" style="color:#f59e0b;"></i>
         <span>Shortage</span>
         <b>{{ shortageCount }}</b>
@@ -45,7 +48,7 @@
     </div>
   </div>
 
-  <!-- ✅ Options Card (dropdown cut fix => add uwso-card--open) -->
+  <!-- ===== Options Card ===== -->
   <div class="uwso-card uwso-card--open uwso-section">
     <div class="uwso-card-head">
       <div class="uwso-head-left">
@@ -53,7 +56,10 @@
           <i class="fas fa-sliders-h" aria-hidden="true"></i>
           <span>Options</span>
         </div>
-        <div class="uwso-card-sub">Select MRQ + Warehouse, system will auto bind destination.</div>
+
+        <div class="uwso-card-sub">
+          Select MRQ + Warehouse, system will auto bind destination.
+        </div>
       </div>
 
       <div class="uwso-head-right">
@@ -68,6 +74,7 @@
 
       <!-- Row 1 -->
       <div class="uwso-grid-3">
+
         <!-- Material Requisition -->
         <div class="uwso-field">
           <label class="uwso-label">
@@ -82,53 +89,44 @@
             bindValue="id"
             placeholder="Select MRQ"
             [(ngModel)]="selectedMrId"
-            (ngModelChange)="onMrChanged($event)">
+            (ngModelChange)="onMrChanged($event)"
+            appendTo="body">
           </ng-select>
-
-          <!-- <div class="uwso-help" *ngIf="selectedMrId">
-            Auto bind MRQ id: <b>{{ selectedMrId }}</b>
-          </div> -->
         </div>
 
         <!-- Destination Warehouse -->
         <div class="uwso-field">
           <label class="uwso-label">
             <i class="fas fa-store" aria-hidden="true"></i>
-            Destination Warehouse (MR Warehouse)
+            Destination Warehouse
           </label>
 
           <input
             class="uwso-input"
             [value]="destinationOutletName || ''"
             readonly
-            placeholder="Auto from MRQ"/>
-
-          <!-- <div class="uwso-help" *ngIf="destinationOutletId">
-            Destination Warehouse excluded from From Warehouse list.
-          </div> -->
+            placeholder="Auto from MRQ" />
         </div>
 
         <!-- Destination Bin -->
         <div class="uwso-field">
           <label class="uwso-label">
             <i class="fas fa-box" aria-hidden="true"></i>
-            Destination Bin (MR Bin)
+            Destination Bin
           </label>
 
           <input
             class="uwso-input"
             [value]="destinationBinName || ''"
             readonly
-            placeholder="Auto from MRQ"/>
-
-          <!-- <div class="uwso-help" *ngIf="destinationBinId">
-            Auto bind BinId: <b>{{ destinationBinId }}</b>
-          </div> -->
+            placeholder="Auto from MRQ" />
         </div>
+
       </div>
 
       <!-- Row 2 -->
       <div class="uwso-grid-2 uwso-mt16">
+
         <!-- From Warehouse -->
         <div class="uwso-field">
           <label class="uwso-label">
@@ -149,16 +147,23 @@
 
             <ng-template ng-option-tmp let-item="item">
               <div class="uwso-opt">
-                <div class="uwso-opt-name">{{ item.name }}</div>
+                <div class="uwso-opt-name">
+                  {{ item.name }}
+                </div>
+
                 <div class="uwso-opt-meta">
                   <span class="uwso-mini">
                     <i class="fas fa-clipboard-list" aria-hidden="true"></i>
-                    Req <b>{{ item.reqQty }}</b>
+                    Req Base Qty
+                    <b>{{ item.reqQty }}</b>
                   </span>
+
                   <span class="dot">•</span>
+
                   <span class="uwso-mini">
                     <i class="fas fa-cubes" aria-hidden="true"></i>
-                    OnHand <b>{{ item.onHand }}</b>
+                    OnHand
+                    <b>{{ item.onHand }}</b>
                   </span>
                 </div>
               </div>
@@ -166,19 +171,24 @@
 
             <ng-template ng-label-tmp let-item="item">
               <div class="uwso-sel">
-                <span class="uwso-sel-name">{{ item.name }}</span>
+                <span class="uwso-sel-name">
+                  {{ item.name }}
+                </span>
+
                 <span class="uwso-sel-meta">
-                  Req {{ item.reqQty }} • OnHand {{ item.onHand }}
+                  Req Base Qty {{ item.reqQty }} • OnHand {{ item.onHand }}
                 </span>
               </div>
             </ng-template>
 
           </ng-select>
 
-          <div class="uwso-help">Transfer will use selected From Warehouse.</div>
+          <div class="uwso-help">
+            Transfer will use selected From Warehouse.
+          </div>
         </div>
 
-
+        <!-- Selected From Warehouse -->
         <div class="uwso-field">
           <label class="uwso-label">
             <i class="fas fa-check-circle" aria-hidden="true"></i>
@@ -189,170 +199,39 @@
             class="uwso-input"
             [value]="selectedFromOutletName || ''"
             readonly
-            placeholder="Select From Warehouse"/>
+            placeholder="Select From Warehouse" />
 
           <div class="uwso-help">
             This Warehouse stock rows will be shown below.
+
             <span *ngIf="selectedFromOutletId && mrLines?.length" class="dot">•</span>
+
             <span *ngIf="selectedFromOutletId && mrLines?.length">
-              Transferable Lines: <b>{{ transferableLineCount }}</b>
+              Transferable Lines:
+              <b>{{ transferableLineCount }}</b>
             </span>
           </div>
         </div>
+
       </div>
 
-
+      <!-- Error Message -->
       <div *ngIf="!loading && errorMsg" class="uwso-error">
         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
         <span>{{ errorMsg }}</span>
       </div>
 
-      <div *ngIf="!loading && transferErrorText" class="uwso-error" style="background:#fff7ed;border-color:#fdba74;color:#9a3412;">
+      <!-- Transfer Validation Message -->
+      <div
+        *ngIf="!loading && transferErrorText"
+        class="uwso-error"
+        style="background:#fff7ed;border-color:#fdba74;color:#9a3412;">
         <i class="fas fa-info-circle" aria-hidden="true"></i>
         <span>{{ transferErrorText }}</span>
       </div>
+
     </div>
   </div>
-
-
-  <!-- <div class="uwso-2col uwso-section" *ngIf="mrLines?.length">
-
-    <div class="uwso-card">
-      <div class="uwso-card-body uwso-summary">
-        <div class="uwso-sum-left">
-          <div class="uwso-sum-mrq">
-            <i class="fas fa-file-invoice" aria-hidden="true"></i>
-            <span>{{ selectedMrNo || ('MRQ-' + selectedMrId) }}</span>
-          </div>
-          <div class="uwso-sum-sub">MR Lines (Balance only)</div>
-        </div>
-
-        <div class="uwso-sum-right">
-          <div class="uwso-pill">
-            <i class="fas fa-balance-scale-right" aria-hidden="true"></i>
-            <span>Total Remaining</span>
-            <b>{{ totalRemainingQty }}</b>
-          </div>
-
-          <div class="uwso-meta">
-            <span class="uwso-mini">
-              <i class="fas fa-user" aria-hidden="true"></i>
-              Requester: <b>{{ requesterName || '-' }}</b>
-            </span>
-            <span class="dot">•</span>
-            <span class="uwso-mini">
-              <i class="far fa-calendar-alt" aria-hidden="true"></i>
-              Date: <b>{{ reqDate || '-' }}</b>
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="uwso-card">
-      <div class="uwso-card-head compact">
-        <div class="uwso-head-left">
-          <div class="uwso-card-title">
-            <i class="fas fa-list" aria-hidden="true"></i>
-            <span>Material Requisition Lines</span>
-          </div>
-          <div class="uwso-card-sub">
-            Only available qty will be transferred. Shortage items will remain pending.
-          </div>
-        </div>
-
-        <span class="uwso-chip soft">
-          <i class="fas fa-stream" aria-hidden="true"></i>
-          {{ mrLines.length }} line(s)
-        </span>
-      </div>
-
-      <div class="uwso-table-wrap">
-        <table class="uwso-table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>SKU</th>
-
-              <th class="t-end">Old Req</th>
-              <th class="t-end">New Req</th>
-              <th class="t-end">Received</th>
-              <th class="t-end">Remaining</th>
-
-
-              <th class="t-end">Avail</th>
-              <th>Status</th>
-              <th class="t-end">Transfer Qty</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr *ngFor="let l of mrLines; trackBy: trackByMrLine">
-              <td class="t-strong">{{ l.itemName }}</td>
-              <td class="t-muted">{{ l.sku }}</td>
-
-              <td class="t-end t-num">{{ l.oldRequestedQty }}</td>
-              <td class="t-end t-num t-strong">{{ l.requestedQty }}</td>
-              <td class="t-end t-num">{{ l.receivedQty }}</td>
-              <td class="t-end t-num">
-                <span class="uwso-badge-num">{{ l.remainingQty }}</span>
-              </td>
-
-              <td class="t-end t-num">
-                <span
-                  class="uwso-badge-av"
-                  [ngStyle]="{opacity: l.availQty > 0 ? 1 : 0.55, borderColor: l.availQty > 0 ? '#2E5F73' : '#ef4444'}">
-                  {{ l.availQty }}
-                </span>
-              </td>
-
-              <td>
-                <span
-                  class="uwso-chip soft"
-                  [ngStyle]="l.status==='SHORT' ? {borderColor:'#ef4444', color:'#b91c1c'} :
-                             l.status==='PARTIAL' ? {borderColor:'#f59e0b', color:'#92400e'} :
-                             {borderColor:'#10b981', color:'#065f46'}">
-                  <i class="fas"
-                     [ngClass]="{
-                       'fa-check-circle': l.status==='READY',
-                       'fa-adjust': l.status==='PARTIAL',
-                       'fa-exclamation-triangle': l.status==='SHORT'
-                     }"
-                     aria-hidden="true"></i>
-                  <span style="margin-left:6px;">{{ l.status }}</span>
-                </span>
-              </td>
-
-              <td class="t-end">
-                <input
-                  class="uwso-input"
-                  style="max-width:120px;text-align:right;"
-                  type="number"
-                  [min]="0"
-                  [max]="l.maxTransferQty"
-                  [(ngModel)]="l.transferQty"
-                  (ngModelChange)="onTransferQtyChanged(l)"
-                  [readonly]="l.status==='SHORT'"
-                  [disabled]="l.status==='SHORT'">
-              </td>
-            </tr>
-
-            <tr *ngIf="!mrLines?.length">
-              <td colspan="9" class="uwso-empty">No remaining lines.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-
-      <div class="uwso-help" style="padding:10px 14px;">
-        <i class="fas fa-info-circle" aria-hidden="true"></i>
-        Transfer button will be enabled if <b>at least one line</b> has Transfer Qty &gt; 0.
-        Shortage lines will remain pending.
-      </div>
-    </div>
-
-  </div> -->
 
   <!-- ===== Stock Table ===== -->
   <div class="uwso-card uwso-section">
@@ -360,10 +239,12 @@
       <div class="uwso-head-left">
         <div class="uwso-card-title">
           <i class="fas fa-boxes" aria-hidden="true"></i>
-          <span>Stock in selected Warehouse (MR items)</span>
+          <span>Stock in selected Warehouse</span>
         </div>
+
         <div class="uwso-card-sub" *ngIf="selectedFromOutletName">
-          From Warehouse: <b>{{ selectedFromOutletName }}</b>
+          From Warehouse:
+          <b>{{ selectedFromOutletName }}</b>
         </div>
       </div>
 
@@ -382,6 +263,7 @@
             <th>Item</th>
             <th>Supplier</th>
             <th>Bin</th>
+            <th class="t-end">Req Base Qty</th>
             <th class="t-end">On Hand</th>
             <th class="t-end">Available</th>
           </tr>
@@ -389,19 +271,45 @@
 
         <tbody>
           <tr *ngFor="let r of filteredRows; trackBy: trackByRow">
-            <td class="t-strong">{{ r.warehouse }}</td>
-            <td class="t-muted">{{ r.sku || '-' }}</td>
-            <td>{{ r.item || '-' }}</td>
-            <td class="t-muted">{{ r.supplierName || '-' }}</td>
-            <td class="t-muted">{{ r.bin || '-' }}</td>
-            <td class="t-end t-num">{{ r.onHand }}</td>
+            <td class="t-strong">
+              {{ r.warehouse }}
+            </td>
+
+            <td class="t-muted">
+              {{ r.sku || '-' }}
+            </td>
+
+            <td>
+              {{ r.item || '-' }}
+            </td>
+
+            <td class="t-muted">
+              {{ r.supplierName || '-' }}
+            </td>
+
+            <td class="t-muted">
+              {{ r.bin || '-' }}
+            </td>
+
             <td class="t-end t-num">
-              <span class="uwso-badge-av">{{ r.available }}</span>
+              <span class="uwso-badge-num">
+                {{ getReqBaseQtyBySku(r.sku) }}
+              </span>
+            </td>
+
+            <td class="t-end t-num">
+              {{ r.onHand }}
+            </td>
+
+            <td class="t-end t-num">
+              <span class="uwso-badge-av">
+                {{ r.available }}
+              </span>
             </td>
           </tr>
 
           <tr *ngIf="!filteredRows?.length">
-            <td colspan="7" class="uwso-empty">
+            <td colspan="8" class="uwso-empty">
               No rows found for selected MR items / Warehouse.
             </td>
           </tr>

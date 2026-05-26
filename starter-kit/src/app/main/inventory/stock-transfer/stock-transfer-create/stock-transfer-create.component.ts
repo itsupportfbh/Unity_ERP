@@ -427,68 +427,85 @@ export class StockTransferCreateComponent implements OnInit {
     }
     return null;
   }
-
-  submitTransferFinal(): void {
-    const err = this.validate();
-    if (err) { Swal.fire('Validation', err, 'warning'); return; }
-    if (!this.header) return;
-
-    const qty = this.toNum(this.transferQty, 0);
-    const remarks = (this.reason ?? '').trim() || null;
-
-    const toId = this.toNum(this.header.toWarehouseId, 0);
-    const toBinId = this.toNum(this.toBinId, 0);
-
-    const r = this.rows[0];
-    const avail = Math.max(0, this.toNum(r?.available ?? 0, 0));
-
-    if (avail <= 0) {
-      Swal.fire('No Stock', 'No available stock for this transfer.', 'warning');
-      return;
-    }
-
-    const itemId = this.toNum(r?.itemId, 0);
-    const stockId = this.toNum(r?.stockId, 0);
-
-    const payload: any[] = [{
-      stockId: stockId,
-      itemId: itemId,
-
-      warehouseId: this.toNum(this.header.fromWarehouseId, 0),
-      binId: (r.binId == null ? null : this.toNum(r.binId, 0)),
-
-      toWarehouseId: toId,
-      toBinId: toBinId,
-
-      transferQty: Math.min(qty, avail),
-
-      requestedQty: this.requestedQty,
-
-      remarks,
-      supplierId: (r.supplierId == null ? null : this.toNum(r.supplierId, 0)),
-      mrId: this.toNum(this.header.mrId, 0),
-      reqNo: this.header.reqNo,
-      sku: this.header.sku
-    }];
-
-    this.loading = true;
-
-    this.stockService.ApproveTransfersBulk(payload).subscribe({
-      next: _ => {
-        this.loading = false;
-        Swal.fire(
-          this.isEditMode ? 'Updated' : 'Submitted',
-          this.isEditMode ? 'Stock Transfer updated successfully.' : 'Stock Transfer submitted successfully.',
-          'success'
-        ).then(() => this.goToStockTransferList());
-      },
-      error: (e: any) => {
-        this.loading = false;
-        console.error(e);
-        Swal.fire('Failed', e?.error?.error || e?.error?.message || e?.message || 'Something went wrong', 'error');
-      }
-    });
+submitTransferFinal(): void {
+  const err = this.validate();
+  if (err) {
+    Swal.fire('Validation', err, 'warning');
+    return;
   }
+
+  if (!this.header) return;
+
+  const qty = this.toNum(this.transferQty, 0);
+  const remarks = (this.reason ?? '').trim() || null;
+
+  const toId = this.toNum(this.header.toWarehouseId, 0);
+  const toBinId = this.toNum(this.toBinId, 0);
+
+  const r = this.rows[0];
+  const avail = Math.max(0, this.toNum(r?.available ?? 0, 0));
+
+  if (avail <= 0) {
+    Swal.fire('No Stock', 'No available stock for this transfer.', 'warning');
+    return;
+  }
+
+  const itemId = this.toNum(r?.itemId, 0);
+  const stockId = this.toNum(r?.stockId, 0);
+
+  const userId = Number(localStorage.getItem('id') ?? 0) || 0;
+  const companyId = Number(localStorage.getItem('companyId') ?? localStorage.getItem('CompanyId') ?? 0) || 0;
+
+  const payload: any[] = [{
+    stockId,
+    itemId,
+
+    warehouseId: this.toNum(this.header.fromWarehouseId, 0),
+    binId: r.binId == null ? null : this.toNum(r.binId, 0),
+
+    toWarehouseId: toId,
+    toBinId,
+
+    transferQty: Math.min(qty, avail),
+    requestedQty: this.requestedQty,
+
+    remarks,
+    supplierId: r.supplierId == null ? null : this.toNum(r.supplierId, 0),
+
+    mrId: this.toNum(this.header.mrId, 0),
+    reqNo: this.header.reqNo,
+    sku: this.header.sku,
+
+    companyId,
+    createdBy: userId,
+    updatedBy: userId
+  }];
+
+  this.loading = true;
+
+  this.stockService.ApproveTransfersBulk(payload).subscribe({
+    next: _ => {
+      this.loading = false;
+
+      Swal.fire(
+        this.isEditMode ? 'Updated' : 'Submitted',
+        this.isEditMode
+          ? 'Stock Transfer updated successfully.'
+          : 'Stock Transfer submitted successfully.',
+        'success'
+      ).then(() => this.goToStockTransferList());
+    },
+    error: (e: any) => {
+      this.loading = false;
+      console.error(e);
+      Swal.fire(
+        'Failed',
+        e?.error?.error || e?.error?.message || e?.message || 'Something went wrong',
+        'error'
+      );
+    }
+  });
+}
 
   goBack(): void {
     this.goToStockTransferList();

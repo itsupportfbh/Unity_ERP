@@ -1,7 +1,6 @@
 <div class="mrq-page">
   <div class="mrq-card">
 
-    <!-- ✅ TOP HEADER (Title + Breadcrumb + Save/Close at right) -->
     <div class="mrq-topbar">
       <div class="mrq-topbar-left">
         <h2 class="mrq-heading">
@@ -11,8 +10,8 @@
       </div>
 
       <div class="mrq-topbar-right">
-        <button class="mrq-btn mrq-btn-primary" type="button" (click)="save()">
-          <span class="ico">💾</span> Save
+        <button class="mrq-btn mrq-btn-primary" type="button" (click)="save()" [disabled]="isSaving">
+          <span class="ico">💾</span> {{ isSaving ? 'Saving...' : 'Save' }}
         </button>
 
         <button class="mrq-btn mrq-btn-light" type="button" (click)="close()">
@@ -21,35 +20,26 @@
       </div>
     </div>
 
-    <!-- ✅ Header fields -->
     <div class="mrq-form mrq-form-3">
 
-      <!-- Warehouse -->
       <div class="mrq-field">
         <label>Warehouse</label>
-
         <ng-select
           class="mrq-outlet-ng"
           [items]="OutletList"
           bindLabel="name"
           bindValue="id"
           [(ngModel)]="header.OutletId"
-          placeholder="Select Outlet"
+          placeholder="Select Warehouse"
           [searchable]="true"
           [clearable]="false"
           [disabled]="isEdit"
-          (change)="onOutletChanged()"
-        >
-          <ng-template ng-option-tmp let-item="item">
-            {{ item.name }}
-          </ng-template>
+          (change)="onOutletChanged()">
         </ng-select>
       </div>
 
-      <!-- ✅ Bin (NEW) -->
       <div class="mrq-field">
         <label>Bin</label>
-
         <ng-select
           class="mrq-outlet-ng"
           [items]="binList"
@@ -59,11 +49,7 @@
           placeholder="Select Bin"
           [searchable]="true"
           [clearable]="false"
-          [disabled]="!header.OutletId"
-        >
-          <ng-template ng-option-tmp let-item="item">
-            {{ item.binName }}
-          </ng-template>
+          [disabled]="!header.OutletId">
         </ng-select>
 
         <small class="text-muted" *ngIf="header.OutletId && !binList.length">
@@ -71,22 +57,18 @@
         </small>
       </div>
 
-      <!-- Requester -->
       <div class="mrq-field">
         <label>Requester Name</label>
         <input class="mrq-input" type="text" [(ngModel)]="header.requesterName" readonly />
       </div>
 
-      <!-- Date -->
       <div class="mrq-field">
         <label>Requested Date</label>
-        <div class="mrq-date">
-          <input class="mrq-input" type="date" [(ngModel)]="header.date" />
-        </div>
+        <input class="mrq-input" type="date" [(ngModel)]="header.date" />
       </div>
+
     </div>
 
-    <!-- ✅ Grid -->
     <div class="mrq-grid-wrap">
       <table class="mrq-grid">
         <thead>
@@ -94,8 +76,11 @@
             <th class="col-no">#</th>
             <th class="col-item">Item</th>
             <th class="col-sku">SKU</th>
-            <th class="col-uom">UOM</th>
-            <th class="col-qty">Qty (Enter)</th>
+            <th class="col-base-uom">Base UOM</th>
+            <th class="col-enter-uom">Enter UOM</th>
+            <th class="col-qty">Qty</th>
+            <th class="col-factor">Factor</th>
+            <th class="col-baseqty">Base Qty</th>
             <th class="col-act">Action</th>
           </tr>
         </thead>
@@ -106,7 +91,7 @@
 
             <td class="col-item">
               <ng-select
-                class="mrq-ng"
+                class="mrq-ng item-select"
                 [(ngModel)]="row.itemId"
                 [items]="items"
                 bindLabel="name"
@@ -118,12 +103,14 @@
                 placeholder="Select Item"
                 dropdownPosition="bottom"
                 (change)="onItemChanged(i)"
-                [disabled]="isEdit"
-              >
+                [disabled]="isEdit">
+
                 <ng-template ng-option-tmp let-item="item">
                   <div class="opt-row">
                     <div class="opt-name">{{ item.name }}</div>
-                    <div class="opt-sub">{{ item.sku }} • {{ item.uom }}</div>
+                    <div class="opt-sub">
+                      {{ item.sku }} • Base: {{ item.baseUom }}
+                    </div>
                   </div>
                 </ng-template>
 
@@ -134,21 +121,53 @@
             </td>
 
             <td class="col-sku">
-              <input class="mrq-input" type="text" [value]="row.sku" readonly />
+              <input class="mrq-input table-input" type="text" [value]="row.sku" readonly />
             </td>
 
-            <td class="col-uom">
-              <input class="mrq-input" type="text" [value]="row.uom" readonly />
+            <td class="col-base-uom">
+              <input class="mrq-input table-input" type="text" [value]="row.baseUom" readonly />
+            </td>
+
+            <td class="col-enter-uom">
+              <ng-select
+                class="mrq-ng"
+                [(ngModel)]="row.enterUomId"
+                [items]="row.uomOptions"
+                bindLabel="uomName"
+                bindValue="uomId"
+                placeholder="Select UOM"
+                [searchable]="true"
+                [clearable]="false"
+                appendTo="body"
+                dropdownPosition="bottom"
+                (change)="onUomChanged(i)">
+              </ng-select>
             </td>
 
             <td class="col-qty">
               <input
-                class="mrq-input qty"
+                class="mrq-input table-input qty"
                 type="number"
                 min="0"
-                placeholder="Enter qty"
+                placeholder="Qty"
                 [(ngModel)]="row.qty"
-              />
+                (ngModelChange)="calculateLine(i)" />
+            </td>
+
+            <td class="col-factor">
+              <input
+                class="mrq-input table-input qty"
+                type="number"
+                [value]="row.conversionFactor"
+                readonly />
+            </td>
+
+            <td class="col-baseqty">
+              <input
+                class="mrq-input table-input qty"
+                type="number"
+                [value]="row.baseQty"
+                readonly />
             </td>
 
             <td class="col-act">
@@ -157,8 +176,7 @@
                 class="mrq-row-remove"
                 title="Remove row"
                 (click)="removeRow(i)"
-                [disabled]="lines.length === 1"
-              >
+                [disabled]="lines.length === 1">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </td>

@@ -6,34 +6,51 @@ import { ItemMasterService } from '../../item-master/item-master.service';
 import { WarehouseService } from 'app/main/master/warehouse/warehouse.service';
 import { MaterialRequisitionService } from '../material-requisition.service';
 
-// ✅ CHANGE THIS PATH to your actual bin service location
-import { BinService } from 'app/main/master/bin/bin.service';
+type UomOption = {
+  uomId: number;
+  uomName: string;
+  factor: number;
+};
 
 type ItemMaster = {
   id: number;
-  name: string;   // itemName
-  sku: string;    // itemCode
-  uom: string;    // uomName
+  name: string;
+  sku: string;
+
   uomId: number | null;
+  uomName: string;
+
+  baseUomId: number | null;
+  baseUom: string;
+
+  uomFactor: number;
 };
 
 type MrqHeader = {
   OutletId: number | null;
-  BinId: number | null;          // ✅ NEW
+  BinId: number | null;
   requesterName: string;
-  date: string; // yyyy-mm-dd
+  date: string;
 };
 
 type MrqLine = {
-  id: number; // ✅ 0 = new line, >0 = existing line
+  id: number;
   itemId: number | null;
   sku: string;
-  uom: string;
-  uomId: number | null;
+
+  baseUomId: number | null;
+  baseUom: string;
+
+  enterUomId: number | null;
+  enterUomName: string;
+
   qty: number | null;
+  conversionFactor: number;
+  baseQty: number;
+
+  uomOptions: UomOption[];
 };
 
-// ✅ Bin DTO (adjust if API differs)
 type BinDto = {
   id: number;
   binName: string;
@@ -47,8 +64,6 @@ type BinDto = {
 export class MaterialRequisitionCreateComponent implements OnInit {
   OutletList: any[] = [];
   items: ItemMaster[] = [];
-
-  // ✅ NEW
   binList: BinDto[] = [];
 
   header: MrqHeader = {
@@ -61,8 +76,6 @@ export class MaterialRequisitionCreateComponent implements OnInit {
   lines: MrqLine[] = [this.emptyRow()];
 
   isSaving = false;
-
-  // ✅ EDIT MODE
   isEdit = false;
   editId: number | null = null;
   userId: any;
@@ -71,24 +84,19 @@ export class MaterialRequisitionCreateComponent implements OnInit {
     private itemMasterService: ItemMasterService,
     private outletService: WarehouseService,
     private mrqService: MaterialRequisitionService,
-
     private route: ActivatedRoute,
     private router: Router
-  ) 
-  {
-    this.userId = localStorage.getItem('id')
+  ) {
+    this.userId = localStorage.getItem('id');
   }
 
   ngOnInit(): void {
-    // requesterName from localStorage
     this.header.requesterName = String(localStorage.getItem('username') ?? '');
 
-    // detect edit id
     const idParam = this.route.snapshot.paramMap.get('id');
     this.editId = idParam ? Number(idParam) : null;
     this.isEdit = !!this.editId;
 
-    // load masters first (items needed for sku/uom mapping)
     this.loadItem(() => {
       if (this.isEdit && this.editId) {
         this.loadById(this.editId);
@@ -98,35 +106,41 @@ export class MaterialRequisitionCreateComponent implements OnInit {
     this.loadOutlets();
   }
 
-  // ----------------------------
-  // Masters
-  // ----------------------------
-  loadItem(done?: () => void): void {
-    this.itemMasterService.getAllItemMaster().subscribe({
-      next: (res: any) => {
-        const data = res?.data ?? [];
-        this.items = (data || []).map((x: any) => ({
-          id: Number(x.id),
-          name: String(x.itemName ?? ''),
-          sku: String(x.itemCode ?? ''),
-          uom: String(x.uomName ?? ''),
-          uomId: x.uomId != null ? Number(x.uomId) : null
-        }));
+loadItem(done?: () => void): void {
+  this.itemMasterService.getAllItemMaster().subscribe({
+    next: (res: any) => {
+      const data = res?.data ?? [];
 
-        this.items.sort((a, b) => a.name.localeCompare(b.name));
-        done?.();
-      },
-      error: (err) => {
-        console.error('Item load error:', err);
-        this.items = [];
-        done?.();
-      }
-    });
-  }
+      this.items = (data || []).map((x: any) => ({
+        id: Number(x.id),
+        name: String(x.itemName ?? ''),
+        sku: String(x.itemCode ?? ''),
+
+        uomId: x.uomId != null ? Number(x.uomId) : null,
+        uomName: String(x.uomName ?? ''),
+
+        baseUomId: x.baseUomId != null ? Number(x.baseUomId) : null,
+        baseUom: String(x.baseUomName ?? ''),
+
+        uomFactor: Number(x.uomFactor ?? 1)
+      }));
+
+      this.items.sort((a, b) => a.name.localeCompare(b.name));
+      done?.();
+    },
+    error: (err) => {
+      console.error('Item load error:', err);
+      this.items = [];
+      done?.();
+    }
+  });
+}
 
   loadOutlets(): void {
     this.outletService.getWarehouse().subscribe({
-      next: (res: any) => (this.OutletList = res?.data ?? []),
+      next: (res: any) => {
+        this.OutletList = res?.data ?? [];
+      },
       error: (err) => {
         console.error('Outlet load error:', err);
         this.OutletList = [];
@@ -134,11 +148,9 @@ export class MaterialRequisitionCreateComponent implements OnInit {
     });
   }
 
-  // ✅ NEW: when outlet selected, load bins
   onOutletChanged(): void {
     const outletId = this.header.OutletId != null ? Number(this.header.OutletId) : null;
 
-    // reset bin selection & list
     this.header.BinId = null;
     this.binList = [];
 
@@ -147,40 +159,30 @@ export class MaterialRequisitionCreateComponent implements OnInit {
     this.loadBinsByOutlet(outletId);
   }
 
-  // ✅ NEW: BinService.getbyBinNameinOuteltId(outletId)
-loadBinsByOutlet(outletId: number, keepSelectedBinId: number | null = null): void {
-  this.outletService.getBinNameByIdAsync(outletId).subscribe({
-    next: (res: any) => {
-      const data = res?.data ?? [];
+  loadBinsByOutlet(outletId: number, keepSelectedBinId: number | null = null): void {
+    this.outletService.getBinNameByIdAsync(outletId).subscribe({
+      next: (res: any) => {
+        const data = res?.data ?? [];
 
-      this.binList = (data || [])
-        .map((b: any) => ({
-          // ✅ IMPORTANT: API gives binID as string
-          id: Number(b.binID ?? b.binId ?? b.id ?? 0),
-          binName: String(b.binName ?? b.name ?? '')
-        }))
-        // ✅ don't remove all rows by mistake
-        .filter((x: BinDto) => x.id > 0 && !!x.binName)
-        .sort((a: BinDto, b: BinDto) => a.binName.localeCompare(b.binName));
+        this.binList = (data || [])
+          .map((b: any) => ({
+            id: Number(b.binID ?? b.binId ?? b.id ?? 0),
+            binName: String(b.binName ?? b.name ?? '')
+          }))
+          .filter((x: BinDto) => x.id > 0 && !!x.binName)
+          .sort((a: BinDto, b: BinDto) => a.binName.localeCompare(b.binName));
 
-      // ✅ keep selected (edit mode)
-      if (keepSelectedBinId && this.binList.some(x => x.id === keepSelectedBinId)) {
-        this.header.BinId = keepSelectedBinId;
+        if (keepSelectedBinId && this.binList.some(x => x.id === keepSelectedBinId)) {
+          this.header.BinId = keepSelectedBinId;
+        }
+      },
+      error: (err) => {
+        console.error('Bin load error:', err);
+        this.binList = [];
       }
+    });
+  }
 
-      console.log('BIN LIST:', this.binList); // ✅ debug
-    },
-    error: (err) => {
-      console.error('Bin load error:', err);
-      this.binList = [];
-    }
-  });
-}
-
-
-  // ----------------------------
-  // EDIT: Load by Id
-  // ----------------------------
   loadById(id: number): void {
     Swal.fire({
       title: 'Loading...',
@@ -200,22 +202,18 @@ loadBinsByOutlet(outletId: number, keepSelectedBinId: number | null = null): voi
           return;
         }
 
-        // header bind
         this.header.OutletId = x.outletId != null ? Number(x.outletId) : null;
 
-        // ✅ NEW: bin bind
-      const binId = x.binId ?? x.binID ?? null;
-this.header.BinId = binId != null ? Number(binId) : null;
+        const binId = x.binId ?? x.binID ?? null;
+        this.header.BinId = binId != null ? Number(binId) : null;
 
         this.header.requesterName = String(x.requesterName ?? this.header.requesterName ?? '');
         this.header.date = this.toISODate(x.reqDate) || this.todayISO();
 
-        // ✅ load bins for outlet and keep selected bin
         if (this.header.OutletId) {
-          this.loadBinsByOutlet(Number(this.header.OutletId), binId);
+          this.loadBinsByOutlet(Number(this.header.OutletId), this.header.BinId);
         }
 
-        // lines bind
         const apiLines = (x.lines ?? x.lineItems ?? []) as any[];
 
         if (!apiLines.length) {
@@ -224,21 +222,43 @@ this.header.BinId = binId != null ? Number(binId) : null;
         }
 
         this.lines = apiLines.map((l: any) => {
-          const lineId = Number(l.id ?? 0);
           const itemId = l.itemId != null ? Number(l.itemId) : null;
           const item = this.items.find(it => it.id === itemId);
 
-          return {
-            id: lineId,
+          const row: MrqLine = {
+            id: Number(l.id ?? 0),
             itemId,
             sku: String(l.itemCode ?? item?.sku ?? ''),
-            uom: String(l.uomName ?? item?.uom ?? ''),
-            uomId: l.uomId != null ? Number(l.uomId) : (item?.uomId ?? null),
-            qty: l.qty != null ? Number(l.qty) : null
-          } as MrqLine;
+
+            baseUomId: l.baseUomId != null
+              ? Number(l.baseUomId)
+              : item?.baseUomId ?? null,
+
+            baseUom: String(l.baseUomName ?? item?.baseUom ?? ''),
+
+            enterUomId: l.uomId != null
+              ? Number(l.uomId)
+              : item?.baseUomId ?? null,
+
+            enterUomName: String(l.uomName ?? item?.baseUom ?? ''),
+
+            qty: l.qty != null ? Number(l.qty) : null,
+            conversionFactor: l.conversionFactor != null ? Number(l.conversionFactor) : 1,
+            baseQty: l.baseQty != null ? Number(l.baseQty) : 0,
+
+            uomOptions: item ? this.buildUomOptions(item) : []
+          };
+
+          if (!row.baseQty) {
+            row.baseQty = Number(((row.qty ?? 0) * row.conversionFactor).toFixed(4));
+          }
+
+          return row;
         });
 
-        if (this.lines.length === 0) this.lines = [this.emptyRow()];
+        if (this.lines.length === 0) {
+          this.lines = [this.emptyRow()];
+        }
       },
       error: (err) => {
         Swal.close();
@@ -249,9 +269,6 @@ this.header.BinId = binId != null ? Number(binId) : null;
     });
   }
 
-  // ----------------------------
-  // Grid actions
-  // ----------------------------
   addRow(): void {
     this.lines.push(this.emptyRow());
   }
@@ -267,40 +284,91 @@ this.header.BinId = binId != null ? Number(binId) : null;
     const item = this.items.find(x => x.id === selectedId);
 
     if (!item) {
-      row.sku = '';
-      row.uom = '';
-      row.uomId = null;
+      this.lines[rowIndex] = this.emptyRow();
       return;
     }
 
-    // ✅ keep row.id (do not touch)
     row.sku = item.sku;
-    row.uom = item.uom;
-    row.uomId = item.uomId;
+
+    row.baseUomId = item.baseUomId;
+    row.baseUom = item.baseUom;
+
+    row.uomOptions = this.buildUomOptions(item);
+
+    const defaultUom =
+      row.uomOptions.find(x => x.uomId === item.baseUomId) ||
+      row.uomOptions[0];
+
+    row.enterUomId = defaultUom?.uomId ?? null;
+    row.enterUomName = defaultUom?.uomName ?? '';
+    row.conversionFactor = defaultUom?.factor ?? 1;
+
+    this.calculateLine(rowIndex);
   }
 
-  // ----------------------------
-  // ng-select custom search
-  // ----------------------------
-  searchFn = (term: string, item: ItemMaster) => {
-    term = (term || '').toLowerCase().trim();
-    if (!term) return true;
+  onUomChanged(rowIndex: number): void {
+    const row = this.lines[rowIndex];
+    const selected = row.uomOptions.find(x => x.uomId === Number(row.enterUomId));
 
-    return (
-      (item.name || '').toLowerCase().includes(term) ||
-      (item.sku || '').toLowerCase().includes(term) ||
-      (item.uom || '').toLowerCase().includes(term)
-    );
-  };
+    row.enterUomName = selected?.uomName ?? '';
+    row.conversionFactor = Number(selected?.factor ?? 1);
 
-  // ----------------------------
-  // Save (Create / Update)
-  // ----------------------------
+    this.calculateLine(rowIndex);
+  }
+
+  calculateLine(rowIndex: number): void {
+    const row = this.lines[rowIndex];
+
+    const qty = Number(row.qty ?? 0);
+    const factor = Number(row.conversionFactor ?? 1);
+
+    row.baseQty = Number((qty * factor).toFixed(4));
+  }
+
+private buildUomOptions(item: ItemMaster): UomOption[] {
+  const list: UomOption[] = [];
+
+  // Enter UOM
+  if (item.uomId && item.uomName) {
+    list.push({
+      uomId: item.uomId,
+      uomName: item.uomName,
+      factor: item.uomFactor || 1
+    });
+  }
+
+  // Base UOM
+  if (item.baseUomId && item.baseUom) {
+    list.push({
+      uomId: item.baseUomId,
+      uomName: item.baseUom,
+      factor: 1
+    });
+  }
+
+  return list.filter(
+    (x, index, arr) => arr.findIndex(y => y.uomId === x.uomId) === index
+  );
+}
+
+searchFn = (term: string, item: ItemMaster) => {
+  term = (term || '').toLowerCase().trim();
+
+  if (!term) return true;
+
+  return (
+    (item.name || '').toLowerCase().includes(term) ||
+    (item.sku || '').toLowerCase().includes(term) ||
+    (item.uomName || '').toLowerCase().includes(term) ||
+    (item.baseUom || '').toLowerCase().includes(term)
+  );
+};
+
   save(): void {
     if (this.isSaving) return;
 
     if (!this.header.OutletId) {
-      Swal.fire('Validation', 'Please select Outlet', 'warning');
+      Swal.fire('Validation', 'Please select Warehouse', 'warning');
       return;
     }
 
@@ -310,6 +378,7 @@ this.header.BinId = binId != null ? Number(binId) : null;
     }
 
     const requester = (this.header.requesterName ?? '').trim();
+
     if (!requester) {
       Swal.fire('Validation', 'Requester name missing', 'warning');
       return;
@@ -319,14 +388,23 @@ this.header.BinId = binId != null ? Number(binId) : null;
       .filter(l => l.itemId && (l.qty ?? 0) > 0)
       .map(l => {
         const item = this.items.find(x => x.id === Number(l.itemId));
+
         return {
-          id: Number(l.id ?? 0), // ✅ send id (0=new line)
+          id: Number(l.id ?? 0),
           itemId: Number(l.itemId),
           itemCode: item?.sku ?? l.sku ?? '',
           itemName: item?.name ?? '',
-          uomId: item?.uomId ?? l.uomId ?? null,
-          uomName: item?.uom ?? l.uom ?? '',
-          qty: Number(l.qty)
+
+          uomId: l.enterUomId,
+          uomName: l.enterUomName,
+
+          baseUomId: l.baseUomId,
+          baseUomName: l.baseUom,
+
+      qty: Number(l.qty),
+conversionFactor: Number(l.conversionFactor || 1),
+baseQty: Number((Number(l.qty || 0) * Number(l.conversionFactor || 1)).toFixed(4)),
+receivedQty: 0
         };
       });
 
@@ -335,10 +413,17 @@ this.header.BinId = binId != null ? Number(binId) : null;
       return;
     }
 
+    const invalidUom = validLines.some(x => !x.uomId || !x.baseUomId);
+
+    if (invalidUom) {
+      Swal.fire('Validation', 'Please check UOM for all selected items', 'warning');
+      return;
+    }
+
     const payload: any = {
       id: this.isEdit ? Number(this.editId) : 0,
       outletId: Number(this.header.OutletId),
-      binId: Number(this.header.BinId),      // ✅ NEW
+      binId: Number(this.header.BinId),
       requesterName: requester,
       reqDate: this.header.date,
       status: 1,
@@ -377,7 +462,7 @@ this.header.BinId = binId != null ? Number(binId) : null;
           'Material Requisition',
           reqNo
             ? `${this.isEdit ? 'Updated' : 'Saved'} Successfully<br><b>${reqNo}</b>`
-            : (res?.message ?? (this.isEdit ? 'Updated successfully' : 'Saved successfully')),
+            : res?.message ?? (this.isEdit ? 'Updated successfully' : 'Saved successfully'),
           'success'
         );
 
@@ -400,11 +485,24 @@ this.header.BinId = binId != null ? Number(binId) : null;
     this.router.navigate(['/Inventory/list-material-requisition']);
   }
 
-  // ----------------------------
-  // Helpers
-  // ----------------------------
   private emptyRow(): MrqLine {
-    return { id: 0, itemId: null, sku: '', uom: '', uomId: null, qty: null };
+    return {
+      id: 0,
+      itemId: null,
+      sku: '',
+
+      baseUomId: null,
+      baseUom: '',
+
+      enterUomId: null,
+      enterUomName: '',
+
+      qty: null,
+      conversionFactor: 1,
+      baseQty: 0,
+
+      uomOptions: []
+    };
   }
 
   private todayISO(): string {
@@ -417,12 +515,19 @@ this.header.BinId = binId != null ? Number(binId) : null;
 
   private toISODate(dt: any): string {
     if (!dt) return '';
-    if (typeof dt === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dt)) return dt.slice(0, 10);
+
+    if (typeof dt === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dt)) {
+      return dt.slice(0, 10);
+    }
+
     const d = new Date(dt);
+
     if (isNaN(d.getTime())) return '';
+
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
+
     return `${yyyy}-${mm}-${dd}`;
   }
 }

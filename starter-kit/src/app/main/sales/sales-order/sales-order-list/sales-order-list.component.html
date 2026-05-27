@@ -63,7 +63,7 @@
             [footerHeight]="50"
             [limit]="selectedOption"
             [columnMode]="'force'"
-            [scrollbarH]="true"
+            [scrollbarH]="false"
             [reorderable]="true">
 
             <ngx-datatable-column
@@ -84,9 +84,9 @@
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="SO Number" prop="salesOrderNo" [width]="140"></ngx-datatable-column>
+            <ngx-datatable-column name="SO Number" prop="salesOrderNo" [width]="90"></ngx-datatable-column>
 
-            <ngx-datatable-column name="Customer Name" prop="customerName" [width]="210">
+            <ngx-datatable-column name="Customer Name" prop="customerName" [width]="180">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 <div
                   class="po-wrap-cell"
@@ -97,7 +97,7 @@
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="Requested Date" prop="requestedDate" [width]="150">
+            <ngx-datatable-column name="Requested Date" prop="requestedDate" [width]="130">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 {{ row.requestedDate | date:'dd-MM-yyyy' }}
               </ng-template>
@@ -129,7 +129,7 @@
               </ng-template>
             </ngx-datatable-column>
 
-           <ngx-datatable-column name="Action" [width]="120" [sortable]="false">
+           <ngx-datatable-column name="Action" [width]="90" [sortable]="false">
   <ng-template let-row="row" ngx-datatable-cell-template>
     <div class="d-flex align-items-center">
       <i

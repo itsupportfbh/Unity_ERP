@@ -1,0 +1,178 @@
+<div class="row">
+
+  <!-- Left: List -->
+  <div class="col-lg-6 col-md-12">
+    <div class="card card-transaction">
+
+      <div class="card-header d-flex justify-content-between align-items-center"
+           style="background-color:#ffffff; padding:12px 20px;">
+        <h4 class="card-title"
+            style="display:flex; align-items:center; gap:10px; margin:0;
+                   font-size:1.25rem; font-weight:600; color:#2E5F73;">
+          <span style="display:inline-flex; align-items:center; justify-content:center;
+                       width:34px; height:34px; background-color:#e5f0f3; border-radius:50%;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2E5F73"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                 style="width:18px; height:18px;">
+              <path d="M12 1v22"></path>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </span>
+          Exchange Rate List
+        </h4>
+
+        <button (click)="createRate()"
+                style="background-color:#2E5F73; color:white; border:none;
+                       padding:6px 14px; font-size:0.9rem; border-radius:4px;
+                       display:flex; align-items:center; gap:6px;">
+          <i data-feather="plus-circle"></i>
+          Create
+        </button>
+      </div>
+
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+
+          <li class="list-group-item d-flex justify-content-between align-items-center"
+              *ngFor="let item of rateList">
+
+            <div class="d-flex align-items-center gap-2" style="gap:10px;">
+              <div style="background-color:#2E5F73; color:white; width:2.5rem; height:2.5rem;
+                          border-radius:50%; display:flex; align-items:center;
+                          justify-content:center; font-weight:700; font-size:0.75rem;">
+                {{ item.fromCurrencyName?.substring(0,3)?.toUpperCase() }}
+              </div>
+              <div>
+                <div style="font-weight:600; font-size:0.95rem; color:#2E5F73;">
+                  {{ item.fromCurrencyName }} → {{ item.toCurrencyName }}
+                </div>
+                <small class="text-muted">
+                  Rate: <b>{{ item.rate | number:'1.4-4' }}</b>
+                  &nbsp;|&nbsp;
+                  {{ item.rateDate | date:'dd-MMM-yyyy' }}
+                </small>
+              </div>
+            </div>
+
+            <div class="d-flex" style="gap:6px;">
+              <button class="btn btn-outline-primary p-0 d-flex align-items-center justify-content-center"
+                      style="width:28px; height:28px;" (click)="editRate(item)">
+                <i data-feather="edit" style="width:14px; height:14px;"></i>
+              </button>
+              <button class="btn btn-outline-danger p-0 d-flex align-items-center justify-content-center"
+                      style="width:28px; height:28px;" (click)="confirmDelete(item)">
+                <i data-feather="trash" style="width:14px; height:14px;"></i>
+              </button>
+            </div>
+
+          </li>
+
+          <li class="list-group-item text-center text-muted" *ngIf="rateList.length === 0">
+            No exchange rates found
+          </li>
+
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Right: Form -->
+  <div class="col-lg-6 col-md-12" *ngIf="isDisplay">
+    <div class="card">
+
+      <div class="card-header">
+        <h4 class="card-title">{{ modeHeader }}</h4>
+      </div>
+
+      <div class="card-body">
+        <form #rateForm="ngForm">
+
+          <div class="form-group">
+            <label>From Currency <span class="text-danger">*</span></label>
+            <ng-select
+              [items]="currencyList"
+              bindLabel="currencyName"
+              bindValue="id"
+              [(ngModel)]="fromCurrencyId"
+              name="fromCurrencyId"
+              placeholder="Select From Currency"
+              required>
+            </ng-select>
+          </div>
+
+          <div class="form-group">
+            <label>To Currency <span class="text-danger">*</span></label>
+            <ng-select
+              [items]="currencyList"
+              bindLabel="currencyName"
+              bindValue="id"
+              [(ngModel)]="toCurrencyId"
+              name="toCurrencyId"
+              placeholder="Select To Currency"
+              required>
+            </ng-select>
+          </div>
+
+          <div class="form-group">
+            <label>Exchange Rate <span class="text-danger">*</span></label>
+            <input type="number" class="form-control"
+                   placeholder="e.g. 83.5000"
+                   name="rate"
+                   [(ngModel)]="rate"
+                   min="0.0001" step="0.0001"
+                   required />
+          </div>
+
+          <div class="form-group">
+            <label>Rate Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control"
+                   name="rateDate"
+                   [(ngModel)]="rateDate"
+                   required />
+          </div>
+
+          <div class="form-group">
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input"
+                     id="isActiveSwitch"
+                     name="isActive"
+                     [(ngModel)]="isActive">
+              <label class="custom-control-label" for="isActiveSwitch">Active</label>
+            </div>
+          </div>
+
+          <div class="row justify-content-start p-1">
+            <button type="submit" class="btn mr-1"
+                    [disabled]="!rateForm.form.valid"
+                    (click)="onSubmit(rateForm)"
+                    style="background-color:#2E5F73; color:white; padding:6px 14px;
+                           border-radius:4px; display:flex; align-items:center; gap:6px;">
+              <i data-feather="check-circle"></i>
+              Submit
+            </button>
+
+            <button type="button" class="btn btn-danger mr-1"
+                    (click)="cancel()"
+                    style="padding:6px 14px; border-radius:4px;
+                           display:flex; align-items:center; gap:6px;">
+              <i data-feather="x-circle"></i>
+              Cancel
+            </button>
+
+            <button type="button" class="btn btn-secondary"
+                    (click)="reset()"
+                    style="padding:6px 14px; border-radius:4px;
+                           display:flex; align-items:center; gap:6px;">
+              <i data-feather="rotate-ccw"></i>
+              Clear
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+</div>

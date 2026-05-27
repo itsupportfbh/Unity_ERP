@@ -24,6 +24,7 @@ export const ALL_MENU: CoreMenu[] = [
       { id: 'customergroups', title: 'Customer Groups', type: 'item', icon: 'circle', url: '/master/customergroups' },
       { id: 'department', title: 'Department', type: 'item', icon: 'circle', url: '/master/department' },
       { id: 'driver', title: 'Driver', type: 'item', icon: 'circle', url: '/master/driver' },
+      { id: 'exchangerate', title: 'Exchange Rate', type: 'item', icon: 'circle', url: '/master/exchangerate' },
       { id: 'flagissue', title: 'FlagIssue', type: 'item', icon: 'circle', url: '/master/flagIssue' },
       { id: 'incoterms', title: 'Incoterms', type: 'item', icon: 'circle', url: '/master/incoterms' },
       { id: 'itemType', title: 'ItemType', type: 'item', icon: 'circle', url: '/master/itemType' },

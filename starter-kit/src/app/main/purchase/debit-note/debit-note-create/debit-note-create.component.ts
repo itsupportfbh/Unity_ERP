@@ -15,6 +15,10 @@ interface SupplierInvoiceOption {
 }
 
 type LineRow = {
+  itemId?: number;
+  warehouseId?: number;
+  binId?: number;
+
   item?: string;
   totalQty?: number;
   varianceQty?: number;
@@ -454,18 +458,22 @@ this.applySourceLines(lines, headerTaxPct);
       const taxAmount = lineAmount * taxPct / 100;
       const lineTotal = lineAmount + taxAmount;
 
-      return {
-        item: r.item ?? '',
-        totalQty: this.toNumber(r.totalQty),
-        qty,
-        varianceQty: qty,
-        price,
-        taxPct,
-        lineAmount,
-        taxAmount,
-        lineTotal,
-        remarks: r.remarks ?? ''
-      };
+    return {
+  itemId: Number(r.itemId ?? 0),
+  warehouseId: Number(r.warehouseId ?? 0),
+  binId: Number(r.binId ?? 0),
+
+  item: r.item ?? '',
+  totalQty: this.toNumber(r.totalQty),
+  qty,
+  varianceQty: qty,
+  price,
+  taxPct,
+  lineAmount,
+  taxAmount,
+  lineTotal,
+  remarks: r.remarks ?? ''
+};
     }));
 
     const payload: DebitNoteDto = {
@@ -570,28 +578,32 @@ private applySourceLines(lines: any[], headerTaxPct: number = 0): void {
       taxPct = this.toNumber(headerTaxPct);
     }
 
-    return {
-      item:
-        l.item ?? l.Item ??
-        l.itemName ?? l.ItemName ??
-        l.name ?? l.Name ??
-        l.description ?? l.Description ?? '',
+ return {
+  itemId: Number(l.itemId ?? l.ItemId ?? l.itemMasterId ?? l.ItemMasterId ?? 0),
+  warehouseId: Number(l.warehouseId ?? l.WarehouseId ?? 0),
+  binId: Number(l.binId ?? l.BinId ?? 0),
 
-      totalQty: this.toNumber(
-        l.qty ?? l.Qty ??
-        l.quantity ?? l.Quantity ??
-        l.invoiceQty ?? l.InvoiceQty ?? 0
-      ),
+  item:
+    l.item ?? l.Item ??
+    l.itemName ?? l.ItemName ??
+    l.name ?? l.Name ??
+    l.description ?? l.Description ?? '',
 
-      varianceQty: 0,
-      qty: 0,
-      price,
-      taxPct,
-      lineAmount: 0,
-      taxAmount: 0,
-      lineTotal: 0,
-      remarks: l.remarks ?? l.Remarks ?? ''
-    };
+  totalQty: this.toNumber(
+    l.qty ?? l.Qty ??
+    l.quantity ?? l.Quantity ??
+    l.invoiceQty ?? l.InvoiceQty ?? 0
+  ),
+
+  varianceQty: 0,
+  qty: 0,
+  price,
+  taxPct,
+  lineAmount: 0,
+  taxAmount: 0,
+  lineTotal: 0,
+  remarks: l.remarks ?? l.Remarks ?? ''
+};
   });
 
   if (!this.retRows.length) {

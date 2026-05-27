@@ -12,6 +12,8 @@ import { SupplierService } from '../supplier/supplier.service';
 import { CountriesService } from 'app/main/master/countries/countries.service';
 import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from 'environments/environment';
 
 /* =========================
    Types
@@ -177,6 +179,9 @@ export class CreatesuppliersComponent implements OnInit {
   editMode = false;
  
 
+exchangeRate: number | null = null;
+exchangeRateLoading = false;
+companyCurrencyId = Number(localStorage.getItem('companyCurrencyId') || 0);
   constructor(
     private route: ActivatedRoute,
     private _countriesService: CountriesService,
@@ -186,7 +191,8 @@ export class CreatesuppliersComponent implements OnInit {
     private incotermsService: IncotermsService,
     private itemsService: ItemsService,
     private _chartOfAccountService: ChartofaccountService,
-    private router: Router,private permissionService: PermissionService
+    private router: Router,private permissionService: PermissionService,
+     private http: HttpClient, 
   ) 
   {
     this.userId = localStorage.getItem('id');
@@ -443,7 +449,9 @@ ngOnInit(): void {
       ? (this.CurrencyList.find(x => x.id === this.supplier.currencyId) || null)
       : null;
     this.currencySearch = this.selectedCurrency?.currencyName ?? '';
-
+if (this.supplier.currencyId) {
+  this.fetchExchangeRate(this.supplier.currencyId);
+}
     this.selectedIncoterm = this.supplier.incotermsId
       ? (this.incotermsList.find(x => x.id === this.supplier.incotermsId) || null)
       : null;
@@ -617,8 +625,42 @@ ngOnInit(): void {
     this.currencySearch = c.currencyName;
     this.supplier.currencyId = c.id;
     this.currencyDropdownOpen = false;
+    this.fetchExchangeRate(c.id); 
+  }
+fetchExchangeRate(fromCurrencyId: number): void {
+  if (!fromCurrencyId || !this.companyCurrencyId || fromCurrencyId === this.companyCurrencyId) {
+    this.exchangeRate = 1;
+    return;
   }
 
+  this.exchangeRateLoading = true;
+  const today = new Date().toISOString().substring(0, 10);
+
+  this.http.get<any>(`${environment.apiUrl}/ExchangeRate/GetRate`, {
+    params: {
+      fromCurrencyId: fromCurrencyId.toString(),
+      toCurrencyId: this.companyCurrencyId.toString(),
+      rateDate: today
+    }
+  }).subscribe({
+    next: (res) => {
+      this.exchangeRate = res?.isSuccess ? res.data?.rate : null;
+      this.exchangeRateLoading = false;
+      if (!res?.isSuccess) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'No Exchange Rate',
+          text: 'No rate found. Please add in Exchange Rate Master.',
+          confirmButtonColor: '#0e3a4c'
+        });
+      }
+    },
+    error: () => {
+      this.exchangeRate = null;
+      this.exchangeRateLoading = false;
+    }
+  });
+}
   filterIncoterms() {
     const q = (this.incotermSearch || '').toLowerCase();
     this.filteredIncoterms = this.incotermsList.filter(i =>

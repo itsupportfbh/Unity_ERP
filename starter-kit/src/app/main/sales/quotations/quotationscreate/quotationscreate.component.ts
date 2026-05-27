@@ -21,7 +21,7 @@ import { PaymentTermsService } from 'app/main/master/payment-terms/payment-terms
 import { QuotationHeader, QuotationLine, QuotationsService } from '../quotations.service';
 import { ItemsetService } from 'app/main/master/itemset/itemsetservice/itemset.service';
 
-type SimpleItem = { id: number; itemName: string; itemCode?: string; uomId?: number; catagoryName: string };
+type SimpleItem = { id: number; itemName: string; itemCode?: string; uomId?: number; baseUomId?: number; catagoryName: string };
 type LineTaxMode = 'Standard-Rated' | 'Zero-Rated' | 'Exempt';
 type Country = { id: number; countryName: string; gstPercentage: number };
 type Customer = {
@@ -213,6 +213,7 @@ timeOptions: { label: string; value: string }[] = [];
     description: string;
     dropdownOpen: boolean;
     filteredItems: SimpleItem[];
+    supplyMethod: number | null;
   } = {
     itemId: null,
     itemSearch: '',
@@ -221,6 +222,7 @@ timeOptions: { label: string; value: string }[] = [];
     unitPrice: null,
     discountPct: 0,
     taxMode: 'Standard-Rated',
+    supplyMethod: null,
     description: '',
     dropdownOpen: false,
     filteredItems: []
@@ -505,13 +507,23 @@ timeOptions: { label: string; value: string }[] = [];
     this.chartOfAccountService.getAllChartOfAccount().subscribe(() => {
       this.itemsService.getAllItem().subscribe((ires: any) => {
         const raw = ires?.data ?? [];
-        this.itemsList = raw.map((item: any) => ({
-          id: Number(item.id ?? item.itemId ?? 0),
-          itemName: item.itemName ?? item.name ?? '',
-          itemCode: item.itemCode ?? '',
-          uomId: Number(item.uomId ?? item.UomId ?? item.uomid ?? 0),
-          catagoryName: item.catagoryName
-        })) as SimpleItem[];
+      this.itemsList = raw.map((item: any) => ({
+  id: Number(item.id ?? item.itemId ?? 0),
+  itemName: item.itemName ?? item.name ?? '',
+  itemCode: item.itemCode ?? '',
+
+  // Item normal UOM
+  uomId: Number(item.uomId ?? item.UomId ?? item.uomid ?? 0),
+
+  // Quotation la base UOM show panna
+  baseUomId: Number(item.baseUomId ?? item.BaseUomId ?? 0),
+  baseUomName: item.baseUomName ?? item.BaseUomName ?? '',
+
+  // Conversion factor from ItemMaster
+  uomFactor: Number(item.uomFactor ?? item.UomFactor ?? 1),
+
+  catagoryName: item.catagoryName
+})) as SimpleItem[];
       });
     });
 
@@ -1106,7 +1118,8 @@ filterItemSets() {
           const itemId = Number(it.itemId ?? it.ItemId ?? it.id ?? 0);
           if (!itemId) continue;
 
-          const uomId = this.resolveUomIdFromItemSetRow(it, itemId);
+        const item = this.itemsList.find(x => x.id === itemId);
+const uomId = item?.baseUomId ?? item?.uomId ?? this.resolveUomIdFromItemSetRow(it, itemId);
           const rawSupplyMethod = this.getRawSupplyMethod(it);
 
           const line: UiLine = {
@@ -1403,6 +1416,7 @@ filterItemSets() {
       unitPrice: null,
       discountPct: 0,
       taxMode: (+this.header.taxPct || 0) === 9 ? 'Standard-Rated' : 'Zero-Rated',
+      supplyMethod: null,
       description: '',
       dropdownOpen: false,
       filteredItems: []
@@ -1456,9 +1470,10 @@ filterItemSets() {
   }
 
   selectModalItem(row: SimpleItem) {
+    debugger
     this.modal.itemId = row.id;
     this.modal.itemSearch = row.itemName;
-    this.modal.uomId = row.uomId ?? null;
+   this.modal.uomId = row.baseUomId ?? row.uomId ?? null;
     this.modal.dropdownOpen = false;
     this.previewLineTotals();
   }
@@ -1488,7 +1503,15 @@ filterItemSets() {
       Swal.fire({ icon: 'warning', title: 'Required', text: 'Item is required', confirmButtonColor: '#2E5F73' });
       return;
     }
-
+if (this.modal.supplyMethod === null || this.modal.supplyMethod === undefined) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'Fulfillment Required',
+    text: 'Please select Fulfillment Mode',
+    confirmButtonColor: '#2E5F73'
+  });
+  return;
+}
     const payload: UiLine = {
       itemId: this.modal.itemId!,
       itemName: this.modal.itemSearch,
@@ -1504,8 +1527,8 @@ filterItemSets() {
       itemSetId: null,
       setName: '',
 
-      supplyMethod: null,
-      supplyMethodText: 'SELECT',
+     supplyMethod: this.modal.supplyMethod == null ? null : Number(this.modal.supplyMethod),
+supplyMethodText: this.supplyMethodLabel(this.modal.supplyMethod),
 
       isSellable: false,
       isConsumable: false,

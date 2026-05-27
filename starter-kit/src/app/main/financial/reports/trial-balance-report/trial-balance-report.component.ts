@@ -145,138 +145,115 @@ canExport(): boolean {
 }
 
   // ================== RUN TB ==================
-  runTB(): void {
-    const body = {
-      fromDate: this.fromDate,
-      toDate: this.toDate,
-      companyId: this.companyId
-    };
+// ================== RUN TB — FIXED ==================
+runTB(): void {
+  const body = {
+    fromDate: this.fromDate,
+    toDate: this.toDate,
+    companyId: this.companyId
+  };
 
-    this.isLoading = true;
-    this.selectedHead = null;
-    this.detailRows = [];
-    this.currentPage = 1;
+  this.isLoading = true;
+  this.selectedHead = null;
+  this.detailRows = [];
+  this.currentPage = 1;
 
-    this.reportsService.getTrialBalance(body).subscribe({
-      next: (res: any) => {
-        this.rawRows = res.data || [];
+  this.reportsService.getTrialBalance(body).subscribe({
+    next: (res: any) => {
+      this.rawRows = res.data || [];
 
-         this.totalOpeningDebit  = this.rawRows.reduce((s, r) => s + (+r.openingDebit  || 0), 0);
-          this.totalOpeningCredit = this.rawRows.reduce((s, r) => s + (+r.openingCredit || 0), 0);
-          this.totalClosingDebit  = this.rawRows.reduce((s, r) => s + (+r.closingDebit  || 0), 0);
-          this.totalClosingCredit = this.rawRows.reduce((s, r) => s + (+r.closingCredit || 0), 0);
+      const mapByCode = new Map<string, TbNode>();
 
-        const mapByCode = new Map<string, TbNode>();
+      this.rawRows.forEach((r: any) => {
+        const node: TbNode = {
+          ...r,
+          parentHead: r.parentHead ?? null,
+          level: 0,
+          expanded: false,
+          isLeaf: true,
+          children: [],
+          isEditingOpening: false,
+          openingDebitEdit: r.openingDebit,
+          openingCreditEdit: r.openingCredit
+        };
+        mapByCode.set(String(node.headCode), node);
+      });
 
-        this.rawRows.forEach((r: any) => {
-          const node: TbNode = {
-            ...r,
-            parentHead: r.parentHead ?? null,
-            level: 0,
-            expanded: false,
-            isLeaf: true,
-            children: [],
-            isEditingOpening: false,
-            openingDebitEdit: r.openingDebit,
-            openingCreditEdit: r.openingCredit
-          };
-          mapByCode.set(String(node.headCode), node);
-        });
+      const roots: TbNode[] = [];
 
-        const roots: TbNode[] = [];
+      mapByCode.forEach(node => {
+        const parentCode =
+          node.parentHead !== null && node.parentHead !== 0
+            ? String(node.parentHead)
+            : '';
 
-        mapByCode.forEach(node => {
-          const parentCode =
-            node.parentHead !== null && node.parentHead !== 0
-              ? String(node.parentHead)
-              : '';
+        if (parentCode && mapByCode.has(parentCode)) {
+          const parent = mapByCode.get(parentCode)!;
+          parent.children.push(node);
+          parent.isLeaf = false;
+          node.level = parent.level + 1;
+        } else {
+          roots.push(node);
+        }
+      });
 
-          if (parentCode && mapByCode.has(parentCode)) {
-            const parent = mapByCode.get(parentCode)!;
-            parent.children.push(node);
-            parent.isLeaf = false;
-            node.level = parent.level + 1;
-          } else {
-            roots.push(node);
-          }
-        });
+      mapByCode.forEach(n => {
+        if (n.children?.length) {
+          n.children.sort((a, b) => a.headCode.localeCompare(b.headCode));
+        }
+      });
+      roots.sort((a, b) => a.headCode.localeCompare(b.headCode));
 
-        mapByCode.forEach(n => {
-          if (n.children?.length) {
-            n.children.sort((a, b) => a.headCode.localeCompare(b.headCode));
-          }
-        });
-        roots.sort((a, b) => a.headCode.localeCompare(b.headCode));
+      this.roots = roots;
 
-        this.roots = roots;
+      this.roots.forEach(r => this.recalcTotalsRecursive(r));
 
-        this.roots.forEach(r => this.recalcTotalsRecursive(r));
+      this.roots.forEach(r => (r.expanded = false));
+      this.rebuildDisplayRows();
 
-        this.roots.forEach(r => (r.expanded = false));
-        this.rebuildDisplayRows();
+      // ✅ FIX: Leaf nodes மட்டும் sum பண்ணு — double count avoid
+     // ✅ இதை வைக்குங்க — leaf nodes மட்டும் total
+const leafNodes: TbNode[] = [];
+this.collectLeaves(this.roots, leafNodes);
+// runTB() method-ல recalcTotalsRecursive பண்ணிட்டு:
+this.totalOpeningDebit  = this.roots.reduce((s, r) => s + (r.openingDebit  || 0), 0);
+this.totalOpeningCredit = this.roots.reduce((s, r) => s + (r.openingCredit || 0), 0);
+this.totalClosingDebit  = this.roots.reduce((s, r) => s + (r.closingDebit  || 0), 0);
+this.totalClosingCredit = this.roots.reduce((s, r) => s + (r.closingCredit || 0), 0);
 
-        // const leafNodes: TbNode[] = [];
-        // this.collectLeaves(this.roots, leafNodes);
-
-        // this.totalOpeningDebit = leafNodes.reduce(
-        //   (s, n) => s + (n.openingDebit || 0),
-        //   0
-        // );
-        // this.totalOpeningCredit = leafNodes.reduce(
-        //   (s, n) => s + (n.openingCredit || 0),
-        //   0
-        // );
-        // this.totalClosingDebit = leafNodes.reduce(
-        //   (s, n) => s + (n.closingDebit || 0),
-        //   0
-        // );
-        // this.totalClosingCredit = leafNodes.reduce(
-        //   (s, n) => s + (n.closingCredit || 0),
-        //   0
-        // );
-
-        this.isLoading = false;
-      },
-      error: () => {
-        this.roots = [];
-        this.displayRows = [];
-        this.totalOpeningDebit =
-          this.totalOpeningCredit =
-          this.totalClosingDebit =
-          this.totalClosingCredit =
-          0;
-        this.isLoading = false;
-      }
-    });
-  }
-
-  // -------- recursion / totals (unchanged) --------
-  private recalcTotalsRecursive(node: TbNode): void {
-    const ownOD = node.openingDebit || 0;
-    const ownOC = node.openingCredit || 0;
-    const ownCD = node.closingDebit || 0;
-    const ownCC = node.closingCredit || 0;
-
-    if (!node.children.length) {
-      node.openingDebit = ownOD;
-      node.openingCredit = ownOC;
-      node.closingDebit = ownCD;
-      node.closingCredit = ownCC;
-      return;
+      this.isLoading = false;
+    },
+    error: () => {
+      this.roots = [];
+      this.displayRows = [];
+      this.totalOpeningDebit =
+        this.totalOpeningCredit =
+        this.totalClosingDebit =
+        this.totalClosingCredit = 0;
+      this.isLoading = false;
     }
+  });
+}
 
-    node.children.forEach(c => this.recalcTotalsRecursive(c));
-
-    const childrenOD = node.children.reduce((s, n) => s + (n.openingDebit || 0), 0);
-    const childrenOC = node.children.reduce((s, n) => s + (n.openingCredit || 0), 0);
-    const childrenCD = node.children.reduce((s, n) => s + (n.closingDebit || 0), 0);
-    const childrenCC = node.children.reduce((s, n) => s + (n.closingCredit || 0), 0);
-
-    node.openingDebit = ownOD + childrenOD;
-    node.openingCredit = ownOC + childrenOC;
-    node.closingDebit = ownCD + childrenCD;
-    node.closingCredit = ownCC + childrenCC;
+private recalcTotalsRecursive(node: TbNode): void {
+  if (!node.children.length) {
+    // Leaf — API values as-is
+    return;
   }
+
+  node.children.forEach(c => this.recalcTotalsRecursive(c));
+
+  // ✅ Own API values + Children sum
+  const ownOD = node.openingDebit  || 0;
+  const ownOC = node.openingCredit || 0;
+  const ownCD = node.closingDebit  || 0;
+  const ownCC = node.closingCredit || 0;
+
+  node.openingDebit  = ownOD + node.children.reduce((s,n) => s + (n.openingDebit  || 0), 0);
+  node.openingCredit = ownOC + node.children.reduce((s,n) => s + (n.openingCredit || 0), 0);
+  node.closingDebit  = ownCD + node.children.reduce((s,n) => s + (n.closingDebit  || 0), 0);
+  node.closingCredit = ownCC + node.children.reduce((s,n) => s + (n.closingCredit || 0), 0);
+}
 
   private collectLeaves(nodes: TbNode[], bucket: TbNode[]): void {
     nodes.forEach(n => {

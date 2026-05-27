@@ -483,20 +483,28 @@ private fetchAvailabilityForLine(ln: SoLine) {
     return;
   }
 
-  this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
-    next: (res: any) => {
-      const rows: ItemAvailabilityDto[] = (res?.data ?? res ?? []) as any;
-      const first = rows?.[0];
-      const available = Number(first?.available ?? 0) || 0;
+this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
+  next: (res: any) => {
+    const rows: ItemAvailabilityDto[] = (res?.data ?? res ?? []) as any;
+    const first = rows?.[0];
 
-      this.availabilityCache.set(key, available);
-      ln.availability = available;
-    },
-    error: (err: any) => {
-      console.error('getAvailability failed', err);
-      ln.availability = undefined;
-    }
-  });
+    const available = Number(first?.available ?? 0) || 0;
+
+    this.availabilityCache.set(key, available);
+    ln.availability = available;
+
+    const reqQty = Number(ln.qty || 0);
+    ln.shortageQty =
+      Number(ln.supplyMethod) === 2
+        ? Math.max(reqQty - available, 0)
+        : 0;
+  },
+  error: (err: any) => {
+    console.error('getAvailability failed', err);
+    ln.availability = undefined;
+    ln.shortageQty = 0;
+  }
+});
 }
 
   private refreshAvailabilityForAllLines() {
@@ -1076,27 +1084,31 @@ private fetchAvailabilityForLine(ln: SoLine) {
       updatedBy: this.userId,
       companyId: this.companyId,
 
-      lineItems: this.soLines.map(l => ({
-        id: l.__id || 0,
-        itemId: l.itemId!,
-        itemName: (l.item || '').toString(),
-        uom: l.uom || '',
-        description: (l.description || '').toString(),
-  locationId: this.locationId, 
-        quantity: Number(l.qty) || 0,
-        unitPrice: Number(l.unitPrice) || 0,
-        discount: Number(l.discountPct) || 0,
-        tax: l.taxMode || null,
-        taxAmount: Number(l.lineTax || 0),
-        total: Number(l.lineTotal) || 0,
+     lineItems: this.soLines.map(l => ({
+  id: l.__id || 0,
+  itemId: l.itemId!,
+  itemName: (l.item || '').toString(),
+  uom: l.uom || '',
+  description: (l.description || '').toString(),
+  locationId: this.locationId,
 
-        fulfillmentMode: l.fulfillmentMode ?? null,
-        SupplyMethodId: l.supplyMethod ?? null,
+  quantity: Number(l.qty) || 0,
+  unitPrice: Number(l.unitPrice) || 0,
+  discount: Number(l.discountPct) || 0,
+  tax: l.taxMode || null,
+  taxAmount: Number(l.lineTax || 0),
+  total: Number(l.lineTotal) || 0,
 
-        createdBy: this.userId,
-        updatedBy: this.userId,
-        companyId: this.companyId,
-      })),
+  fulfillmentMode: l.fulfillmentMode ?? null,
+  SupplyMethodId: l.supplyMethod ?? null,
+
+  availability: Number(l.availability || 0),
+  shortageQty: Number(l.shortageQty || 0),
+
+  createdBy: this.userId,
+  updatedBy: this.userId,
+  companyId: this.companyId
+})),
 
       totals: t
     };
@@ -1248,13 +1260,23 @@ async post(): Promise<void> {
     return (v ?? '').toString().trim() === '';
   }
 
-  private getDirectDoShortageLines() {
-  return (this.soLines || []).filter(l =>
-    Number(l.supplyMethod) === 2 &&           // Direct DO
-    Number(l.itemId || 0) > 0 &&
-    (Number(l.qty) || 0) > 0 &&
-    Number(l.availability ?? 0) < Number(l.qty)
-  );
+private getDirectDoShortageLines() {
+  return (this.soLines || []).filter(l => {
+    const req = Number(l.qty || 0);
+    const avl = Number(l.availability ?? 0);
+
+    l.shortageQty =
+      Number(l.supplyMethod) === 2
+        ? Math.max(req - avl, 0)
+        : 0;
+
+    return (
+      Number(l.supplyMethod) === 2 &&
+      Number(l.itemId || 0) > 0 &&
+      req > 0 &&
+      l.shortageQty > 0
+    );
+  });
 }
   cancel() {
     this.router.navigate(['/Sales/Sales-Order-list']);

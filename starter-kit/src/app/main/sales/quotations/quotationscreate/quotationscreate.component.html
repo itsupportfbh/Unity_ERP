@@ -753,9 +753,21 @@
               step="0.01"
               (ngModelChange)="previewLineTotals()" />
           </div>
+<!-- Fulfillment Mode -->
+<div class="qtCol12 qtMd3">
+  <label class="qtLabel">Fulfillment Mode</label>
 
+  <select
+    class="qtInput"
+    [(ngModel)]="modal.supplyMethod"
+    name="modalSupplyMethod">
+    <option [ngValue]="null">Select</option>
+    <option [ngValue]="2">Direct DO</option>
+    <option [ngValue]="1">PP</option>
+  </select>
+</div>
           <!-- Tax Mode -->
-          <div class="qtCol12 qtMd6">
+          <div class="qtCol12 qtMd3">
             <label class="qtLabel">Tax Mode (Line)</label>
             <select
               class="qtInput"

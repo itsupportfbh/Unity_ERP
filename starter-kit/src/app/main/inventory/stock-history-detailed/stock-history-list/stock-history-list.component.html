@@ -1,0 +1,335 @@
+<div class="stock-page">
+
+  <!-- ───────────────── Header ───────────────── -->
+  <div class="stock-top">
+    <div>
+      <h3>Stock History</h3>
+      <p>Inventory stock balance and last movement details</p>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn-light" type="button" (click)="openExportModal()">
+        <i class="feather icon-download"></i> Export
+      </button>
+
+      <button class="btn-main" type="button" (click)="loadData()">
+        <i class="feather icon-refresh-cw"></i> Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- ───────────────── Summary ───────────────── -->
+  <div class="summary-strip">
+    <div class="summary-item">
+      <span>Total Items</span>
+      <b>{{ totalItems }}</b>
+    </div>
+
+    <div class="summary-item success">
+      <span>In Stock</span>
+      <b>{{ inStockCount }}</b>
+    </div>
+
+    <div class="summary-item warning">
+      <span>Low Stock</span>
+      <b>{{ lowStockCount }}</b>
+    </div>
+
+    <div class="summary-item danger">
+      <span>Zero Stock</span>
+      <b>{{ zeroStockCount }}</b>
+    </div>
+  </div>
+
+  <!-- ───────────────── Filters ───────────────── -->
+  <div class="filter-panel">
+
+    <div class="filter-box search-box">
+      <label>Search Item</label>
+      <div class="input-icon">
+        <i class="feather icon-search"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search item name, SKU, category"
+          [(ngModel)]="filters.search"
+          (ngModelChange)="onSearchChange()" />
+      </div>
+    </div>
+
+    <!-- Warehouse filter currently hidden -->
+    <!--
+    <div class="filter-box">
+      <label>Warehouse</label>
+      <ng-select
+        [items]="warehouses"
+        bindLabel="name"
+        bindValue="id"
+        placeholder="All Warehouse"
+        [(ngModel)]="filters.warehouseId"
+        (change)="onFilterChange()">
+      </ng-select>
+    </div>
+    -->
+
+    <div class="filter-box">
+      <label>Status</label>
+      <ng-select
+        [items]="stockStatuses"
+        bindLabel="label"
+        bindValue="value"
+        placeholder="All Status"
+        [(ngModel)]="filters.status"
+        (change)="onFilterChange()">
+      </ng-select>
+    </div>
+
+    <div class="filter-box">
+      <label>Category</label>
+      <ng-select
+        [items]="categories"
+        bindLabel="name"
+        bindValue="id"
+        placeholder="All Category"
+        [(ngModel)]="filters.categoryId"
+        (change)="onFilterChange()">
+      </ng-select>
+    </div>
+
+    <div class="filter-buttons">
+      <button class="btn-main" type="button" (click)="applyFilters()">
+        <i class="feather icon-search"></i> Search
+      </button>
+
+      <button class="btn-light" type="button" (click)="clearFilters()">
+        <i class="feather icon-x"></i> Clear
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ───────────────── Stock Card ───────────────── -->
+  <div class="stock-card">
+
+    <div class="stock-card-head">
+      <div>
+        <h5>Stock Items</h5>
+        <span>{{ totalItems }} records found</span>
+      </div>
+
+      <div class="page-size">
+        <span>Page {{ currentPage }} / {{ totalPages }}</span>
+
+        <select
+          class="form-control"
+          [(ngModel)]="pageSize"
+          (change)="onPageSizeChange()">
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-box" *ngIf="loading">
+      <div class="spinner-border text-primary"></div>
+      <p>Loading stock history...</p>
+    </div>
+
+    <!-- List -->
+    <div class="stock-list" *ngIf="!loading">
+
+      <div class="stock-row stock-row-head">
+        <div (click)="sortBy('name')">
+          Item
+          <i class="sort-icon" *ngIf="sortColumn === 'name'"
+             [class.icon-up]="sortDirection === 'asc'"
+             [class.icon-down]="sortDirection === 'desc'"></i>
+        </div>
+
+        <div (click)="sortBy('category')">
+          Category
+          <i class="sort-icon" *ngIf="sortColumn === 'category'"
+             [class.icon-up]="sortDirection === 'asc'"
+             [class.icon-down]="sortDirection === 'desc'"></i>
+        </div>
+
+        <div class="text-right" (click)="sortBy('onHand')">
+          Total On Hand
+          <i class="sort-icon" *ngIf="sortColumn === 'onHand'"
+             [class.icon-up]="sortDirection === 'asc'"
+             [class.icon-down]="sortDirection === 'desc'"></i>
+        </div>
+
+        <div class="text-right" (click)="sortBy('reserved')">
+          Reserved
+          <i class="sort-icon" *ngIf="sortColumn === 'reserved'"
+             [class.icon-up]="sortDirection === 'asc'"
+             [class.icon-down]="sortDirection === 'desc'"></i>
+        </div>
+
+        <div class="text-right" (click)="sortBy('available')">
+          Available
+          <i class="sort-icon" *ngIf="sortColumn === 'available'"
+             [class.icon-up]="sortDirection === 'asc'"
+             [class.icon-down]="sortDirection === 'desc'"></i>
+        </div>
+
+        <div>Status</div>
+        <!-- <div>Last Movement</div> -->
+        <!-- <div>Txn</div> -->
+        <div class="text-center">Details</div>
+      </div>
+
+      <div class="stock-row" *ngFor="let item of pagedItems">
+
+        <div class="item-cell">
+          <div class="sku">{{ item.sku || '-' }}</div>
+          <div class="name" [title]="item.name">{{ item.name || '-' }}</div>
+        </div>
+
+        <div>{{ item.category || '-' }}</div>
+
+        <div class="num">
+          {{ item.onHand | number:'1.0-4' }}
+        </div>
+
+        <div class="num muted">
+          {{ item.reserved | number:'1.0-4' }}
+        </div>
+
+        <div class="num">
+          <span
+            [class.qty-ok]="item.available > item.minQty"
+            [class.qty-low]="item.available > 0 && item.available <= item.minQty"
+            [class.qty-zero]="item.available <= 0">
+            {{ item.available | number:'1.0-4' }}
+          </span>
+        </div>
+
+        <div>
+          <span
+            class="status"
+            [class.ok]="item.status === 'In Stock'"
+            [class.low]="item.status === 'Low Stock'"
+            [class.zero]="item.status === 'Zero Stock'">
+            {{ item.status || '-' }}
+          </span>
+        </div>
+
+        <!-- <div class="muted">
+          {{ item.lastMovement ? (item.lastMovement | date:'dd-MM-yyyy') : '-' }}
+        </div> -->
+
+        <!-- <div>
+          <span class="txn">{{ item.lastTxnType || '-' }}</span>
+        </div> -->
+
+        <div class="text-center">
+          <button class="view-btn" type="button" (click)="viewDetails(item)" title="View Details">
+            <i class="feather icon-eye"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <div class="empty-box" *ngIf="pagedItems.length === 0">
+        <i class="feather icon-inbox"></i>
+        <p>No stock items found</p>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="stock-footer" *ngIf="!loading">
+      <span>Showing {{ pageStart }} - {{ pageEnd }} of {{ totalItems }}</span>
+
+      <div class="pagination-box">
+        <button
+          type="button"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)">
+          <i class="feather icon-chevron-left"></i>
+        </button>
+
+        <ng-container *ngFor="let p of visiblePages">
+          <span *ngIf="p === '...'" class="dots">...</span>
+
+          <button
+            type="button"
+            *ngIf="p !== '...'"
+            [class.active]="p === currentPage"
+            (click)="goToPage(+p)">
+            {{ p }}
+          </button>
+        </ng-container>
+
+        <button
+          type="button"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)">
+          <i class="feather icon-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ───────────────── Export Modal ───────────────── -->
+  <div class="export-backdrop" *ngIf="showExportModal" (click)="closeExportModal()"></div>
+
+  <div class="export-modal" *ngIf="showExportModal">
+
+    <div class="export-modal-head">
+      <div>
+        <h5>Export Stock History</h5>
+        <p>Select export format for current stock data</p>
+      </div>
+
+      <button type="button" class="modal-close" (click)="closeExportModal()">
+        <i class="feather icon-x"></i>
+      </button>
+    </div>
+
+    <div class="export-modal-body">
+
+      <button type="button" class="export-option excel" (click)="exportToExcel()">
+        <div class="export-icon">
+          <i class="feather icon-file-text"></i>
+        </div>
+
+        <div class="export-info">
+          <b>Export as Excel</b>
+          <span>Download item stock data in .xlsx format</span>
+        </div>
+
+        <i class="feather icon-chevron-right export-arrow"></i>
+      </button>
+
+      <button type="button" class="export-option pdf" (click)="exportToPdf()">
+        <div class="export-icon">
+          <i class="feather icon-printer"></i>
+        </div>
+
+        <div class="export-info">
+          <b>Export as PDF</b>
+          <span>Open print preview and save as PDF</span>
+        </div>
+
+        <i class="feather icon-chevron-right export-arrow"></i>
+      </button>
+
+    </div>
+
+    <div class="export-modal-foot">
+      <span>{{ totalItems }} records available for export</span>
+
+      <button type="button" class="btn-light" (click)="closeExportModal()">
+        Cancel
+      </button>
+    </div>
+
+  </div>
+
+</div>

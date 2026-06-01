@@ -26,6 +26,8 @@ import { MaterialRequisitionListComponent } from './material-requisation/materia
 import { MaterialRequisitionCreateComponent } from './material-requisation/material-requisition-create/material-requisition-create.component';
 import { ListStockTransferReceiptComponent } from './stock-transfer-receipt/list-stock-transfer-receipt/list-stock-transfer-receipt.component';
 import { StockCogsComponent } from './stock-cogs/stock-cogs/stock-cogs.component';
+import { StockHistoryListComponent } from './stock-history-detailed/stock-history-list/stock-history-list.component';
+import { StockHistoryDetailsComponent } from './stock-history-detailed/stock-history-details/stock-history-details.component';
 
 const routes = [
   {
@@ -141,6 +143,18 @@ const routes = [
     component: StockCogsComponent,
     data: { animation: 'list-stock-transfer-receipt' }
   },
+
+         {
+    path: 'list-stock-history',
+    component: StockHistoryListComponent,
+    data: { animation: 'list-stock-transfer-receipt' }
+  },
+
+         {
+    path: 'details-stock-history',
+    component: StockHistoryDetailsComponent,
+    data: { animation: 'list-stock-transfer-receipt' }
+  },
 ]
 
 @NgModule({
@@ -162,6 +176,8 @@ const routes = [
      MaterialRequisitionCreateComponent,
      ListStockTransferReceiptComponent,
      StockCogsComponent,
+     StockHistoryListComponent,
+     StockHistoryDetailsComponent,
   ],
   imports: [
     CommonModule,

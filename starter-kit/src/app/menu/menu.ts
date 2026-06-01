@@ -304,7 +304,8 @@ export const ALL_MENU: CoreMenu[] = [
       { id: 'reorder-edit', title: 'Stock Reorder Planning Edit', type: 'item', icon: 'circle', url: '/Inventory/edit-stockreorderplanning', hidden: true },
 
       { id: 'stockcogs', title: 'Stock COGS', type: 'item', icon: 'circle', url: '/Inventory/stockcogs' },
-      { id: 'stock-history', title: 'Stock History', type: 'item', icon: 'circle', url: '/Inventory/stock-history' }
+          { id: 'list-stock-history', title: 'Stock History', type: 'item', icon: 'circle', url: '/Inventory/list-stock-history' }
+      
     ]
   },
 

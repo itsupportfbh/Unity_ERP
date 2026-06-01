@@ -1,0 +1,292 @@
+<div class="shd-page">
+
+  <div class="shd-hero-card">
+    <div class="shd-hero-left">
+      <button class="shd-back-btn" (click)="goBack()">
+        <i class="feather icon-arrow-left"></i>
+        Back
+      </button>
+
+      <div>
+        <h2>Stock History</h2>
+        <p>Inventory stock movement details for <b>{{ itemSku }}</b></p>
+      </div>
+    </div>
+
+    <div class="shd-hero-actions">
+      <button class="shd-btn shd-btn-light" (click)="exportExcel()">
+        <i class="feather icon-download"></i>
+        Export
+      </button>
+
+      <button class="shd-btn shd-btn-primary" (click)="printPage()">
+        <i class="feather icon-printer"></i>
+        Print
+      </button>
+    </div>
+  </div>
+
+  <div class="shd-loading" *ngIf="loading">
+    <div class="spinner-border"></div>
+    <span>Loading stock history...</span>
+  </div>
+
+  <ng-container *ngIf="!loading && itemDetail">
+
+    <div class="shd-item-card">
+      <div class="shd-item-main">
+        <div class="shd-avatar">{{ avatarLetters }}</div>
+
+        <div>
+          <h3>{{ itemDetail.name }}</h3>
+
+          <div class="shd-chip-row">
+            <span class="shd-chip">
+              <i class="feather icon-tag"></i>
+              {{ itemDetail.sku }}
+            </span>
+
+            <span class="shd-chip">{{ itemDetail.category || '-' }}</span>
+            <span class="shd-chip">{{ itemDetail.uom || '-' }}</span>
+
+            <span class="shd-chip">
+              <i class="feather icon-map-pin"></i>
+              {{ itemDetail.warehouse || 'All Warehouses' }}
+            </span>
+
+            <span
+              class="shd-status"
+              [class.ok]="itemDetail.status === 'In Stock'"
+              [class.low]="itemDetail.status === 'Low Stock'"
+              [class.zero]="itemDetail.status === 'Zero Stock'">
+              {{ itemDetail.status }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="shd-stock-boxes">
+        <div>
+          <label>On Hand</label>
+          <strong>{{ itemDetail.onHand }}</strong>
+        </div>
+
+        <div>
+          <label>Reserved</label>
+          <strong class="danger">{{ itemDetail.reserved }}</strong>
+        </div>
+
+        <div>
+          <label>Available</label>
+          <strong class="success">{{ itemDetail.available }}</strong>
+        </div>
+
+        <div>
+          <label>Reorder</label>
+          <strong>{{ itemDetail.reorderQty }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="shd-kpi-grid">
+      <div class="shd-kpi-card">
+        <span>Total Received</span>
+        <h4 class="success">+{{ totalIn }}</h4>
+      </div>
+
+      <div class="shd-kpi-card">
+        <span>Total Issued</span>
+        <h4 class="danger">-{{ totalOut }}</h4>
+      </div>
+
+      <div class="shd-kpi-card">
+        <span>Adjustments</span>
+        <h4 class="warning">{{ totalAdj >= 0 ? '+' : '' }}{{ totalAdj }}</h4>
+      </div>
+
+      <div class="shd-kpi-card">
+        <span>Transactions</span>
+        <h4>{{ totalTransactions }}</h4>
+      </div>
+    </div>
+
+
+    <div class="shd-filter-card">
+      <div class="shd-filter-grid">
+
+        <div class="form-group">
+          <label>Warehouse</label>
+          <ng-select
+            [items]="warehouses"
+            bindLabel="name"
+            bindValue="id"
+            placeholder="All Warehouses"
+            [(ngModel)]="filters.warehouseId">
+          </ng-select>
+        </div>
+
+        <div class="form-group">
+          <label>Txn Type</label>
+          <ng-select
+            [items]="txnTypes"
+            bindLabel="label"
+            bindValue="value"
+            placeholder="All Types"
+            [(ngModel)]="filters.txnType">
+          </ng-select>
+        </div>
+
+        <div class="form-group">
+          <label>From Date</label>
+          <input type="date" class="form-control" [(ngModel)]="filters.fromDate">
+        </div>
+
+        <div class="form-group">
+          <label>To Date</label>
+          <input type="date" class="form-control" [(ngModel)]="filters.toDate">
+        </div>
+
+        <div class="shd-filter-actions">
+          <button class="shd-btn shd-btn-primary" (click)="applyFilters()">
+            <i class="feather icon-search"></i>
+            Filter
+          </button>
+
+          <button class="shd-btn shd-btn-light" (click)="clearFilters()">
+            <i class="feather icon-x"></i>
+            Clear
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="shd-table-card">
+      <div class="shd-table-top">
+        <div>
+          <h3>
+            <i class="feather icon-clock"></i>
+            Transaction History
+          </h3>
+          <p>Showing movement details for selected item</p>
+        </div>
+
+        <div class="shd-table-tools">
+          <span>{{ totalTransactions }} records</span>
+
+          <select
+            class="form-control"
+            [(ngModel)]="pageSize"
+            (change)="onPageSizeChange()">
+            <option [value]="10">10 / page</option>
+            <option [value]="25">25 / page</option>
+            <option [value]="50">50 / page</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="shd-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Txn Type</th>
+              <th>Reference No</th>
+              <th>Warehouse</th>
+              <th>Bin</th>
+              <th class="text-right">Qty In</th>
+              <th class="text-right">Qty Out</th>
+              <th class="text-right">Adjustment</th>
+              <th class="text-right">Before</th>
+              <th class="text-right">After</th>
+              <th class="text-right">Unit Cost</th>
+              <th class="text-right">Total Cost</th>
+              <th>Reason</th>
+              <th>Created By</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let row of pagedHistory; let i = index">
+              <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+
+              <td>{{ row.txnDate | date:'dd-MM-yyyy' }}</td>
+
+              <td>
+                <span
+                  class="txn-badge"
+                  [class.grn]="row.sourceType === 'GRN'"
+                  [class.sales]="row.sourceType === 'Sales'"
+                  [class.adjustment]="row.sourceType === 'Adjustment' || row.sourceType === 'Stock Take'"
+                  [class.transfer]="row.sourceType === 'Transfer In' || row.sourceType === 'Transfer Out'">
+                  {{ row.sourceType }}
+                </span>
+              </td>
+
+              <td class="ref-no">{{ row.referenceNo || '—' }}</td>
+              <td>{{ row.warehouseName || '—' }}</td>
+              <td>{{ row.binName || '—' }}</td>
+
+              <td class="text-right success">
+                {{ row.qtyIn > 0 ? '+' + row.qtyIn : '—' }}
+              </td>
+
+              <td class="text-right danger">
+                {{ row.qtyOut > 0 ? '-' + row.qtyOut : '—' }}
+              </td>
+
+              <td
+                class="text-right"
+                [class.success]="row.adjustment > 0"
+                [class.danger]="row.adjustment < 0">
+                {{ row.adjustment !== 0 ? (row.adjustment > 0 ? '+' + row.adjustment : row.adjustment) : '—' }}
+              </td>
+
+              <td class="text-right muted">{{ row.qtyBefore }}</td>
+              <td class="text-right bold">{{ row.qtyAfter }}</td>
+              <td class="text-right">{{ row.unitCost | number:'1.2-2' }}</td>
+              <td class="text-right">{{ row.totalCost | number:'1.2-2' }}</td>
+              <td class="muted">{{ row.reason || '—' }}</td>
+              <td class="muted">{{ row.createdBy || '—' }}</td>
+            </tr>
+
+            <tr *ngIf="pagedHistory.length === 0">
+              <td colspan="15" class="empty-state">
+                <i class="feather icon-inbox"></i>
+                <p>No transactions found</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="shd-pagination">
+        <span>Showing {{ pageStart }}–{{ pageEnd }} of {{ totalTransactions }} records</span>
+
+        <div>
+          <button class="pg-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+            <i class="feather icon-chevron-left"></i>
+          </button>
+
+          <ng-container *ngFor="let p of visiblePages">
+            <span *ngIf="p === '...'" class="pg-dot">...</span>
+
+            <button
+              *ngIf="p !== '...'"
+              class="pg-btn"
+              [class.active]="p === currentPage"
+              (click)="goToPage(+p)">
+              {{ p }}
+            </button>
+          </ng-container>
+
+          <button class="pg-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+            <i class="feather icon-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+</div>

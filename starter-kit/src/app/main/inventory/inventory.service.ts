@@ -60,4 +60,27 @@ export class InventoryService {
   batchUpdateWarehouseAndSupplierPrice(dtos: UpdateWarehouseAndSupplierPriceDto[]): Observable<any[]> {
     return forkJoin(dtos.map(d => this.updateWarehouseAndSupplierPrice(d)));
   }
+
+  getStockHistoryList(filters: any): Observable<any> {
+  let params: any = {};
+
+  if (filters.search) params.search = filters.search;
+  if (filters.warehouseId) params.warehouseId = filters.warehouseId;
+  if (filters.status) params.status = filters.status;
+  if (filters.categoryId) params.categoryId = filters.categoryId;
+
+  return this.http.get<any>(`${this.url}/StockHistory/list`, { params });
+}
+
+getStockHistoryDetail(filters: any): Observable<any> {
+  const params: any = {};
+
+  if (filters.itemId) params.itemId = filters.itemId;
+  if (filters.warehouseId) params.warehouseId = filters.warehouseId;
+  if (filters.txnType) params.txnType = filters.txnType;
+  if (filters.fromDate) params.fromDate = filters.fromDate;
+  if (filters.toDate) params.toDate = filters.toDate;
+
+  return this.http.get<any>(`${this.url}/StockHistory/detail`, { params });
+}
 }

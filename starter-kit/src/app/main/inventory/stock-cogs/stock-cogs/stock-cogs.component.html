@@ -125,15 +125,24 @@
               </div>
             </td>
 
-            <td class="num">{{ r.openingQty }}</td>
+            <td class="num">
+              <div class="qty-main">{{ r.openingQty }} {{ r.purchaseUomName }}</div>
+              <div class="qty-sub">Base-{{ r.openingBaseQty }} {{ r.baseUomName }}</div>
+            </td>
             <td class="num">{{ money(unitPrice(r.openingValue, r.openingQty)) }}</td>
             <td class="num">{{ money(r.openingValue) }}</td>
 
-            <td class="num">{{ r.purchaseQty }}</td>
+            <td class="num">
+             <div class="qty-main">{{ r.purchaseQty }} {{ r.purchaseUomName }}</div>
+             <div class="qty-sub">Base-{{ r.purchaseBaseQty }} {{ r.baseUomName }}</div>
+            </td>
             <td class="num">{{ money(unitPrice(r.purchaseValue, r.purchaseQty)) }}</td>
             <td class="num">{{ money(r.purchaseValue) }}</td>
 
-            <td class="num">{{ r.closingQty }}</td>
+            <td class="num">
+            <div class="qty-main">{{ r.closingQty }} {{ r.purchaseUomName }}</div>
+            <div class="qty-sub">Base-{{ r.closingBaseQty }} {{ r.baseUomName }}</div>
+            </td>
             <td class="num">{{ money(unitPrice(r.closingValue, r.closingQty)) }}</td>
             <td class="num">{{ money(r.closingValue) }}</td>
 

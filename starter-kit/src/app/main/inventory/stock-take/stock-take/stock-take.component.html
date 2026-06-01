@@ -71,8 +71,10 @@
                         <th style="background-color:#2E5F73; color:white; width:200px;">Barcode</th>
                         <!-- <th style="background-color:#2E5F73; color:white; width:120px;">Available</th> -->
                         <th style="background-color:#2E5F73; color:white; width:150px;white-space: nowrap;">Accepted Qty
+                        <small class="d-block" style="font-size:10px;color:#dbeafe;">Base UOM</small>
                         </th>
                         <th style="background-color:#2E5F73; color:white; width:150px;white-space: nowrap;">Faulty Qty
+                         <small class="d-block" style="font-size:10px;color:#dbeafe;">Base UOM</small>
                         </th>
                         <th style="background-color:#2E5F73; color:white;width:250px;white-space: nowrap;">Reason For
                             Faulty Qty</th>
@@ -99,16 +101,30 @@
                                 (ngModelChange)="onCheckReview()" placeholder="Enter barcode" /></td>
 
                         <!-- <td class="text-muted">{{ r.onHand ?? 0 }}</td> -->
-                        <td>
-                            <input type="number" class="form-control" [(ngModel)]="r.countedQty"
-                                (ngModelChange)="onCountChange(r)" min="0" step="0.0001" placeholder="0" />
-                            <div *ngIf="r._error" class="small text-danger mt-1">{{ r._error }}</div>
-                        </td>
-                        <td>
-                            <input type="number" class="form-control" [(ngModel)]="r.badCountedQty"
-                                (ngModelChange)="onUnCountChange(r)" min="0" step="0.0001" placeholder="0" />
-                            <div *ngIf="r._error" class="small text-danger mt-1">{{ r._error }}</div>
-                        </td>
+                   <td style="min-width:150px;">
+                    <div class="input-group input-group-sm qty-uom-box">
+                        <input type="number" class="form-control qty-input" [(ngModel)]="r.countedQty"
+                        (ngModelChange)="onCountChange(r)" min="0" step="0.0001" placeholder="0" />
+
+                        <span class="input-group-text qty-uom" style="line-height: 0.45;">
+                        {{ r.baseUomName || '' }}
+                        </span>
+                    </div>
+
+                    <div *ngIf="r._error" class="small text-danger mt-1">{{ r._error }}</div>
+                    </td>
+                    <td style="min-width:150px;">
+                    <div class="input-group input-group-sm qty-uom-box">
+                        <input type="number" class="form-control qty-input" [(ngModel)]="r.badCountedQty"
+                        (ngModelChange)="onUnCountChange(r)" min="0" step="0.0001" placeholder="0" />
+
+                        <span class="input-group-text qty-uom" style="line-height: 0.45;">
+                        {{ r.baseUomName || '' }}
+                        </span>
+                    </div>
+
+                    <div *ngIf="r._error" class="small text-danger mt-1">{{ r._error }}</div>
+                    </td>
                         <!-- <td><ng-select [items]="reasonList" bindLabel="stockIssuesNames" bindValue="id" [(ngModel)]="r.reason"
                                  placeholder="Item" class="w-100"></ng-select>
                         </td> -->
@@ -183,13 +199,15 @@
                             <th style="background-color:#2E5F73;color: #fff;">Item</th>
                             <th style="background-color:#2E5F73;color: #fff;">Barcode</th>
                             <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">
-                                OnHand Available/Fault</th>
+                                OnHand Available</th>
+                             <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">
+                                OnHand Fault <small class="d-block" style="font-size:10px;color:#dbeafe;">Base UOM</small></th>    
                             <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">
-                                Accepted Qty</th>
+                                Accepted Qty <small class="d-block" style="font-size:10px;color:#dbeafe;">Base UOM</small></th>
                             <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">Faulty
-                                Qty</th>
+                                Qty <small class="d-block" style="font-size:10px;color:#dbeafe;">Base UOM</small></th>
                             <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">Total
-                                Qty</th>
+                                Qty <small class="d-block" style="font-size:10px;color:#dbeafe;">Base UOM</small></th>
                             <th class="text-end" style="background-color:#2E5F73;color: #fff;">Variance</th>
                             <th class="text-end" style="background-color:#2E5F73;color: #fff;white-space:nowrap">Reason
                                 For Faulty Qty</th>
@@ -209,12 +227,20 @@
                                 {{ r.itemName || getItemName(r.itemId) }}
                             </td>
                             <td class="text-end">{{ toNum(r.barcode) }}</td>
-                            <td class="text-end"> {{ toNum(r.onHand) }} /  {{ toNum(r.badOnHand ?? 0) }}</td>
-                            <td class="text-end">{{ toNum(r.countedQty) }}</td>
-                            <td class="text-end">{{ toNum(r.badCountedQty) }}</td>
-                            <td class="text-end">{{ toNum(r.countedQty) + toNum(r.badCountedQty) }}</td>
+                            <td class="text-end" style="min-width:200px;">
+                            <div style="font-weight:400; color:#2E5F73;">
+                              Base-Qty:  {{ formatBaseQty(r) }}
+                            </div>
+                             <div style="font-weight:400; color:#2E5F73;">
+                              Purchase-Qty: {{ formatPurchaseQty(r) }}
+                            </div>
+                            </td>
+                             <td class="text-end">{{ toNum(r.badOnHand ?? 0) }} <small class="text-muted">{{ r.baseUomName || '' }}</small></td>
+                            <td class="text-end">{{ toNum(r.countedQty) }} <small class="text-muted">{{ r.baseUomName || '' }}</small></td>
+                            <td class="text-end">{{ toNum(r.badCountedQty) }} <small class="text-muted">{{ r.baseUomName || '' }}</small></td>
+                            <td class="text-end">{{ toNum(r.countedQty) + toNum(r.badCountedQty) }} <small class="text-muted">{{ r.baseUomName || '' }}</small></td>
                             <td class="text-end" [ngClass]="getVariance(r) >= 0 ? 'text-success' : 'text-danger'">
-                                {{ signed(getVariance(r)) }}
+                                {{ signed(getVariance(r)) }} <small class="text-muted">{{ r.baseUomName || '' }}</small>
                             </td>
                             <!-- <td class="text-end"><ng-select [items]="reasonList" bindLabel="stockIssuesNames" bindValue="id" [(ngModel)]="r.reason"
                                  placeholder="Item" class="w-100"></ng-select></td> -->

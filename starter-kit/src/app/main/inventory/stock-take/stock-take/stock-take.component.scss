@@ -12,3 +12,19 @@ table td { white-space: normal; }
 /* component.scss */
 .remarks-col { min-width: 200px; }   /* adjust 280–360px to taste */
 .remarks-col textarea { width: 100%; }
+.qty-uom-box {
+  width: 120px;
+}
+
+.qty-input {
+  width: 65px !important;
+  min-width: 65px;
+  text-align: center;
+}
+
+.qty-uom {
+  width: 55px;
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}

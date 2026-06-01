@@ -10,17 +10,28 @@ export interface CogsSummary {
 
 export interface CogsItemRow {
   itemId: number;
-  itemName?: string;
   itemCode?: string;
-  itemText?: string;
+  itemName?: string;
 
   openingQty: number;
+  openingBaseQty: number;
+  openingPrice: number;
   openingValue: number;
+
   purchaseQty: number;
+  purchaseBaseQty: number;
+  purchasePrice: number;
   purchaseValue: number;
+
   closingQty: number;
+  closingBaseQty: number;
+  closingPrice: number;
   closingValue: number;
+
   cogsValue: number;
+
+  baseUomName: string;
+  purchaseUomName: string;
 }
 
 export interface CogsReport {

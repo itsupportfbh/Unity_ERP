@@ -122,6 +122,25 @@ export class StockCogsComponent implements OnInit {
   }
 
   load(): void {
+    if (!this.fromDate || !this.toDate) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Date Required',
+      text: 'Please select From Date and To Date.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
+  }
+
+  if (new Date(this.fromDate) > new Date(this.toDate)) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Invalid Date Range',
+      text: 'From Date should be less than or equal to To Date.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
+  }
     this.loading = true;
 
     this.api.getCogs(this.fromDate, this.toDate, this.warehouseId ?? undefined, this.binId).subscribe({
@@ -131,6 +150,15 @@ export class StockCogsComponent implements OnInit {
         // optional: remove dummy row
         if (this.report?.items?.length) {
           this.report.items = this.report.items.filter(x => (x?.itemId ?? 0) > 0);
+        }
+
+          if (!this.report?.items?.length) {
+          Swal.fire({
+            icon: 'info',
+            title: 'No Data',
+            text: 'No COGS data found for the selected date and warehouse.',
+            confirmButtonColor: '#0e3a4c'
+          });
         }
 
         this.loading = false;
@@ -198,8 +226,14 @@ private setDefaultWarehouseIfNeeded(): void {
   return wh?.name || `Warehouse ${this.warehouseId}`;
 }
 
-  money(n?: number) {
-  const v = Number(n ?? 0);
+money(n?: number) {
+  let v = Number(n ?? 0);
+
+  // fix -0.00 display
+  if (Math.abs(v) < 0.005) {
+    v = 0;
+  }
+
   return `$${v.toLocaleString('en-SG', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -217,6 +251,30 @@ private setDefaultWarehouseIfNeeded(): void {
   if (!q) return 0;
   return v / q;
 }
+formatQty(n?: number): string {
+  const v = Number(n ?? 0);
+
+  if (Math.abs(v) < 0.0005) return '0';
+
+  return v.toLocaleString('en-SG', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4
+  });
+}
+
+qtyWithUom(qty?: number, uom?: string): string {
+  return `${this.formatQty(qty)} ${uom || ''}`.trim();
+}
+
+qtyExportText(
+  mainQty?: number,
+  mainUom?: string,
+  baseQty?: number,
+  baseUom?: string
+): string {
+  const main = this.qtyWithUom(mainQty, mainUom);
+  return `${main} | Base: ${this.formatQty(baseQty)} ${baseUom || ''}`.trim();
+}
 private buildCogsExportRows(): any[] {
   const data = this.rows || [];
 
@@ -224,15 +282,34 @@ private buildCogsExportRows(): any[] {
     'Sl. No': idx + 1,
     'Item Code': r.itemCode || '',
     'Item Name': r.itemName || r.itemText || '',
-    'Opening Qty': Number(r.openingQty || 0),
-    'Opening Price': Number(this.unitPrice(r.openingValue, r.openingQty) || 0),
+
+    'Opening Qty': this.qtyExportText(
+      r.openingQty,
+      r.purchaseUomName,
+      r.openingBaseQty,
+      r.baseUomName
+    ),
+    'Opening Price': Number(r.openingPrice ?? this.unitPrice(r.openingValue, r.openingQty) ?? 0),
     'Opening Value': Number(r.openingValue || 0),
-    'Purchase Qty': Number(r.purchaseQty || 0),
-    'Purchase Price': Number(this.unitPrice(r.purchaseValue, r.purchaseQty) || 0),
+
+    'Purchase Qty': this.qtyExportText(
+      r.purchaseQty,
+      r.purchaseUomName,
+      r.purchaseBaseQty,
+      r.baseUomName
+    ),
+    'Purchase Price': Number(r.purchasePrice ?? this.unitPrice(r.purchaseValue, r.purchaseQty) ?? 0),
     'Purchase Value': Number(r.purchaseValue || 0),
-    'Closing Qty': Number(r.closingQty || 0),
-    'Closing Price': Number(this.unitPrice(r.closingValue, r.closingQty) || 0),
+
+    'Closing Qty': this.qtyExportText(
+      r.closingQty,
+      r.purchaseUomName,
+      r.closingBaseQty,
+      r.baseUomName
+    ),
+    'Closing Price': Number(r.closingPrice ?? this.unitPrice(r.closingValue, r.closingQty) ?? 0),
     'Closing Value': Number(r.closingValue || 0),
+
     'COGS': Number(r.cogsValue || 0)
   }));
 }
@@ -288,21 +365,21 @@ exportToExcel(): void {
   const wsDetail: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
 
   // column widths
-  wsDetail['!cols'] = [
-    { wch: 8 },   // Sl. No
-    { wch: 14 },  // Item Code
-    { wch: 28 },  // Item Name
-    { wch: 12 },  // Opening Qty
-    { wch: 14 },  // Opening Price
-    { wch: 14 },  // Opening Value
-    { wch: 12 },  // Purchase Qty
-    { wch: 14 },  // Purchase Price
-    { wch: 14 },  // Purchase Value
-    { wch: 12 },  // Closing Qty
-    { wch: 14 },  // Closing Price
-    { wch: 14 },  // Closing Value
-    { wch: 12 }   // COGS
-  ];
+ wsDetail['!cols'] = [
+  { wch: 8 },
+  { wch: 14 },
+  { wch: 28 },
+  { wch: 24 }, // Opening Qty
+  { wch: 14 },
+  { wch: 14 },
+  { wch: 24 }, // Purchase Qty
+  { wch: 14 },
+  { wch: 14 },
+  { wch: 24 }, // Closing Qty
+  { wch: 14 },
+  { wch: 14 },
+  { wch: 12 }
+];
 
   // Money columns in detail sheet:
   // E = Opening Price
@@ -321,6 +398,22 @@ exportToExcel(): void {
       }
     });
   }
+  for (let row = 2; row <= data.length + 1; row++) {
+  ['D', 'G', 'J'].forEach(col => {
+    const cellRef = `${col}${row}`;
+
+    if (wsDetail[cellRef]) {
+  wsDetail[cellRef].t = 's';
+  wsDetail[cellRef].v = String(wsDetail[cellRef].v || '');
+  wsDetail[cellRef].w = String(wsDetail[cellRef].v || '');
+}
+  });
+}
+wsDetail['!rows'] = [];
+
+for (let row = 1; row <= data.length; row++) {
+  wsDetail['!rows'][row] = { hpt: 36 };
+}
 
   XLSX.utils.book_append_sheet(wb, wsDetail, 'COGS Details');
 
@@ -388,13 +481,13 @@ exportToPdf(): void {
   String(r['Sl. No'] ?? ''),
   String(r['Item Code'] ?? ''),
   String(r['Item Name'] ?? ''),
-  Number(r['Opening Qty'] || 0).toFixed(2),
+  String(r['Opening Qty'] || ''),
   this.money(r['Opening Price'] || 0),
   this.money(r['Opening Value'] || 0),
-  Number(r['Purchase Qty'] || 0).toFixed(2),
+  String(r['Purchase Qty'] || ''),
   this.money(r['Purchase Price'] || 0),
   this.money(r['Purchase Value'] || 0),
-  Number(r['Closing Qty'] || 0).toFixed(2),
+  String(r['Closing Qty'] || ''),
   this.money(r['Closing Price'] || 0),
   this.money(r['Closing Value'] || 0),
   this.money(r['COGS'] || 0)
@@ -406,9 +499,12 @@ exportToPdf(): void {
     startY: 85,
     margin: { left: 20, right: 20 },
     styles: {
-      fontSize: 8,
-      valign: 'middle',
-      halign: 'right'
+    fontSize: 8,
+    valign: 'middle',
+    halign: 'right'
+    },
+    bodyStyles: {
+      minCellHeight: 24
     },
     columnStyles: {
       0: { halign: 'center' },
@@ -423,4 +519,5 @@ exportToPdf(): void {
   const fileName = `COGS-${from}-to-${to}-WH-${wh}.pdf`;
   doc.save(fileName);
 }
+
 }

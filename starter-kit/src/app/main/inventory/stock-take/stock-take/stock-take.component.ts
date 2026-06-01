@@ -24,6 +24,12 @@ interface StockTakeLine {
   binName:any
   onHand: number | null;
   badOnHand?: number | null;  
+  purchaseQty?: number | null;
+  baseUomId?: number | null;
+  purchaseUomId?: number | null;
+  baseUomName?: string | null;
+  purchaseUomName?: string | null;
+  uomFactor?: number | null;
   countedQty: number | null;
   badCountedQty: number | null;
   barcode?: string | null;
@@ -243,6 +249,19 @@ private syncReviewRow(line: StockTakeLine): void {
 
   // ===== Helpers for modal/table =====
   toNum(v: any): number { return Number(v) || 0; }
+  formatBaseQty(r: any): string {
+  const qty = this.toNum(r.onHand);
+  const uom = r.baseUomName || '';
+  return `${qty}${uom}`.trim();
+}
+  formatPurchaseQty(r: any): string {
+  const qty = this.toNum(r.purchaseQty);
+  const purchaseUom = r.purchaseUomName || '';
+
+  if (!qty && !purchaseUom) return '-';
+
+  return `${qty}-(${purchaseUom})`;
+}
   getVariance(r: StockTakeLine): number {
     const good = this.toNum(r.countedQty);
     const bad = this.toNum((r as any).badCountedQty); // or r.badQty if that's your name
@@ -346,6 +365,14 @@ private syncReviewRow(line: StockTakeLine): void {
        supplierName: dto.supplierName ?? '', 
       onHand: Number(dto.onHand) || 0,
       badOnHand: Number(dto.badOnHand) || 0,
+
+      purchaseQty: Number(dto.purchaseQty) || 0,
+      baseUomId: dto.baseUomId ?? null,
+      purchaseUomId: dto.purchaseUomId ?? null,
+      baseUomName: dto.baseUomName ?? '',
+      purchaseUomName: dto.purchaseUomName ?? '',
+      uomFactor: Number(dto.uomFactor) || 1,
+
       countedQty: 0,
       badCountedQty: 0,
       // barcode: dto.barcode ?? '',

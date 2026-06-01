@@ -220,7 +220,10 @@ export class StockTakeListComponent implements OnInit {
       barcode: (l?.barcode ?? '-') as string,
       binId: (l?.binId),
       itemId: (l?.itemId),
-      itemName: (l?.itemName ?? l?.name ?? '-') as string,
+      supplierId: l?.supplierId,
+      supplierName: l?.supplierName ?? row?.supplierName ?? 'ALL',
+
+      itemName: l?.itemName ?? l?.name ?? this.getItemName(l?.itemId),
       onHand: N(l?.onHand ?? l?.available),
       countedQty: N(l?.countedQty),
       badCountedQty:N(l?.badCountedQty),
@@ -246,8 +249,8 @@ export class StockTakeListComponent implements OnInit {
   }
 
   getItemName(id: number | string | null) {
-    const x = this.itemList.find(i => i.id === id);
-    return x?.name ?? String(id ?? '');
+    const x = this.itemList?.find(i => Number(i.id) === Number(id));
+    return x?.itemName ?? x?.name ?? String(id ?? '');
   }
 
   closeLinesModal() {

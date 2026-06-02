@@ -22,7 +22,7 @@ export interface BankAccountBalance {
   providedIn: 'root'
 })
 export class AccountsPayableService {
-
+private apiurl = environment.apiUrl;
   private baseUrl = environment.apiUrl + '/finance/ap';
 private baseUrl1 = environment.apiUrl + '/PeriodClose';
 private baseUrl2 = environment.apiUrl + '/BankAccounts';
@@ -77,5 +77,18 @@ getSupplierAdvances() {
 }
 getSupplierAdvancesList() {
   return this.http.get<any>(`${this.baseUrl}/list`);
+}
+getCurrencies(): Observable<any> {
+  return this.http.get(`${this.apiurl}/Currency/GetCurrencies`);
+}
+
+getExchangeRate(fromCurrencyId: number, toCurrencyId: number, date: string): Observable<any> {
+  return this.http.get(`${this.apiurl}/ExchangeRate/GetRate`, {
+    params: {
+      fromCurrencyId: fromCurrencyId.toString(),
+      toCurrencyId:   toCurrencyId.toString(),
+      rateDate:       date
+    }
+  });
 }
 }

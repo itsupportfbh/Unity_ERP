@@ -1,6 +1,8 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from 'environments/environment';
 
 import {
   CompanyService,
@@ -34,6 +36,7 @@ interface NumberSeriesRow {
   encapsulation: ViewEncapsulation.None
 })
 export class CompanyCreateComponent implements OnInit {
+
   activeTab: CompanyTab = 'general';
 
   readonly tabsOrder: CompanyTab[] = [
@@ -45,6 +48,8 @@ export class CompanyCreateComponent implements OnInit {
     'audit'
   ];
 
+  apiUrl = environment.apiUrl;
+
   generalForm!: FormGroup;
   financeForm!: FormGroup;
   defaultsForm!: FormGroup;
@@ -54,54 +59,72 @@ export class CompanyCreateComponent implements OnInit {
   logoPreview: string | null = null;
 
   numberSeries: NumberSeriesRow[] = [
-    { document: 'Sales Invoice', prefix: 'SI', nextNo: 1, reset: true },
-    { document: 'Purchase Invoice (PIN)', prefix: 'PIN', nextNo: 1, reset: true },
-    { document: 'Delivery Order', prefix: 'DO', nextNo: 1, reset: true }
+    { document: 'Sales Invoice',           prefix: 'SI',  nextNo: 1, reset: true },
+    { document: 'Purchase Invoice (PIN)',   prefix: 'PIN', nextNo: 1, reset: true },
+    { document: 'Delivery Order',          prefix: 'DO',  nextNo: 1, reset: true }
   ];
 
-  lastUpdatedBy: string = '—';
+  lastUpdatedBy = '—';
   lastUpdatedAt = '—';
   auditTrail: Array<{ date: string; user: string; change: string }> = [];
 
-  saving = false;
-  loading = false;
-  successMsg = '';
-  errorMsg = '';
+  saving      = false;
+  loading     = false;
+  successMsg  = '';
+  errorMsg    = '';
 
-  isEdit = false;
-  companyId = 0;
+  isEdit      = false;
+  companyId   = 0;
   showPassword = false;
-  public isDisplay = false;
-  isNewOrganization = true;
+  isDisplay   = false;
+
+  isNewOrganization   = true;
   organizations: OrganizationLookupRow[] = [];
   selectedOrganizationId = 0;
-  selectedOrgGuid = '';
-  userId: number;
- functionId = 'company';
-  
-    permission: FunctionPermission;
-      isPermissionLoaded = false;
-      isPageLoading = false;
-  constructor(
-    private fb: FormBuilder,
-    private router: Router,
-    private route: ActivatedRoute,
-    private companyService: CompanyService,
-     private permissionService : PermissionService
-  )
-   {
-     this.userId = Number(localStorage.getItem('id') || 0);
-     this.permission = this.permissionService.getEmptyPermission(this.functionId);
-   }
+  selectedOrgGuid        = '';
 
+  userId     : number;
+  functionId  = 'company';
+
+  permission      !: FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading      = false;
+
+  // ─── Currency dropdown ───────────────────────────────────────────
+  currencyList      : any[] = [];
+  filteredCurrencies: any[] = [];
+  currencySearch    = '';
+  currencyDdOpen    = false;
+  selectedCurrencyId: number | null = null;
+
+  // ─── Country dropdown ────────────────────────────────────────────
+  countryList      : any[] = [];
+  filteredCountries: any[] = [];
+  countrySearch    = '';
+  countryDdOpen    = false;
+  selectedCountryId: number | null = null;
+
+  // ─────────────────────────────────────────────────────────────────
+  constructor(
+    private fb             : FormBuilder,
+    private router         : Router,
+    private route          : ActivatedRoute,
+    private http           : HttpClient,
+    private companyService : CompanyService,
+    private permissionService: PermissionService
+  ) {
+    this.userId     = Number(localStorage.getItem('id') || 0);
+    this.permission = this.permissionService.getEmptyPermission(this.functionId);
+  }
+
+  // ─────────────────────────────────────────────────────────────────
   ngOnInit(): void {
     this.buildForms();
     this.loadPermission();
-    // this.loadOrganizations();
 
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
-      this.isEdit = true;
+      this.isEdit    = true;
       this.companyId = +idParam;
       this.loadCompany(this.companyId);
     }
@@ -109,195 +132,332 @@ export class CompanyCreateComponent implements OnInit {
     this.setPasswordState();
   }
 
+  // ─── Close dropdowns on outside click ────────────────────────────
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.currencyDdOpen = false;
+    this.countryDdOpen  = false;
+  }
+
+  // ─── Build Forms ─────────────────────────────────────────────────
   private buildForms(): void {
     this.generalForm = this.fb.group({
-      code: ['', [Validators.required, Validators.maxLength(50)]],
-      name: ['', [Validators.required, Validators.maxLength(200)]],
-      legalName: [''],
-      registrationNo: [''],
+      code            : ['', [Validators.required, Validators.maxLength(50)]],
+      name            : ['', [Validators.required, Validators.maxLength(200)]],
+      legalName       : [''],
+      registrationNo  : [''],
       taxRegistrationNo: [''],
-      status: ['1'],
-      phone: [''],
-      email: ['', [Validators.email]],
-      website: [''],
-      country: ['Singapore'],
-
-      contactPerson: [''],
-      contactMobileNo: [''],
-      contactEmail: ['', [Validators.email]],
-
-      address1: [''],
-      address2: [''],
-      city: [''],
-      state: [''],
-      postal: ['']
+      status          : ['1'],
+      phone           : [''],
+      email           : ['', [Validators.email]],
+      website         : [''],
+      country         : ['Singapore'],
+      contactPerson   : [''],
+      contactMobileNo : [''],
+      contactEmail    : ['', [Validators.email]],
+      address1        : [''],
+      address2        : [''],
+      city            : [''],
+      state           : [''],
+      postal          : ['']
     });
 
     this.financeForm = this.fb.group({
-      baseCurrency: ['SGD', [Validators.required]],
-      country: ['Singapore'],
-      taxMode: ['Exclusive'],
-      gstNo: [''],
-      filingFrequency: ['Monthly'],
+      baseCurrency        : ['SGD', [Validators.required]],
+      country             : ['Singapore'],
+      taxMode             : ['Exclusive'],
+      gstNo               : [''],
+      filingFrequency     : ['Monthly'],
       defaultOutputTaxCode: [''],
-      defaultInputTaxCode: [''],
-      decimalPlaces: [2],
-      roundingRule: ['Round half up']
+      defaultInputTaxCode : [''],
+      decimalPlaces       : [2],
+      roundingRule        : ['Round half up']
     });
 
     this.defaultsForm = this.fb.group({
-      defaultBranch: ['Head Office'],
+      defaultBranch   : ['Head Office'],
       defaultWarehouse: ['Main Warehouse'],
-      defaultBin: ['MAIN'],
-      defaultLanguage: ['EN'],
-      timeZone: ['Asia/Kolkata']
+      defaultBin      : ['MAIN'],
+      defaultLanguage : ['EN'],
+      timeZone        : ['Asia/Kolkata']
     });
 
     this.integrationForm = this.fb.group({
-      whatsapp: [true],
-      smtp: [true],
-      ocr: [false],
+      whatsapp   : [true],
+      smtp       : [true],
+      ocr        : [false],
       apiEndpoint: [''],
-      apiKey: ['']
+      apiKey     : ['']
     });
 
     this.adminUserForm = this.fb.group({
-      username: ['', [Validators.required, Validators.maxLength(100)]],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      username    : ['', [Validators.required, Validators.maxLength(100)]],
+      email       : ['', [Validators.required, Validators.email]],
+      password    : ['', [Validators.required, Validators.minLength(6)]],
       departmentId: [1],
-      locationId: [1]
+      locationId  : [1]
     });
   }
 
+  // ─── Load master lists ────────────────────────────────────────────
+private loadCurrencies(): void {
+  this.http.get<any>(`${this.apiUrl}/Currency/GetCurrencies`).subscribe({
+    next: (res) => {
+      this.currencyList = (res?.data || []).filter((x: any) => x.isActive !== false);
+      this.filteredCurrencies = [...this.currencyList];
+
+      const search = (this.currencySearch || this.financeForm.get('baseCurrency')?.value || '').trim();
+
+      let found: any = null;
+
+      if (this.selectedCurrencyId) {
+        found = this.currencyList.find((x: any) => Number(x.id) === Number(this.selectedCurrencyId));
+      }
+
+      if (!found && search) {
+        found = this.currencyList.find((x: any) =>
+          String(x.currencyName || '').toLowerCase() === search.toLowerCase() ||
+          String(x.description || '').toLowerCase() === search.toLowerCase()
+        );
+      }
+
+      if (found) {
+        this.selectedCurrencyId = Number(found.id);
+        this.currencySearch = found.currencyName;
+        this.financeForm.patchValue({ baseCurrency: found.currencyName });
+      }
+    },
+    error: () => {
+      this.currencyList = [];
+      this.filteredCurrencies = [];
+    }
+  });
+}
+
+private loadCountries(): void {
+  this.http.get<any>(`${this.apiUrl}/Country/GetAll`).subscribe({
+    next: (res) => {
+      this.countryList = (res?.data || []).filter((x: any) => x.isActive !== false);
+      this.filteredCountries = [...this.countryList];
+
+      const search = (this.countrySearch || this.financeForm.get('country')?.value || '').trim();
+
+      let found: any = null;
+
+      if (this.selectedCountryId) {
+        found = this.countryList.find((x: any) => Number(x.id) === Number(this.selectedCountryId));
+      }
+
+      if (!found && search) {
+        found = this.countryList.find((x: any) =>
+          String(x.countryName || '').toLowerCase() === search.toLowerCase()
+        );
+      }
+
+      if (found) {
+        this.selectedCountryId = Number(found.id);
+        this.countrySearch = found.countryName;
+        this.financeForm.patchValue({ country: found.countryName });
+      }
+    },
+    error: () => {
+      this.countryList = [];
+      this.filteredCountries = [];
+    }
+  });
+}
+
+  // ─── Currency dropdown handlers ───────────────────────────────────
+  filterCurrency(ev?: Event): void {
+    ev?.stopPropagation();
+    const q = (this.currencySearch || '').toLowerCase();
+    this.filteredCurrencies = this.currencyList.filter(c =>
+      (c.currencyName || '').toLowerCase().includes(q)
+    );
+    this.currencyDdOpen = true;
+  }
+
+  openCurrencyDd(ev: Event): void {
+    ev.stopPropagation();
+    this.currencyDdOpen = !this.currencyDdOpen;
+    if (this.currencyDdOpen) {
+      this.filteredCurrencies = [...this.currencyList];
+    }
+  }
+
+  selectCurrency(c: any, ev?: Event): void {
+     ev?.stopPropagation();
+    this.selectedCurrencyId = c.id;
+    this.currencySearch     = c.currencyName;
+    this.currencyDdOpen     = false;
+    this.financeForm.patchValue({ baseCurrency: c.currencyName });
+  }
+
+  // ─── Country dropdown handlers ────────────────────────────────────
+  filterCountry(ev?: Event): void {
+    ev?.stopPropagation();
+    const q = (this.countrySearch || '').toLowerCase();
+    this.filteredCountries = this.countryList.filter(c =>
+      (c.countryName || '').toLowerCase().includes(q)
+    );
+    this.countryDdOpen = true;
+  }
+
+  openCountryDd(ev: Event): void {
+    ev.stopPropagation();
+    this.countryDdOpen = !this.countryDdOpen;
+    if (this.countryDdOpen) {
+      this.filteredCountries = [...this.countryList];
+    }
+  }
+
+  selectCountry(co: any, ev?: Event): void {
+    ev?.stopPropagation();
+    this.selectedCountryId = co.id;
+    this.countrySearch     = co.countryName;
+    this.countryDdOpen     = false;
+    this.financeForm.patchValue({ country: co.countryName });
+  }
+
+  // ─── Organizations ────────────────────────────────────────────────
   private loadOrganizations(): void {
     this.companyService.getOrganizations().subscribe({
-      next: (res) => {
-        this.organizations = res || [];
-      },
-      error: () => {
-        this.organizations = [];
-      }
+      next:  (res) => { this.organizations = res || []; },
+      error: ()    => { this.organizations = []; }
     });
   }
 
   onOrganizationModeChange(value: boolean): void {
     this.isNewOrganization = value;
-
     if (value) {
       this.selectedOrganizationId = 0;
-      this.selectedOrgGuid = '';
+      this.selectedOrgGuid        = '';
     }
   }
 
   onOrganizationSelected(orgId: number | string): void {
     this.selectedOrganizationId = Number(orgId || 0);
-
     const org = this.organizations.find(x => x.id === this.selectedOrganizationId);
     this.selectedOrgGuid = org?.orgGuid || '';
   }
 
-  private getCurrentUserId(): number {
-    return Number(localStorage.getItem('id') || 0);
-  }
-
+  // ─── Load company for edit ────────────────────────────────────────
   private loadCompany(id: number): void {
-    this.loading = true;
+    this.loading  = true;
     this.errorMsg = '';
 
     this.companyService.getCompanyById(id).subscribe({
       next: (res: CompanySetupDetailDto) => {
         this.loading = false;
 
+        // General tab
         this.generalForm.patchValue({
-          code: res.general?.code ?? '',
-          name: res.general?.name ?? '',
-          legalName: res.general?.legalName ?? '',
-          registrationNo: res.general?.registrationNo ?? '',
+          code             : res.general?.code              ?? '',
+          name             : res.general?.name              ?? '',
+          legalName        : res.general?.legalName         ?? '',
+          registrationNo   : res.general?.registrationNo    ?? '',
           taxRegistrationNo: res.general?.taxRegistrationNo ?? '',
-          status: String(res.general?.status ?? '1'),
-          phone: res.general?.phone ?? '',
-          email: res.general?.email ?? '',
-          website: res.general?.website ?? '',
-          country: res.general?.country ?? 'Singapore',
-          contactPerson: res.general?.contactPerson ?? '',
-          contactMobileNo: res.general?.contactMobileNo ?? '',
-          contactEmail: res.general?.contactEmail ?? '',
-          address1: res.general?.address1 ?? '',
-          address2: res.general?.address2 ?? '',
-          city: res.general?.city ?? '',
-          state: res.general?.state ?? '',
-          postal: res.general?.postal ?? ''
+          status           : String(res.general?.status     ?? '1'),
+          phone            : res.general?.phone             ?? '',
+          email            : res.general?.email             ?? '',
+          website          : res.general?.website           ?? '',
+          country          : res.general?.country           ?? 'Singapore',
+          contactPerson    : res.general?.contactPerson     ?? '',
+          contactMobileNo  : res.general?.contactMobileNo   ?? '',
+          contactEmail     : res.general?.contactEmail      ?? '',
+          address1         : res.general?.address1          ?? '',
+          address2         : res.general?.address2          ?? '',
+          city             : res.general?.city              ?? '',
+          state            : res.general?.state             ?? '',
+          postal           : res.general?.postal            ?? ''
         });
 
+        // Finance tab
         this.financeForm.patchValue({
-          baseCurrency: res.financeTax?.baseCurrency ?? 'SGD',
-          country: res.financeTax?.country ?? 'Singapore',
-          taxMode: res.financeTax?.taxMode ?? 'Exclusive',
-          gstNo: res.financeTax?.gstNo ?? '',
-          filingFrequency: res.financeTax?.filingFrequency ?? 'Monthly',
+          baseCurrency        : res.financeTax?.baseCurrency         ?? 'SGD',
+          country             : res.financeTax?.country              ?? 'Singapore',
+          taxMode             : res.financeTax?.taxMode              ?? 'Exclusive',
+          gstNo               : res.financeTax?.gstNo                ?? '',
+          filingFrequency     : res.financeTax?.filingFrequency      ?? 'Monthly',
           defaultOutputTaxCode: res.financeTax?.defaultOutputTaxCode ?? '',
-          defaultInputTaxCode: res.financeTax?.defaultInputTaxCode ?? '',
-          decimalPlaces: res.financeTax?.decimalPlaces ?? 2,
-          roundingRule: res.financeTax?.roundingRule ?? 'Round half up'
+          defaultInputTaxCode : res.financeTax?.defaultInputTaxCode  ?? '',
+          decimalPlaces       : res.financeTax?.decimalPlaces        ?? 2,
+          roundingRule        : res.financeTax?.roundingRule         ?? 'Round half up'
         });
 
+        // ✅ Hydrate currency / country ids + search text
+        this.selectedCurrencyId = (res.financeTax as any)?.currencyId ?? null;
+        this.currencySearch     = res.financeTax?.baseCurrency ?? '';
+
+        this.selectedCountryId  = (res.financeTax as any)?.countryId ?? null;
+        this.countrySearch      = res.financeTax?.country ?? '';
+
+        // Defaults tab
         this.defaultsForm.patchValue({
-          defaultBranch: res.defaults?.defaultBranch ?? 'Head Office',
+          defaultBranch   : res.defaults?.defaultBranch    ?? 'Head Office',
           defaultWarehouse: res.defaults?.defaultWarehouse ?? 'Main Warehouse',
-          defaultBin: res.defaults?.defaultBin ?? 'MAIN',
-          defaultLanguage: res.defaults?.defaultLanguage ?? 'EN',
-          timeZone: res.defaults?.timeZone ?? 'Asia/Kolkata'
+          defaultBin      : res.defaults?.defaultBin       ?? 'MAIN',
+          defaultLanguage : res.defaults?.defaultLanguage  ?? 'EN',
+          timeZone        : res.defaults?.timeZone         ?? 'Asia/Kolkata'
         });
 
         this.integrationForm.patchValue({
-          whatsapp: res.integrations?.whatsapp ?? true,
-          smtp: res.integrations?.smtp ?? true,
-          ocr: res.integrations?.ocr ?? false,
+          whatsapp   : res.integrations?.whatsapp    ?? true,
+          smtp       : res.integrations?.smtp        ?? true,
+          ocr        : res.integrations?.ocr         ?? false,
           apiEndpoint: res.integrations?.apiEndpoint ?? '',
-          apiKey: res.integrations?.apiKey ?? ''
+          apiKey     : res.integrations?.apiKey      ?? ''
         });
 
         this.adminUserForm.patchValue({
-          username: res.initialAdminUser?.username ?? 'admin',
-          email: res.initialAdminUser?.email ?? '',
-          password: '',
+          username    : res.initialAdminUser?.username     ?? 'admin',
+          email       : res.initialAdminUser?.email        ?? '',
+          password    : '',
           departmentId: res.initialAdminUser?.departmentId ?? 1,
-          locationId: res.initialAdminUser?.locationId ?? 1
+          locationId  : res.initialAdminUser?.locationId   ?? 1
         });
 
         this.numberSeries = res.numberSeries?.length
           ? res.numberSeries.map(x => ({
               document: x.document ?? '',
-              prefix: x.prefix ?? '',
-              nextNo: Number(x.nextNo ?? 1),
-              reset: !!x.reset
+              prefix  : x.prefix   ?? '',
+              nextNo  : Number(x.nextNo ?? 1),
+              reset   : !!x.reset
             }))
           : [];
 
-        this.logoPreview = res.logoBase64 ?? null;
-        this.lastUpdatedBy = res.lastUpdatedBy || '—';
-        this.lastUpdatedAt = res.lastUpdatedAt || '—';
-        this.auditTrail = res.auditTrail || [];
-
+        this.logoPreview            = res.logoBase64    ?? null;
+        this.lastUpdatedBy          = res.lastUpdatedBy || '—';
+        this.lastUpdatedAt          = res.lastUpdatedAt || '—';
+        this.auditTrail             = res.auditTrail    || [];
         this.selectedOrganizationId = Number(res.organizationId || 0);
-        this.selectedOrgGuid = res.orgGuid || '';
-        this.isNewOrganization = false;
+        this.selectedOrgGuid        = res.orgGuid       || '';
+        this.isNewOrganization      = false;
 
         this.setPasswordState();
+
+        // Load master lists AFTER hydrate (so id-based sync works)
+        this.loadCurrencies();
+        this.loadCountries();
       },
       error: (err) => {
-        this.loading = false;
+        this.loading  = false;
         this.errorMsg = err?.error?.message || 'Failed to load company details';
       }
     });
   }
 
+  // ─── Form helpers ─────────────────────────────────────────────────
   isInvalid(form: FormGroup, controlName: string): boolean {
     const control = form.get(controlName);
     return !!control && control.invalid && (control.dirty || control.touched);
   }
 
+  private getCurrentUserId(): number {
+    return Number(localStorage.getItem('id') || 0);
+  }
+
+  // ─── Tab navigation ───────────────────────────────────────────────
   setTab(tab: CompanyTab): void {
     this.activeTab = tab;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -313,29 +473,22 @@ export class CompanyCreateComponent implements OnInit {
 
   goPrev(): void {
     const idx = this.tabsOrder.indexOf(this.activeTab);
-    if (idx > 0) {
-      this.setTab(this.tabsOrder[idx - 1]);
-    }
+    if (idx > 0) this.setTab(this.tabsOrder[idx - 1]);
   }
 
   goNext(): void {
     const idx = this.tabsOrder.indexOf(this.activeTab);
-    if (idx < this.tabsOrder.length - 1) {
-      this.setTab(this.tabsOrder[idx + 1]);
-    }
+    if (idx < this.tabsOrder.length - 1) this.setTab(this.tabsOrder[idx + 1]);
   }
 
+  // ─── Logo ─────────────────────────────────────────────────────────
   onLogoPicked(evt: Event): void {
     const input = evt.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) {
-      return;
-    }
+    const file  = input.files?.[0];
+    if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.logoPreview = String(reader.result || '');
-    };
+    const reader  = new FileReader();
+    reader.onload = () => { this.logoPreview = String(reader.result || ''); };
     reader.readAsDataURL(file);
   }
 
@@ -343,28 +496,23 @@ export class CompanyCreateComponent implements OnInit {
     this.logoPreview = null;
   }
 
+  // ─── Number series ────────────────────────────────────────────────
   addNumberRow(): void {
-    this.numberSeries.push({
-      document: '',
-      prefix: '',
-      nextNo: 1,
-      reset: false
-    });
+    this.numberSeries.push({ document: '', prefix: '', nextNo: 1, reset: false });
   }
 
   removeNumberRow(i: number): void {
     this.numberSeries.splice(i, 1);
   }
 
+  // ─── Password ─────────────────────────────────────────────────────
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
 
   setPasswordState(): void {
     const ctrl = this.adminUserForm.get('password');
-    if (!ctrl) {
-      return;
-    }
+    if (!ctrl) return;
 
     if (this.isEdit) {
       ctrl.setValidators([]);
@@ -375,13 +523,21 @@ export class CompanyCreateComponent implements OnInit {
     ctrl.updateValueAndValidity({ emitEvent: false });
   }
 
+  // ─── Validate ─────────────────────────────────────────────────────
   private validateBeforeSave(): boolean {
     this.successMsg = '';
-    this.errorMsg = '';
+    this.errorMsg   = '';
 
     if (!this.isEdit && !this.isNewOrganization && this.selectedOrganizationId <= 0) {
       this.errorMsg = 'Please select an organization.';
       this.setTab('general');
+      return false;
+    }
+
+    // ✅ Base currency required
+    if (!this.selectedCurrencyId) {
+      this.errorMsg = 'Please select a Base Currency.';
+      this.setTab('financeTax');
       return false;
     }
 
@@ -419,41 +575,53 @@ export class CompanyCreateComponent implements OnInit {
     return true;
   }
 
+  // ─── Save ─────────────────────────────────────────────────────────
   save(): void {
-    if (!this.validateBeforeSave()) {
-      return;
-    }
+    if (!this.validateBeforeSave()) return;
 
     const adminRaw = this.adminUserForm.getRawValue();
 
     const payload: CreateCompanySetupPayload = {
       isNewOrganization: this.isEdit ? false : this.isNewOrganization,
-      organizationId: this.isEdit ? this.selectedOrganizationId || null : (this.isNewOrganization ? null : this.selectedOrganizationId),
-      orgGuid: this.isEdit ? (this.selectedOrgGuid || null) : (this.isNewOrganization ? null : this.selectedOrgGuid),
+      organizationId   : this.isEdit
+        ? this.selectedOrganizationId || null
+        : (this.isNewOrganization ? null : this.selectedOrganizationId),
+      orgGuid          : this.isEdit
+        ? (this.selectedOrgGuid || null)
+        : (this.isNewOrganization ? null : this.selectedOrgGuid),
 
       general: {
         ...this.generalForm.getRawValue(),
         createdBy: this.getCurrentUserId()
       },
+
+      // ✅ CurrencyId + CountryId pass பண்றோம்
       financeTax: {
-        ...this.financeForm.getRawValue()
+        ...this.financeForm.getRawValue(),
+        currencyId: this.selectedCurrencyId,
+        countryId : this.selectedCountryId
       },
+
       defaults: {
         ...this.defaultsForm.getRawValue()
       },
+
       numberSeries: this.numberSeries.map(x => ({
         document: (x.document || '').trim(),
-        prefix: (x.prefix || '').trim(),
-        nextNo: Number(x.nextNo || 1),
-        reset: !!x.reset
+        prefix  : (x.prefix   || '').trim(),
+        nextNo  : Number(x.nextNo || 1),
+        reset   : !!x.reset
       })),
+
       integrations: {
         ...this.integrationForm.getRawValue()
       },
+
       initialAdminUser: {
         ...adminRaw,
         password: this.isEdit && !adminRaw.password ? null : adminRaw.password
       },
+
       logoBase64: this.logoPreview
     };
 
@@ -483,8 +651,8 @@ export class CompanyCreateComponent implements OnInit {
         this.lastUpdatedAt = new Date().toLocaleString();
 
         this.auditTrail.unshift({
-          date: new Date().toLocaleString(),
-          user: currentUser,
+          date  : new Date().toLocaleString(),
+          user  : currentUser,
           change: this.isEdit
             ? 'Company updated'
             : this.isNewOrganization
@@ -495,9 +663,9 @@ export class CompanyCreateComponent implements OnInit {
         this.setTab('audit');
 
         Swal.fire({
-          icon: 'success',
-          title: this.isEdit ? 'Updated' : 'Created',
-          text: successText,
+          icon             : 'success',
+          title            : this.isEdit ? 'Updated' : 'Created',
+          text             : successText,
           confirmButtonText: 'OK',
           confirmButtonColor: '#2E5F73'
         }).then(() => {
@@ -505,13 +673,13 @@ export class CompanyCreateComponent implements OnInit {
         });
       },
       error: (err) => {
-        this.saving = false;
+        this.saving   = false;
         this.errorMsg = err?.error?.message || 'Failed to save company';
 
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: this.errorMsg,
+          icon             : 'error',
+          title            : 'Error',
+          text             : this.errorMsg,
           confirmButtonColor: '#d33'
         });
       }
@@ -520,68 +688,61 @@ export class CompanyCreateComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/master/companyList']);
-  } 
-  
+  }
+
+  // ─── Permission ───────────────────────────────────────────────────
   loadPermission(): void {
-            if (!this.userId || this.userId <= 0) {
-              this.permission = this.permissionService.getEmptyPermission(this.functionId);
-              this.isPermissionLoaded = true;
-        
-              Swal.fire({
-                icon: 'warning',
-                title: 'Access Denied',
-                text: 'User not found. Please login again.',
-                confirmButtonColor: '#0e3a4c'
-              });
-              return;
-            }
-        
-            this.isPageLoading = true;
-        
-            this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
-              next: (res: FunctionPermission) => {
-                this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
-                this.isPermissionLoaded = true;
-                this.isPageLoading = false;
-        
-                if (this.canView()) {
-                  this.loadOrganizations();
-                } else {
-                  this.organizations = [];
-                  this.isDisplay = false;
-                }
-              },
-              error: (err) => {
-                console.error('Permission load error:', err);
-                this.permission = this.permissionService.getEmptyPermission(this.functionId);
-                this.isPermissionLoaded = true;
-                this.isPageLoading = false;
-        
-                Swal.fire({
-                  icon: 'error',
-                  title: 'Error',
-                  text: 'Unable to load permission.',
-                  confirmButtonColor: '#d33'
-                });
-              }
-            });
-          }
-        
-          canView(): boolean {
-            return this.permissionService.hasView(this.permission);
-          }
-        
-          canCreate(): boolean {
-            return this.permissionService.hasCreate(this.permission);
-          }
-        
-          canEdit(): boolean {
-            return this.permissionService.hasEdit(this.permission);
-          }
-        
-          canDelete(): boolean {
-            return this.permissionService.hasDelete(this.permission);
-          }
+    if (!this.userId || this.userId <= 0) {
+      this.permission        = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
 
+      Swal.fire({
+        icon             : 'warning',
+        title            : 'Access Denied',
+        text             : 'User not found. Please login again.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
+    this.isPageLoading = true;
+
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission        = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading      = false;
+
+        if (this.canView()) {
+          this.loadOrganizations();
+
+          // ✅ Load master lists for create mode
+          if (!this.isEdit) {
+            this.loadCurrencies();
+            this.loadCountries();
+          }
+        } else {
+          this.organizations = [];
+          this.isDisplay     = false;
+        }
+      },
+      error: () => {
+        this.permission        = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading      = false;
+
+        Swal.fire({
+          icon             : 'error',
+          title            : 'Error',
+          text             : 'Unable to load permission.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    });
+  }
+
+  canView()   : boolean { return this.permissionService.hasView(this.permission);   }
+  canCreate() : boolean { return this.permissionService.hasCreate(this.permission); }
+  canEdit()   : boolean { return this.permissionService.hasEdit(this.permission);   }
+  canDelete() : boolean { return this.permissionService.hasDelete(this.permission); }
 }

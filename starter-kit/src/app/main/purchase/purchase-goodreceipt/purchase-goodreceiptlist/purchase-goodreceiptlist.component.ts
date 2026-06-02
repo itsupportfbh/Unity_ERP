@@ -52,6 +52,11 @@ interface GrnRow {
   warehouseName?: string | null;
   binName?: string | null;
   strategyName?: string | null;
+   grnJson?: string | null;  
+  fxRate?: number | null;    
+  currencyName?: string | null;
+  
+  unitPrice?: number | null;
 }
 
 type ViewerState = { open: boolean; src: string | null };
@@ -254,7 +259,10 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
           strategyId: g.strategyId ?? g.StrategyId ?? null,
           warehouseName: g.warehouseName ?? g.WarehouseName ?? null,
           binName: g.binName ?? g.BinName ?? null,
-          strategyName: g.strategyName ?? g.StrategyName ?? null
+          strategyName: g.strategyName ?? g.StrategyName ?? null,
+          grnJson: g.grnJson ?? g.GRNJson ?? g.GrnJson ?? null, 
+   fxRate: Number(g.fxRate ?? g.FxRate ?? 1),        // ✅ add
+  unitPrice: Number(g.unitPrice ?? g.UnitPrice ?? 0)  
         }));
 
         this.allRows = normalized;
@@ -689,4 +697,16 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
     const minutes = d.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
   }
+getGrnLineTotal(row: any): number {
+  // ✅ Direct fields use பண்ணு (grnJson இல்ல)
+  const qty = Number(row?.qtyReceived || 0);
+  const price = Number(row?.unitPrice || row?.UnitPrice || 0);
+  return +(qty * price).toFixed(2);
+}
+
+getGrnBaseCurrencyTotal(row: any): number {
+  const total = this.getGrnLineTotal(row);
+  const fxRate = Number(row?.fxRate || row?.FxRate || 1);
+  return +(total * fxRate).toFixed(2);
+}
 }

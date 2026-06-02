@@ -99,27 +99,38 @@
           </ul>
         </div>
 
-        <!-- Currency / FX -->
-        <div class="field">
-          <label>Currency / FX Rate</label>
+       <!-- Currency / FX -->
+<div class="field">
+  <label>Currency / FX Rate
+    <!-- ✅ Loading spinner -->
+    <span *ngIf="exchangeRateLoading"
+      style="font-size:0.75rem; color:#0e3a4c; margin-left:6px;">
+      ⏳ Fetching rate...
+    </span>
+    <!-- ✅ No rate warning -->
+    <span *ngIf="!exchangeRateLoading && exchangeRate === null && poHdr.currencyId && !isSGDCurrency()"
+      style="font-size:0.75rem; color:#d33; margin-left:6px;">
+      ⚠ No rate found
+    </span>
+  </label>
 
-          <div class="split">
-            <div class="ig ig--disabled">
-              <input type="text" [(ngModel)]="searchTexts['currency']" placeholder="Currency" disabled />
-              <button type="button" class="ig__btn ig__btn--caret" disabled>▼</button>
-            </div>
+  <div class="split">
+    <div class="ig ig--disabled">
+      <input type="text" [(ngModel)]="searchTexts['currency']" placeholder="Currency" disabled />
+      <button type="button" class="ig__btn ig__btn--caret" disabled>▼</button>
+    </div>
 
-            <div class="ig">
-              <input
-                type="number"
-                [(ngModel)]="poHdr.fxRate"
-                placeholder="FX Rate"
-                (input)="calculateFxTotal()"
-                [disabled]="isSGDCurrency()"
-              />
-            </div>
-          </div>
-        </div>
+    <div class="ig">
+      <input
+        type="number"
+        [(ngModel)]="poHdr.fxRate"
+        placeholder="FX Rate"
+        (input)="calculateFxTotal()"
+        [disabled]="isSGDCurrency()"
+      />
+    </div>
+  </div>
+</div>
 
       </div>
 

@@ -71,7 +71,7 @@
           [footerHeight]="50"
           [limit]="selectedOption"
           [columnMode]="ColumnMode.force"
-          [scrollbarH]="false"
+          [scrollbarH]="true"
           [reorderable]="true">
 
           <!-- Eye column -->
@@ -103,14 +103,12 @@
             </ng-template>
           </ngx-datatable-column>
 
-         <ngx-datatable-column name="Supplier Name" prop="name" [width]="200">
+    
+<!-- Supplier Name column -->
+<ngx-datatable-column name="Supplier Name" prop="name" [width]="200">
   <ng-template ngx-datatable-cell-template let-row="row">
-
-    <!-- Popover Content Template -->
     <ng-template #popContent>
-      <div class="pp-body">
-        {{ row.name }}
-      </div>
+      <div class="pp-body">{{ row.name }}</div>
     </ng-template>
 
     <span
@@ -121,14 +119,29 @@
       triggers="mouseenter:mouseleave"
       container="body"
       placement="top"
-      popoverClass="custom-popover"
-    >
+      popoverClass="custom-popover">
       {{ row.name?.slice(0, 20) }}{{ row.name?.length > 20 ? '...' : '' }}
     </span>
+  </ng-template>
+</ngx-datatable-column>  
 
+
+<ngx-datatable-column name="Total (INR)" [width]="140">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    {{ getGrnLineTotal(row) | number:'1.2-2' }}
   </ng-template>
 </ngx-datatable-column>
 
+<ngx-datatable-column name="Total (Base SGD)" [width]="150">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <span style="color:#2E5F73; font-weight:600;">
+      {{ getGrnBaseCurrencyTotal(row) | number:'1.2-2' }} SGD
+    </span>
+  </ng-template>
+</ngx-datatable-column>
+
+<!-- Status column -->
+<ngx-datatable-column name="Status" [width]="140" [sortable]="false">
           <!-- Status -->
           <ngx-datatable-column name="Status" [width]="140" [sortable]="false">
             <ng-template ngx-datatable-cell-template let-row="row">
@@ -137,7 +150,7 @@
               </span>
             </ng-template>
           </ngx-datatable-column>
-
+</ngx-datatable-column>
           <!-- Action -->
           <ngx-datatable-column
             name="Action"
@@ -216,6 +229,7 @@
               <th class="c-qc">QC</th>
               <th class="c-batch">Batch/Serial</th>
               <th class="c-sup">Supplier</th>
+            
               <th class="c-sto">Storage</th>
               <th class="c-sur">Surface</th>
               <th class="c-exp">Expiry</th>
@@ -244,6 +258,7 @@
               <td>{{ l.qualityCheck || '—' }}</td>
               <td>{{ l.batchSerial || '—' }}</td>
               <td>{{ l.supplierName || '—' }}</td>
+            
               <td>{{ l.storageType || '—' }}</td>
               <td>{{ l.surfaceTemp || '—' }}</td>
               <td>{{ l.expiry | date:'yyyy-MM-dd' }}</td>

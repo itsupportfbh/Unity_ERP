@@ -27,8 +27,9 @@ interface GRNHeader {
   poLines?: any;
   poLinesJson?: any;
   currencyId?: number;
+  currencyName?: string; // ✅ add
+  fxRate?: number;       // ✅ add
   tax?: number;
-
   previousPinPending?: boolean;
   previousPinNo?: string;
   previousGrnNo?: string;
@@ -86,6 +87,10 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
   isGlPosted = false;
   gstLockMessage = '';
 
+  // existing properties-க்கு கீழே add பண்ணுங்க
+fxRate: number = 1;
+currencyName: string = '';
+netPayableBase: number = 0; // ✅ SGD amount
   constructor(
     private fb: FormBuilder,
     private api: SupplierInvoiceService,
@@ -228,6 +233,8 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
       poLines: x.poLines ?? x.PoLines,
       poLinesJson: x.poLinesJson ?? x.PoLinesJson,
       currencyId: x.currencyId ?? x.CurrencyId,
+       fxRate: Number(x.fxRate ?? x.FxRate ?? 1),        // ✅ add
+    currencyName: x.currencyName ?? x.CurrencyName ?? '',
 
       previousPinPending:
         previousPinPendingValue === true ||
@@ -436,61 +443,66 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     this.applySelectedGrns(selected);
   }
 
-  private applySelectedGrns(selected: GRNHeader[]): void {
-    if (!selected || selected.length === 0) {
-      this.selectedGrnNos = [];
-      this.grnSearch = '';
-
-      this.form.patchValue({
-        grnIds: [],
-        grnNos: '',
-        supplierId: null,
-        supplierName: '',
-        currencyId: null,
-        tax: 0,
-        amount: 0
-      }, { emitEvent: false });
-
-      this.replaceLinesWith([
-        {
-          item: '',
-          qty: 1,
-          unitPrice: 0,
-          discountPct: 0,
-          location: '',
-          taxMode: 'EXCLUSIVE'
-        }
-      ]);
-
-      this.recalcAllLines();
-      this.recalcHeaderFromLines();
-      this.isPartialAsked = false;
-      this.checkSupplierAdvanceForSelectedGrn();
-      return;
-    }
-
-    const ids = selected.map(x => Number(x.id));
-    const displayText = selected.map(x => x.grnNo).join(', ');
-    this.selectedGrnNos = selected.map(x => x.grnNo);
-
-    const pct = this.getTaxPctFromGrn(selected[0]);
+ private applySelectedGrns(selected: GRNHeader[]): void {
+  if (!selected || selected.length === 0) {
+    this.selectedGrnNos = [];
+    this.grnSearch = '';
+    this.fxRate = 1;
+    this.currencyName = '';
+    this.netPayableBase = 0;
 
     this.form.patchValue({
-      grnIds: ids,
-      grnNos: displayText,
-      supplierId: selected[0]?.supplierId ?? null,
-      supplierName: selected[0]?.supplierName ?? '',
-      currencyId: selected[0]?.currencyId != null ? Number(selected[0]?.currencyId) : null,
-      tax: pct
+      grnIds: [],
+      grnNos: '',
+      supplierId: null,
+      supplierName: '',
+      currencyId: null,
+      tax: 0,
+      amount: 0
     }, { emitEvent: false });
 
-    this.grnSearch = displayText;
-    this.mergeLinesFromMultipleGrns(selected);
+    this.replaceLinesWith([{
+      item: '',
+      qty: 1,
+      unitPrice: 0,
+      discountPct: 0,
+      location: '',
+      taxMode: 'EXCLUSIVE'
+    }]);
+
     this.recalcAllLines();
     this.recalcHeaderFromLines();
     this.isPartialAsked = false;
     this.checkSupplierAdvanceForSelectedGrn();
+    return;
   }
+
+  const ids = selected.map(x => Number(x.id));
+  const displayText = selected.map(x => x.grnNo).join(', ');
+  this.selectedGrnNos = selected.map(x => x.grnNo);
+
+  const pct = this.getTaxPctFromGrn(selected[0]);
+
+  // ✅ FxRate + CurrencyName set
+  this.fxRate = Number(selected[0]?.fxRate || 1);
+  this.currencyName = selected[0]?.currencyName || '';
+
+  this.form.patchValue({
+    grnIds: ids,
+    grnNos: displayText,
+    supplierId: selected[0]?.supplierId ?? null,
+    supplierName: selected[0]?.supplierName ?? '',
+    currencyId: selected[0]?.currencyId != null ? Number(selected[0]?.currencyId) : null,
+    tax: pct
+  }, { emitEvent: false });
+
+  this.grnSearch = displayText;
+  this.mergeLinesFromMultipleGrns(selected);
+  this.recalcAllLines();
+  this.recalcHeaderFromLines();
+  this.isPartialAsked = false;
+  this.checkSupplierAdvanceForSelectedGrn();
+}
 
   private seedEmptyLine(): void {
     if (this.lines.length === 0) {
@@ -739,34 +751,37 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
     this.recalcHeaderFromLines();
   }
 
-  private recalcHeaderFromLines(): void {
-    let grossTotal = 0;
-    let discount = 0;
-    let taxTotal = 0;
-    let grandTotal = 0;
+ private recalcHeaderFromLines(): void {
+  let grossTotal = 0;
+  let discount = 0;
+  let taxTotal = 0;
+  let grandTotal = 0;
 
-    (this.lines.value || []).forEach((l: any) => {
-      const q = this.toNumber(l.qty);
-      const p = this.toNumber(l.unitPrice);
-      const d = this.toNumber(l.discountPct);
+  (this.lines.value || []).forEach((l: any) => {
+    const q = this.toNumber(l.qty);
+    const p = this.toNumber(l.unitPrice);
+    const d = this.toNumber(l.discountPct);
 
-      const gross = q * p;
-      const discAmt = d > 0 ? (gross * d / 100) : 0;
+    const gross = q * p;
+    const discAmt = d > 0 ? (gross * d / 100) : 0;
 
-      grossTotal += gross;
-      discount += discAmt;
-      taxTotal += this.toNumber(l.taxAmt);
-      grandTotal += this.toNumber(l.lineGrandTotal);
-    });
+    grossTotal += gross;
+    discount   += discAmt;
+    taxTotal   += this.toNumber(l.taxAmt);
+    grandTotal += this.toNumber(l.lineGrandTotal);
+  });
 
-    this.subTotal = +grossTotal.toFixed(2);
-    this.discountTotal = +discount.toFixed(2);
-    this.taxAmount = +taxTotal.toFixed(2);
-    this.grandTotal = +grandTotal.toFixed(2);
-    this.netPayable = this.grandTotal;
+  this.subTotal      = +grossTotal.toFixed(2);
+  this.discountTotal = +discount.toFixed(2);
+  this.taxAmount     = +taxTotal.toFixed(2);
+  this.grandTotal    = +grandTotal.toFixed(2);
+  this.netPayable    = this.grandTotal;
 
-    this.form.patchValue({ amount: this.grandTotal }, { emitEvent: false });
-  }
+  // ✅ Base SGD calculate
+  this.netPayableBase = +(this.netPayable * this.fxRate).toFixed(2);
+
+  this.form.patchValue({ amount: this.grandTotal }, { emitEvent: false });
+}
 
   save(action: 'HOLD' | 'POST' = 'POST'): void {
     if (this.isInvoiceBlocked()) return;

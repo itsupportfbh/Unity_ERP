@@ -154,7 +154,9 @@ poApprovalSearch = '';
     // pdfmake cache
     private _pdfMake: any = null;
     private _pdfReady = false;
-
+modalFxRate = 1;
+modalCurrencyName = '';
+companyCurrencyName = 'SGD';
     // company info (match your real company)
     private companyInfo = {
       name: 'Catering Solutions Pte Ltd',
@@ -198,7 +200,11 @@ poApprovalSearch = '';
   ngAfterViewChecked(): void {
     feather.replace();
   }
-
+getNetTotalBase(row: any): number {
+  const netTotal = Number(row?.netTotal || 0);
+  const fxRate = Number(row?.fxRate || 1);
+  return +( netTotal * fxRate).toFixed(2);
+}
 
   loadPoPermission(): void {
   const userId = Number(localStorage.getItem('id') || 0);
@@ -488,6 +494,9 @@ private showPeriodLockedSwal(action: string): void {
 
   // ✅ Total remains sum of total (as before)
   const total = normalized.reduce((sum, l) => sum + (Number(l?.total) || 0), 0);
+
+  this.modalFxRate = Number(row?.fxRate || 1);
+  this.modalCurrencyName = row?.currencyName || 'INR';
 
   this.modalLines = normalized;
   this.modalLocation = row?.location || '';

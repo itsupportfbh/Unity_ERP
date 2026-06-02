@@ -1,5 +1,3 @@
-// src/app/main/financial/accounts-payable/accounts-payable.component.ts
-
 import {
   Component,
   OnInit,
@@ -37,6 +35,9 @@ interface SupplierAdvanceRow {
   originalAmount: number;
   utilisedAmount: number;
   balanceAmount: number;
+  currencyName: string;
+  fxRate: number;
+  amountBase: number;
 }
 
 @Component({
@@ -62,78 +63,90 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   private allInvoices: any[] = [];
   invoiceSearch = '';
 
-  totalInvAmount = 0;
-  totalInvPaid = 0;
-  totalInvDebitNote = 0;
-  totalInvAdvance = 0;
+  totalInvAmount      = 0;
+  totalInvPaid        = 0;
+  totalInvDebitNote   = 0;
+  totalInvAdvance     = 0;
   totalInvOutstanding = 0;
 
   supplierGroups: SupplierInvoiceGroup[] = [];
   expandedSupplierIds = new Set<number>();
 
-  invPage = 1;
+  invPage     = 1;
   invPageSize = 10;
 
-  payments: any[] = [];
-  showPaymentForm = false;
-
-  payListPage = 1;
-  payListPageSize = 10;
+  payments: any[]    = [];
+  showPaymentForm    = false;
+  payListPage        = 1;
+  payListPageSize    = 10;
 
   paySupplierId: number | null = null;
-  supplierInvoicesAll: any[] = [];
-
-  payInvPage = 1;
+  supplierInvoicesAll: any[]   = [];
+  payInvPage     = 1;
   payInvPageSize = 10;
 
-  payDate = '';
-  payMethodId = 2;
+  payDate      = '';
+  payMethodId  = 2;
   payReference = '';
-  payAmount = 0;
-  payNotes = '';
-  payInvSelectAll = false;
-  amountEditedManually = false;
+  payAmount    = 0;
+  payNotes     = '';
+  payInvSelectAll       = false;
+  amountEditedManually  = false;
 
-  supTotalInvoice = 0;
-  supTotalPaid = 0;
-  supTotalDebitNote = 0;
-  supTotalAdvance = 0;
-  supTotalNetOutstanding = 0;
-  supTotalPayable = 0;
+  supTotalInvoice         = 0;
+  supTotalPaid            = 0;
+  supTotalDebitNote       = 0;
+  supTotalAdvance         = 0;
+  supTotalNetOutstanding  = 0;
+  supTotalPayable         = 0;
 
-  supplierAdvances: SupplierAdvanceRow[] = [];
+  // ✅ Payment Currency + FxRate
+  payFxRate:           number  = 1;
+  payAmountBase:       number  = 0;
+  payExchangeGainLoss: number  = 0;
+  payCurrencyName:     string  = '';
+  paymentCurrencyId:   number  = 0;
+  paymentCurrencyName: string  = 'SGD';
+  availableCurrencies: any[]   = [];
+  fxRateLoading:       boolean = false;
+
+  // Invoice currency (reference only)
+  invoiceCurrencyId:   number = 0;
+  invoiceCurrencyName: string = '';
+  invoiceFxRate:       number = 1;
+
+  supplierAdvances:      SupplierAdvanceRow[] = [];
   pagedSupplierAdvances: SupplierAdvanceRow[] = [];
-  advPage = 1;
+  advPage     = 1;
   advPageSize = 10;
 
-  totalAdvanceAmount = 0;
+  totalAdvanceAmount   = 0;
   totalAdvanceUtilised = 0;
-  totalAdvanceBalance = 0;
+  totalAdvanceBalance  = 0;
 
   matchRows: any[] = [];
-  matchPage = 1;
-  matchPageSize = 10;
+  matchPage        = 1;
+  matchPageSize    = 10;
 
-  isPeriodLocked = false;
+  isPeriodLocked    = false;
   currentPeriodName = '';
   userId: any;
-
   Math = Math;
 
-        functionId = 'ap';
-      
-        permission: FunctionPermission;
-          isPermissionLoaded = false;
-          isPageLoading = false;
-periodName = '';
+  functionId          = 'ap';
+  permission:         FunctionPermission;
+  isPermissionLoaded  = false;
+  isPageLoading       = false;
+  periodName          = '';
+
   constructor(
     private apSvc: AccountsPayableService,
     private supplierSvc: SupplierService,
     public router: Router,
-         private permissionService : PermissionService
+    private permissionService: PermissionService
   ) {
-    this.payDate = new Date().toISOString().substring(0, 10);
-    this.userId = Number(localStorage.getItem('id') );
+    this.payDate   = new Date().toISOString().substring(0, 10);
+    this.userId    = Number(localStorage.getItem('id'));
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
@@ -142,94 +155,137 @@ periodName = '';
     this.loadSuppliers();
     this.loadBankAccounts();
     this.loadPermission();
+    this.loadCurrencies();
   }
 
   ngAfterViewInit(): void {
     feather.replace();
   }
 
-
-loadPermission(): void {
-  if (!this.userId || this.userId <= 0) {
-    this.permission = this.permissionService.getEmptyPermission(this.functionId);
-    this.isPermissionLoaded = true;
-
-    Swal.fire({
-      icon: 'warning',
-      title: 'Access Denied',
-      text: 'User not found. Please login again.',
-      confirmButtonColor: '#0e3a4c'
-    });
-    return;
+  // ✅ Base currency id
+  getBaseCurrencyId(): number {
+    return Number(localStorage.getItem('companyCurrencyId') || 0);
   }
 
-  this.isPageLoading = true;
+  // ✅ Load currencies
+  loadCurrencies(): void {
+    this.apSvc.getCurrencies().subscribe({
+      next: (res: any) => {
+        this.availableCurrencies = res?.data || res || [];
+        this.setDefaultPaymentCurrency();
+      },
+      error: () => {}
+    });
+  }
 
-  this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
-    next: (res: FunctionPermission) => {
-      this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
-      this.isPermissionLoaded = true;
-      this.isPageLoading = false;
+  // ✅ Set default = SGD (base currency)
+  private setDefaultPaymentCurrency(): void {
+    const baseCurrId = this.getBaseCurrencyId();
+    const base = this.availableCurrencies.find(
+      c => Number(c.id || c.Id) === baseCurrId
+    );
+    this.paymentCurrencyId   = baseCurrId;
+    this.paymentCurrencyName = base?.currencyName || base?.CurrencyName || 'SGD';
+    this.payCurrencyName     = this.paymentCurrencyName;
+    this.payFxRate           = 1;
+  }
 
-      if (!this.canView()) {
-        this.invoices = [];
-        this.allInvoices = [];
-        this.supplierGroups = [];
-        Swal.fire('Access Denied', 'You do not have view permission.', 'warning');
-        return;
-      }
+  // ✅ Currency dropdown change
+  onPaymentCurrencyChange(): void {
+    const sel = this.availableCurrencies.find(
+      c => Number(c.id || c.Id) === Number(this.paymentCurrencyId)
+    );
+    if (!sel) return;
 
-      this.setTab('invoices');
-    },
-    error: () => {
-      this.permission = this.permissionService.getEmptyPermission(this.functionId);
-      this.isPermissionLoaded = true;
-      this.isPageLoading = false;
-      Swal.fire('Error', 'Unable to load permission.', 'error');
+    this.paymentCurrencyName = sel.currencyName || sel.CurrencyName || '';
+    this.payCurrencyName     = this.paymentCurrencyName;
+
+    const baseCurrId = this.getBaseCurrencyId();
+
+    if (Number(this.paymentCurrencyId) === baseCurrId) {
+      this.payFxRate = 1;
+      this.recalcPaymentBase();
+    } else {
+      this.fetchPaymentFxRate();
     }
-  });
-}
-        
-          canView(): boolean {
-            return this.permissionService.hasView(this.permission);
-          }
-        
-          canCreate(): boolean {
-            return this.permissionService.hasCreate(this.permission);
-          }
-        
-          canEdit(): boolean {
-            return this.permissionService.hasEdit(this.permission);
-          }
-        
-          canDelete(): boolean {
-            return this.permissionService.hasDelete(this.permission);
-          }
-  
-          canApprove(): boolean{
-            return this.permissionService.hasApprove(this.permission);
-          }
+  }
+
+  // ✅ Fetch FxRate for selected currency
+  fetchPaymentFxRate(): void {
+    const baseCurrId = this.getBaseCurrencyId();
+    if (!baseCurrId || !this.paymentCurrencyId) return;
+
+    this.fxRateLoading = true;
+    const today = new Date().toISOString().substring(0, 10);
+
+    this.apSvc.getExchangeRate(
+      this.paymentCurrencyId,
+      baseCurrId,
+      today
+    ).subscribe({
+      next: (res: any) => {
+        this.fxRateLoading = false;
+        if (res?.isSuccess && res?.data?.rate) {
+          this.payFxRate = Number(res.data.rate);
+        } else {
+          this.payFxRate = Number(this.invoiceFxRate || 1);
+        }
+        this.recalcPaymentBase();
+      },
+      error: () => {
+        this.fxRateLoading = false;
+        this.payFxRate = Number(this.invoiceFxRate || 1);
+        this.recalcPaymentBase();
+      }
+    });
+  }
+
+  loadPermission(): void {
+    if (!this.userId || this.userId <= 0) {
+      this.permission        = this.permissionService.getEmptyPermission(this.functionId);
+      this.isPermissionLoaded = true;
+      Swal.fire({ icon: 'warning', title: 'Access Denied',
+        text: 'User not found. Please login again.', confirmButtonColor: '#0e3a4c' });
+      return;
+    }
+
+    this.isPageLoading = true;
+    this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
+      next: (res: FunctionPermission) => {
+        this.permission         = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading      = false;
+
+        if (!this.canView()) {
+          this.invoices       = [];
+          this.allInvoices    = [];
+          this.supplierGroups = [];
+          Swal.fire('Access Denied', 'You do not have view permission.', 'warning');
+          return;
+        }
+        this.setTab('invoices');
+      },
+      error: () => {
+        this.permission         = this.permissionService.getEmptyPermission(this.functionId);
+        this.isPermissionLoaded = true;
+        this.isPageLoading      = false;
+        Swal.fire('Error', 'Unable to load permission.', 'error');
+      }
+    });
+  }
+
+  canView():    boolean { return this.permissionService.hasView(this.permission); }
+  canCreate():  boolean { return this.permissionService.hasCreate(this.permission); }
+  canEdit():    boolean { return this.permissionService.hasEdit(this.permission); }
+  canDelete():  boolean { return this.permissionService.hasDelete(this.permission); }
+  canApprove(): boolean { return this.permissionService.hasApprove(this.permission); }
 
   setTab(tab: ApTab): void {
     this.activeTab = tab;
-
-    if (tab === 'invoices') {
-      this.loadInvoices();
-    }
-
-    if (tab === 'payments') {
-      this.showPaymentForm = false;
-      this.loadPayments();
-      this.cancelPayment();
-    }
-
-    if (tab === 'match') {
-      this.loadMatch();
-    }
-
-    if (tab === 'advances') {
-      this.loadAdvances();
-    }
+    if (tab === 'invoices')  this.loadInvoices();
+    if (tab === 'payments')  { this.showPaymentForm = false; this.loadPayments(); this.cancelPayment(); }
+    if (tab === 'match')     this.loadMatch();
+    if (tab === 'advances')  this.loadAdvances();
   }
 
   loadSuppliers(): void {
@@ -237,7 +293,7 @@ loadPermission(): void {
       next: (res: any) => {
         const raw = res?.data || res || [];
         this.suppliers = raw.map((s: any) => ({
-          id: Number(s.id || s.Id || 0),
+          id:   Number(s.id || s.Id || 0),
           name: s.name || s.supplierName || s.SupplierName || s.Name || ''
         }));
       },
@@ -247,9 +303,7 @@ loadPermission(): void {
 
   loadBankAccounts(): void {
     this.apSvc.getBankAccounts().subscribe({
-      next: (res: any) => {
-        this.bankAccounts = res?.data || res || [];
-      },
+      next: (res: any) => { this.bankAccounts = res?.data || res || []; },
       error: () => Swal.fire('Error', 'Failed to load bank accounts', 'error')
     });
   }
@@ -264,32 +318,24 @@ loadPermission(): void {
         const advanceRows = res.advances?.data || res.advances || [];
 
         const utilisedAdvanceMap = new Map<number, number>();
-
         advanceRows.forEach((a: any) => {
           const supplierId = Number(a.supplierId || a.SupplierId || 0);
-          const original = Number(a.originalAmount || a.OriginalAmount || 0);
-          const utilised = Number(a.utilisedAmount || a.UtilisedAmount || 0);
-          const balance = Number(a.balanceAmount || a.BalanceAmount || 0);
-
-          const applied = utilised > 0 ? utilised : Math.max(original - balance, 0);
-
+          const original   = Number(a.originalAmount || a.OriginalAmount || 0);
+          const utilised   = Number(a.utilisedAmount || a.UtilisedAmount || 0);
+          const balance    = Number(a.balanceAmount  || a.BalanceAmount  || 0);
+          const applied    = utilised > 0 ? utilised : Math.max(original - balance, 0);
           if (supplierId > 0 && applied > 0) {
-            utilisedAdvanceMap.set(
-              supplierId,
-              Number(((utilisedAdvanceMap.get(supplierId) || 0) + applied).toFixed(2))
-            );
+            utilisedAdvanceMap.set(supplierId,
+              Number(((utilisedAdvanceMap.get(supplierId) || 0) + applied).toFixed(2)));
           }
         });
 
         this.allInvoices = invoiceRows
           .map((x: any) => this.mapInvoiceRow(x))
-          .sort(
-            (a: any, b: any) =>
-              new Date(a.invoiceDate).getTime() - new Date(b.invoiceDate).getTime()
-          );
+          .sort((a: any, b: any) =>
+            new Date(a.invoiceDate).getTime() - new Date(b.invoiceDate).getTime());
 
         this.applyUtilisedAdvanceToInvoices(utilisedAdvanceMap);
-
         this.invoices = [...this.allInvoices];
         this.calcInvoiceTotals();
         this.buildSupplierGroups();
@@ -299,96 +345,88 @@ loadPermission(): void {
   }
 
   private mapInvoiceRow(x: any): any {
-    const grandTotal = Number(x.grandTotal || x.GrandTotal || x.amount || x.Amount || 0);
-    const paidAmount = Number(x.paidAmount || x.PaidAmount || 0);
+    const grandTotal      = Number(x.grandTotal || x.GrandTotal || x.amount || x.Amount || 0);
+    const paidAmount      = Number(x.paidAmount || x.PaidAmount || 0);
     const debitNoteAmount = Number(x.debitNoteAmount || x.DebitNoteAmount || 0);
-
-    const advanceAmount = Number(
-      x.advanceAmount ||
-      x.AdvanceAmount ||
-      x.advanceAppliedAmount ||
-      x.AdvanceAppliedAmount ||
-      x.appliedAdvanceAmount ||
-      x.AppliedAdvanceAmount ||
-      0
-    );
+    const advanceAmount   = Number(x.advanceAmount || x.AdvanceAmount ||
+      x.advanceAppliedAmount || x.AdvanceAppliedAmount || 0);
 
     const beforeAdvance = Math.max(grandTotal - paidAmount - debitNoteAmount, 0);
-    const outstanding = Math.max(beforeAdvance - advanceAmount, 0);
+    const outstanding   = Math.max(beforeAdvance - advanceAmount, 0);
 
     return {
       ...x,
-      id: Number(x.id || x.Id || 0),
-      supplierId: Number(x.supplierId || x.SupplierId || 0),
-      supplierName: x.supplierName || x.SupplierName || '',
-      invoiceNo: x.invoiceNo || x.InvoiceNo || '',
-      invoiceDate: x.invoiceDate || x.InvoiceDate,
-      dueDate: x.dueDate || x.DueDate,
-      grandTotal: Number(grandTotal.toFixed(2)),
-      paidAmount: Number(paidAmount.toFixed(2)),
-      debitNoteAmount: Number(debitNoteAmount.toFixed(2)),
-      advanceAmount: Number(advanceAmount.toFixed(2)),
+      id:                       Number(x.id || x.Id || 0),
+      supplierId:               Number(x.supplierId || x.SupplierId || 0),
+      supplierName:             x.supplierName || x.SupplierName || '',
+      invoiceNo:                x.invoiceNo    || x.InvoiceNo    || '',
+      invoiceDate:              x.invoiceDate  || x.InvoiceDate,
+      dueDate:                  x.dueDate      || x.DueDate,
+      grandTotal:               Number(grandTotal.toFixed(2)),
+      paidAmount:               Number(paidAmount.toFixed(2)),
+      debitNoteAmount:          Number(debitNoteAmount.toFixed(2)),
+      advanceAmount:            Number(advanceAmount.toFixed(2)),
       outstandingBeforeAdvance: Number(beforeAdvance.toFixed(2)),
-      outstandingAmount: Number(outstanding.toFixed(2)),
-      payableAfterAdvance: Number(outstanding.toFixed(2)),
-      debitNoteNo: x.debitNoteNo || x.DebitNoteNo || '',
-      debitNoteDate: x.debitNoteDate || x.DebitNoteDate,
-      status: x.status || x.Status,
+      outstandingAmount:        Number(outstanding.toFixed(2)),
+      payableAfterAdvance:      Number(outstanding.toFixed(2)),
+      debitNoteNo:              x.debitNoteNo  || x.DebitNoteNo  || '',
+      debitNoteDate:            x.debitNoteDate || x.DebitNoteDate,
+      status:                   x.status       || x.Status,
+      fxRate:       Number(x.fxRate       ?? x.FxRate       ?? 1),
+      currencyId:   Number(x.currencyId   ?? x.CurrencyId   ?? 0),
+      currencyName: x.currencyName        ?? x.CurrencyName  ?? '',
+      amountBase:   Number(x.amountBase   ?? x.AmountBase   ?? 0),
       isSelected: false
     };
   }
 
   private applyUtilisedAdvanceToInvoices(utilisedAdvanceMap: Map<number, number>): void {
     const grouped = new Map<number, any[]>();
-
     this.allInvoices.forEach(inv => {
-      const supplierId = Number(inv.supplierId || 0);
-      if (!grouped.has(supplierId)) grouped.set(supplierId, []);
-      grouped.get(supplierId)!.push(inv);
+      const sid = Number(inv.supplierId || 0);
+      if (!grouped.has(sid)) grouped.set(sid, []);
+      grouped.get(sid)!.push(inv);
     });
 
-    grouped.forEach((list, supplierId) => {
-      let remainingAdvance = Number(utilisedAdvanceMap.get(supplierId) || 0);
-
+    grouped.forEach((list) => {
       list.forEach(inv => {
+        const sid            = Number(inv.supplierId || 0);
+        let remaining        = Number(utilisedAdvanceMap.get(sid) || 0);
         const alreadyAdvance = Number(inv.advanceAmount || 0);
 
         if (alreadyAdvance > 0) {
-          remainingAdvance = Number(Math.max(remainingAdvance - alreadyAdvance, 0).toFixed(2));
+          utilisedAdvanceMap.set(sid, Number(Math.max(remaining - alreadyAdvance, 0).toFixed(2)));
           return;
         }
 
-        const beforeAdvance = Number(inv.outstandingBeforeAdvance || 0);
-        const applied = Math.min(beforeAdvance, remainingAdvance);
+        const before  = Number(inv.outstandingBeforeAdvance || 0);
+        const applied = Math.min(before, remaining);
 
-        inv.advanceAmount = Number(applied.toFixed(2));
-        inv.outstandingAmount = Number(Math.max(beforeAdvance - applied, 0).toFixed(2));
+        inv.advanceAmount       = Number(applied.toFixed(2));
+        inv.outstandingAmount   = Number(Math.max(before - applied, 0).toFixed(2));
         inv.payableAfterAdvance = inv.outstandingAmount;
 
-        remainingAdvance = Number(Math.max(remainingAdvance - applied, 0).toFixed(2));
+        utilisedAdvanceMap.set(sid, Number(Math.max(remaining - applied, 0).toFixed(2)));
       });
     });
   }
 
   calcInvoiceTotals(): void {
-    this.totalInvAmount = 0;
-    this.totalInvPaid = 0;
-    this.totalInvDebitNote = 0;
-    this.totalInvAdvance = 0;
-    this.totalInvOutstanding = 0;
+    this.totalInvAmount = this.totalInvPaid = this.totalInvDebitNote =
+    this.totalInvAdvance = this.totalInvOutstanding = 0;
 
     this.invoices.forEach(i => {
-      this.totalInvAmount += Number(i.grandTotal || 0);
-      this.totalInvPaid += Number(i.paidAmount || 0);
-      this.totalInvDebitNote += Number(i.debitNoteAmount || 0);
-      this.totalInvAdvance += Number(i.advanceAmount || 0);
+      this.totalInvAmount      += Number(i.grandTotal          || 0);
+      this.totalInvPaid        += Number(i.paidAmount          || 0);
+      this.totalInvDebitNote   += Number(i.debitNoteAmount     || 0);
+      this.totalInvAdvance     += Number(i.advanceAmount       || 0);
       this.totalInvOutstanding += Number(i.payableAfterAdvance || 0);
     });
 
-    this.totalInvAmount = Number(this.totalInvAmount.toFixed(2));
-    this.totalInvPaid = Number(this.totalInvPaid.toFixed(2));
-    this.totalInvDebitNote = Number(this.totalInvDebitNote.toFixed(2));
-    this.totalInvAdvance = Number(this.totalInvAdvance.toFixed(2));
+    this.totalInvAmount      = Number(this.totalInvAmount.toFixed(2));
+    this.totalInvPaid        = Number(this.totalInvPaid.toFixed(2));
+    this.totalInvDebitNote   = Number(this.totalInvDebitNote.toFixed(2));
+    this.totalInvAdvance     = Number(this.totalInvAdvance.toFixed(2));
     this.totalInvOutstanding = Number(this.totalInvOutstanding.toFixed(2));
   }
 
@@ -396,38 +434,31 @@ loadPermission(): void {
     const map = new Map<number, SupplierInvoiceGroup>();
 
     this.invoices.forEach(inv => {
-      const supplierId = Number(inv.supplierId || 0);
-      if (!supplierId) return;
+      const sid = Number(inv.supplierId || 0);
+      if (!sid) return;
 
-      if (!map.has(supplierId)) {
-        map.set(supplierId, {
-          supplierId,
-          supplierName: inv.supplierName || '',
-          totalGrandTotal: 0,
-          totalPaid: 0,
-          totalDebitNote: 0,
-          totalAdvance: 0,
-          totalPayable: 0,
-          invoices: []
-        });
+      if (!map.has(sid)) {
+        map.set(sid, { supplierId: sid, supplierName: inv.supplierName || '',
+          totalGrandTotal: 0, totalPaid: 0, totalDebitNote: 0,
+          totalAdvance: 0, totalPayable: 0, invoices: [] });
       }
 
-      const grp = map.get(supplierId)!;
-      grp.totalGrandTotal += Number(inv.grandTotal || 0);
-      grp.totalPaid += Number(inv.paidAmount || 0);
-      grp.totalDebitNote += Number(inv.debitNoteAmount || 0);
-      grp.totalAdvance += Number(inv.advanceAmount || 0);
-      grp.totalPayable += Number(inv.payableAfterAdvance || 0);
-      grp.invoices.push(inv);
+      const g = map.get(sid)!;
+      g.totalGrandTotal += Number(inv.grandTotal          || 0);
+      g.totalPaid       += Number(inv.paidAmount          || 0);
+      g.totalDebitNote  += Number(inv.debitNoteAmount     || 0);
+      g.totalAdvance    += Number(inv.advanceAmount       || 0);
+      g.totalPayable    += Number(inv.payableAfterAdvance || 0);
+      g.invoices.push(inv);
     });
 
     this.supplierGroups = Array.from(map.values()).map(g => ({
       ...g,
       totalGrandTotal: Number(g.totalGrandTotal.toFixed(2)),
-      totalPaid: Number(g.totalPaid.toFixed(2)),
-      totalDebitNote: Number(g.totalDebitNote.toFixed(2)),
-      totalAdvance: Number(g.totalAdvance.toFixed(2)),
-      totalPayable: Number(g.totalPayable.toFixed(2))
+      totalPaid:       Number(g.totalPaid.toFixed(2)),
+      totalDebitNote:  Number(g.totalDebitNote.toFixed(2)),
+      totalAdvance:    Number(g.totalAdvance.toFixed(2)),
+      totalPayable:    Number(g.totalPayable.toFixed(2))
     }));
 
     this.supplierGroups.sort((a, b) => a.supplierName.localeCompare(b.supplierName));
@@ -438,14 +469,10 @@ loadPermission(): void {
   filterInvoices(event: any): void {
     const val = event?.target?.value?.toLowerCase() || '';
     this.invoiceSearch = val;
-
-    this.invoices = !val
-      ? [...this.allInvoices]
+    this.invoices = !val ? [...this.allInvoices]
       : this.allInvoices.filter(i =>
           (i.invoiceNo || '').toLowerCase().includes(val) ||
-          (i.supplierName || '').toLowerCase().includes(val)
-        );
-
+          (i.supplierName || '').toLowerCase().includes(val));
     this.calcInvoiceTotals();
     this.buildSupplierGroups();
   }
@@ -462,29 +489,28 @@ loadPermission(): void {
 
   getInvoiceStatusTextByAmounts(row: any): string {
     const paid = Number(row.paidAmount || 0);
-    const dn = Number(row.debitNoteAmount || 0);
-    const adv = Number(row.advanceAmount || 0);
-    const os = Number(row.payableAfterAdvance || 0);
-
+    const dn   = Number(row.debitNoteAmount || 0);
+    const adv  = Number(row.advanceAmount || 0);
+    const os   = Number(row.payableAfterAdvance || 0);
     if (os <= 0 && (paid > 0 || dn > 0 || adv > 0)) return 'Paid';
-    if ((paid > 0 || dn > 0 || adv > 0) && os > 0) return 'Partial';
+    if ((paid > 0 || dn > 0 || adv > 0) && os > 0)  return 'Partial';
     return 'Unpaid';
   }
 
   getInvoiceStatusClassByAmounts(row: any): string {
-    const txt = this.getInvoiceStatusTextByAmounts(row);
-    if (txt === 'Paid') return 'badge-success';
-    if (txt === 'Partial') return 'badge-warning';
+    const t = this.getInvoiceStatusTextByAmounts(row);
+    if (t === 'Paid')    return 'badge-success';
+    if (t === 'Partial') return 'badge-warning';
     return 'badge-danger';
   }
 
   get invTotalPages(): number {
-    return Math.max(1, Math.ceil((this.supplierGroups.length || 0) / this.invPageSize));
+    return Math.max(1, Math.ceil(this.supplierGroups.length / this.invPageSize));
   }
 
   get pagedSupplierGroups(): SupplierInvoiceGroup[] {
-    const start = (this.invPage - 1) * this.invPageSize;
-    return this.supplierGroups.slice(start, start + this.invPageSize);
+    const s = (this.invPage - 1) * this.invPageSize;
+    return this.supplierGroups.slice(s, s + this.invPageSize);
   }
 
   invGoToPage(p: number): void {
@@ -494,59 +520,51 @@ loadPermission(): void {
 
   loadPayments(): void {
     this.apSvc.getPayments().subscribe({
-      next: (res: any) => {
-        this.payments = res?.data || res || [];
-        this.payListPage = 1;
-      },
+      next: (res: any) => { this.payments = res?.data || res || []; this.payListPage = 1; },
       error: () => Swal.fire('Error', 'Failed to load payments', 'error')
     });
   }
 
-  openNewPayment(): void {
-    this.showPaymentForm = true;
-    this.cancelPayment();
-  }
-
-  backToPaymentList(): void {
-    this.showPaymentForm = false;
-    this.cancelPayment();
-  }
-
-  cancelPaymentForm(): void {
-    this.cancelPayment();
-  }
+  openNewPayment(): void { this.showPaymentForm = true; this.cancelPayment(); }
+  backToPaymentList(): void { this.showPaymentForm = false; this.cancelPayment(); }
+  cancelPaymentForm(): void { this.cancelPayment(); }
 
   cancelPayment(): void {
     this.resetPaymentForm();
-
-    this.paySupplierId = null;
-    this.supplierInvoicesAll = [];
-
-    this.supTotalInvoice = 0;
-    this.supTotalPaid = 0;
-    this.supTotalDebitNote = 0;
-    this.supTotalAdvance = 0;
+    this.paySupplierId          = null;
+    this.supplierInvoicesAll    = [];
+    this.supTotalInvoice        = 0;
+    this.supTotalPaid           = 0;
+    this.supTotalDebitNote      = 0;
+    this.supTotalAdvance        = 0;
     this.supTotalNetOutstanding = 0;
-    this.supTotalPayable = 0;
-
-    this.payInvSelectAll = false;
-    this.amountEditedManually = false;
-    this.payInvPage = 1;
+    this.supTotalPayable        = 0;
+    this.payInvSelectAll        = false;
+    this.amountEditedManually   = false;
+    this.payInvPage             = 1;
+    this.invoiceCurrencyId      = 0;
+    this.invoiceCurrencyName    = '';
+    this.invoiceFxRate          = 1;
   }
 
   onPaySupplierChange(): void {
-    this.payAmount = 0;
-    this.amountEditedManually = false;
-    this.supplierInvoicesAll = [];
-    this.payInvSelectAll = false;
-    this.payInvPage = 1;
-
-    this.supTotalInvoice = 0;
-    this.supTotalPaid = 0;
-    this.supTotalDebitNote = 0;
-    this.supTotalAdvance = 0;
+    this.payAmount              = 0;
+    this.amountEditedManually   = false;
+    this.supplierInvoicesAll    = [];
+    this.payInvSelectAll        = false;
+    this.payInvPage             = 1;
+    this.supTotalInvoice        = 0;
+    this.supTotalPaid           = 0;
+    this.supTotalDebitNote      = 0;
+    this.supTotalAdvance        = 0;
     this.supTotalNetOutstanding = 0;
-    this.supTotalPayable = 0;
+    this.supTotalPayable        = 0;
+    this.invoiceCurrencyId      = 0;
+    this.invoiceCurrencyName    = '';
+    this.invoiceFxRate          = 1;
+
+    // ✅ Default SGD always
+    this.setDefaultPaymentCurrency();
 
     if (!this.paySupplierId) return;
 
@@ -566,42 +584,45 @@ loadPermission(): void {
 
         this.supplierInvoicesAll = invoiceRows
           .map((x: any) => this.mapInvoiceRow(x))
-          .sort(
-            (a: any, b: any) =>
-              new Date(a.invoiceDate).getTime() - new Date(b.invoiceDate).getTime()
-          )
+          .sort((a: any, b: any) =>
+            new Date(a.invoiceDate).getTime() - new Date(b.invoiceDate).getTime())
           .map((inv: any) => {
-            const beforeAdvance = Number(inv.outstandingBeforeAdvance || 0);
-            const existingAdvance = Number(inv.advanceAmount || 0);
-            const extraAdvance = existingAdvance > 0 ? 0 : Math.min(beforeAdvance, remainingAdvance);
-
-            inv.advanceAmount = Number((existingAdvance + extraAdvance).toFixed(2));
-            inv.outstandingAmount = Number(
-              Math.max(beforeAdvance - inv.advanceAmount, 0).toFixed(2)
-            );
+            const before        = Number(inv.outstandingBeforeAdvance || 0);
+            const existing      = Number(inv.advanceAmount || 0);
+            const extra         = existing > 0 ? 0 : Math.min(before, remainingAdvance);
+            inv.advanceAmount       = Number((existing + extra).toFixed(2));
+            inv.outstandingAmount   = Number(Math.max(before - inv.advanceAmount, 0).toFixed(2));
             inv.payableAfterAdvance = inv.outstandingAmount;
-
-            remainingAdvance = Number(Math.max(remainingAdvance - extraAdvance, 0).toFixed(2));
+            remainingAdvance        = Number(Math.max(remainingAdvance - extra, 0).toFixed(2));
             return inv;
           })
           .filter((x: any) => Number(x.outstandingBeforeAdvance || 0) > 0);
 
         this.supplierInvoicesAll.forEach(x => {
-          this.supTotalInvoice += Number(x.grandTotal || 0);
-          this.supTotalPaid += Number(x.paidAmount || 0);
-          this.supTotalDebitNote += Number(x.debitNoteAmount || 0);
-          this.supTotalAdvance += Number(x.advanceAmount || 0);
-          this.supTotalNetOutstanding += Number(x.outstandingAmount || 0);
-          this.supTotalPayable += Number(x.payableAfterAdvance || 0);
+          this.supTotalInvoice        += Number(x.grandTotal          || 0);
+          this.supTotalPaid           += Number(x.paidAmount          || 0);
+          this.supTotalDebitNote      += Number(x.debitNoteAmount     || 0);
+          this.supTotalAdvance        += Number(x.advanceAmount       || 0);
+          this.supTotalNetOutstanding += Number(x.outstandingAmount   || 0);
+          this.supTotalPayable        += Number(x.payableAfterAdvance || 0);
         });
 
-        this.supTotalInvoice = Number(this.supTotalInvoice.toFixed(2));
-        this.supTotalPaid = Number(this.supTotalPaid.toFixed(2));
-        this.supTotalDebitNote = Number(this.supTotalDebitNote.toFixed(2));
-        this.supTotalAdvance = Number(this.supTotalAdvance.toFixed(2));
+        this.supTotalInvoice        = Number(this.supTotalInvoice.toFixed(2));
+        this.supTotalPaid           = Number(this.supTotalPaid.toFixed(2));
+        this.supTotalDebitNote      = Number(this.supTotalDebitNote.toFixed(2));
+        this.supTotalAdvance        = Number(this.supTotalAdvance.toFixed(2));
         this.supTotalNetOutstanding = Number(this.supTotalNetOutstanding.toFixed(2));
-        this.supTotalPayable = Number(this.supTotalPayable.toFixed(2));
+        this.supTotalPayable        = Number(this.supTotalPayable.toFixed(2));
 
+        // ✅ Store invoice currency (reference only)
+        const first              = this.supplierInvoicesAll[0];
+        this.invoiceCurrencyId   = Number(first?.currencyId   || 0);
+        this.invoiceCurrencyName = first?.currencyName        || '';
+        this.invoiceFxRate       = Number(first?.fxRate       || 1);
+
+        // ✅ Payment currency = SGD (default, user can change)
+        this.setDefaultPaymentCurrency();
+        this.recalcPaymentBase();
         this.recalcBankBalanceAfterPayment();
       },
       error: () => Swal.fire('Error', 'Failed to load supplier invoices', 'error')
@@ -617,32 +638,26 @@ loadPermission(): void {
 
   onInvoiceCheckboxChange(inv: any, checked: boolean): void {
     inv.isSelected = checked;
-
-    this.payInvSelectAll =
-      this.supplierInvoicesAll.length > 0 &&
+    this.payInvSelectAll = this.supplierInvoicesAll.length > 0 &&
       this.supplierInvoicesAll.every(x => x.isSelected);
-
     this.amountEditedManually = false;
     this.recalcSelectedAmount();
   }
 
   recalcSelectedAmount(): void {
     if (this.amountEditedManually) return;
-
     let total = 0;
     this.supplierInvoicesAll.forEach(x => {
       if (x.isSelected) total += Number(x.payableAfterAdvance || 0);
     });
-
     this.payAmount = Number(total.toFixed(2));
     this.recalcBankBalanceAfterPayment();
+    this.recalcPaymentBase();
   }
 
   onBankChange(): void {
     const bank = this.bankAccounts.find((x: any) =>
-      Number(x.id || x.bankId || x.BankId) === Number(this.selectedBankId)
-    );
-
+      Number(x.id || x.bankId || x.BankId) === Number(this.selectedBankId));
     this.bankAvailableBalance = Number(bank?.availableBalance || bank?.AvailableBalance || 0);
     this.recalcBankBalanceAfterPayment();
   }
@@ -660,114 +675,126 @@ loadPermission(): void {
   onAmountInputChange(): void {
     this.amountEditedManually = true;
     this.recalcBankBalanceAfterPayment();
+    this.recalcPaymentBase();
   }
 
   recalcBankBalanceAfterPayment(): void {
-    if (this.bankAvailableBalance == null) {
-      this.bankBalanceAfterPayment = null;
-      return;
-    }
-
+    if (this.bankAvailableBalance == null) { this.bankBalanceAfterPayment = null; return; }
     this.bankBalanceAfterPayment =
       Number(this.bankAvailableBalance || 0) - Number(this.payAmount || 0);
   }
 
+  // ✅ FxRate + Exchange Gain/Loss
+  recalcPaymentBase(): void {
+    const fx  = Number(this.payFxRate || 1);
+    const amt = Number(this.payAmount || 0);
+
+    // If paying in SGD (base) → amountBase = amount (no conversion)
+    const baseCurrId = this.getBaseCurrencyId();
+    if (Number(this.paymentCurrencyId) === baseCurrId) {
+      this.payAmountBase       = amt;
+      this.payExchangeGainLoss = 0;
+      return;
+    }
+
+    // Foreign currency payment
+    this.payAmountBase = +(amt * fx).toFixed(2);
+
+    // Exchange Gain/Loss = payment FxRate vs invoice FxRate
+    const invFx = Number(this.invoiceFxRate || 1);
+    if (
+      this.invoiceCurrencyId === Number(this.paymentCurrencyId) &&
+      Math.abs(invFx - fx) > 0.000001 &&
+      amt > 0
+    ) {
+      this.payExchangeGainLoss = +(amt * fx - amt * invFx).toFixed(2);
+    } else {
+      this.payExchangeGainLoss = 0;
+    }
+  }
+
   postPayment(): void {
     if (!this.paySupplierId) {
-      Swal.fire('Warning', 'Select supplier', 'warning');
-      return;
+      Swal.fire('Warning', 'Select supplier', 'warning'); return;
     }
 
     const selected = this.supplierInvoicesAll.filter(x => x.isSelected);
-
     if (selected.length === 0) {
-      Swal.fire('Warning', 'Select at least one invoice', 'warning');
-      return;
+      Swal.fire('Warning', 'Select at least one invoice', 'warning'); return;
     }
 
     const selectedAdvanceTotal = selected.reduce(
-      (sum, x) => sum + Number(x.advanceAmount || 0),
-      0
-    );
+      (sum, x) => sum + Number(x.advanceAmount || 0), 0);
 
     if ((!this.payAmount || this.payAmount <= 0) && selectedAdvanceTotal <= 0) {
-      Swal.fire('Warning', 'Amount is zero', 'warning');
-      return;
+      Swal.fire('Warning', 'Amount is zero', 'warning'); return;
     }
 
-    if (
-      Number(this.payAmount || 0) > 0 &&
-      (this.payMethodId === 2 || this.payMethodId === 3) &&
-      !this.selectedBankId
-    ) {
-      Swal.fire('Warning', 'Select Bank Account', 'warning');
-      return;
+    if (Number(this.payAmount || 0) > 0 &&
+        (this.payMethodId === 2 || this.payMethodId === 3) && !this.selectedBankId) {
+      Swal.fire('Warning', 'Select Bank Account', 'warning'); return;
     }
 
-    const requests =
-      selected.length === 1
-        ? [
-            this.apSvc.createPayment({
-              supplierInvoiceId: selected[0].id,
-              supplierId: this.paySupplierId,
-              paymentDate: this.payDate,
-              paymentMethodId: this.payMethodId,
-              referenceNo: this.payReference,
-              amount: Number(this.payAmount || 0),
-              advanceAppliedAmount: Number(selected[0].advanceAmount || 0),
-              notes: this.payNotes,
-              bankAccountId: this.selectedBankId,
-              bankId: this.selectedBankId,
-              createdBy: this.userId,
-              countryId: Number(localStorage.getItem('countryId') || 1)
-            })
-          ]
-        : selected.map(inv =>
-            this.apSvc.createPayment({
-              supplierInvoiceId: inv.id,
-              supplierId: this.paySupplierId,
-              paymentDate: this.payDate,
-              paymentMethodId: this.payMethodId,
-              referenceNo: this.payReference,
-              amount: Number(inv.payableAfterAdvance || 0),
-              advanceAppliedAmount: Number(inv.advanceAmount || 0),
-              notes: this.payNotes,
-              bankAccountId: this.selectedBankId,
-              bankId: this.selectedBankId,
-              createdBy: this.userId,
-              countryId: Number(localStorage.getItem('countryId') || 1)
-            })
-          );
+    const baseCurrId  = this.getBaseCurrencyId();
+    const isBaseCurr  = Number(this.paymentCurrencyId) === baseCurrId;
+
+    const buildPayload = (inv: any, amount: number) => ({
+      supplierInvoiceId:    inv.id,
+      supplierId:           this.paySupplierId,
+      paymentDate:          this.payDate,
+      paymentMethodId:      this.payMethodId,
+      referenceNo:          this.payReference,
+      amount:               amount,
+      advanceAppliedAmount: Number(inv.advanceAmount || 0),
+      notes:                this.payNotes,
+      bankAccountId:        this.selectedBankId,
+      bankId:               this.selectedBankId,
+      createdBy:            this.userId,
+      countryId:            Number(localStorage.getItem('countryId') || 1),
+      // ✅ FxRate fields
+      fxRate:               isBaseCurr ? 1 : this.payFxRate,
+      amountBase:           isBaseCurr ? amount : +(amount * this.payFxRate).toFixed(2),
+      currencyName:         this.paymentCurrencyName, // ✅ SGD or INR
+      currencyId:           this.paymentCurrencyId,
+      companyCurrencyId:    baseCurrId
+    });
+
+    const requests = selected.length === 1
+      ? [this.apSvc.createPayment(buildPayload(selected[0], Number(this.payAmount || 0)))]
+      : selected.map(inv =>
+          this.apSvc.createPayment(buildPayload(inv, Number(inv.payableAfterAdvance || 0))));
 
     forkJoin(requests).subscribe({
       next: (results: any[]) => {
         const allOk = results.every(r => r?.isSuccess !== false);
-
         if (!allOk) {
           const err = results.find(r => r?.isSuccess === false);
-          Swal.fire('Warning', err?.message || 'Some payments failed', 'warning');
-          return;
+          Swal.fire('Warning', err?.message || 'Some payments failed', 'warning'); return;
         }
 
-        const cashPaid = Number(this.payAmount || 0);
+        const cashPaid             = Number(this.payAmount || 0);
         const selectedPayableTotal = selected.reduce(
-          (sum, x) => sum + Number(x.payableAfterAdvance || 0),
-          0
-        );
+          (sum, x) => sum + Number(x.payableAfterAdvance || 0), 0);
+
+        const exchangeMsg = this.payExchangeGainLoss !== 0
+          ? `<hr/><p style="color:${this.payExchangeGainLoss > 0 ? '#dc3545' : '#28a745'}">
+               Exchange ${this.payExchangeGainLoss > 0 ? 'Loss' : 'Gain'}:
+               <b>${Math.abs(this.payExchangeGainLoss).toFixed(2)} SGD</b>
+             </p>` : '';
 
         Swal.fire({
-          icon: 'success',
-          title: 'Payment Posted',
+          icon: 'success', title: 'Payment Posted',
           html: `
             <div style="text-align:left;font-size:14px;line-height:1.7">
-              <p>Supplier payment posted successfully.</p>
-              <hr/>
-              <p>Advance Adjusted: <b>${selectedAdvanceTotal.toFixed(2)}</b></p>
-              <p>Cash / Bank Paid: <b>${cashPaid.toFixed(2)}</b></p>
-              <p>Total Cleared: <b>${(selectedAdvanceTotal + cashPaid).toFixed(2)}</b></p>
-              <p>Balance Payable: <b>${Math.max(selectedPayableTotal - cashPaid, 0).toFixed(2)}</b></p>
-            </div>
-          `
+              <p>Payment posted successfully.</p><hr/>
+              <p>Advance: <b>${selectedAdvanceTotal.toFixed(2)}</b></p>
+              <p>Paid: <b>${cashPaid.toFixed(2)} ${this.paymentCurrencyName}</b></p>
+              ${!isBaseCurr ? `
+                <p>FX Rate: <b>${this.payFxRate}</b></p>
+                <p>Base (SGD): <b>${this.payAmountBase.toFixed(2)} SGD</b></p>` : ''}
+              <p>Balance: <b>${Math.max(selectedPayableTotal - cashPaid, 0).toFixed(2)}</b></p>
+              ${exchangeMsg}
+            </div>`
         });
 
         if (this.selectedBankId && this.bankBalanceAfterPayment != null) {
@@ -775,7 +802,6 @@ loadPermission(): void {
             bankHeadId: this.selectedBankId,
             newBalance: this.bankBalanceAfterPayment
           }).subscribe({ error: () => {} });
-
           this.loadBankAccounts();
         }
 
@@ -785,7 +811,6 @@ loadPermission(): void {
       },
       error: err => {
         const msg = err?.error?.message || err?.message || 'Payment failed';
-
         if (msg.toLowerCase().includes('locked')) {
           Swal.fire('Period Locked', msg, 'error');
           this.checkPeriodLockForDate(this.payDate);
@@ -797,39 +822,40 @@ loadPermission(): void {
   }
 
   resetPaymentForm(): void {
-    this.payDate = new Date().toISOString().substring(0, 10);
-    this.payMethodId = 2;
-    this.payReference = '';
-    this.payAmount = 0;
-    this.payNotes = '';
-    this.amountEditedManually = false;
-    this.selectedBankId = null;
-    this.bankAvailableBalance = null;
+    this.payDate                 = new Date().toISOString().substring(0, 10);
+    this.payMethodId             = 2;
+    this.payReference            = '';
+    this.payAmount               = 0;
+    this.payNotes                = '';
+    this.amountEditedManually    = false;
+    this.selectedBankId          = null;
+    this.bankAvailableBalance    = null;
     this.bankBalanceAfterPayment = null;
+    this.payFxRate               = 1;
+    this.payAmountBase           = 0;
+    this.payExchangeGainLoss     = 0;
+    this.invoiceCurrencyId       = 0;
+    this.invoiceCurrencyName     = '';
+    this.invoiceFxRate           = 1;
+    this.setDefaultPaymentCurrency();
   }
 
   getPaymentMethodName(id?: number): string {
     switch (Number(id || 0)) {
-      case 1:
-        return 'Cash';
-      case 2:
-        return 'Bank Transfer';
-      case 3:
-        return 'Cheque';
-      case 4:
-        return 'Other';
-      default:
-        return 'Other';
+      case 1: return 'Cash';
+      case 2: return 'Bank Transfer';
+      case 3: return 'Cheque';
+      default: return 'Other';
     }
   }
 
   get payListTotalPages(): number {
-    return Math.max(1, Math.ceil((this.payments.length || 0) / this.payListPageSize));
+    return Math.max(1, Math.ceil(this.payments.length / this.payListPageSize));
   }
 
   get pagedPayments(): any[] {
-    const start = (this.payListPage - 1) * this.payListPageSize;
-    return this.payments.slice(start, start + this.payListPageSize);
+    const s = (this.payListPage - 1) * this.payListPageSize;
+    return this.payments.slice(s, s + this.payListPageSize);
   }
 
   payListGoToPage(p: number): void {
@@ -838,12 +864,12 @@ loadPermission(): void {
   }
 
   get payInvTotalPages(): number {
-    return Math.max(1, Math.ceil((this.supplierInvoicesAll.length || 0) / this.payInvPageSize));
+    return Math.max(1, Math.ceil(this.supplierInvoicesAll.length / this.payInvPageSize));
   }
 
   get pagedSupplierInvoices(): any[] {
-    const start = (this.payInvPage - 1) * this.payInvPageSize;
-    return this.supplierInvoicesAll.slice(start, start + this.payInvPageSize);
+    const s = (this.payInvPage - 1) * this.payInvPageSize;
+    return this.supplierInvoicesAll.slice(s, s + this.payInvPageSize);
   }
 
   payInvGoToPage(p: number): void {
@@ -855,29 +881,27 @@ loadPermission(): void {
     this.apSvc.getSupplierAdvances().subscribe({
       next: (res: any) => {
         const rows = res?.data || res || [];
-
         this.supplierAdvances = rows.map((a: any) => ({
-          id: Number(a.id || a.Id || 0),
-          advanceNo: a.advanceNo || a.AdvanceNo || '',
-          supplierId: Number(a.supplierId || a.SupplierId || 0),
-          supplierName: a.supplierName || a.SupplierName || '',
-          advanceDate: a.advanceDate || a.AdvanceDate,
+          id:             Number(a.id            || a.Id            || 0),
+          advanceNo:      a.advanceNo            || a.AdvanceNo     || '',
+          supplierId:     Number(a.supplierId    || a.SupplierId    || 0),
+          supplierName:   a.supplierName         || a.SupplierName  || '',
+          advanceDate:    a.advanceDate          || a.AdvanceDate,
           originalAmount: Number(a.originalAmount || a.OriginalAmount || 0),
           utilisedAmount: Number(a.utilisedAmount || a.UtilisedAmount || 0),
-          balanceAmount: Number(a.balanceAmount || a.BalanceAmount || 0)
+          balanceAmount:  Number(a.balanceAmount  || a.BalanceAmount  || 0),
+          currencyName:   a.currencyName         || a.CurrencyName   || 'SGD',
+          fxRate:         Number(a.fxRate        || a.FxRate         || 1),
+          amountBase:     Number(a.amountBase    || a.AmountBase     || 0)
         }));
 
         this.advPage = 1;
-        this.totalAdvanceAmount = 0;
-        this.totalAdvanceUtilised = 0;
-        this.totalAdvanceBalance = 0;
-
+        this.totalAdvanceAmount = this.totalAdvanceUtilised = this.totalAdvanceBalance = 0;
         this.supplierAdvances.forEach(a => {
-          this.totalAdvanceAmount += Number(a.originalAmount || 0);
+          this.totalAdvanceAmount   += Number(a.originalAmount || 0);
           this.totalAdvanceUtilised += Number(a.utilisedAmount || 0);
-          this.totalAdvanceBalance += Number(a.balanceAmount || 0);
+          this.totalAdvanceBalance  += Number(a.balanceAmount  || 0);
         });
-
         this.updatePagedAdvances();
       },
       error: () => Swal.fire('Error', 'Failed to load supplier advances', 'error')
@@ -885,12 +909,12 @@ loadPermission(): void {
   }
 
   updatePagedAdvances(): void {
-    const start = (this.advPage - 1) * this.advPageSize;
-    this.pagedSupplierAdvances = this.supplierAdvances.slice(start, start + this.advPageSize);
+    const s = (this.advPage - 1) * this.advPageSize;
+    this.pagedSupplierAdvances = this.supplierAdvances.slice(s, s + this.advPageSize);
   }
 
   get advTotalPages(): number {
-    return Math.max(1, Math.ceil((this.supplierAdvances.length || 0) / this.advPageSize));
+    return Math.max(1, Math.ceil(this.supplierAdvances.length / this.advPageSize));
   }
 
   advGoToPage(p: number): void {
@@ -899,38 +923,26 @@ loadPermission(): void {
     this.updatePagedAdvances();
   }
 
-  openNewAdvance(): void {
-    this.router.navigate(['/financial/ap-advance']);
-  }
+  openNewAdvance(): void { this.router.navigate(['/financial/ap-advance']); }
 
   loadMatch(): void {
     this.apSvc.getMatchList().subscribe({
       next: (res: any) => {
         const rows = res?.data || res || [];
-
         this.matchRows = rows.map((x: any) => {
-          const poAmount = Number(x.poAmount || x.PoAmount || x.poAmt || x.PoAmt || 0);
-          const invoiceAmount = Number(
-            x.invoiceAmount || x.InvoiceAmount || x.invoiceAmt || x.InvoiceAmt || 0
-          );
-
-          const status =
-            Math.abs(poAmount - invoiceAmount) <= 0.01 && poAmount > 0
-              ? 'Matched'
-              : x.status || x.Status || 'Mismatch';
-
+          const poAmt  = Number(x.poAmount      || x.PoAmount      || 0);
+          const invAmt = Number(x.invoiceAmount || x.InvoiceAmount || 0);
+          const status = Math.abs(poAmt - invAmt) <= 0.01 && poAmt > 0
+            ? 'Matched' : x.status || x.Status || 'Mismatch';
           return {
             ...x,
-            poNo: x.poNo || x.PoNo || x.purchaseOrderNo || x.PurchaseOrderNo || '',
-            grnNo: x.grnNo || x.GrnNo || x.goodsReceiptNo || x.GoodsReceiptNo || '',
-            invoiceNo: x.invoiceNo || x.InvoiceNo || '',
+            poNo:         x.poNo         || x.PoNo         || '',
+            grnNo:        x.grnNo        || x.GrnNo        || '',
+            invoiceNo:    x.invoiceNo    || x.InvoiceNo    || '',
             supplierName: x.supplierName || x.SupplierName || '',
-            poAmount,
-            invoiceAmount,
-            status
+            poAmount: poAmt, invoiceAmount: invAmt, status
           };
         });
-
         this.matchPage = 1;
       },
       error: () => Swal.fire('Error', 'Failed to load match list', 'error')
@@ -946,12 +958,12 @@ loadPermission(): void {
   }
 
   get matchTotalPages(): number {
-    return Math.max(1, Math.ceil((this.matchRows.length || 0) / this.matchPageSize));
+    return Math.max(1, Math.ceil(this.matchRows.length / this.matchPageSize));
   }
 
   get pagedMatchRows(): any[] {
-    const start = (this.matchPage - 1) * this.matchPageSize;
-    return this.matchRows.slice(start, start + this.matchPageSize);
+    const s = (this.matchPage - 1) * this.matchPageSize;
+    return this.matchRows.slice(s, s + this.matchPageSize);
   }
 
   matchGoToPage(p: number): void {
@@ -969,26 +981,23 @@ loadPermission(): void {
     this.selectedInvoiceForEmail = null;
   }
 
-  onEmailModalBackdropClick(event: MouseEvent): void {
-    this.closeEmailModal();
-  }
+  onEmailModalBackdropClick(event: MouseEvent): void { this.closeEmailModal(); }
 
   checkPeriodLockForDate(dateStr: string): void {
     if (!dateStr) return;
-
     this.apSvc.getPeriodStatus(dateStr).subscribe({
       next: (res: any) => {
-        this.isPeriodLocked = !!res.isLocked;
+        this.isPeriodLocked    = !!res.isLocked;
         this.currentPeriodName = res.periodName || '';
       },
-      error: () => {
-        this.isPeriodLocked = false;
-        this.currentPeriodName = '';
-      }
+      error: () => { this.isPeriodLocked = false; this.currentPeriodName = ''; }
     });
   }
 
   onPayDateChange(): void {
     this.checkPeriodLockForDate(this.payDate);
+    if (Number(this.paymentCurrencyId) !== this.getBaseCurrencyId()) {
+      this.fetchPaymentFxRate();
+    }
   }
 }

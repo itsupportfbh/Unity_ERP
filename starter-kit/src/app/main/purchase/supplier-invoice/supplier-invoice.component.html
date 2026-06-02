@@ -35,18 +35,47 @@
             </div>
           </div>
 
+          <!-- ✅ Summary with Currency + Base SGD -->
           <div class="pinX__summary">
             <div class="pinX__sumItem">
               <div class="k">Sub-total</div>
-              <div class="v">{{ subTotal | number:'1.2-2' }}</div>
+              <div class="v">
+                {{ subTotal | number:'1.2-2' }}
+                <span *ngIf="currencyName" style="font-size:0.8rem; color:#6b7280;">
+                  {{ currencyName }}
+                </span>
+              </div>
             </div>
+
             <div class="pinX__sumItem">
               <div class="k">Tax</div>
               <div class="v">{{ taxAmount | number:'1.2-2' }}</div>
             </div>
+
             <div class="pinX__sumItem pinX__sumItem--strong">
               <div class="k">Net Payable</div>
-              <div class="v">{{ netPayable | number:'1.2-2' }}</div>
+              <div class="v">
+                {{ netPayable | number:'1.2-2' }}
+                <span *ngIf="currencyName" style="font-size:0.8rem;">
+                  {{ currencyName }}
+                </span>
+              </div>
+            </div>
+
+            <!-- ✅ Base SGD — foreign currency மட்டும் -->
+            <div class="pinX__sumItem" *ngIf="fxRate !== 1 && currencyName">
+              <div class="k" style="color:#2E5F73;">Base (SGD)</div>
+              <div class="v" style="color:#2E5F73; font-weight:700;">
+                {{ netPayableBase | number:'1.2-2' }} SGD
+              </div>
+            </div>
+
+            <!-- ✅ FX Rate badge -->
+            <div class="pinX__sumItem" *ngIf="fxRate !== 1 && currencyName">
+              <div class="k">FX Rate</div>
+              <div class="v" style="color:#6b7280; font-size:0.82rem;">
+                1 {{ currencyName }} = {{ fxRate | number:'1.4-4' }} SGD
+              </div>
             </div>
           </div>
         </div>
@@ -54,117 +83,151 @@
         <!-- Header fields -->
         <div class="pinX__section">
           <div class="pinX__grid">
+
             <!-- GRN combobox -->
-         <!-- GRN combobox -->
-<div class="pinX__field pinX__field--grn grn-combobox">
-  <label class="pinX__label">GRN #</label>
+            <div class="pinX__field pinX__field--grn grn-combobox">
+              <label class="pinX__label">GRN #</label>
 
-  <div class="pinX__combo">
-  <input type="text"
-       class="pinX__input pinX__input--withCaret"
-       [value]="grnSearch"
-       (input)="onGrnSearch($event)"
-       (focus)="onGrnFocus()"
-       placeholder="Search GRN…"
-       [disabled]="isGstLocked" />
+              <div class="pinX__combo">
+                <input type="text"
+                  class="pinX__input pinX__input--withCaret"
+                  [value]="grnSearch"
+                  (input)="onGrnSearch($event)"
+                  (focus)="onGrnFocus()"
+                  placeholder="Search GRN…"
+                  [disabled]="isGstLocked" />
 
-    <button
-      type="button"
-      class="pinX__caretBtn"
-      (click)="grnOpen = !grnOpen"
-      aria-label="Toggle GRN list">
-      <i class="fas fa-chevron-down"></i>
-    </button>
-  </div>
+                <button type="button"
+                  class="pinX__caretBtn"
+                  (click)="grnOpen = !grnOpen"
+                  aria-label="Toggle GRN list">
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+              </div>
 
-  <input type="hidden" formControlName="grnIds" />
-  <input type="hidden" formControlName="grnNos" />
+              <input type="hidden" formControlName="grnIds" />
+              <input type="hidden" formControlName="grnNos" />
 
-  <div *ngIf="grnOpen" class="pinX__dropdown">
-    <div class="pinX__dropHead">Choose GRN</div>
+              <div *ngIf="grnOpen" class="pinX__dropdown">
+                <div class="pinX__dropHead">Choose GRN</div>
 
-    <button
-      type="button"
-      class="pinX__dropItemOneLine"
-      *ngFor="let g of grnFiltered"
-      [class.pinX__dropItem--blocked]="isGrnBlocked(g)"
-      [attr.title]="getGrnBlockMessage(g)"
-      (click)="toggleGrn(g)">
+                <button type="button"
+                  class="pinX__dropItemOneLine"
+                  *ngFor="let g of grnFiltered"
+                  [class.pinX__dropItem--blocked]="isGrnBlocked(g)"
+                  [attr.title]="getGrnBlockMessage(g)"
+                  (click)="toggleGrn(g)">
 
-      <span class="xNo">{{ g.grnNo }}</span>
-      <span class="xSep">•</span>
-      <span class="xPo" *ngIf="g.poNo">PO: {{ g.poNo }}</span>
+                  <span class="xNo">{{ g.grnNo }}</span>
+                  <span class="xSep">•</span>
+                  <span class="xPo" *ngIf="g.poNo">PO: {{ g.poNo }}</span>
 
-      <span class="ml-auto" *ngIf="isGrnBlocked(g)">
-        <i class="fas fa-exclamation-triangle text-warning"></i>
-      </span>
+                  <!-- ✅ Currency badge -->
+                  <span class="xCur" *ngIf="g.currencyName"
+                    style="font-size:0.75rem; color:#2E5F73; margin-left:4px;">
+                    {{ g.currencyName }}
+                  </span>
 
-      <span class="ml-auto" *ngIf="!isGrnBlocked(g) && isGrnSelected(g.id)">
-        <i class="fas fa-check text-success"></i>
-      </span>
-    </button>
+                  <span class="ml-auto" *ngIf="isGrnBlocked(g)">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                  </span>
 
-    <div *ngIf="!grnFiltered?.length" class="pinX__dropEmpty">No results</div>
-  </div>
+                  <span class="ml-auto" *ngIf="!isGrnBlocked(g) && isGrnSelected(g.id)">
+                    <i class="fas fa-check text-success"></i>
+                  </span>
+                </button>
 
-  <div class="mt-50" *ngIf="selectedGrnNos?.length">
-    <span class="pinX__grnBadge" *ngFor="let n of selectedGrnNos">
-      {{ n }}
-      <i class="fas fa-times" (click)="removeGrnByNo(n)"></i>
-    </span>
-  </div>
-</div>
+                <div *ngIf="!grnFiltered?.length" class="pinX__dropEmpty">
+                  No results
+                </div>
+              </div>
+
+              <div class="mt-50" *ngIf="selectedGrnNos?.length">
+                <span class="pinX__grnBadge" *ngFor="let n of selectedGrnNos">
+                  {{ n }}
+                  <i class="fas fa-times" (click)="removeGrnByNo(n)"></i>
+                </span>
+              </div>
+            </div>
 
             <!-- Supplier -->
             <div class="pinX__field">
               <label class="pinX__label">Supplier</label>
-              <input type="text" class="pinX__input pinX__input--readonly" formControlName="supplierName" readonly />
+              <input type="text"
+                class="pinX__input pinX__input--readonly"
+                formControlName="supplierName"
+                readonly />
             </div>
 
             <!-- Invoice Date -->
             <div class="pinX__field">
               <label class="pinX__label">Invoice Date</label>
-             <input type="date"
-       class="pinX__input"
-       [min]="minDate"
-       formControlName="invoiceDate"
-       (change)="checkGstLock()" />
-       <div *ngIf="isGstLocked" class="alert alert-warning mt-1">
-  {{ gstLockMessage || 'GST period is locked. Supplier invoice cannot be changed.' }}
-</div>
+              <input type="date"
+                class="pinX__input"
+                [min]="minDate"
+                formControlName="invoiceDate"
+                (change)="checkGstLock()" />
+              <div *ngIf="isGstLocked" class="alert alert-warning mt-1">
+                {{ gstLockMessage || 'GST period is locked.' }}
+              </div>
             </div>
 
             <!-- Amount -->
             <div class="pinX__field">
-              <label class="pinX__label">Amount</label>
-              <input type="number" class="pinX__input pinX__input--readonly" formControlName="amount" [readonly]="true" />
+              <label class="pinX__label">
+                Amount
+                <span *ngIf="currencyName"
+                  style="font-size:0.8rem; color:#6b7280; margin-left:4px;">
+                  ({{ currencyName }})
+                </span>
+              </label>
+              <input type="number"
+                class="pinX__input pinX__input--readonly"
+                formControlName="amount"
+                [readonly]="true" />
+            </div>
+
+            <!-- ✅ Currency / FX Rate — foreign currency-ஆ இருந்தா show -->
+            <div class="pinX__field" *ngIf="fxRate !== 1 && currencyName">
+              <label class="pinX__label">Currency / FX Rate</label>
+              <div style="display:flex; gap:8px;">
+                <input type="text"
+                  class="pinX__input pinX__input--readonly"
+                  [value]="currencyName"
+                  readonly
+                  style="width:80px;" />
+                <input type="number"
+                  class="pinX__input pinX__input--readonly"
+                  [value]="fxRate"
+                  readonly />
+              </div>
+            </div>
+
+            <!-- ✅ Base Amount SGD — foreign currency-ஆ இருந்தா show -->
+            <div class="pinX__field" *ngIf="fxRate !== 1 && currencyName">
+              <label class="pinX__label">Base Amount (SGD)</label>
+              <input type="text"
+                class="pinX__input pinX__input--readonly"
+                [value]="netPayableBase | number:'1.2-2'"
+                readonly
+                style="color:#2E5F73; font-weight:600;" />
             </div>
 
             <!-- Tax -->
             <div class="pinX__field">
               <label class="pinX__label">Tax</label>
-
               <div class="pinX__taxRow">
-                <!-- <select class="pinX__input pinX__select" formControlName="taxMode" (change)="onTaxModeChange()">
-                  <option value="EXCLUSIVE">Exclusive</option>
-                  <option value="INCLUSIVE">Inclusive</option>
-                  <option value="ZERO">0% (No tax)</option>
-                </select> -->
-
                 <div class="pinX__taxPct">
-                 <input type="number"
-       class="pinX__input"
-       formControlName="tax"
-       (input)="onTaxChange()"
-       placeholder="%" />
+                  <input type="number"
+                    class="pinX__input"
+                    formControlName="tax"
+                    (input)="onTaxChange()"
+                    placeholder="%" />
                   <span class="pinX__suffix">%</span>
                 </div>
               </div>
-
-              <!-- <div class="pinX__hint">
-                Mode: <b>{{ taxMode }}</b>
-              </div> -->
             </div>
+
           </div>
         </div>
 
@@ -174,39 +237,37 @@
             <div class="pinX__sectionTitle">
               <i class="fas fa-list"></i> Lines
             </div>
-
-            <!-- <div class="pinX__scrollHint">
-              <i class="fas fa-arrows-left-right"></i> Scroll →
-            </div> -->
           </div>
 
-          <!-- ✅ scroll container (NO overlay inside) -->
           <div class="pinX__tableScroll">
             <div class="pinX__tableShell">
-
               <div class="pinX__tableWrap pinX__tableFixed">
+
                 <!-- Header -->
-             <div class="pinX__tableHead pinX__rowFixed">
-  <div class="c1">Item</div>
-  <div class="c2">Ledger Name</div>
-  <div class="c3">Location</div>
-  <div class="c4">Qty</div>
-  <div class="c5">Price</div>
-  <div class="c6">Discount(%)</div>
-  <div class="c7">TaxCode</div>
-  <div class="c8">Tax Amt</div>
-  <div class="c9">Total</div>
-</div>
+                <div class="pinX__tableHead pinX__rowFixed">
+                  <div class="c1">Item</div>
+                  <div class="c2">Ledger Name</div>
+                  <div class="c3">Location</div>
+                  <div class="c4">Qty</div>
+                  <div class="c5">Price</div>
+                  <div class="c6">Discount(%)</div>
+                  <div class="c7">TaxCode</div>
+                  <div class="c8">Tax Amt</div>
+                  <div class="c9">Total ({{ currencyName || 'SGD' }})</div>
+                </div>
 
                 <div formArrayName="lines">
-                  <div *ngIf="lines.length === 0" class="pinX__empty">No lines yet.</div>
+                  <div *ngIf="lines.length === 0" class="pinX__empty">
+                    No lines yet.
+                  </div>
 
                   <div *ngFor="let row of lines.controls; let i = index; trackBy: trackByLine"
-                       [formGroupName]="i"
-                       class="pinX__tr pinX__rowFixed">
+                    [formGroupName]="i"
+                    class="pinX__tr pinX__rowFixed">
 
                     <div class="c1">
-                      <input class="pinX__input pinX__cellInput" formControlName="item" />
+                      <input class="pinX__input pinX__cellInput"
+                        formControlName="item" />
                     </div>
 
                     <div class="c2">
@@ -220,56 +281,67 @@
                         placeholder="Search / choose Ledger Name..."
                         formControlName="budgetLineId"
                         appendTo="body"
-                        dropdownPosition="bottom"
-                      >
+                        dropdownPosition="bottom">
                         <ng-template ng-label-tmp let-item="item">
-                          <span class="pinX__ngLabel" [title]="item?.label">{{ item?.label }}</span>
+                          <span class="pinX__ngLabel" [title]="item?.label">
+                            {{ item?.label }}
+                          </span>
                         </ng-template>
                         <ng-template ng-option-tmp let-item="item">
-                          <div class="pinX__ngOption" [title]="item.label">{{ item.label }}</div>
+                          <div class="pinX__ngOption" [title]="item.label">
+                            {{ item.label }}
+                          </div>
                         </ng-template>
                       </ng-select>
                     </div>
 
                     <div class="c3">
-                      <input class="pinX__input pinX__cellInput" formControlName="location" />
+                      <input class="pinX__input pinX__cellInput"
+                        formControlName="location" />
                     </div>
 
                     <div class="c4">
-                      <input type="number" class="pinX__input pinX__cellInput" formControlName="qty" (input)="onCellChange1(i)" />
+                      <input type="number"
+                        class="pinX__input pinX__cellInput"
+                        formControlName="qty"
+                        (input)="onCellChange1(i)" />
                     </div>
 
                     <div class="c5">
-                      <input type="number" class="pinX__input pinX__cellInput" formControlName="unitPrice" (input)="onCellChange(i)" />
+                      <input type="number"
+                        class="pinX__input pinX__cellInput"
+                        formControlName="unitPrice"
+                        (input)="onCellChange(i)" />
                     </div>
 
                     <div class="c6">
-                      <input type="number" class="pinX__input pinX__cellInput" formControlName="discountPct" (input)="onCellChange(i)" />
+                      <input type="number"
+                        class="pinX__input pinX__cellInput"
+                        formControlName="discountPct"
+                        (input)="onCellChange(i)" />
                     </div>
-<div class="c7">
-  <select class="pinX__input pinX__cellInput"
-          formControlName="taxMode"
-          (change)="onLineTaxChange(i)">
-    <option value="EXCLUSIVE">Exclusive</option>
-    <option value="INCLUSIVE">Inclusive</option>
-    <option value="ZERO">0%</option>
-  </select>
-</div>
 
-<div class="c8">
-  {{ (row.get('taxAmt')?.value || 0) | number:'1.2-2' }}
-</div>
+                    <div class="c7">
+                      <select class="pinX__input pinX__cellInput"
+                        formControlName="taxMode"
+                        (change)="onLineTaxChange(i)">
+                        <option value="EXCLUSIVE">Exclusive</option>
+                        <option value="INCLUSIVE">Inclusive</option>
+                        <option value="ZERO">0%</option>
+                      </select>
+                    </div>
 
-<div class="c9">
-  {{ (row.get('lineGrandTotal')?.value || 0) | number:'1.2-2' }}
-</div>
- 
+                    <div class="c8">
+                      {{ (row.get('taxAmt')?.value || 0) | number:'1.2-2' }}
+                    </div>
+
+                    <div class="c9">
+                      {{ (row.get('lineGrandTotal')?.value || 0) | number:'1.2-2' }}
+                    </div>
+
                   </div>
                 </div>
               </div>
-
-              <!-- ✅ fade only OUTSIDE the table area -->
-              <!-- <div class="pinX__scrollFadeRight" aria-hidden="true"></div> -->
             </div>
           </div>
 
@@ -283,7 +355,13 @@
               <div class="pinX__totalsRows">
                 <div class="r">
                   <div class="k">Sub-total</div>
-                  <div class="v">{{ subTotal | number:'1.2-2' }}</div>
+                  <div class="v">
+                    {{ subTotal | number:'1.2-2' }}
+                    <span *ngIf="currencyName"
+                      style="font-size:0.8rem; color:#6b7280;">
+                      {{ currencyName }}
+                    </span>
+                  </div>
                 </div>
 
                 <div class="r">
@@ -293,7 +371,8 @@
 
                 <div class="r">
                   <div class="k">
-                   Tax <span class="muted">({{ form.get('tax')?.value || 0 }}%)</span>
+                    Tax
+                    <span class="muted">({{ form.get('tax')?.value || 0 }}%)</span>
                   </div>
                   <div class="v">{{ taxAmount | number:'1.2-2' }}</div>
                 </div>
@@ -302,13 +381,46 @@
 
                 <div class="r strong">
                   <div class="k">Grand total</div>
-                  <div class="v">{{ grandTotal | number:'1.2-2' }}</div>
+                  <div class="v">
+                    {{ grandTotal | number:'1.2-2' }}
+                    <span *ngIf="currencyName"
+                      style="font-size:0.8rem;">
+                      {{ currencyName }}
+                    </span>
+                  </div>
                 </div>
 
                 <div class="r strong brand">
                   <div class="k">Net Payable</div>
-                  <div class="v">{{ netPayable | number:'1.2-2' }}</div>
+                  <div class="v">
+                    {{ netPayable | number:'1.2-2' }}
+                    <span *ngIf="currencyName"
+                      style="font-size:0.8rem;">
+                      {{ currencyName }}
+                    </span>
+                  </div>
                 </div>
+
+                <!-- ✅ Base SGD row -->
+                <div class="r" *ngIf="fxRate !== 1 && currencyName">
+                  <div class="k" style="color:#2E5F73;">
+                    Base (SGD)
+                  </div>
+                  <div class="v" style="color:#2E5F73; font-weight:700;">
+                    {{ netPayableBase | number:'1.2-2' }} SGD
+                  </div>
+                </div>
+
+                <!-- ✅ FX Rate row -->
+                <div class="r" *ngIf="fxRate !== 1 && currencyName">
+                  <div class="k" style="color:#6b7280; font-size:0.82rem;">
+                    FX Rate
+                  </div>
+                  <div class="v" style="color:#6b7280; font-size:0.82rem;">
+                    1 {{ currencyName }} = {{ fxRate | number:'1.4-4' }} SGD
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
@@ -316,7 +428,10 @@
 
         <!-- Actions -->
         <div class="pinX__actions">
-          <button class="pinX__btn pinX__btn--primary" type="button" [disabled]="form.invalid" (click)="save('HOLD')">
+          <button class="pinX__btn pinX__btn--primary"
+            type="button"
+            [disabled]="form.invalid"
+            (click)="save('HOLD')">
             <i class="fas fa-save"></i>
             <span>Save</span>
           </button>
@@ -327,7 +442,6 @@
   </form>
 </div>
 
-<!-- In supplier-invoice.component.html, find the OCR modal tag and make sure it's: -->
 <app-ocr-upload-modal
   [open]="ocrOpen"
   [createdBy]="userId?.toString()"

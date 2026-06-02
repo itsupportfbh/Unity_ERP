@@ -288,71 +288,130 @@
     </div>
   </ng-container>
 
-  <ng-container *ngIf="activeTab === 'financeTax'">
-    <div class="content-shell">
-      <div class="content-shell__body">
-        <form [formGroup]="financeForm">
-          <div class="section-card main-card">
-            <div class="section-card__head">
-              <div>
-                <h3>Finance & Tax</h3>
-                <p>Configure currency and tax settings</p>
-              </div>
-            </div>
-
-            <div class="section-card__body">
-              <div class="form-grid cols-3">
-                <div class="form-field">
-                  <label>Base Currency</label>
-                  <input type="text" class="app-control app-control--sm" formControlName="baseCurrency" />
-                </div>
-
-                <div class="form-field">
-                  <label>Country</label>
-                  <input type="text" class="app-control app-control--sm" formControlName="country" />
-                </div>
-
-                <div class="form-field">
-                  <label>Tax Mode</label>
-                  <input type="text" class="app-control app-control--sm" formControlName="taxMode" />
-                </div>
-
-                <div class="form-field">
-                  <label>GST No</label>
-                  <input type="text" class="app-control app-control--sm" formControlName="gstNo" />
-                </div>
-
-                <div class="form-field">
-                  <label>Filing Frequency</label>
-                  <input type="text" class="app-control app-control--sm" formControlName="filingFrequency" />
-                </div>
-
-                <div class="form-field">
-                  <label>Decimal Places</label>
-                  <input type="number" class="app-control app-control--sm" formControlName="decimalPlaces" />
-                </div>
-
-                <div class="form-field">
-                  <label>Default Output Tax Code</label>
-                  <input type="text" class="app-control app-control--sm" formControlName="defaultOutputTaxCode" />
-                </div>
-
-                <div class="form-field">
-                  <label>Default Input Tax Code</label>
-                  <input type="text" class="app-control app-control--sm" formControlName="defaultInputTaxCode" />
-                </div>
-
-                <div class="form-field">
-                  <label>Rounding Rule</label>
-                  <input type="text" class="app-control app-control--sm" formControlName="roundingRule" />
-                </div>
-              </div>
+ <ng-container *ngIf="activeTab === 'financeTax'">
+  <div class="content-shell">
+    <div class="content-shell__body">
+      <form [formGroup]="financeForm">
+        <div class="section-card main-card">
+          <div class="section-card__head">
+            <div>
+              <h3>Finance & Tax</h3>
+              <p>Configure currency and tax settings</p>
             </div>
           </div>
-        </form>
-      </div>
+
+          <div class="section-card__body">
+            <div class="form-grid cols-3">
+
+              <!-- ✅ Base Currency — dropdown -->
+              <div class="form-field">
+                <label>Base Currency</label>
+                <div class="relative dropdown-scope" (click)="$event.stopPropagation()">
+                  <input
+                    type="text"
+                    class="app-control app-control--sm"
+                    [(ngModel)]="currencySearch"
+                    [ngModelOptions]="{standalone: true}"
+                    (input)="filterCurrency()"
+                    (focus)="currencyDdOpen = true"
+                    placeholder="Search currency..."
+                  />
+                  <button type="button"
+                    (click)="currencyDdOpen = !currencyDdOpen"
+                    style="position:absolute; right:6px; top:50%; transform:translateY(-50%);
+                           background:none; border:none; cursor:pointer; font-size:0.7rem;">▼</button>
+
+                  <ul *ngIf="currencyDdOpen && filteredCurrencies.length"
+                    style="position:absolute; top:100%; left:0; right:0; background:#fff;
+                           border:1px solid #d1d5db; border-radius:4px; max-height:180px;
+                           overflow-y:auto; z-index:100; margin:0; padding:0; list-style:none;">
+                    <li *ngFor="let c of filteredCurrencies"
+                      (click)="selectCurrency(c)"
+                      style="padding:6px 10px; cursor:pointer; font-size:0.85rem;"
+                      onmouseover="this.style.background='#f0f4ff'"
+                      onmouseout="this.style.background=''">
+                      {{ c.currencyName }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- ✅ Country — dropdown -->
+              <div class="form-field">
+                <label>Country</label>
+                <div class="relative dropdown-scope" (click)="$event.stopPropagation()">
+                  <input
+                    type="text"
+                    class="app-control app-control--sm"
+                    [(ngModel)]="countrySearch"
+                    [ngModelOptions]="{standalone: true}"
+                    (input)="filterCountry()"
+                    (focus)="countryDdOpen = true"
+                    placeholder="Search country..."
+                  />
+                  <button type="button"
+                    (click)="countryDdOpen = !countryDdOpen"
+                    style="position:absolute; right:6px; top:50%; transform:translateY(-50%);
+                           background:none; border:none; cursor:pointer; font-size:0.7rem;">▼</button>
+
+                  <ul *ngIf="countryDdOpen && filteredCountries.length"
+                    style="position:absolute; top:100%; left:0; right:0; background:#fff;
+                           border:1px solid #d1d5db; border-radius:4px; max-height:180px;
+                           overflow-y:auto; z-index:100; margin:0; padding:0; list-style:none;">
+                    <li *ngFor="let co of filteredCountries"
+                      (click)="selectCountry(co)"
+                      style="padding:6px 10px; cursor:pointer; font-size:0.85rem;"
+                      onmouseover="this.style.background='#f0f4ff'"
+                      onmouseout="this.style.background=''">
+                      {{ co.countryName }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- மற்றதெல்லாம் same -->
+              <div class="form-field">
+                <label>Tax Mode</label>
+                <input type="text" class="app-control app-control--sm" formControlName="taxMode" />
+              </div>
+
+              <div class="form-field">
+                <label>GST No</label>
+                <input type="text" class="app-control app-control--sm" formControlName="gstNo" />
+              </div>
+
+              <div class="form-field">
+                <label>Filing Frequency</label>
+                <input type="text" class="app-control app-control--sm" formControlName="filingFrequency" />
+              </div>
+
+              <div class="form-field">
+                <label>Decimal Places</label>
+                <input type="number" class="app-control app-control--sm" formControlName="decimalPlaces" />
+              </div>
+
+              <div class="form-field">
+                <label>Default Output Tax Code</label>
+                <input type="text" class="app-control app-control--sm" formControlName="defaultOutputTaxCode" />
+              </div>
+
+              <div class="form-field">
+                <label>Default Input Tax Code</label>
+                <input type="text" class="app-control app-control--sm" formControlName="defaultInputTaxCode" />
+              </div>
+
+              <div class="form-field">
+                <label>Rounding Rule</label>
+                <input type="text" class="app-control app-control--sm" formControlName="roundingRule" />
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
-  </ng-container>
+  </div>
+</ng-container>
 
   <ng-container *ngIf="activeTab === 'defaults'">
     <div class="content-shell">

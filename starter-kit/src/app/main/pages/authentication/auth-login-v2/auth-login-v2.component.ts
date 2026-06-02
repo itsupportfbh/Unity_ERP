@@ -140,6 +140,8 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
     localStorage.setItem('organizationId', String(data.organizationId ?? ''));
     localStorage.setItem('companies', JSON.stringify(data.companies || []));
     localStorage.setItem('requiresCompanySelection', String(!!data.requiresCompanySelection));
+    localStorage.setItem('companyCurrencyId',   String(data.companyCurrencyId   ?? 0));
+localStorage.setItem('companyCurrencyName', data.companyCurrencyName ?? '');
   }
 
   private clearOldLoginStorage(): void {

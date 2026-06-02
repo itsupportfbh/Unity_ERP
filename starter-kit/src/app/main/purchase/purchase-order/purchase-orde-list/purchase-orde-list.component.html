@@ -271,7 +271,21 @@
 </ngx-datatable-column>
 
           <ngx-datatable-column name="Currency/FX" prop="currencyName" [width]="120"></ngx-datatable-column>
+<!-- இருக்கும் Currency/FX column-க்கு அடுத்து -->
+<ngx-datatable-column name="Net Total" prop="netTotal" [width]="140">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <span>{{ row.netTotal | number:'1.2-2' }} {{ row.currencyName }}</span>
+  </ng-template>
+</ngx-datatable-column>
 
+<!-- Base SGD column -->
+<ngx-datatable-column name="Net Total (Base)" [width]="150">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <span style="color:#2E5F73; font-weight:600;">
+      {{ getNetTotalBase(row) | number:'1.2-2' }} SGD
+    </span>
+  </ng-template>
+</ngx-datatable-column>
           <ngx-datatable-column name="PO Date" prop="poDate" [width]="120">
             <ng-template let-row="row" ngx-datatable-cell-template>
               {{ row.poDate | date:'dd-MM-yyyy' }}
@@ -406,7 +420,12 @@
               <th style="padding:10px 12px; text-align:right; font-weight:600; width:120px;">Price</th>
               <th style="padding:10px 12px; text-align:right; font-weight:600; width:120px;">Discount(%)</th>
                <th style="padding:10px 12px; text-align:right; font-weight:600; width:110px;">Tax Amt</th>
-              <th style="padding:10px 12px; text-align:right; font-weight:600; width:120px;">Total</th>
+             <th style="padding:10px 12px; text-align:right; font-weight:600;">
+  Total ({{ modalCurrencyName }})
+</th>
+<th style="padding:10px 12px; text-align:right; font-weight:600;">
+  Base (SGD)
+</th>
             </tr>
           </thead>
 
@@ -443,9 +462,12 @@
               <td style="padding:10px 12px; text-align:right; font-variant-numeric:tabular-nums;">
                 {{ l.taxAmt || 0 }}
               </td>
-              <td style="padding:10px 12px; text-align:right; font-variant-numeric:tabular-nums;">
-                {{ l.total || 0 }}
-              </td>
+             <td style="padding:10px 12px; text-align:right;">
+  {{ l.total || 0 | number:'1.2-2' }}
+</td>
+<td style="padding:10px 12px; text-align:right; color:#2E5F73; font-weight:600;">
+  {{ (l.total * modalFxRate) | number:'1.2-2' }}
+</td>
             </tr>
 
             <tr *ngIf="!modalLines?.length">
@@ -458,10 +480,12 @@
           <tfoot *ngIf="modalLines?.length">
             <tr style="background:#f3f4f6; border-top:1px solid #e5e7eb;">
               <td colspan="9" style="padding:10px 12px; font-weight:700;">Total</td>
-              <td
-                style="padding:10px 12px; text-align:right; font-weight:700; font-variant-numeric:tabular-nums;">
-                {{ modalTotal }}
-              </td>
+<td style="padding:10px 12px; text-align:right; font-weight:700;">
+  {{ modalTotal | number:'1.2-2' }}
+</td>
+<td style="padding:10px 12px; text-align:right; font-weight:700; color:#2E5F73;">
+  {{ (modalTotal * modalFxRate) | number:'1.2-2' }} SGD
+</td>
             </tr>
           </tfoot>
         </table>

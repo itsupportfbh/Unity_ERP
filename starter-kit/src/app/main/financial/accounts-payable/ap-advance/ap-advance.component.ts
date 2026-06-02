@@ -29,6 +29,8 @@ interface GRNHeader {
   poLines?: string;
   currencyId?: number;
   tax?: number;
+    fxRate?: number;       // ✅ add
+  currencyName?: string;
 }
 
 @Component({
@@ -71,7 +73,11 @@ export class ApAdvanceComponent implements OnInit {
   bankName: string | null = null;
 
   saving = false;
-
+fxRate: number = 1;
+currencyId: number | null = null;
+currencyName: string = '';
+amountBase: number = 0;
+exchangeRateLoading = false;
   constructor(
     private apSvc: AccountsPayableService,
     private supplierSvc: SupplierService,
@@ -124,13 +130,15 @@ export class ApAdvanceComponent implements OnInit {
           id: x.id,
           grnNo: x.grnNo,
           poid: x.poid,
-          poNo: x.poNo,
+         poNo: x.purchaseOrderNo ?? x.poNo,
           tax: x.tax,
           supplierId: x.supplierId,
           supplierName: x.supplierName,
           grnJson: x.grnJson,
           poLines: x.poLines,
-          currencyId: x.currencyId
+          currencyId: x.currencyId,
+           fxRate: Number(x.fxRate || 1),       // ✅ add
+        currencyName: x.currencyName || ''
         }));
 
         // by default show all (or filter by supplier later)
@@ -169,22 +177,29 @@ export class ApAdvanceComponent implements OnInit {
     }
   }
 
-  private applyGrnSupplierFilter(): void {
-    if (this.supplierId) {
-      this.grnFiltered = this.grnList.filter(g => g.supplierId === this.supplierId);
-    } else {
-      this.grnFiltered = [...this.grnList];
-    }
+private applyGrnSupplierFilter(): void {
+  if (this.supplierId) {
+    this.grnFiltered = this.grnList.filter(
+      g => Number(g.supplierId) === Number(this.supplierId)  // ✅ Number() cast important
+    );
+  } else {
+    this.grnFiltered = [...this.grnList];
   }
+}
 
   onDateChange(): void {
     // if you want, you can validate period lock from AP service here
   }
 
-  onAmountChange(): void {
-    this.recalcBankBalanceAfterAdvance();
-  }
-
+onAmountChange(): void {
+  this.recalcBankBalanceAfterAdvance();
+  this.calculateAmountBase(); // ✅ add
+}
+calculateAmountBase(): void {
+  const amt = Number(this.amount || 0);
+  const fx = Number(this.fxRate || 1);
+  this.amountBase = +(amt * fx).toFixed(2);
+}
   onMethodChange(): void {
     if (this.methodId === 2 || this.methodId === 3) {
       this.onBankChange();
@@ -245,18 +260,26 @@ export class ApAdvanceComponent implements OnInit {
     }
   }
 
-  selectGrn(g: GRNHeader): void {
-    this.grnId = g.id;
-    this.grnNo = g.grnNo;
-    this.grnSearch = g.grnNo;
-    this.grnOpen = false;
+selectGrn(g: GRNHeader): void {
+   console.log('Selected GRN:', g);  
+  console.log('currencyName:', g.currencyName);
+  console.log('fxRate:', g.fxRate);
+  this.grnId = g.id;
+  this.grnNo = g.grnNo;
+  this.grnSearch = g.grnNo;
+  this.grnOpen = false;
 
-    // If supplier not selected, auto pick from GRN supplier
-    if (!this.supplierId && g.supplierId) {
-      this.supplierId = g.supplierId;
-      this.onSupplierChange();
-    }
+  // ✅ currency set பண்ணுங்க
+  this.currencyId = g.currencyId || null;
+  this.fxRate = Number(g.fxRate || 1);
+  this.currencyName = g.currencyName || '';  // ← இது empty-ஆ இருக்கா?
+  this.calculateAmountBase();
+
+  if (!this.supplierId && g.supplierId) {
+    this.supplierId = g.supplierId;
+    this.onSupplierChange();
   }
+}
 
   // Close GRN dropdown when clicking outside
   @HostListener('document:click', ['$event'])
@@ -297,7 +320,10 @@ export class ApAdvanceComponent implements OnInit {
       methodId: this.methodId,
       bankHeadId: this.bankHeadId,
       grnId: this.grnId,
-      grnNo: this.grnNo || null
+      grnNo: this.grnNo || null,
+      currencyId: this.currencyId,   
+    fxRate: this.fxRate,           
+    amountBase: this.amountBase 
     };
 
     this.apSvc.createSupplierAdvance(payload).subscribe({

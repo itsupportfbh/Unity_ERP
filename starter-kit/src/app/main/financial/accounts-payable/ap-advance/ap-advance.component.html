@@ -97,7 +97,39 @@
                     placeholder="e.g. Advance Ref / Internal No" />
                 </div>
               </div>
+<div class="form-row row mb-1" *ngIf="currencyName">
+  <div class="col-md-4 col-12 mb-1 mb-md-0">
+    <label class="ap-label">Currency</label>
+    <input type="text"
+           class="form-control"
+           [value]="currencyName"
+           disabled />
+  </div>
 
+  <div class="col-md-4 col-12 mb-1 mb-md-0">
+    <label class="ap-label">
+      FX Rate
+      <span *ngIf="exchangeRateLoading"
+            style="font-size:0.75rem; color:#0e3a4c; margin-left:6px;">
+        ⏳ Fetching...
+      </span>
+    </label>
+    <input type="number"
+           class="form-control text-right"
+           [(ngModel)]="fxRate"
+           (input)="calculateAmountBase()"
+           [disabled]="currencyName === 'SGD'" />
+  </div>
+
+  <div class="col-md-4 col-12">
+    <label class="ap-label">Base Amount (SGD)</label>
+    <input type="text"
+           class="form-control text-right"
+           [value]="amountBase | number:'1.2-2'"
+           disabled
+           style="color:#2E5F73; font-weight:600;" />
+  </div>
+</div>
               <!-- GRN combobox row -->
               <div class="form-row row mb-1">
                 <div class="col-md-6 col-12">
@@ -246,14 +278,38 @@
                   </span>
                 </div>
 
-                <div class="ap-advance-summary-divider"></div>
+             <!-- ✅ Advance Amount row மாத்துங்க -->
+<div class="ap-advance-summary-divider"></div>
 
-                <div class="ap-advance-summary-row total">
-                  <span class="label">Advance Amount</span>
-                  <span class="value">
-                    {{ amount || 0 | number:'1.2-2' }}
-                  </span>
-                </div>
+<!-- Currency row -->
+<div class="ap-advance-summary-row" *ngIf="currencyName">
+  <span class="label">Currency</span>
+  <span class="value">{{ currencyName }}</span>
+</div>
+
+<!-- FX Rate row -->
+<div class="ap-advance-summary-row" 
+     *ngIf="currencyName && currencyName !== 'SGD'">
+  <span class="label">FX Rate</span>
+  <span class="value">{{ fxRate | number:'1.4-4' }}</span>
+</div>
+
+<!-- Advance Amount -->
+<div class="ap-advance-summary-row total">
+  <span class="label">Advance Amount</span>
+  <span class="value">
+    {{ amount || 0 | number:'1.2-2' }} {{ currencyName || 'SGD' }}
+  </span>
+</div>
+
+<!-- Base SGD — only show if foreign currency -->
+<div class="ap-advance-summary-row" 
+     *ngIf="currencyName && currencyName !== 'SGD' && amountBase > 0">
+  <span class="label">Base Amount (SGD)</span>
+  <span class="value" style="color:#2E5F73; font-weight:700;">
+    {{ amountBase | number:'1.2-2' }} SGD
+  </span>
+</div>
 
               </div>
             </div>

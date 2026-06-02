@@ -19,6 +19,8 @@ import { TaxCodeService } from 'app/main/master/taxcode/taxcode.service';
 import { CountriesService } from 'app/main/master/countries/countries.service';
 import { POTempService } from '../purchase-order-temp.service';
 import { ItemMasterService } from 'app/main/inventory/item-master/item-master.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from 'environments/environment';
 
 @Component({
   selector: 'app-purchase-order-create',
@@ -129,7 +131,9 @@ export class PurchaseOrderCreateComponent implements OnInit {
   private cleanHash = '';
   private fromReorderPrId: number | null = null;
   private fromAlertPrId: number | null = null;
-
+exchangeRate: number | null = null;
+exchangeRateLoading = false;
+companyCurrencyId = Number(localStorage.getItem('companyCurrencyId') || 0);
   constructor(
     private poService: POService,
     private router: Router,
@@ -146,7 +150,8 @@ export class PurchaseOrderCreateComponent implements OnInit {
     private taxCodeService: TaxCodeService,
     private _countriesService: CountriesService,
     private poTempService: POTempService,
-    private itemsSvc: ItemMasterService
+    private itemsSvc: ItemMasterService,
+    private http: HttpClient, 
   ) {
     this.userId = localStorage.getItem('id') || 'System';
   }
@@ -235,6 +240,9 @@ export class PurchaseOrderCreateComponent implements OnInit {
           if (selectedCurrency) {
             this.searchTexts['currency'] = selectedCurrency.currencyName;
             this.showShipping = selectedCurrency.currencyName?.trim().toUpperCase() !== 'SGD';
+            if (this.poHdr.fxRate === 0) {
+    this.fetchExchangeRate(selectedCurrency.id, selectedCurrency.currencyName);
+  }
           }
 
           const selectedIncoterms = this.incoterms?.find((d: any) => d.id === this.poHdr.incotermsId);
@@ -369,7 +377,70 @@ export class PurchaseOrderCreateComponent implements OnInit {
 
     setTimeout(() => this.markClean());
   }
+fetchExchangeRate(currencyId: number, currencyName?: string): void {
+  debugger
+  const fromCurrencyId = Number(currencyId || 0); // Supplier currency: SGD
+  const toCurrencyId = Number(this.companyCurrencyId || 0); // Company currency: INR
 
+  if (!fromCurrencyId || !toCurrencyId) {
+    this.poHdr.fxRate = 0;
+    Swal.fire({
+      icon: 'warning',
+      title: 'Company Currency Missing',
+      text: 'Company base currency not found. Please set companyCurrencyId.',
+      confirmButtonColor: '#0e3a4c'
+    });
+    return;
+  }
+
+  if (fromCurrencyId === toCurrencyId) {
+    this.poHdr.fxRate = 1;
+    this.exchangeRate = 1;
+    this.calculateFxTotal();
+    return;
+  }
+
+  this.exchangeRateLoading = true;
+  const today = new Date().toISOString().substring(0, 10);
+
+  this.http.get<any>(`${environment.apiUrl}/ExchangeRate/GetRate`, {
+    params: {
+      fromCurrencyId: fromCurrencyId.toString(),
+      toCurrencyId: toCurrencyId.toString(),
+      rateDate: today
+    }
+  }).subscribe({
+    next: (res) => {
+      this.exchangeRateLoading = false;
+
+      if (res?.isSuccess && res?.data?.rate) {
+        this.poHdr.fxRate = Number(res.data.rate); // 62
+        this.exchangeRate = Number(res.data.rate);
+      } else {
+        this.poHdr.fxRate = 0;
+        this.exchangeRate = null;
+
+        Swal.fire({
+          icon: 'warning',
+          title: 'No Exchange Rate',
+          text: `No rate found for ${currencyName || 'selected currency'}.`,
+          confirmButtonColor: '#0e3a4c'
+        });
+      }
+
+      this.calculateFxTotal();
+    },
+    error: () => {
+      this.exchangeRateLoading = false;
+      this.poHdr.fxRate = 0;
+      this.exchangeRate = null;
+      this.calculateFxTotal();
+    }
+  });
+}
+isBaseCurrency(): boolean {
+  return Number(this.poHdr.currencyId || 0) === Number(this.companyCurrencyId || 0);
+}
   ngAfterViewChecked(): void {
     feather.replace();
   }
@@ -716,37 +787,34 @@ export class PurchaseOrderCreateComponent implements OnInit {
   }
 
   select(field: string, item: any) {
+    debugger
     this.searchTexts[field] = item.name || item.paymentTermsName || item.currencyName || item.incotermsName || '';
 
     switch (field) {
-      case 'supplier':
-        this.poHdr.supplierId = item.id;
+  case 'supplier':
+  this.poHdr.supplierId = item.id;
 
-        const found = this.currencies.find(x => x.id === item.currencyId);
-        this.poHdr.currencyId = item.currencyId;
-        this.poHdr.currencyName = found?.currencyName || found?.name || '';
-        this.poHdr.fxRate = this.poHdr.currencyName === 'SGD' ? 1 : 0;
-        this.searchTexts['currency'] = this.poHdr.currencyName;
+  const found = this.currencies?.find((x: any) => x.id === item.currencyId);
+  this.poHdr.currencyId   = item.currencyId || 0;
+  this.poHdr.currencyName = found?.currencyName || found?.name || '';
+  this.searchTexts['currency'] = this.poHdr.currencyName;
 
-        if (this.poHdr.currencyName === 'SGD') {
-          const foundGst = this.countries.find(x => x.id === item.countryId);
-          this.poHdr.tax = foundGst?.gstPercentage;
-          this.showShipping = false;
-        } else {
-          this.poHdr.tax = 0;
-          this.showShipping = true;
-        }
-
-        const foundTerms = this.paymentTerms.find(x => x.id === item.termsId);
-        if (foundTerms) {
-          this.searchTexts['paymentTerms'] = foundTerms.paymentTermsName;
-          this.poHdr.paymentTermId = foundTerms.id;
-        }
-
-        this.poLines.forEach(l => this.calculateLineTotal(l));
-        this.applySupplierPricesToAllLines();
-        break;
-
+  // ✅ item.currencyId use பண்ணு, this.poHdr.currencyId இல்ல
+  if (Number(item.currencyId) === Number(this.companyCurrencyId)) {
+    this.poHdr.fxRate   = 1;
+    this.exchangeRate   = 1;
+    this.showShipping   = false;
+    const foundGst = this.countries?.find((x: any) => x.id === item.countryId);
+    this.poHdr.tax  = foundGst?.gstPercentage || 0;
+    this.calculateFxTotal();
+  } else {
+    this.poHdr.fxRate  = 0;
+    this.poHdr.tax     = 0;
+    this.showShipping  = true;
+    // ✅ item.currencyId pass பண்ணு
+    this.fetchExchangeRate(item.currencyId, this.poHdr.currencyName);
+  }
+  break;
       case 'paymentTerms':
         this.poHdr.paymentTermId = item.id;
         break;
@@ -1222,17 +1290,16 @@ export class PurchaseOrderCreateComponent implements OnInit {
   round(val: number) {
     return Math.round((val + Number.EPSILON) * 100) / 100;
   }
+calculateFxTotal() {
+  const fx = Number(this.poHdr.fxRate) || 0;
+  const netTotal = this.poTotals?.netTotal || 0;
 
-  calculateFxTotal() {
-    const fx = Number(this.poHdr.fxRate) || 1;
-    const netTotal = this.poTotals?.netTotal || 0;
-
-    if (this.isSGDCurrency()) {
-      this.poHdr.netTotalBase = netTotal;
-    } else {
-      this.poHdr.netTotalBase = Number((netTotal * fx).toFixed(2));
-    }
+  if (this.isBaseCurrency()) {
+    this.poHdr.netTotalBase = netTotal;
+  } else {
+    this.poHdr.netTotalBase = Number((netTotal * fx).toFixed(2));
   }
+}
 
   notify(msg: string) {
     alert(msg);

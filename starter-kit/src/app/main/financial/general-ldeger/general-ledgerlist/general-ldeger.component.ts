@@ -8,38 +8,42 @@ interface CoaFlat {
   headCode: number;
   headName: string;
   parentHead: number;
-
   headType: string;
   rootHeadType: string;
-
   openingBalance: number;
   debit: number;
   credit: number;
   balance: number;
-
+  debitBase: number;    // ✅
+  creditBase: number;   // ✅
+  balanceBase: number;  // ✅
   isControl: boolean;
   isActive?: boolean;
 }
 
 interface CoaNode extends CoaFlat {
-  // OWN values coming from API (this head only)
   ownOpening: number;
   ownDebit: number;
   ownCredit: number;
   ownBalance: number;
+  ownDebitBase: number;   // ✅
+  ownCreditBase: number;  // ✅
 
-
-  // TOTALS (own + all descendants)
   totalOpening: number;
   totalDebit: number;
   totalCredit: number;
   totalBalance: number;
+  totalDebitBase: number;   // ✅
+  totalCreditBase: number;  // ✅
+  totalBalanceBase: number; // ✅
 
-  // DISPLAY values for the table (depends on expanded/collapsed)
   openingBalance: number;
   debit: number;
   credit: number;
   balance: number;
+  debitBase: number;    // ✅
+  creditBase: number;   // ✅
+  balanceBase: number;  // ✅
 
   children: CoaNode[];
   hasChildren: boolean;
@@ -57,7 +61,7 @@ interface CoaNode extends CoaFlat {
 export class GeneralLdegerComponent implements OnInit {
 
   @ViewChild('table') table: DatatableComponent | undefined;
-isExpanded: boolean = false;
+  isExpanded: boolean = false;
   headervalue = 'General Ledger';
   selectedOption = 10;
   searchValue = '';
@@ -72,12 +76,10 @@ isExpanded: boolean = false;
     this.load();
   }
 
-  // balance = opening + credit - debit
   private calcBalance(opening: number, debit: number, credit: number): number {
     return opening + credit - debit;
   }
 
-  // ================= LOAD DATA FROM API =================
   load(): void {
     this.isLoading = true;
 
@@ -87,7 +89,6 @@ isExpanded: boolean = false;
 
         const flat: CoaFlat[] = (raw || []).map((x: any) => {
           const headName = String(x.headName ?? '').trim();
-
           const isControl =
             !!x.isControl ||
             headName === 'Accounts Payable' ||
@@ -98,47 +99,51 @@ isExpanded: boolean = false;
             headCode: Number(x.headCode ?? 0),
             headName,
             parentHead: x.parentHead == null ? 0 : Number(x.parentHead),
-
             headType: String(x.headType ?? ''),
             rootHeadType: String(x.rootHeadType ?? ''),
-
             openingBalance: Number(x.openingBalance ?? 0),
             debit: Number(x.debit ?? 0),
             credit: Number(x.credit ?? 0),
             balance: Number(x.balance ?? 0),
-
+            // ✅ base fields
+            debitBase:   Number(x.debitBase   ?? x.DebitBase   ?? 0),
+            creditBase:  Number(x.creditBase  ?? x.CreditBase  ?? 0),
+            balanceBase: Number(x.balanceBase ?? x.BalanceBase ?? 0),
             isControl,
             isActive: x.isActive ?? true
           };
         });
 
         const flatActive = flat.filter(r => !!r.isActive);
-
-        const nodesById = new Map<number, CoaNode>();
+        const nodesById   = new Map<number, CoaNode>();
         const nodesByCode = new Map<number, CoaNode>();
 
-        // ---------- CREATE NODES ----------
+        // CREATE NODES
         flatActive.forEach(f => {
           const node: CoaNode = {
             ...f,
+            ownOpening:   f.openingBalance,
+            ownDebit:     f.debit,
+            ownCredit:    f.credit,
+            ownBalance:   f.balance,
+            ownDebitBase:  f.debitBase,   // ✅
+            ownCreditBase: f.creditBase,  // ✅
 
-            // own values from API
-            ownOpening: f.openingBalance,
-            ownDebit:   f.debit,
-            ownCredit:  f.credit,
-            ownBalance: f.balance,
+            totalOpening:    0,
+            totalDebit:      0,
+            totalCredit:     0,
+            totalBalance:    0,
+            totalDebitBase:  0,  // ✅
+            totalCreditBase: 0,  // ✅
+            totalBalanceBase:0,  // ✅
 
-            // totals (filled by computeTotals)
-            totalOpening: 0,
-            totalDebit:   0,
-            totalCredit:  0,
-            totalBalance: 0,
-
-            // display values (filled in rebuildDisplayRows)
             openingBalance: 0,
-            debit: 0,
-            credit: 0,
-            balance: 0,
+            debit:    0,
+            credit:   0,
+            balance:  0,
+            debitBase:   0,  // ✅
+            creditBase:  0,  // ✅
+            balanceBase: 0,  // ✅
 
             children: [],
             hasChildren: false,
@@ -151,9 +156,8 @@ isExpanded: boolean = false;
           nodesByCode.set(node.headCode, node);
         });
 
-        // ---------- BUILD TREE (ParentHead = parent HeadCode) ----------
+        // BUILD TREE
         const roots: CoaNode[] = [];
-
         nodesById.forEach(node => {
           const p = node.parentHead ?? 0;
           if (!p) {
@@ -164,32 +168,28 @@ isExpanded: boolean = false;
               node.parent = parent;
               parent.children.push(node);
             } else {
-              // parent missing → treat as root (safety)
               roots.push(node);
             }
           }
         });
 
-        // ---------- SORT & SET LEVEL / HASCHILDREN ----------
+        // SORT & SET LEVEL
         const sortAndSetLevel = (list: CoaNode[], level: number) => {
           list.sort((a, b) => a.headCode - b.headCode);
           list.forEach(n => {
             n.level = level;
             n.hasChildren = !!(n.children && n.children.length);
-            if (n.hasChildren) {
-              sortAndSetLevel(n.children, level + 1);
-            }
+            if (n.hasChildren) sortAndSetLevel(n.children, level + 1);
           });
         };
         sortAndSetLevel(roots, 0);
 
-        // ---------- COMPUTE TOTALS (own + all descendants) ----------
+        // COMPUTE TOTALS
         roots.forEach(r => this.computeTotals(r));
 
         this.roots = roots;
         this.roots.forEach(r => (r.$$expanded = false));
         this.rebuildDisplayRows();
-
         this.isLoading = false;
       },
       error: (err) => {
@@ -204,36 +204,49 @@ isExpanded: boolean = false;
     });
   }
 
-  // ===== RECURSIVE: totals = own + all descendants =====
-  private computeTotals(node: CoaNode): { opening: number; debit: number; credit: number } {
-    let opening = node.ownOpening ?? 0;
-    let debit   = node.ownDebit   ?? 0;
-    let credit  = node.ownCredit  ?? 0;
+  // ✅ RECURSIVE TOTALS — debitBase + creditBase include
+  private computeTotals(node: CoaNode): {
+    opening: number;
+    debit: number;
+    credit: number;
+    debitBase: number;
+    creditBase: number;
+  } {
+    let opening    = node.ownOpening    ?? 0;
+    let debit      = node.ownDebit      ?? 0;
+    let credit     = node.ownCredit     ?? 0;
+    let debitBase  = node.ownDebitBase  ?? 0;  // ✅
+    let creditBase = node.ownCreditBase ?? 0;  // ✅
 
     if (node.children && node.children.length) {
       node.children.forEach(ch => {
         const t = this.computeTotals(ch);
-        opening += t.opening;
-        debit   += t.debit;
-        credit  += t.credit;
+        opening    += t.opening;
+        debit      += t.debit;
+        credit     += t.credit;
+        debitBase  += t.debitBase;   // ✅
+        creditBase += t.creditBase;  // ✅
       });
     }
 
-    node.totalOpening = opening;
-    node.totalDebit   = debit;
-    node.totalCredit  = credit;
-    node.totalBalance = Math.abs(this.calcBalance(opening, debit, credit));
+    node.totalOpening    = opening;
+    node.totalDebit      = debit;
+    node.totalCredit     = credit;
+    node.totalBalance    = Math.abs(this.calcBalance(opening, debit, credit));
+    node.totalDebitBase  = debitBase;                      // ✅
+    node.totalCreditBase = creditBase;                     // ✅
+    node.totalBalanceBase = Math.abs(debitBase - creditBase); // ✅
 
-    return { opening, debit, credit };
+    return { opening, debit, credit, debitBase, creditBase };
   }
 
-  // ================= FLATTEN TREE & APPLY DISPLAY RULES =================
+  // ✅ FLATTEN TREE — debitBase + creditBase display
   private rebuildDisplayRows(): void {
     const output: CoaNode[] = [];
 
     const visit = (node: CoaNode) => {
       const hasChildren = !!(node.children && node.children.length);
-      let o = 0, d = 0, c = 0;
+      let o = 0, d = 0, c = 0, db = 0, cb = 0;
 
       if (hasChildren) {
         const hasOwn =
@@ -242,33 +255,39 @@ isExpanded: boolean = false;
           (node.ownCredit  ?? 0) !== 0;
 
         if (node.$$expanded) {
-          // EXPANDED
           if (hasOwn) {
-            // show only own movement
-            o = node.ownOpening ?? 0;
-            d = node.ownDebit   ?? 0;
-            c = node.ownCredit  ?? 0;
+            o  = node.ownOpening    ?? 0;
+            d  = node.ownDebit      ?? 0;
+            c  = node.ownCredit     ?? 0;
+            db = node.ownDebitBase  ?? 0;  // ✅
+            cb = node.ownCreditBase ?? 0;  // ✅
           } else {
-            // pure grouping – no own value
-            o = 0; d = 0; c = 0;
+            o = 0; d = 0; c = 0; db = 0; cb = 0;
           }
         } else {
-          // COLLAPSED → show totals (own + all descendants)
-          o = node.totalOpening ?? 0;
-          d = node.totalDebit   ?? 0;
-          c = node.totalCredit  ?? 0;
+          // COLLAPSED → show totals
+          o  = node.totalOpening    ?? 0;
+          d  = node.totalDebit      ?? 0;
+          c  = node.totalCredit     ?? 0;
+          db = node.totalDebitBase  ?? 0;  // ✅
+          cb = node.totalCreditBase ?? 0;  // ✅
         }
       } else {
-        // LEAF → always own values
-        o = node.ownOpening ?? 0;
-        d = node.ownDebit   ?? 0;
-        c = node.ownCredit  ?? 0;
+        // LEAF
+        o  = node.ownOpening    ?? 0;
+        d  = node.ownDebit      ?? 0;
+        c  = node.ownCredit     ?? 0;
+        db = node.ownDebitBase  ?? 0;  // ✅
+        cb = node.ownCreditBase ?? 0;  // ✅
       }
 
       node.openingBalance = o;
-      node.debit = d;
-      node.credit = c;
-      node.balance = Math.abs(this.calcBalance(o, d, c));
+      node.debit          = d;
+      node.credit         = c;
+      node.balance        = Math.abs(this.calcBalance(o, d, c));
+      node.debitBase      = db;                   // ✅
+      node.creditBase     = cb;                   // ✅
+      node.balanceBase    = Math.abs(db - cb);    // ✅
 
       output.push(node);
 
@@ -288,20 +307,15 @@ isExpanded: boolean = false;
       : output;
   }
 
-  // ===== EXPAND / COLLAPSE =====
-toggleRow(row: CoaNode): void {
-  const hasChildren = !!(row.children && row.children.length);
-  if (!hasChildren) return;
+  toggleRow(row: CoaNode): void {
+    const hasChildren = !!(row.children && row.children.length);
+    if (!hasChildren) return;
 
-  // expand/collapse
-  row.$$expanded = !row.$$expanded;
+    row.$$expanded = !row.$$expanded;
+    this.rebuildDisplayRows();
+    this.isExpanded = this.displayRows?.some((r: any) => r.$$expanded) || false;
+  }
 
-  // rebuild rows (your existing logic)
-  this.rebuildDisplayRows();
-
-  // ✅ scrollbar ON only if any parent expanded
-  this.isExpanded = this.displayRows?.some((r: any) => r.$$expanded) || false;
-}
   filterUpdate(): void {
     this.rebuildDisplayRows();
   }

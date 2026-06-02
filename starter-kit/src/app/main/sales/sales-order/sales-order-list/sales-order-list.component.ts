@@ -92,6 +92,12 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   modalLines: SoLine[] = [];
   modalTotal = 0;
 
+  // ✅ GRN Alert modal
+  showGrnAlertModal  = false;
+  grnAlertLines: any[] = [];
+  grnAlertSoNo       = '';
+  grnAlertLoading    = false;
+
   lineCols = {
     uom: true,
     qty: true,
@@ -103,17 +109,13 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     ProcurementStatus: 0
   };
 
-  isPeriodLocked = false;
+  isPeriodLocked    = false;
   currentPeriodName = '';
-
-  userId: number = 0;
-
-  // IMPORTANT: DB/Menu permission code exact ah match aaganum
-  functionId = 'so-list';
-
+  userId: number    = 0;
+  functionId        = 'so-list';
   permission: FunctionPermission;
   isPermissionLoaded = false;
-  isPageLoading = false;
+  isPageLoading      = false;
 
   constructor(
     private salesOrderService: SalesOrderService,
@@ -122,33 +124,22 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     private periodService: PeriodCloseService,
     private permissionService: PermissionService
   ) {
-    this.userId = Number(localStorage.getItem('id') || 0);
+    this.userId    = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
-  ngOnInit(): void {
-    this.loadPermission();
-  }
+  ngOnInit(): void { this.loadPermission(); }
+  ngAfterViewInit(): void  { feather.replace(); }
+  ngAfterViewChecked(): void { feather.replace(); }
 
-  ngAfterViewInit(): void {
-    feather.replace();
-  }
-
-  ngAfterViewChecked(): void {
-    feather.replace();
-  }
-
+  // ===================================================
+  // PERMISSION
+  // ===================================================
   loadPermission(): void {
     if (!this.userId || this.userId <= 0) {
-      this.permission = this.permissionService.getEmptyPermission(this.functionId);
+      this.permission        = this.permissionService.getEmptyPermission(this.functionId);
       this.isPermissionLoaded = true;
-
-      Swal.fire({
-        icon: 'warning',
-        title: 'Access Denied',
-        text: 'User not found. Please login again.',
-        confirmButtonColor: '#0e3a4c'
-      });
+      Swal.fire({ icon: 'warning', title: 'Access Denied', text: 'User not found. Please login again.', confirmButtonColor: '#0e3a4c' });
       return;
     }
 
@@ -156,9 +147,9 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
 
     this.permissionService.getFunctionPermission(this.userId, this.functionId).subscribe({
       next: (res: FunctionPermission) => {
-        this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
+        this.permission        = res || this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
-        this.isPageLoading = false;
+        this.isPageLoading     = false;
 
         if (this.canView()) {
           const today = new Date().toISOString().substring(0, 10);
@@ -166,61 +157,41 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
           this.loadRequests();
           this.prefetchDraftsCount();
         } else {
-          this.rows = [];
+          this.rows     = [];
           this.tempData = [];
         }
       },
       error: (err) => {
         console.error('Permission load error:', err);
-
-        this.permission = this.permissionService.getEmptyPermission(this.functionId);
+        this.permission        = this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
-        this.isPageLoading = false;
-
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Unable to load permission.',
-          confirmButtonColor: '#d33'
-        });
+        this.isPageLoading     = false;
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Unable to load permission.', confirmButtonColor: '#d33' });
       }
     });
   }
 
-  canView(): boolean {
-    return this.permissionService.hasView(this.permission);
-  }
-
-  canCreate(): boolean {
-    return this.permissionService.hasCreate(this.permission);
-  }
-
-  canEdit(): boolean {
-    return this.permissionService.hasEdit(this.permission);
-  }
-
-  canDelete(): boolean {
-    return this.permissionService.hasDelete(this.permission);
-  }
+  canView():   boolean { return this.permissionService.hasView(this.permission); }
+  canCreate(): boolean { return this.permissionService.hasCreate(this.permission); }
+  canEdit():   boolean { return this.permissionService.hasEdit(this.permission); }
+  canDelete(): boolean { return this.permissionService.hasDelete(this.permission); }
 
   getLinesColsCount(): number {
     const dynamicCols = Object.values(this.lineCols).filter(Boolean).length;
-    const fixedCols = 2;
-    return 1 + dynamicCols + fixedCols;
+    return 1 + dynamicCols + 2;
   }
 
+  // ===================================================
+  // PERIOD LOCK
+  // ===================================================
   private checkPeriodLockForDate(dateStr: string): void {
     if (!dateStr) return;
-
     this.periodService.getStatusForDateWithName(dateStr).subscribe({
       next: (res: PeriodStatusDto | null) => {
-        this.isPeriodLocked = !!res?.isLocked;
+        this.isPeriodLocked    = !!res?.isLocked;
         this.currentPeriodName = res?.periodName || '';
       },
-      error: () => {
-        this.isPeriodLocked = false;
-        this.currentPeriodName = '';
-      }
+      error: () => { this.isPeriodLocked = false; this.currentPeriodName = ''; }
     });
   }
 
@@ -234,42 +205,43 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     );
   }
 
+  // ===================================================
+  // SHORTAGE / DRAFT helpers
+  // ===================================================
   getShortageQty(r: any): number {
-    const qty = Number(r?.quantity ?? r?.qty ?? 0);
+    const qty    = Number(r?.quantity ?? r?.qty ?? 0);
     const locked = Number(r?.lockedQty ?? 0);
-    const s = qty - locked;
+    const s      = qty - locked;
     return s > 0 ? s : 0;
   }
 
   private rebuildBlockedSoIds(): void {
     const set = new Set<number>();
-
     for (const r of (this.draftRows ?? [])) {
       const soId = Number(r?.salesOrderId ?? 0);
       if (!soId) continue;
-
-      const shortage = this.getShortageQty(r);
+      const shortage     = this.getShortageQty(r);
       const missingAlloc =
         (r?.warehouseId == null || r?.warehouseId === 0) ||
-        (r?.supplierId == null || r?.supplierId === 0) ||
-        (r?.binId == null || r?.binId === 0);
-
+        (r?.supplierId  == null || r?.supplierId  === 0) ||
+        (r?.binId       == null || r?.binId       === 0);
       if (shortage > 0 || missingAlloc) set.add(soId);
     }
-
     this.blockedSoIds = set;
   }
 
   hasInsufficientQty(row: SoHeader): boolean {
-    const id = Number(row?.id ?? 0);
-    return id > 0 && this.blockedSoIds.has(id);
+    return Number(row?.id ?? 0) > 0 && this.blockedSoIds.has(row.id);
   }
 
+  // ===================================================
+  // LOAD / FILTER
+  // ===================================================
   loadRequests(): void {
     this.salesOrderService.getSO().subscribe({
       next: (res: any) => {
         const list: SoHeader[] = (res ?? []).map((r: any) => ({ ...r }));
-        this.rows = list;
+        this.rows     = list;
         this.tempData = list;
         this.filterUpdate({ target: { value: this.searchValue } });
       },
@@ -281,26 +253,15 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
     const val = (event?.target?.value ?? this.searchValue ?? '').toString().toLowerCase().trim();
 
     const temp = this.tempData.filter((d: SoHeader) => {
-      const soNo = (d.salesOrderNo || '').toString().toLowerCase();
-      const cust = (
-        d.isCashSales || d.customerId === 0 || d.customerId == null
-          ? 'Cash Sales'
-          : (d.customerName || '')
-      ).toString().toLowerCase();
-
+      const soNo       = (d.salesOrderNo || '').toString().toLowerCase();
+      const cust       = (d.isCashSales || d.customerId === 0 || d.customerId == null
+        ? 'Cash Sales' : (d.customerName || '')).toString().toLowerCase();
       const reqDateStr = this.datePipe.transform(d.requestedDate, 'dd-MM-yyyy')?.toLowerCase() || '';
-      const delDateStr = this.datePipe.transform(d.deliveryDate, 'dd-MM-yyyy')?.toLowerCase() || '';
-      const statusCode = (d.approvalStatus ?? d.status);
-      const statusStr = this.statusToText(statusCode).toLowerCase();
+      const delDateStr = this.datePipe.transform(d.deliveryDate,  'dd-MM-yyyy')?.toLowerCase() || '';
+      const statusStr  = this.statusToText(d.approvalStatus ?? d.status).toLowerCase();
 
-      return (
-        !val ||
-        soNo.includes(val) ||
-        cust.includes(val) ||
-        reqDateStr.includes(val) ||
-        delDateStr.includes(val) ||
-        statusStr.includes(val)
-      );
+      return !val || soNo.includes(val) || cust.includes(val) ||
+        reqDateStr.includes(val) || delDateStr.includes(val) || statusStr.includes(val);
     });
 
     this.rows = temp;
@@ -310,10 +271,10 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   statusToText(v: any): string {
     const code = Number(v);
     switch (code) {
-      case 0: return 'Draft';
-      case 1: return 'Pending';
-      case 2: return 'Approved';
-      case 3: return 'Rejected';
+      case 0:  return 'Draft';
+      case 1:  return 'Pending';
+      case 2:  return 'Approved';
+      case 3:  return 'Rejected';
       default: return (v ?? '').toString();
     }
   }
@@ -321,187 +282,119 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   isRowLocked(row: SoHeader): boolean {
     const v = row?.approvalStatus ?? row?.status;
     if (v == null) return false;
-
     if (typeof v === 'string') {
       const s = v.trim().toLowerCase();
       return s === 'approved' || s === 'rejected';
     }
-
-    const code = Number(v);
-    return [2, 3].includes(code);
+    return [2, 3].includes(Number(v));
   }
 
+  // ===================================================
+  // CRUD
+  // ===================================================
   openCreate(): void {
     if (!this.canCreate()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Access Denied',
-        text: 'You do not have create permission.',
-        confirmButtonColor: '#0e3a4c'
-      });
+      Swal.fire({ icon: 'warning', title: 'Access Denied', text: 'You do not have create permission.', confirmButtonColor: '#0e3a4c' });
       return;
     }
-
-    if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('create Sales Orders');
-      return;
-    }
-
+    if (this.isPeriodLocked) { this.showPeriodLockedSwal('create Sales Orders'); return; }
     this.router.navigate(['/Sales/Sales-Order-create']);
   }
 
   editSO(row: SoHeader): void {
     if (!this.canEdit()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Access Denied',
-        text: 'You do not have edit permission.',
-        confirmButtonColor: '#0e3a4c'
-      });
+      Swal.fire({ icon: 'warning', title: 'Access Denied', text: 'You do not have edit permission.', confirmButtonColor: '#0e3a4c' });
       return;
     }
-
-    if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('edit Sales Orders');
-      return;
-    }
-
+    if (this.isPeriodLocked) { this.showPeriodLockedSwal('edit Sales Orders'); return; }
     this.router.navigateByUrl(`/Sales/Sales-Order-edit/${row.id}`);
   }
 
   deleteSO(id: number): void {
     if (!this.canDelete()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Access Denied',
-        text: 'You do not have delete permission.',
-        confirmButtonColor: '#0e3a4c'
-      });
+      Swal.fire({ icon: 'warning', title: 'Access Denied', text: 'You do not have delete permission.', confirmButtonColor: '#0e3a4c' });
       return;
     }
-
-    if (this.isPeriodLocked) {
-      this.showPeriodLockedSwal('delete Sales Orders');
-      return;
-    }
+    if (this.isPeriodLocked) { this.showPeriodLockedSwal('delete Sales Orders'); return; }
 
     Swal.fire({
-      title: 'Are you sure?',
-      text: 'This will delete the Sales Order (soft delete).',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
+      title: 'Are you sure?', text: 'This will delete the Sales Order (soft delete).',
+      icon: 'warning', showCancelButton: true,
+      confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Yes, delete it!'
     }).then(res => {
       if (!res.isConfirmed) return;
-
       this.salesOrderService.deleteSO(id, this.userId || 1).subscribe({
-        next: () => {
-          this.loadRequests();
-          this.prefetchDraftsCount();
-          Swal.fire('Deleted!', 'Sales Order has been deleted.', 'success');
-        },
-        error: (err) => {
-          console.error(err);
-          Swal.fire('Error', 'Delete failed.', 'error');
-        }
+        next: () => { this.loadRequests(); this.prefetchDraftsCount(); Swal.fire('Deleted!', 'Sales Order has been deleted.', 'success'); },
+        error: (err) => { console.error(err); Swal.fire('Error', 'Delete failed.', 'error'); }
       });
     });
   }
 
+  // ===================================================
+  // APPROVE / REJECT
+  // ===================================================
   onApprove(row: SoHeader): void {
     if (this.hasInsufficientQty(row)) {
-      Swal.fire(
-        'Cannot Approve',
-        'This Sales Order has Insufficient stock / allocation incomplete. Please resolve Draft lines first.',
-        'warning'
-      );
+      Swal.fire('Cannot Approve', 'This Sales Order has insufficient stock / allocation incomplete.', 'warning');
       return;
     }
-
     Swal.fire({
-      title: 'Approve this Sales Order?',
-      text: `SO #${row.salesOrderNo} will be marked as Approved.`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, approve',
-      confirmButtonColor: '#2E5F73'
+      title: 'Approve this Sales Order?', text: `SO #${row.salesOrderNo} will be marked as Approved.`,
+      icon: 'question', showCancelButton: true, confirmButtonText: 'Yes, approve', confirmButtonColor: '#2E5F73'
     }).then(res => {
       if (!res.isConfirmed) return;
-
       this.salesOrderService.approveSO(row.id, this.userId || 1).subscribe({
         next: () => {
-          row.status = 2;
-          row.approvalStatus = 2;
-          row.approvedBy = this.userId || 1;
+          row.status = 2; row.approvalStatus = 2; row.approvedBy = this.userId || 1;
           Swal.fire('Approved', 'Sales Order approved successfully.', 'success');
           this.prefetchDraftsCount();
         },
-        error: (err) => {
-          console.error(err);
-          Swal.fire('Error', 'Failed to approve Sales Order.', 'error');
-        }
+        error: (err) => { console.error(err); Swal.fire('Error', 'Failed to approve Sales Order.', 'error'); }
       });
     });
   }
 
   onReject(row: SoHeader): void {
     Swal.fire({
-      title: 'Reject this Sales Order?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, reject',
-      confirmButtonColor: '#b91c1c'
+      title: 'Reject this Sales Order?', icon: 'warning', showCancelButton: true,
+      confirmButtonText: 'Yes, reject', confirmButtonColor: '#b91c1c'
     }).then(res => {
       if (!res.isConfirmed) return;
-
       this.salesOrderService.rejectSO(row.id).subscribe({
         next: () => {
-          row.status = 3;
-          row.approvalStatus = 3;
-          row.isActive = false;
+          row.status = 3; row.approvalStatus = 3; row.isActive = false;
           Swal.fire('Rejected', 'Sales Order rejected and lines unlocked.', 'success');
           this.prefetchDraftsCount();
         },
-        error: (err) => {
-          console.error(err);
-          Swal.fire('Error', 'Failed to reject Sales Order.', 'error');
-        }
+        error: (err) => { console.error(err); Swal.fire('Error', 'Failed to reject Sales Order.', 'error'); }
       });
     });
   }
 
+  // ===================================================
+  // LINES MODAL
+  // ===================================================
   openLinesModal(row: SoHeader): void {
     const lines = this.extractLinesFromRow(row);
-
-    const total = (lines || []).reduce((sum, l: any) => {
-      const t = Number(l?.total ?? 0);
-      return sum + (isNaN(t) ? 0 : t);
-    }, 0);
-
-    this.modalLines = lines ?? [];
-    this.modalTotal = total;
+    this.modalTotal  = (lines || []).reduce((s, l: any) => s + (isNaN(Number(l?.total)) ? 0 : Number(l?.total ?? 0)), 0);
+    this.modalLines  = lines ?? [];
     this.showLinesModal = true;
   }
 
-  closeLinesModal(): void {
-    this.showLinesModal = false;
-  }
+  closeLinesModal(): void { this.showLinesModal = false; }
 
+  // ===================================================
+  // DRAFTS MODAL
+  // ===================================================
   prefetchDraftsCount(): void {
     this.salesOrderService.getDrafts().subscribe({
-      next: (res) => {
-        this.draftRows = (res?.data ?? []);
-        this.rebuildBlockedSoIds();
-      },
+      next: (res) => { this.draftRows = (res?.data ?? []); this.rebuildBlockedSoIds(); },
       error: (err) => console.error('draft count error', err)
     });
   }
 
   openDrafts(): void {
     this.draftLoading = true;
-
     this.salesOrderService.getDrafts().subscribe({
       next: (res) => {
         this.draftRows = (res?.data ?? []).map((x: any) => ({
@@ -510,56 +403,87 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
             ? 'Insufficient stock / allocation incomplete'
             : 'Allocation missing (WH/SUP/BIN)'
         }));
-
         this.rebuildBlockedSoIds();
-        this.draftLoading = false;
+        this.draftLoading    = false;
         this.showDraftsModal = true;
       },
-      error: (err) => {
-        this.draftLoading = false;
-        console.error(err);
+      error: (err) => { this.draftLoading = false; console.error(err); }
+    });
+  }
+
+  closeDrafts(): void { this.showDraftsModal = false; }
+
+  // ===================================================
+  // ✅ GRN ALERT MODAL
+  // ===================================================
+  openGrnAlert(row: SoHeader): void {
+    this.grnAlertSoNo      = row.salesOrderNo;
+    this.grnAlertLines     = [];
+    this.grnAlertLoading   = true;
+    this.showGrnAlertModal = true;
+
+    this.salesOrderService.getGrnAlerts(row.id).subscribe({
+      next: (res: any) => {
+        this.grnAlertLines   = res?.data ?? [];
+        this.grnAlertLoading = false;
+      },
+      error: () => {
+        this.grnAlertLines   = [];
+        this.grnAlertLoading = false;
       }
     });
   }
 
-  closeDrafts(): void {
-    this.showDraftsModal = false;
+  closeGrnAlert(): void {
+    this.showGrnAlertModal = false;
+    this.grnAlertLines     = [];
   }
 
+  getTotalOrdered(): number {
+    return (this.grnAlertLines || []).reduce((s, l) => s + Number(l.orderedQty || 0), 0);
+  }
+
+  getTotalReceived(): number {
+    return (this.grnAlertLines || []).reduce((s, l) => s + Number(l.receivedQty || 0), 0);
+  }
+
+  getTotalPending(): number {
+    return (this.grnAlertLines || [])
+      .reduce((s, l) => s + Math.max(0, Number(l.orderedQty || 0) - Number(l.receivedQty || 0)), 0);
+  }
+
+  getGrnProcStatusText(s: number): string {
+    return s === 1 ? 'Pending'
+      : s === 2 ? 'PO Created'
+      : s === 3 ? 'Partially Received'
+      : s === 4 ? 'Fully Received'
+      : 'Unknown';
+  }
+
+  getGrnProcBadge(s: number): string {
+    return s === 1 ? 'badge-warning'
+      : s === 2 ? 'badge-info'
+      : s === 3 ? 'badge-primary'
+      : s === 4 ? 'badge-success'
+      : 'badge-secondary';
+  }
+
+  // ===================================================
+  // PRINT
+  // ===================================================
   openPrint(row: SoHeader): void {
     const lines = this.extractLinesFromRow(row);
-    const html = this.buildSoPrintHtml(row, lines);
-
-    const w = window.open('', 'SO_PRINT_' + Date.now(), 'width=1200,height=780');
+    const html  = this.buildSoPrintHtml(row, lines);
+    const w     = window.open('', 'SO_PRINT_' + Date.now(), 'width=1200,height=780');
     if (!w) return;
-
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
+    w.document.open(); w.document.write(html); w.document.close();
   }
 
-  private extractLinesFromRow(row: SoHeader): SoLine[] {
-    let lines: SoLine[] = [];
-
-    try {
-      if (Array.isArray(row?.lineItems)) {
-        lines = row.lineItems as SoLine[];
-      } else if (row?.lineItems) {
-        lines = JSON.parse(row.lineItems as any);
-      } else if ((row as any)?.poLines) {
-        const poLines = (row as any).poLines;
-        lines = Array.isArray(poLines) ? poLines : JSON.parse(poLines);
-      }
-    } catch {
-      lines = [];
-    }
-
-    return lines ?? [];
-  }
-
+  // ===================================================
+  // PROC STATUS helpers
+  // ===================================================
   getProcStatusText(l: any): string {
     const s = +(l.procurementStatus ?? l.ProcurementStatus ?? l.status ?? 0);
-
     return s === 1 ? 'Pending'
       : s === 2 ? 'PO Created'
       : s === 3 ? 'Partially Received'
@@ -570,64 +494,61 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
 
   getProcStatusBadgeClass(l: any): any {
     const s = +(l.procurementStatus ?? l.ProcurementStatus ?? l.status ?? 0);
-
     return {
-      'badge-secondary': s === 1,
-      'badge-info': s === 2,
-      'badge-warning': s === 3,
-      'badge-success': s === 4,
-      'badge-danger': s === 5
+      'badge-secondary': s === 1, 'badge-info': s === 2,
+      'badge-warning':   s === 3, 'badge-success': s === 4, 'badge-danger': s === 5
     };
   }
 
-  private getSoPrintStatus(h: any, lines: any[]): string {
-    const headerPs = +(h?.procurementStatus ?? h?.ProcurementStatus ?? 0);
+  // ===================================================
+  // PRIVATE HELPERS
+  // ===================================================
+  private extractLinesFromRow(row: SoHeader): SoLine[] {
+    let lines: SoLine[] = [];
+    try {
+      if (Array.isArray(row?.lineItems))   lines = row.lineItems as SoLine[];
+      else if (row?.lineItems)             lines = JSON.parse(row.lineItems as any);
+      else if ((row as any)?.poLines) {
+        const pl = (row as any).poLines;
+        lines = Array.isArray(pl) ? pl : JSON.parse(pl);
+      }
+    } catch { lines = []; }
+    return lines ?? [];
+  }
 
-    if (headerPs > 0) {
-      return this.mapProcToText(headerPs);
-    }
+  private getSoPrintStatus(h: any, lines: any[]): string {
+    const headerPs = +(h?.procurementStatus ?? 0);
+    if (headerPs > 0) return this.mapProcToText(headerPs);
 
     const statuses = (lines || [])
       .map(l => +(l?.procurementStatus ?? l?.ProcurementStatus ?? 0))
       .filter(x => x > 0);
 
     if (!statuses.length) return this.statusToText(h?.status ?? 1);
-
     if (statuses.every(s => s === 4)) return 'Completed';
-    if (statuses.some(s => s === 5)) return 'Shortage';
-    if (statuses.some(s => s === 3)) return 'Partially Received';
-    if (statuses.some(s => s === 2)) return 'PO Created';
-
+    if (statuses.some(s => s === 5))  return 'Shortage';
+    if (statuses.some(s => s === 3))  return 'Partially Received';
+    if (statuses.some(s => s === 2))  return 'PO Created';
     return 'Pending';
   }
 
   private mapProcToText(s: number): string {
-    return s === 1 ? 'Pending'
-      : s === 2 ? 'PO Created'
-      : s === 3 ? 'Partially Received'
-      : s === 4 ? 'Completed'
-      : s === 5 ? 'Shortage'
-      : 'Pending';
+    return s === 1 ? 'Pending' : s === 2 ? 'PO Created'
+      : s === 3 ? 'Partially Received' : s === 4 ? 'Completed'
+      : s === 5 ? 'Shortage' : 'Pending';
   }
 
   private escapeHtml(s: any): string {
-    const str = String(s ?? '');
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+    return String(s ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
 
   private fmtDate(d: any): string {
     if (!d) return '-';
     const dt = new Date(d);
     if (isNaN(dt.getTime())) return '-';
-    const dd = String(dt.getDate()).padStart(2, '0');
-    const mm = String(dt.getMonth() + 1).padStart(2, '0');
-    const yy = dt.getFullYear();
-    return `${dd}-${mm}-${yy}`;
+    return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()}`;
   }
 
   private fmtNum(v: any, dec: number): string {
@@ -636,156 +557,99 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   }
 
   private fmtQty(n: any): string {
-    const x = +n || 0;
-    return x.toFixed(3).replace(/\.?0+$/, '');
+    return (+n || 0).toFixed(3).replace(/\.?0+$/, '');
   }
 
   private buildSoPrintHtml(h: SoHeader, lines: SoLine[]): string {
-    const brand = '#2E5F73';
-    const dark = '#0f172a';
-    const text = '#111827';
-    const muted = '#6b7280';
-    const line = '#d1d5db';
-
-    const companyName = 'Continental Catering Solutions Pvt Ltd';
+    const brand = '#2E5F73', dark = '#0f172a', text = '#111827', muted = '#6b7280', line = '#d1d5db';
+    const companyName  = 'Continental Catering Solutions Pvt Ltd';
     const companyAddr1 = 'No: 3/8, Church Street';
     const companyAddr2 = 'Nungambakkam, Chennai - 600034';
     const companyPhone = '+91 98765 43210';
     const companyEmail = 'info@unityworks.com';
 
-    const soNo = this.escapeHtml(h?.salesOrderNo || '-');
-    const customer = this.escapeHtml(
-      h?.isCashSales || h?.customerId === 0 || h?.customerId == null
-        ? 'Cash Sales'
-        : (h?.customerName || '-')
-    );
-    const reqDate = this.escapeHtml(this.datePipe.transform(h?.requestedDate as any, 'dd-MM-yyyy') || this.fmtDate(h?.requestedDate));
-    const delDate = this.escapeHtml(this.datePipe.transform(h?.deliveryDate as any, 'dd-MM-yyyy') || this.fmtDate(h?.deliveryDate));
-    const deliveryTo = this.escapeHtml((h as any)?.deliveryTo ?? (h as any)?.DeliveryTo ?? '-');
-    const status = this.escapeHtml(this.getSoPrintStatus(h, lines));
+    const soNo       = this.escapeHtml(h?.salesOrderNo || '-');
+    const customer   = this.escapeHtml(h?.isCashSales || h?.customerId === 0 || h?.customerId == null ? 'Cash Sales' : (h?.customerName || '-'));
+    const reqDate    = this.escapeHtml(this.datePipe.transform(h?.requestedDate as any, 'dd-MM-yyyy') || this.fmtDate(h?.requestedDate));
+    const delDate    = this.escapeHtml(this.datePipe.transform(h?.deliveryDate as any,  'dd-MM-yyyy') || this.fmtDate(h?.deliveryDate));
+    const deliveryTo = this.escapeHtml((h as any)?.deliveryTo ?? '-');
+    const status     = this.escapeHtml(this.getSoPrintStatus(h, lines));
 
     const rowsHtml = (lines || []).map((l: any, i: number) => {
-      const qty = Number(l?.quantity ?? l?.qty ?? 0);
-      const up = Number(l?.unitPrice ?? l?.price ?? 0);
-      const locked = Number(l?.lockedQty ?? 0);
+      const qty     = Number(l?.quantity ?? l?.qty ?? 0);
+      const up      = Number(l?.unitPrice ?? l?.price ?? 0);
+      const locked  = Number(l?.lockedQty ?? 0);
       const shortage = Math.max(qty - locked, 0);
-      const total = Number(l?.total ?? (qty * up));
-
-      return `
-        <tr>
-          <td class="c">${i + 1}</td>
-          <td class="wrap">${this.escapeHtml(l?.itemName || l?.item || '-')}</td>
-          <td class="c">${this.escapeHtml(l?.uom || '-')}</td>
-          <td class="r">${this.fmtQty(qty)}</td>
-          <td class="r">${this.fmtNum(up, 2)}</td>
-          <td class="r">${this.fmtQty(locked)}</td>
-          <td class="r">${this.fmtQty(shortage)}</td>
-          <td class="r b">${this.fmtNum(isNaN(total) ? 0 : total, 2)}</td>
-          <td class="c">${this.escapeHtml(this.getProcStatusText(l))}</td>
-        </tr>
-      `;
+      const total   = Number(l?.total ?? (qty * up));
+      return `<tr>
+        <td class="c">${i + 1}</td>
+        <td class="wrap">${this.escapeHtml(l?.itemName || l?.item || '-')}</td>
+        <td class="c">${this.escapeHtml(l?.uom || '-')}</td>
+        <td class="r">${this.fmtQty(qty)}</td>
+        <td class="r">${this.fmtNum(up, 2)}</td>
+        <td class="r">${this.fmtQty(locked)}</td>
+        <td class="r">${this.fmtQty(shortage)}</td>
+        <td class="r b">${this.fmtNum(isNaN(total) ? 0 : total, 2)}</td>
+        <td class="c">${this.escapeHtml(this.getProcStatusText(l))}</td>
+      </tr>`;
     }).join('');
 
-    const subTotal = (lines || []).reduce((s, l: any) => {
-      const qty = Number(l?.quantity ?? l?.qty ?? 0);
-      const up = Number(l?.unitPrice ?? l?.price ?? 0);
-      const t = Number(l?.total ?? (qty * up));
-      return s + (isNaN(t) ? 0 : t);
-    }, 0);
-
+    const subTotal  = (lines || []).reduce((s, l: any) => { const t = Number(l?.total ?? 0); return s + (isNaN(t) ? 0 : t); }, 0);
     const grandTotal = Number(h?.grandTotal ?? subTotal) || subTotal;
-
-    const tableHtml = (lines && lines.length)
-      ? `
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th style="width:55px;">S.NO</th>
-              <th>ITEM</th>
-              <th style="width:80px;" class="c">UOM</th>
-              <th style="width:85px;" class="r">QTY</th>
-              <th style="width:95px;" class="r">UNIT PRICE</th>
-              <th style="width:95px;" class="r">ALLOCATED</th>
-              <th style="width:90px;" class="r">SHORTAGE</th>
-              <th style="width:110px;" class="r">TOTAL</th>
-              <th style="width:150px;" class="c">PROC. STATUS</th>
-            </tr>
-          </thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>
-      `
+    const tableHtml  = (lines && lines.length)
+      ? `<table class="tbl"><thead><tr>
+          <th style="width:55px;">S.NO</th><th>ITEM</th>
+          <th style="width:80px;" class="c">UOM</th><th style="width:85px;" class="r">QTY</th>
+          <th style="width:95px;" class="r">UNIT PRICE</th><th style="width:95px;" class="r">ALLOCATED</th>
+          <th style="width:90px;" class="r">SHORTAGE</th><th style="width:110px;" class="r">TOTAL</th>
+          <th style="width:150px;" class="c">PROC. STATUS</th>
+        </tr></thead><tbody>${rowsHtml}</tbody></table>`
       : `<div class="empty">No lines</div>`;
 
-    return `
-    <html>
-    <head>
-      <title>Sales Order - ${soNo}</title>
-      <style>
-        @page { margin: 8mm 10mm 14mm 10mm; }
-        * { box-sizing:border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        body { font-family: Arial, Helvetica, sans-serif; margin:0; background:#fff; color:${text}; }
-        .hdr{ display:flex; gap:16px; padding-bottom:14px; margin-bottom:14px; border-bottom:2px solid ${brand}; }
-        .logo{ width:48px; height:48px; border-radius:14px; background:${brand}; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; }
-        .cname{ font-size:20px; font-weight:900; }
-        .doc{ font-size:14px; font-weight:900; color:${dark}; letter-spacing:1px; margin-top:2px; }
-        .cmeta{ font-size:12px; color:${muted}; margin-top:4px; }
-        .meta{ display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; padding:14px; border:1px solid ${line}; border-radius:12px; margin-bottom:12px; }
-        .row{ display:grid; grid-template-columns:150px 1fr; gap:10px; }
-        .k{ color:${muted}; font-weight:700; }
-        .v{ font-weight:800; word-break:break-word; }
-        .tbl{ width:100%; border-collapse:collapse; font-size:13px; }
-        .tbl th, .tbl td{ border:1px solid ${line}; padding:10px; vertical-align:top; }
-        .tbl thead th{ background:${brand}; color:#fff; font-weight:900; text-transform:uppercase; }
-        .wrap{ white-space:normal; word-break:break-word; }
-        .c{ text-align:center; }
-        .r{ text-align:right; }
-        .b{ font-weight:900; }
-        .totals{ margin-top:12px; display:flex; justify-content:flex-end; }
-        .totTbl{ width:300px; border-collapse:collapse; }
-        .totTbl td{ border:1px solid ${line}; padding:10px 12px; }
-        .footer{ position:fixed; left:10mm; right:10mm; bottom:6mm; font-size:11px; color:${muted}; display:flex; justify-content:space-between; }
-        .empty{ border:1px dashed ${muted}; color:${muted}; padding:18px; text-align:center; border-radius:12px; font-size:14px; margin-top:10px; }
-      </style>
-    </head>
-    <body>
-      <div class="hdr">
-        <div class="logo">CC</div>
-        <div>
-          <div class="cname">${this.escapeHtml(companyName)}</div>
-          <div class="doc">SALES ORDER</div>
-          <div class="cmeta">
-            ${this.escapeHtml(companyAddr1)}<br/>
-            ${this.escapeHtml(companyAddr2)}<br/>
-            ${this.escapeHtml(companyPhone)} · ${this.escapeHtml(companyEmail)}
-          </div>
-        </div>
+    return `<html><head><title>Sales Order - ${soNo}</title>
+    <style>
+      @page{margin:8mm 10mm 14mm 10mm;}
+      *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+      body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#fff;color:${text};}
+      .hdr{display:flex;gap:16px;padding-bottom:14px;margin-bottom:14px;border-bottom:2px solid ${brand};}
+      .logo{width:48px;height:48px;border-radius:14px;background:${brand};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;}
+      .cname{font-size:20px;font-weight:900;}.doc{font-size:14px;font-weight:900;color:${dark};letter-spacing:1px;margin-top:2px;}
+      .cmeta{font-size:12px;color:${muted};margin-top:4px;}
+      .meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;padding:14px;border:1px solid ${line};border-radius:12px;margin-bottom:12px;}
+      .row{display:grid;grid-template-columns:150px 1fr;gap:10px;}.k{color:${muted};font-weight:700;}.v{font-weight:800;word-break:break-word;}
+      .tbl{width:100%;border-collapse:collapse;font-size:13px;}.tbl th,.tbl td{border:1px solid ${line};padding:10px;vertical-align:top;}
+      .tbl thead th{background:${brand};color:#fff;font-weight:900;text-transform:uppercase;}
+      .wrap{white-space:normal;word-break:break-word;}.c{text-align:center;}.r{text-align:right;}.b{font-weight:900;}
+      .totals{margin-top:12px;display:flex;justify-content:flex-end;}.totTbl{width:300px;border-collapse:collapse;}
+      .totTbl td{border:1px solid ${line};padding:10px 12px;}
+      .footer{position:fixed;left:10mm;right:10mm;bottom:6mm;font-size:11px;color:${muted};display:flex;justify-content:space-between;}
+      .empty{border:1px dashed ${muted};color:${muted};padding:18px;text-align:center;border-radius:12px;font-size:14px;margin-top:10px;}
+    </style></head><body>
+    <div class="hdr">
+      <div class="logo">CC</div>
+      <div>
+        <div class="cname">${this.escapeHtml(companyName)}</div>
+        <div class="doc">SALES ORDER</div>
+        <div class="cmeta">${this.escapeHtml(companyAddr1)}<br/>${this.escapeHtml(companyAddr2)}<br/>${this.escapeHtml(companyPhone)} · ${this.escapeHtml(companyEmail)}</div>
       </div>
-
-      <div class="meta">
-        <div class="row"><div class="k">SO No</div><div class="v">${soNo}</div></div>
-        <div class="row"><div class="k">Status</div><div class="v">${status}</div></div>
-        <div class="row"><div class="k">Customer</div><div class="v">${customer}</div></div>
-        <div class="row"><div class="k">Order Date</div><div class="v">${reqDate}</div></div>
-        <div class="row"><div class="k">Delivery Date</div><div class="v">${delDate}</div></div>
-        <div class="row"><div class="k">Delivery To</div><div class="v">${deliveryTo}</div></div>
-      </div>
-
-      ${tableHtml}
-
-      <div class="totals">
-        <table class="totTbl">
-          <tr><td>Sub Total</td><td class="r b">${this.fmtNum(subTotal, 2)}</td></tr>
-          <tr><td>Grand Total</td><td class="r b">${this.fmtNum(grandTotal, 2)}</td></tr>
-        </table>
-      </div>
-
-      <div class="footer">
-        <div>Generated by ERP · ${this.escapeHtml(this.fmtDate(new Date()))}</div>
-        <div>Page 1</div>
-      </div>
-
-      <script>window.onload = () => window.print();</script>
-    </body>
-    </html>`;
+    </div>
+    <div class="meta">
+      <div class="row"><div class="k">SO No</div><div class="v">${soNo}</div></div>
+      <div class="row"><div class="k">Status</div><div class="v">${status}</div></div>
+      <div class="row"><div class="k">Customer</div><div class="v">${customer}</div></div>
+      <div class="row"><div class="k">Order Date</div><div class="v">${reqDate}</div></div>
+      <div class="row"><div class="k">Delivery Date</div><div class="v">${delDate}</div></div>
+      <div class="row"><div class="k">Delivery To</div><div class="v">${deliveryTo}</div></div>
+    </div>
+    ${tableHtml}
+    <div class="totals"><table class="totTbl">
+      <tr><td>Sub Total</td><td class="r b">${this.fmtNum(subTotal, 2)}</td></tr>
+      <tr><td>Grand Total</td><td class="r b">${this.fmtNum(grandTotal, 2)}</td></tr>
+    </table></div>
+    <div class="footer">
+      <div>Generated by ERP · ${this.escapeHtml(this.fmtDate(new Date()))}</div><div>Page 1</div>
+    </div>
+    <script>window.onload=()=>window.print();</script>
+    </body></html>`;
   }
 }

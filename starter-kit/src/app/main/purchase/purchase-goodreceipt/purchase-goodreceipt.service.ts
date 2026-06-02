@@ -78,4 +78,13 @@ applyGrnAndUpdateSalesOrder(req: any): Observable<any> {
   getAvailableForPinEdit(pinId: number): Observable<ApiResponse<GrnForPinDto[]>> {
     return this.http.get<ApiResponse<GrnForPinDto[]>>(`${this.url + GRNApiUrls.GetAvailableForPinEdit}${pinId}`);
   }
+
+  // purchase-goodreceipt.service.ts
+
+applyGrnToSalesOrder(grnId: number, updatedBy: number = 0): Observable<any> {
+  return this.http.post(
+    `${this.url}/apply-grn-to-so/${grnId}?updatedBy=${updatedBy}`,
+    {}
+  );
+}
 }

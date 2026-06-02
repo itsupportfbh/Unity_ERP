@@ -343,89 +343,140 @@ const payload: any = {
   }
 
   /* ===================== POST ONE ROW ===================== */
-  private postOneRowToInventory(row: any, originalIndex: number) {
-    if (!row?.itemCode) { Swal.fire('Missing item', 'Item code not found.', 'warning'); return; }
-    if (!row?.warehouseId) { Swal.fire('Missing warehouse', 'Select a warehouse before posting.', 'warning'); return; }
+// purchase-goodreceipt.component.ts
 
-    const qty = Number(row?.qtyReceived || 0);
-    if (!Number.isFinite(qty) || qty <= 0) { Swal.fire('Quantity required', 'Enter a received quantity > 0.', 'warning'); return; }
+private postOneRowToInventory(row: any, originalIndex: number) {
+  if (!row?.itemCode) {
+    Swal.fire('Missing item', 'Item code not found.', 'warning');
+    return;
+  }
+  if (!row?.warehouseId) {
+    Swal.fire('Missing warehouse', 'Select a warehouse before posting.', 'warning');
+    return;
+  }
 
-    const applyReq: ApplyGrnRequest = {
-      grnNo: this.generatedGRN?.grnNo || '',
-      receptionDate: this.receiptDate || new Date(),
-      updatedBy: (localStorage.getItem('id') || ''),
-      lines: [{
-        itemCode: String(row.itemCode || '').trim(),
-        supplierId: row.supplierId ?? this.currentSupplierId ?? null,
-        warehouseId: Number(row.warehouseId),
-        binId: row.binId ?? null,
-        strategyId: row.strategyId ?? null,
-        qtyDelta: qty,
-        batchFlag: !!row.batchSerial,
-        serialFlag: false,
-        barcode: row.batchSerial ?? row.barcode ?? null,
-        price: this.getNumberOrNull(row.unitPrice),
-        remarks: row.remarks ?? null
-      } as ApplyGrnLine]
-    };
+  const qty = Number(row?.qtyReceived || 0);
+  if (!Number.isFinite(qty) || qty <= 0) {
+    Swal.fire('Quantity required', 'Enter a received quantity > 0.', 'warning');
+    return;
+  }
 
-    const upsert: UpdateWarehouseAndSupplierPriceDto = {
+  const applyReq: ApplyGrnRequest = {
+    grnNo: this.generatedGRN?.grnNo || '',
+    receptionDate: this.receiptDate || new Date(),
+    updatedBy: (localStorage.getItem('id') || ''),
+    lines: [{
       itemCode: String(row.itemCode || '').trim(),
+      supplierId: row.supplierId ?? this.currentSupplierId ?? null,
       warehouseId: Number(row.warehouseId),
       binId: row.binId ?? null,
       strategyId: row.strategyId ?? null,
       qtyDelta: qty,
       batchFlag: !!row.batchSerial,
       serialFlag: false,
-      supplierId: row.supplierId ?? this.currentSupplierId ?? null,
-      price: this.getNumberOrNull(row.unitPrice),
       barcode: row.batchSerial ?? row.barcode ?? null,
-      remarks: row.remarks ?? null,
-      updatedBy: (localStorage.getItem('id') || undefined)
-    };
+      price: this.getNumberOrNull(row.unitPrice),
+      remarks: row.remarks ?? null
+    } as ApplyGrnLine]
+  };
 
-    this.inventoryService.applyGrnToInventory(applyReq).subscribe({
-      next: () => {
-        this.inventoryService.batchUpdateWarehouseAndSupplierPrice([upsert]).subscribe({
-          next: () => {
-            const alertReq = {
-              ItemCode: String(row.itemCode || '').trim(),
-              warehouseId: row.warehouseId,
-              binId: row.binId,
-              supplierId: row.supplierId,
-              receivedQty: row.qtyReceived,
-              updatedBy: localStorage.getItem('id')
-            };
+  const upsert: UpdateWarehouseAndSupplierPriceDto = {
+    itemCode: String(row.itemCode || '').trim(),
+    warehouseId: Number(row.warehouseId),
+    binId: row.binId ?? null,
+    strategyId: row.strategyId ?? null,
+    qtyDelta: qty,
+    batchFlag: !!row.batchSerial,
+    serialFlag: false,
+    supplierId: row.supplierId ?? this.currentSupplierId ?? null,
+    price: this.getNumberOrNull(row.unitPrice),
+    barcode: row.batchSerial ?? row.barcode ?? null,
+    remarks: row.remarks ?? null,
+    updatedBy: (localStorage.getItem('id') || undefined)
+  };
 
-            this.purchaseGoodReceiptService.applyGrnAndUpdateSalesOrder(alertReq).subscribe({
-              next: () => {
-                this.updateRowAndPersist(
-                  originalIndex,
-                  { isPostInventory: true, isFlagIssue: false, flagIssueId: 0 },
-                  () => {
-                    Swal.fire('Posted', 'Row posted to inventory & PurchaseAlert updated.', 'success');
-                    this.redirectIfAllDone();
-                  }
-                );
-              },
-              error: (err) => {
-                console.error('SalesOrder/PurchaseAlert update failed', err);
-                Swal.fire('Partial', 'Inventory updated but PurchaseAlert update failed.', 'warning');
+  const userId = Number(localStorage.getItem('id') || 0);
+  const grnId  = this.generatedGRN?.id;
+
+  this.inventoryService.applyGrnToInventory(applyReq).subscribe({
+    next: () => {
+      this.inventoryService.batchUpdateWarehouseAndSupplierPrice([upsert]).subscribe({
+        next: () => {
+
+          // ✅ STEP 3: GRN → SO procurement update + alert
+          if (grnId) {
+            this.purchaseGoodReceiptService
+              .applyGrnToSalesOrder(grnId, userId)   // ← new method
+              .subscribe({
+                next: (soRes: any) => {
+                  this.updateRowAndPersist(
+                    originalIndex,
+                    { isPostInventory: true, isFlagIssue: false, flagIssueId: 0 },
+                    () => {
+                      // ✅ SO alert
+                      if (soRes?.showAlert && soRes?.alertMessage) {
+                        Swal.fire({
+                          icon: 'success',
+                          title: 'Posted & SO Updated',
+                          html: `
+                            <p><b>Inventory posted successfully.</b></p>
+                            <hr/>
+                            <p>${soRes.alertMessage}</p>
+                          `,
+                          confirmButtonColor: '#0e3a4c'
+                        }).then(() => this.redirectIfAllDone());
+                      } else {
+                        Swal.fire({
+                          icon: 'success',
+                          title: 'Posted',
+                          text: 'Row posted to inventory.',
+                          confirmButtonColor: '#0e3a4c'
+                        }).then(() => this.redirectIfAllDone());
+                      }
+                    }
+                  );
+                },
+                error: (err: any) => {
+                  // inventory போச்சு, SO update மட்டும் தப்பு
+                  console.error('SO update failed', err);
+                  this.updateRowAndPersist(
+                    originalIndex,
+                    { isPostInventory: true, isFlagIssue: false, flagIssueId: 0 },
+                    () => {
+                      Swal.fire(
+                        'Partial',
+                        'Inventory posted but SO update failed. Check ProcurementNote manually.',
+                        'warning'
+                      );
+                      this.redirectIfAllDone();
+                    }
+                  );
+                }
+              });
+          } else {
+            // no GRN id — just mark posted
+            this.updateRowAndPersist(
+              originalIndex,
+              { isPostInventory: true, isFlagIssue: false, flagIssueId: 0 },
+              () => {
+                Swal.fire('Posted', 'Row posted to inventory.', 'success');
+                this.redirectIfAllDone();
               }
-            });
-          },
-          error: (err) => {
-            console.error('Price/warehouse upsert failed', err);
-            Swal.fire('Partial', 'Stock updated but price/warehouse upsert failed. Retry from this screen.', 'warning');
+            );
           }
-        });
-      },
-      error: (err) => {
-        console.error('Apply GRN to inventory failed', err);
-        Swal.fire('Failed', 'Could not post this row to inventory.', 'error');
-      }
-    });
-  }
+        },
+        error: (err: any) => {
+          console.error('Price upsert failed', err);
+          Swal.fire('Partial', 'Stock updated but price upsert failed.', 'warning');
+        }
+      });
+    },
+    error: (err: any) => {
+      console.error('Apply GRN to inventory failed', err);
+      Swal.fire('Failed', 'Could not post this row to inventory.', 'error');
+    }
+  });
+}
 
   /* ===================== FLAG ISSUE FLOW ===================== */
   loadFlagIssues() {

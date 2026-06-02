@@ -21,159 +21,98 @@
             </div>
 
             <div class="search-wrap">
-              <input
-                [(ngModel)]="searchValue"
-                name="searchValue"
-                type="search"
+              <input [(ngModel)]="searchValue" name="searchValue" type="search"
                 class="form-control so-search"
                 placeholder="Search SO no / customer / status / date"
-                (keyup)="filterUpdate($event)"
-                (search)="filterUpdate($event)" />
+                (keyup)="filterUpdate($event)" (search)="filterUpdate($event)" />
             </div>
 
             <div class="actions">
-              <button
-                *ngIf="canCreate()"
-                (click)="openCreate()"
+              <button *ngIf="canCreate()" (click)="openCreate()"
                 class="btn m-1 d-inline-flex align-items-center"
                 style="background-color:#2E5F73;color:white;gap:6px;"
                 [disabled]="isPeriodLocked"
                 [attr.title]="isPeriodLocked
-                  ? (currentPeriodName
-                      ? 'Period ' + currentPeriodName + ' is locked'
-                      : 'Accounting period is locked')
+                  ? (currentPeriodName ? 'Period ' + currentPeriodName + ' is locked' : 'Accounting period is locked')
                   : 'Create Sales Order'">
-
                 <i data-feather="plus-circle" class="w-4 h-4"></i>
                 <span>Add</span>
               </button>
             </div>
-              <div *ngIf="isPeriodLocked"
-                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
-                 style="font-size: 0.8rem;">
+
+            <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 mx-2 mb-2" style="font-size:.8rem;">
               Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
             </div>
           </div>
 
-          <ngx-datatable
-            class="bootstrap core-bootstrap so-table"
-            [rows]="rows"
-            [rowHeight]="50"
-            [headerHeight]="50"
-            [footerHeight]="50"
-            [limit]="selectedOption"
-            [columnMode]="'force'"
-            [scrollbarH]="false"
-            [reorderable]="true">
+          <!-- ===== TABLE ===== -->
+          <ngx-datatable class="bootstrap core-bootstrap so-table"
+            [rows]="rows" [rowHeight]="50" [headerHeight]="50" [footerHeight]="50"
+            [limit]="selectedOption" [columnMode]="'force'" [scrollbarH]="false" [reorderable]="true">
 
-            <ngx-datatable-column
-              [width]="50"
-              [resizeable]="false"
-              [sortable]="false"
-              [draggable]="false"
-              [canAutoResize]="false">
-
+            <!-- Eye -->
+            <ngx-datatable-column [width]="45" [resizeable]="false" [sortable]="false"
+              [draggable]="false" [canAutoResize]="false">
               <ng-template ngx-datatable-cell-template let-row="row">
-                <span
-                  (click)="openLinesModal(row)"
-                  title="View Details"
-                  style="cursor:pointer; font-size:18px; color:#2E5F73;">
-
+                <span (click)="openLinesModal(row)" title="View Lines"
+                  style="cursor:pointer;font-size:17px;color:#2E5F73;">
                   <i class="fas fa-eye"></i>
                 </span>
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="SO Number" prop="salesOrderNo" [width]="90"></ngx-datatable-column>
+            <ngx-datatable-column name="SO Number"      prop="salesOrderNo"   [width]="100"></ngx-datatable-column>
 
-            <ngx-datatable-column name="Customer Name" prop="customerName" [width]="180">
+            <ngx-datatable-column name="Customer Name"  prop="customerName"   [width]="180">
               <ng-template let-row="row" ngx-datatable-cell-template>
-                <div
-                  class="po-wrap-cell"
-                  [title]="row.isCashSales || row.customerId === 0 || row.customerId == null ? 'Cash Sales' : (row.customerName || '-')">
-
-                  {{ row.isCashSales || row.customerId === 0 || row.customerId == null ? 'Cash Sales' : (row.customerName || '-') }}
+                <div class="po-wrap-cell"
+                  [title]="row.isCashSales || row.customerId===0 || row.customerId==null ? 'Cash Sales' : (row.customerName||'-')">
+                  {{ row.isCashSales || row.customerId===0 || row.customerId==null ? 'Cash Sales' : (row.customerName||'-') }}
                 </div>
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="Requested Date" prop="requestedDate" [width]="130">
+            <ngx-datatable-column name="Requested Date" prop="requestedDate"  [width]="130">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 {{ row.requestedDate | date:'dd-MM-yyyy' }}
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="150">
+            <ngx-datatable-column name="Delivery Date"  prop="deliveryDate"   [width]="130">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 {{ row.deliveryDate | date:'dd-MM-yyyy' }}
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="Status" prop="status" [width]="140">
+            <ngx-datatable-column name="Status"         prop="status"         [width]="120">
               <ng-template let-row="row" ngx-datatable-cell-template>
-                <span
-                  class="badge badge-pill"
-                  [ngClass]="{
-                    'badge-warning': +row.status === 1,
-                    'badge-primary': +row.status === 2,
-                    'badge-success': +row.status === 3
-                  }"
-                  style="padding:6px 12px; font-size:13px;">
-
-                  {{
-                    +row.status === 1 ? 'Pending' :
-                    +row.status === 2 ? 'Approved' :
-                    +row.status === 3 ? 'Completed' : 'Unknown'
-                  }}
+                <span class="badge badge-pill"
+                  [ngClass]="{ 'badge-warning': +row.status===1, 'badge-primary': +row.status===2, 'badge-success': +row.status===3 }"
+                  style="padding:6px 12px;font-size:13px;">
+                  {{ +row.status===1 ? 'Pending' : +row.status===2 ? 'Approved' : +row.status===3 ? 'Completed' : 'Unknown' }}
                 </span>
               </ng-template>
             </ngx-datatable-column>
 
-           <ngx-datatable-column name="Action" [width]="90" [sortable]="false">
+            <!-- ✅ GRN Stock column -->
+            <ngx-datatable-column name="GRN Stock" [width]="80" [sortable]="false">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <i class="fas fa-boxes grn-icon" (click)="openGrnAlert(row)" title="View GRN Stock Status"></i>
+              </ng-template>
+            </ngx-datatable-column>
+
+            <!-- Action -->
+<!-- Action -->
+<ngx-datatable-column name="Action" [width]="60" [sortable]="false">
   <ng-template let-row="row" ngx-datatable-cell-template>
-    <div class="d-flex align-items-center">
-      <i
-        class="fas fa-print text-primary mr-2"
+    <div class="d-flex align-items-center justify-content-center">
+      <i class="fas fa-print text-primary"
         style="cursor:pointer;"
         (click)="openPrint(row)"
-        title="Print / PDF">
-      </i>
-
-      <ng-container *ngIf="isRowLocked(row) || isPeriodLocked; else actionsEnabled">
-        <i
-          *ngIf="canEdit()"
-          class="fas fa-pen text-muted mr-2"
-          [title]="isPeriodLocked ? 'Period locked' : 'Disabled for approved/rejected SO'">
-        </i>
-
-        <i
-          *ngIf="canDelete()"
-          class="fas fa-trash text-muted"
-          [title]="isPeriodLocked ? 'Period locked' : 'Disabled for approved/rejected SO'">
-        </i>
-      </ng-container>
-
-      <ng-template #actionsEnabled>
-        <i
-          *ngIf="canEdit()"
-          class="fas fa-pen text-success mr-2"
-          style="cursor:pointer;"
-          (click)="editSO(row)"
-          title="Edit">
-        </i>
-
-        <i
-          *ngIf="canDelete()"
-          class="fas fa-trash text-danger"
-          style="cursor:pointer;"
-          (click)="deleteSO(row.id)"
-          title="Delete">
-        </i>
-      </ng-template>
+        title="Print / PDF"></i>
     </div>
   </ng-template>
 </ngx-datatable-column>
-
           </ngx-datatable>
         </div>
       </section>
@@ -181,13 +120,13 @@
   </div>
 </div>
 
+<!-- ===== SO LINES MODAL ===== -->
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="backdrop">
   <div (click)="$event.stopPropagation()" class="modal-card">
     <div class="modal-head">
       <h3>SO Lines</h3>
       <button (click)="closeLinesModal()" aria-label="Close" class="modal-close">×</button>
     </div>
-
     <div class="modal-body">
       <div class="lines-wrap">
         <table class="lines-table">
@@ -205,7 +144,6 @@
               <th class="num">Proc. Status</th>
             </tr>
           </thead>
-
           <tbody>
             <tr *ngFor="let l of modalLines; let i = index" [class.alt]="i % 2 === 0">
               <td>{{ l.itemName || l.item || '-' }}</td>
@@ -217,23 +155,17 @@
               <td *ngIf="lineCols.lockedQty" class="num">{{ l.lockedQty ?? 0 }}</td>
               <td class="num">{{ getShortageQty(l) }}</td>
               <td *ngIf="lineCols.total" class="num">{{ l.total ?? 0 }}</td>
-
               <td class="num">
-                <span
-                  class="badge badge-pill"
-                  [ngClass]="getProcStatusBadgeClass(l)"
-                  style="padding:6px 12px; font-size:12px; min-width:140px; display:inline-block; text-align:center;">
-
+                <span class="badge badge-pill" [ngClass]="getProcStatusBadgeClass(l)"
+                  style="padding:6px 12px;font-size:12px;min-width:140px;display:inline-block;text-align:center;">
                   {{ getProcStatusText(l) }}
                 </span>
               </td>
             </tr>
-
             <tr *ngIf="!modalLines?.length">
               <td [attr.colspan]="getLinesColsCount()" class="empty">No lines</td>
             </tr>
           </tbody>
-
           <tfoot *ngIf="modalLines?.length">
             <tr>
               <td [attr.colspan]="getLinesColsCount() - 1" class="total-label">Total</td>
@@ -243,13 +175,13 @@
         </table>
       </div>
     </div>
-
     <div class="modal-foot">
       <button (click)="closeLinesModal()" class="btn-close">Close</button>
     </div>
   </div>
 </div>
 
+<!-- ===== DRAFTS MODAL ===== -->
 <div *ngIf="showDraftsModal" class="backdrop" (click)="closeDrafts()">
   <div class="modal-card" (click)="$event.stopPropagation()">
     <div class="modal-head">
@@ -259,35 +191,23 @@
           <span>Total: <strong>{{ draftRows?.length || 0 }}</strong></span>
         </div>
       </div>
-
       <button (click)="closeDrafts()" aria-label="Close" class="modal-close">×</button>
     </div>
-
     <div class="modal-body">
       <div *ngIf="draftLoading" class="draft-loading">Loading…</div>
-
       <div *ngIf="!draftLoading" class="lines-wrap">
         <table class="lines-table">
           <thead>
             <tr>
-              <th>SO No</th>
-              <th>Item</th>
-              <th>UOM</th>
-              <th class="num">Ordered Qty</th>
-              <th class="num">Allocated Qty</th>
-              <th class="num">Shortage Qty</th>
-              <th class="num">WH Id</th>
-              <th class="num">Bin Id</th>
-              <th class="num">Supplier Id</th>
-              <th class="reason">Reason</th>
+              <th>SO No</th><th>Item</th><th>UOM</th>
+              <th class="num">Ordered Qty</th><th class="num">Allocated Qty</th>
+              <th class="num">Shortage Qty</th><th class="num">WH Id</th>
+              <th class="num">Bin Id</th><th class="num">Supplier Id</th><th class="reason">Reason</th>
             </tr>
           </thead>
-
           <tbody>
             <tr *ngFor="let r of draftRows; let i = index" [class.alt]="i % 2 === 0">
-              <td>{{ r.salesOrderNo }}</td>
-              <td>{{ r.itemName }}</td>
-              <td>{{ r.uom || '-' }}</td>
+              <td>{{ r.salesOrderNo }}</td><td>{{ r.itemName }}</td><td>{{ r.uom || '-' }}</td>
               <td class="num">{{ r.quantity ?? 0 }}</td>
               <td class="num">{{ r.lockedQty ?? 0 }}</td>
               <td class="num">{{ getShortageQty(r) }}</td>
@@ -296,7 +216,6 @@
               <td class="num">{{ r.supplierId ?? '-' }}</td>
               <td class="reason">{{ r.reason }}</td>
             </tr>
-
             <tr *ngIf="!draftRows?.length">
               <td colspan="10" class="empty">No drafts</td>
             </tr>
@@ -304,29 +223,124 @@
         </table>
       </div>
     </div>
-
     <div class="modal-foot">
       <button (click)="closeDrafts()" class="btn-close">Close</button>
     </div>
   </div>
 </div>
 
-<ng-template #loadingTemplate>
-  <div class="row">
-    <div class="col-12">
-      <div class="alert alert-info mt-2">
-        Loading permission...
+<!-- ===== ✅ GRN STOCK ALERT MODAL ===== -->
+<div *ngIf="showGrnAlertModal" (click)="closeGrnAlert()" class="backdrop">
+  <div (click)="$event.stopPropagation()" class="modal-card grn-modal-card">
+
+    <div class="modal-head">
+      <h3>
+        <i class="fas fa-boxes mr-2" style="color:#0F766E;"></i>
+        GRN Stock Status &nbsp;—&nbsp;
+        <span style="color:#2E5F73;">{{ grnAlertSoNo }}</span>
+      </h3>
+      <button (click)="closeGrnAlert()" aria-label="Close" class="modal-close">×</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Loading -->
+      <div *ngIf="grnAlertLoading" class="grn-loading">
+        <i class="fas fa-spinner fa-spin mr-2"></i> Loading...
+      </div>
+
+      <!-- Empty -->
+      <div *ngIf="!grnAlertLoading && !grnAlertLines?.length" class="grn-empty">
+        <i class="fas fa-box-open mb-2" style="font-size:32px;color:#d1d5db;"></i>
+        <div>No Direct DO lines found for this Sales Order.</div>
+      </div>
+
+      <!-- Table -->
+      <div *ngIf="!grnAlertLoading && grnAlertLines?.length" class="lines-wrap">
+        <table class="lines-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>UOM</th>
+              <th class="num">Ordered</th>
+              <th class="num">Received</th>
+              <th class="num">Pending</th>
+              <th>Status</th>
+              <th>Last Updated</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let l of grnAlertLines; let i = index" [class.alt]="i % 2 === 0">
+              <td style="font-weight:600;">{{ l.itemName || '-' }}</td>
+              <td>{{ l.uom || '-' }}</td>
+
+              <!-- Ordered -->
+              <td class="num">{{ l.orderedQty | number:'1.0-3' }}</td>
+
+              <!-- Received -->
+              <td class="num">
+                <span class="grn-qty-received" [class.has-qty]="l.receivedQty > 0">
+                  {{ l.receivedQty | number:'1.0-3' }}
+                </span>
+              </td>
+
+              <!-- Pending -->
+              <td class="num">
+                <span class="grn-qty-pending"
+                  [class.is-zero]="(l.orderedQty - l.receivedQty) <= 0">
+                  {{ (l.orderedQty - l.receivedQty) | number:'1.0-3' }}
+                </span>
+              </td>
+
+              <!-- Status badge -->
+              <td>
+                <span class="badge badge-pill"
+                  [ngClass]="getGrnProcBadge(l.procurementStatus)"
+                  style="padding:5px 10px;font-size:12px;min-width:130px;display:inline-block;text-align:center;">
+                  {{ getGrnProcStatusText(l.procurementStatus) }}
+                </span>
+              </td>
+
+              <!-- Last update -->
+              <td class="grn-date">
+                {{ l.procurementUpdatedDate
+                   ? (l.procurementUpdatedDate | date:'dd-MM-yyyy HH:mm')
+                   : '-' }}
+              </td>
+            </tr>
+          </tbody>
+
+          <!-- Summary footer -->
+          <tfoot>
+            <tr class="grn-footer-row">
+              <td colspan="2" class="total-label">Total</td>
+              <td class="num total-val">{{ getTotalOrdered()  | number:'1.0-3' }}</td>
+              <td class="num total-val grn-qty-received has-qty">{{ getTotalReceived() | number:'1.0-3' }}</td>
+              <td class="num total-val grn-qty-pending"
+                [class.is-zero]="getTotalPending() <= 0">{{ getTotalPending() | number:'1.0-3' }}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
+
+    <div class="modal-foot">
+      <button (click)="closeGrnAlert()" class="btn-close">Close</button>
+    </div>
   </div>
+</div>
+
+<!-- ===== TEMPLATES ===== -->
+<ng-template #loadingTemplate>
+  <div class="row"><div class="col-12">
+    <div class="alert alert-info mt-2">Loading permission...</div>
+  </div></div>
 </ng-template>
 
 <ng-template #noAccessTemplate>
-  <div class="row">
-    <div class="col-12">
-      <div class="alert alert-warning mt-2">
-        You do not have permission to view this screen.
-      </div>
-    </div>
-  </div>
+  <div class="row"><div class="col-12">
+    <div class="alert alert-warning mt-2">You do not have permission to view this screen.</div>
+  </div></div>
 </ng-template>

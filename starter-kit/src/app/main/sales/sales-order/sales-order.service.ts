@@ -117,4 +117,8 @@ insertSO(data: any): Observable<ResponseResult<number>> {
 getAvailableSoForSalesInvoice() {
   return this.http.get<any>(`${this.url}/SalesInvoice/available-so`);
 }
+
+getGrnAlerts(salesOrderId: number): Observable<any> {
+  return this.http.get(`${this.url}/SalesOrder/grn-alerts/${salesOrderId}`);
+}
 }

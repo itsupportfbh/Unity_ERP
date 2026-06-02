@@ -12,6 +12,8 @@ import Swal from 'sweetalert2';
 import { ColumnMode, DatatableComponent } from '@swimlane/ngx-datatable';
 import { DatePipe } from '@angular/common';
 import * as feather from 'feather-icons';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 import { SalesOrderService } from '../sales-order.service';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
@@ -57,6 +59,18 @@ type SoHeader = {
   grandTotal?: number;
 };
 
+type SalesOrderGrnAlert = {
+  id: number;
+  salesOrderId: number;
+  salesOrderNo: string;
+  customerName: string;
+  receivedQty: number;
+  orderedQty: number;
+  pendingQty: number;
+  lastUpdated?: string | null;
+  lineCount: number;
+};
+
 export interface PeriodStatusDto {
   isLocked: boolean;
   periodName?: string;
@@ -93,10 +107,11 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   modalTotal = 0;
 
   // ✅ GRN Alert modal
-  showGrnAlertModal  = false;
-  grnAlertLines: any[] = [];
-  grnAlertSoNo       = '';
-  grnAlertLoading    = false;
+  showAlertsPanel = false;
+  alerts: SalesOrderGrnAlert[] = [];
+  alertCount = 0;
+
+  private readonly grnAlertReadStorageKey = 'sales-order-grn-alert-read';
 
   lineCols = {
     uom: true,
@@ -244,6 +259,7 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
         this.rows     = list;
         this.tempData = list;
         this.filterUpdate({ target: { value: this.searchValue } });
+        this.refreshGrnAlerts();
       },
       error: (err) => console.error('Error loading SO list', err)
     });
@@ -416,56 +432,85 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   // ===================================================
   // ✅ GRN ALERT MODAL
   // ===================================================
-  openGrnAlert(row: SoHeader): void {
-    this.grnAlertSoNo      = row.salesOrderNo;
-    this.grnAlertLines     = [];
-    this.grnAlertLoading   = true;
-    this.showGrnAlertModal = true;
+  toggleAlerts(): void {
+    this.showAlertsPanel = !this.showAlertsPanel;
+    if (this.showAlertsPanel) this.refreshGrnAlerts();
+  }
 
-    this.salesOrderService.getGrnAlerts(row.id).subscribe({
-      next: (res: any) => {
-        this.grnAlertLines   = res?.data ?? [];
-        this.grnAlertLoading = false;
+  closeAlerts(): void {
+    this.showAlertsPanel = false;
+  }
+
+  refreshGrnAlerts(): void {
+    const salesOrders = (this.tempData || []).filter(row => Number(row?.id || 0) > 0);
+
+    if (!salesOrders.length) {
+      this.alerts = [];
+      this.alertCount = 0;
+      return;
+    }
+
+    forkJoin(
+      salesOrders.map(row =>
+        this.salesOrderService.getGrnAlerts(row.id).pipe(
+          map((res: any) => this.mapGrnAlert(row, res?.data ?? [])),
+          catchError(() => of(null))
+        )
+      )
+    ).subscribe({
+      next: (results) => {
+        const readIds = this.getReadAlertIds();
+        const unread = (results || [])
+          .filter((alert): alert is SalesOrderGrnAlert => !!alert)
+          .filter(alert => !readIds.includes(alert.salesOrderId))
+          .sort((a, b) => {
+            const aTime = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+            const bTime = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+            return bTime - aTime;
+          });
+
+        this.alerts = unread;
+        this.alertCount = unread.length;
       },
       error: () => {
-        this.grnAlertLines   = [];
-        this.grnAlertLoading = false;
+        this.alerts = [];
+        this.alertCount = 0;
       }
     });
   }
 
-  closeGrnAlert(): void {
-    this.showGrnAlertModal = false;
-    this.grnAlertLines     = [];
+  markAlertAsRead(alert: SalesOrderGrnAlert): void {
+    const readIds = this.getReadAlertIds();
+    if (!readIds.includes(alert.salesOrderId)) {
+      readIds.push(alert.salesOrderId);
+      localStorage.setItem(this.grnAlertReadStorageKey, JSON.stringify(readIds));
+    }
+
+    this.alerts = this.alerts.filter(x => x.salesOrderId !== alert.salesOrderId);
+    this.alertCount = this.alerts.length;
   }
 
-  getTotalOrdered(): number {
-    return (this.grnAlertLines || []).reduce((s, l) => s + Number(l.orderedQty || 0), 0);
+  markAllAlertsAsRead(): void {
+    if (!this.alerts.length) return;
+
+    const readIds = Array.from(new Set([
+      ...this.getReadAlertIds(),
+      ...this.alerts.map(x => x.salesOrderId)
+    ]));
+
+    localStorage.setItem(this.grnAlertReadStorageKey, JSON.stringify(readIds));
+    this.alerts = [];
+    this.alertCount = 0;
+    this.showAlertsPanel = false;
   }
 
-  getTotalReceived(): number {
-    return (this.grnAlertLines || []).reduce((s, l) => s + Number(l.receivedQty || 0), 0);
+  clearReadAlertState(): void {
+    localStorage.removeItem(this.grnAlertReadStorageKey);
+    this.refreshGrnAlerts();
   }
 
-  getTotalPending(): number {
-    return (this.grnAlertLines || [])
-      .reduce((s, l) => s + Math.max(0, Number(l.orderedQty || 0) - Number(l.receivedQty || 0)), 0);
-  }
-
-  getGrnProcStatusText(s: number): string {
-    return s === 1 ? 'Pending'
-      : s === 2 ? 'PO Created'
-      : s === 3 ? 'Partially Received'
-      : s === 4 ? 'Fully Received'
-      : 'Unknown';
-  }
-
-  getGrnProcBadge(s: number): string {
-    return s === 1 ? 'badge-warning'
-      : s === 2 ? 'badge-info'
-      : s === 3 ? 'badge-primary'
-      : s === 4 ? 'badge-success'
-      : 'badge-secondary';
+  trackByAlertId(_: number, alert: SalesOrderGrnAlert): number {
+    return alert.salesOrderId;
   }
 
   // ===================================================
@@ -514,6 +559,49 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
       }
     } catch { lines = []; }
     return lines ?? [];
+  }
+
+  private mapGrnAlert(row: SoHeader, lines: any[]): SalesOrderGrnAlert | null {
+    if (!Array.isArray(lines) || !lines.length) return null;
+
+    const orderedQty = lines.reduce((sum, line) => sum + Number(line?.orderedQty || 0), 0);
+    const receivedQty = lines.reduce((sum, line) => sum + Number(line?.receivedQty || 0), 0);
+    const pendingQty = Math.max(orderedQty - receivedQty, 0);
+    const hasGrn = lines.some(line => Number(line?.receivedQty || 0) > 0);
+
+    if (!hasGrn) return null;
+
+    const lastUpdated = lines
+      .map(line => line?.procurementUpdatedDate || null)
+      .filter(Boolean)
+      .sort()
+      .reverse()[0] || null;
+
+    return {
+      id: row.id,
+      salesOrderId: row.id,
+      salesOrderNo: row.salesOrderNo,
+      customerName: row.isCashSales || row.customerId === 0 || row.customerId == null
+        ? 'Cash Sales'
+        : (row.customerName || '-'),
+      receivedQty,
+      orderedQty,
+      pendingQty,
+      lastUpdated,
+      lineCount: lines.length
+    };
+  }
+
+  private getReadAlertIds(): number[] {
+    try {
+      const raw = localStorage.getItem(this.grnAlertReadStorageKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed)
+        ? parsed.map(x => Number(x)).filter(x => x > 0)
+        : [];
+    } catch {
+      return [];
+    }
   }
 
   private getSoPrintStatus(h: any, lines: any[]): string {

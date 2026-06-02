@@ -28,6 +28,57 @@
             </div>
 
             <div class="actions">
+              <div class="position-relative">
+                <button *ngIf="canCreate()" type="button" (click)="toggleAlerts()"
+                  class="btn btn-alerts d-inline-flex align-items-center"
+                  title="GRN Alerts">
+                  <i data-feather="bell" class="w-4 h-4"></i>
+                  <span>Alerts</span>
+                  <span *ngIf="alertCount > 0" class="badge badge-pill badge-danger alert-badge">
+                    {{ alertCount }}
+                  </span>
+                </button>
+
+                <div *ngIf="showAlertsPanel" class="card alerts-panel">
+                  <div class="alerts-head">
+                    <div class="d-flex align-items-center" style="gap:8px;">
+                      <i data-feather="bell"></i>
+                      <b>GRN Alerts</b>
+                    </div>
+                    <div class="d-flex align-items-center" style="gap:8px;">
+                      <button class="btn btn-sm btn-light" (click)="refreshGrnAlerts()">Refresh</button>
+                      <button class="btn btn-sm btn-warning" (click)="markAllAlertsAsRead()" [disabled]="alerts.length === 0">
+                        Mark all read
+                      </button>
+                      <button class="btn btn-sm btn-outline-light" (click)="clearReadAlertState()">Reset</button>
+                      <button class="btn btn-sm btn-outline-light" (click)="closeAlerts()" aria-label="Close">X</button>
+                    </div>
+                  </div>
+
+                  <div class="alerts-body">
+                    <div *ngIf="alerts.length === 0" class="p-3 text-center text-muted">
+                      No new GRN alerts.
+                    </div>
+
+                    <div *ngFor="let alert of alerts; trackBy: trackByAlertId" class="alert-card">
+                      <div class="alert-title">{{ alert.salesOrderNo }} - {{ alert.customerName }}</div>
+                      <div class="alert-sub">
+                        Received: {{ alert.receivedQty | number:'1.0-3' }}
+                        / Ordered: {{ alert.orderedQty | number:'1.0-3' }}
+                        / Pending: {{ alert.pendingQty | number:'1.0-3' }}
+                      </div>
+                      <div class="alert-sub">
+                        Lines: {{ alert.lineCount }}
+                        <span *ngIf="alert.lastUpdated"> / {{ alert.lastUpdated | date:'dd-MM-yyyy HH:mm' }}</span>
+                      </div>
+                      <div class="mt-2 d-flex" style="gap:8px;">
+                        <button class="btn btn-sm btn-outline-primary" (click)="markAlertAsRead(alert)">Read</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <button *ngIf="canCreate()" (click)="openCreate()"
                 class="btn m-1 d-inline-flex align-items-center"
                 style="background-color:#2E5F73;color:white;gap:6px;"
@@ -45,12 +96,10 @@
             </div>
           </div>
 
-          <!-- ===== TABLE ===== -->
           <ngx-datatable class="bootstrap core-bootstrap so-table"
             [rows]="rows" [rowHeight]="50" [headerHeight]="50" [footerHeight]="50"
             [limit]="selectedOption" [columnMode]="'force'" [scrollbarH]="false" [reorderable]="true">
 
-            <!-- Eye -->
             <ngx-datatable-column [width]="45" [resizeable]="false" [sortable]="false"
               [draggable]="false" [canAutoResize]="false">
               <ng-template ngx-datatable-cell-template let-row="row">
@@ -61,9 +110,9 @@
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="SO Number"      prop="salesOrderNo"   [width]="100"></ngx-datatable-column>
+            <ngx-datatable-column name="SO Number" prop="salesOrderNo" [width]="100"></ngx-datatable-column>
 
-            <ngx-datatable-column name="Customer Name"  prop="customerName"   [width]="180">
+            <ngx-datatable-column name="Customer Name" prop="customerName" [width]="180">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 <div class="po-wrap-cell"
                   [title]="row.isCashSales || row.customerId===0 || row.customerId==null ? 'Cash Sales' : (row.customerName||'-')">
@@ -72,19 +121,19 @@
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="Requested Date" prop="requestedDate"  [width]="130">
+            <ngx-datatable-column name="Requested Date" prop="requestedDate" [width]="130">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 {{ row.requestedDate | date:'dd-MM-yyyy' }}
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="Delivery Date"  prop="deliveryDate"   [width]="130">
+            <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="130">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 {{ row.deliveryDate | date:'dd-MM-yyyy' }}
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="Status"         prop="status"         [width]="120">
+            <ngx-datatable-column name="Status" prop="status" [width]="120">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 <span class="badge badge-pill"
                   [ngClass]="{ 'badge-warning': +row.status===1, 'badge-primary': +row.status===2, 'badge-success': +row.status===3 }"
@@ -94,25 +143,16 @@
               </ng-template>
             </ngx-datatable-column>
 
-            <!-- ✅ GRN Stock column -->
-            <ngx-datatable-column name="GRN Stock" [width]="80" [sortable]="false">
+            <ngx-datatable-column name="Action" [width]="60" [sortable]="false">
               <ng-template let-row="row" ngx-datatable-cell-template>
-                <i class="fas fa-boxes grn-icon" (click)="openGrnAlert(row)" title="View GRN Stock Status"></i>
+                <div class="d-flex align-items-center justify-content-center">
+                  <i class="fas fa-print text-primary"
+                    style="cursor:pointer;"
+                    (click)="openPrint(row)"
+                    title="Print / PDF"></i>
+                </div>
               </ng-template>
             </ngx-datatable-column>
-
-            <!-- Action -->
-<!-- Action -->
-<ngx-datatable-column name="Action" [width]="60" [sortable]="false">
-  <ng-template let-row="row" ngx-datatable-cell-template>
-    <div class="d-flex align-items-center justify-content-center">
-      <i class="fas fa-print text-primary"
-        style="cursor:pointer;"
-        (click)="openPrint(row)"
-        title="Print / PDF"></i>
-    </div>
-  </ng-template>
-</ngx-datatable-column>
           </ngx-datatable>
         </div>
       </section>
@@ -120,12 +160,11 @@
   </div>
 </div>
 
-<!-- ===== SO LINES MODAL ===== -->
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="backdrop">
   <div (click)="$event.stopPropagation()" class="modal-card">
     <div class="modal-head">
       <h3>SO Lines</h3>
-      <button (click)="closeLinesModal()" aria-label="Close" class="modal-close">×</button>
+      <button (click)="closeLinesModal()" aria-label="Close" class="modal-close">X</button>
     </div>
     <div class="modal-body">
       <div class="lines-wrap">
@@ -181,7 +220,6 @@
   </div>
 </div>
 
-<!-- ===== DRAFTS MODAL ===== -->
 <div *ngIf="showDraftsModal" class="backdrop" (click)="closeDrafts()">
   <div class="modal-card" (click)="$event.stopPropagation()">
     <div class="modal-head">
@@ -191,23 +229,31 @@
           <span>Total: <strong>{{ draftRows?.length || 0 }}</strong></span>
         </div>
       </div>
-      <button (click)="closeDrafts()" aria-label="Close" class="modal-close">×</button>
+      <button (click)="closeDrafts()" aria-label="Close" class="modal-close">X</button>
     </div>
     <div class="modal-body">
-      <div *ngIf="draftLoading" class="draft-loading">Loading…</div>
+      <div *ngIf="draftLoading" class="draft-loading">Loading...</div>
       <div *ngIf="!draftLoading" class="lines-wrap">
         <table class="lines-table">
           <thead>
             <tr>
-              <th>SO No</th><th>Item</th><th>UOM</th>
-              <th class="num">Ordered Qty</th><th class="num">Allocated Qty</th>
-              <th class="num">Shortage Qty</th><th class="num">WH Id</th>
-              <th class="num">Bin Id</th><th class="num">Supplier Id</th><th class="reason">Reason</th>
+              <th>SO No</th>
+              <th>Item</th>
+              <th>UOM</th>
+              <th class="num">Ordered Qty</th>
+              <th class="num">Allocated Qty</th>
+              <th class="num">Shortage Qty</th>
+              <th class="num">WH Id</th>
+              <th class="num">Bin Id</th>
+              <th class="num">Supplier Id</th>
+              <th class="reason">Reason</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let r of draftRows; let i = index" [class.alt]="i % 2 === 0">
-              <td>{{ r.salesOrderNo }}</td><td>{{ r.itemName }}</td><td>{{ r.uom || '-' }}</td>
+              <td>{{ r.salesOrderNo }}</td>
+              <td>{{ r.itemName }}</td>
+              <td>{{ r.uom || '-' }}</td>
               <td class="num">{{ r.quantity ?? 0 }}</td>
               <td class="num">{{ r.lockedQty ?? 0 }}</td>
               <td class="num">{{ getShortageQty(r) }}</td>
@@ -229,110 +275,6 @@
   </div>
 </div>
 
-<!-- ===== ✅ GRN STOCK ALERT MODAL ===== -->
-<div *ngIf="showGrnAlertModal" (click)="closeGrnAlert()" class="backdrop">
-  <div (click)="$event.stopPropagation()" class="modal-card grn-modal-card">
-
-    <div class="modal-head">
-      <h3>
-        <i class="fas fa-boxes mr-2" style="color:#0F766E;"></i>
-        GRN Stock Status &nbsp;—&nbsp;
-        <span style="color:#2E5F73;">{{ grnAlertSoNo }}</span>
-      </h3>
-      <button (click)="closeGrnAlert()" aria-label="Close" class="modal-close">×</button>
-    </div>
-
-    <div class="modal-body">
-
-      <!-- Loading -->
-      <div *ngIf="grnAlertLoading" class="grn-loading">
-        <i class="fas fa-spinner fa-spin mr-2"></i> Loading...
-      </div>
-
-      <!-- Empty -->
-      <div *ngIf="!grnAlertLoading && !grnAlertLines?.length" class="grn-empty">
-        <i class="fas fa-box-open mb-2" style="font-size:32px;color:#d1d5db;"></i>
-        <div>No Direct DO lines found for this Sales Order.</div>
-      </div>
-
-      <!-- Table -->
-      <div *ngIf="!grnAlertLoading && grnAlertLines?.length" class="lines-wrap">
-        <table class="lines-table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>UOM</th>
-              <th class="num">Ordered</th>
-              <th class="num">Received</th>
-              <th class="num">Pending</th>
-              <th>Status</th>
-              <th>Last Updated</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr *ngFor="let l of grnAlertLines; let i = index" [class.alt]="i % 2 === 0">
-              <td style="font-weight:600;">{{ l.itemName || '-' }}</td>
-              <td>{{ l.uom || '-' }}</td>
-
-              <!-- Ordered -->
-              <td class="num">{{ l.orderedQty | number:'1.0-3' }}</td>
-
-              <!-- Received -->
-              <td class="num">
-                <span class="grn-qty-received" [class.has-qty]="l.receivedQty > 0">
-                  {{ l.receivedQty | number:'1.0-3' }}
-                </span>
-              </td>
-
-              <!-- Pending -->
-              <td class="num">
-                <span class="grn-qty-pending"
-                  [class.is-zero]="(l.orderedQty - l.receivedQty) <= 0">
-                  {{ (l.orderedQty - l.receivedQty) | number:'1.0-3' }}
-                </span>
-              </td>
-
-              <!-- Status badge -->
-              <td>
-                <span class="badge badge-pill"
-                  [ngClass]="getGrnProcBadge(l.procurementStatus)"
-                  style="padding:5px 10px;font-size:12px;min-width:130px;display:inline-block;text-align:center;">
-                  {{ getGrnProcStatusText(l.procurementStatus) }}
-                </span>
-              </td>
-
-              <!-- Last update -->
-              <td class="grn-date">
-                {{ l.procurementUpdatedDate
-                   ? (l.procurementUpdatedDate | date:'dd-MM-yyyy HH:mm')
-                   : '-' }}
-              </td>
-            </tr>
-          </tbody>
-
-          <!-- Summary footer -->
-          <tfoot>
-            <tr class="grn-footer-row">
-              <td colspan="2" class="total-label">Total</td>
-              <td class="num total-val">{{ getTotalOrdered()  | number:'1.0-3' }}</td>
-              <td class="num total-val grn-qty-received has-qty">{{ getTotalReceived() | number:'1.0-3' }}</td>
-              <td class="num total-val grn-qty-pending"
-                [class.is-zero]="getTotalPending() <= 0">{{ getTotalPending() | number:'1.0-3' }}</td>
-              <td colspan="2"></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-
-    <div class="modal-foot">
-      <button (click)="closeGrnAlert()" class="btn-close">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== TEMPLATES ===== -->
 <ng-template #loadingTemplate>
   <div class="row"><div class="col-12">
     <div class="alert alert-info mt-2">Loading permission...</div>

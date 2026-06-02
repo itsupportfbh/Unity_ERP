@@ -166,7 +166,9 @@
                 (change)="onWarehouseChange(r)"
                 [appendTo]="'body'"
                 [dropdownPosition]="'bottom'"
-                [clearable]="true"
+                [clearable]="!defaultWarehouseId"
+                [searchable]="!defaultWarehouseId"
+                [disabled]="!!defaultWarehouseId"
                 placeholder="Select Warehouse"
                 class="grn-ng">
               </ng-select>

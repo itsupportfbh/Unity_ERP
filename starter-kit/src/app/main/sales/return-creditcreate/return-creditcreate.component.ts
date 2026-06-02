@@ -256,8 +256,8 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     }
 
     this.doNumber = row.doNumber ?? row.DoNumber ?? '';
-    this.siNumber = row.siNumber ?? row.invoiceNo ?? row.SiNumber ?? '';
-    this.siId = row.siId;
+    this.siNumber = row.siNumber ?? row.invoiceNo ?? row.InvoiceNo ?? row.SiNumber ?? '';
+    this.siId = +(row.siId ?? row.SiId ?? 0) || null;
     this.customerId = row.customerId;
     this.customerName = this.customers?.find(c => c.customerId == this.customerId)?.customerName ?? '';
 
@@ -312,6 +312,19 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
   addLine(): void {
     if (this.isCreditNoteBlocked()) return;
 
+    if (!this.doId) {
+      Swal.fire({ icon: 'warning', title: 'Select Delivery Order' });
+      return;
+    }
+
+    if (!this.siId || !this.siNumber) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sales Invoice not found',
+        text: 'Create Sales Invoice for this Delivery Order first.'
+      });
+      return;
+    }
     this.lines.push({
       doLineId: null,
       siId: this.siId ?? 0,
@@ -491,4 +504,7 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
   goList(): void {
     this.router.navigate(['/Sales/Return-credit-list']);
   }
+  canAddLine(): boolean {
+  return !!this.doId && !!this.siId && !!this.siNumber && !this.isGstLocked && !this.isGlPosted;
+}
 }

@@ -120,6 +120,8 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
 
   currentSupplierId: number | null = null;
   currentSupplierName = '';
+  locationId = Number(localStorage.getItem('locationId') || 0) || 0;
+  defaultWarehouseId: number | null = null;
 
   warehouses: Array<{ id: number; name: string }> = [];
   binsByWarehouse: Record<number, Array<{ id: number; binName: string }>> = {};
@@ -800,6 +802,8 @@ private buildRowsFromPo(
       flagIssueId: null
     } as LineRow;
   });
+
+  this.applyDefaultWarehouseToRows();
 }
 
   private extractItemCode(itemText: string): string {
@@ -855,10 +859,19 @@ private buildRowsFromPo(
     return this.warehouseService.getWarehouse().pipe(
       tap((res: any) => {
         const arr = res?.data ?? res ?? [];
-        this.warehouses = arr.map((w: any) => ({
+        const mapped = arr.map((w: any) => ({
           id: Number(w.id ?? w.Id),
-          name: String(w.name ?? w.warehouseName ?? w.WarehouseName ?? '')
+          name: String(w.name ?? w.warehouseName ?? w.WarehouseName ?? ''),
+          locationId: Number(w.locationId ?? w.LocationId ?? w.outletId ?? w.OutletId ?? 0)
         })).filter((w: any) => !!w.id && !!w.name);
+
+        const filtered = this.locationId > 0
+          ? mapped.filter((w: any) => Number(w.locationId) === this.locationId)
+          : mapped;
+
+        this.warehouses = filtered.length ? filtered.map((w: any) => ({ id: w.id, name: w.name })) : mapped.map((w: any) => ({ id: w.id, name: w.name }));
+        this.defaultWarehouseId = this.warehouses.length ? Number(this.warehouses[0].id) : null;
+        this.applyDefaultWarehouseToRows();
       }),
       map(() => void 0),
       catchError(err => {
@@ -940,6 +953,8 @@ private buildRowsFromPo(
       photos: [],
       isFlagIssue: false, isPostInventory: false, flagIssueId: null
     }];
+
+    this.applyDefaultWarehouseToRows();
   }
 
   trackByIndex = (i: number) => i;
@@ -1141,7 +1156,26 @@ private buildRowsFromPo(
       },
       error: (err) => console.error('Edit load failed', err)
     });
-  }
+}
+
+private applyDefaultWarehouseToRows(): void {
+  if (!this.defaultWarehouseId || !this.grnRows?.length) return;
+
+  const warehouseName = this.lookupWarehouseName(this.defaultWarehouseId);
+
+  this.grnRows = (this.grnRows || []).map((row: LineRow) => {
+    const warehouseId = this.toNum(row?.warehouseId) ?? this.defaultWarehouseId;
+    return {
+      ...row,
+      warehouseId,
+      warehouseName: row?.warehouseName || warehouseName,
+      binId: warehouseId === this.defaultWarehouseId ? row?.binId ?? null : row?.binId
+    };
+  });
+
+  this.loadBins$(this.defaultWarehouseId).subscribe();
+}
+
 onQtyChange(r: any) {
   const qty = Number(r.qtyReceived ?? 0);
   const rem = Number(r.remainingQty ?? r.poQty ?? 0);

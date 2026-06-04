@@ -35,11 +35,11 @@
             </div>
 
             <div class="mrq-right-btnrow">
-              <button class="btn mrq-btn-outline" type="button" (click)="goStockOverview()">
+              <button class="btn mrq-btn-outline" type="button" *ngIf="canShowStockButtons()" (click)="goStockOverview()">
                 Stock Overview List
               </button>
 
-              <button class="btn mrq-btn-outline" type="button" (click)="goStockTransfer()">
+              <button class="btn mrq-btn-outline" type="button" *ngIf="canShowStockButtons()" (click)="goStockTransfer()">
                 Stock Transfer List
               </button>
 

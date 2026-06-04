@@ -54,7 +54,7 @@ export class MaterialRequisitionListComponent implements OnInit {
   // view modal
   selectedReq: MaterialReqRow | null = null;
   private modalRef?: NgbModalRef;
-
+companyId: number = 0;
    userId: number = 0;
     functionId = 'mr-list';
     
@@ -73,6 +73,7 @@ export class MaterialRequisitionListComponent implements OnInit {
   {
     this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
+    this.companyId = Number(localStorage.getItem('companyId') || 0);
   }
 
   ngOnInit(): void {
@@ -295,5 +296,9 @@ goStockTransfer() {
       this.periodName = '';
     }
   });
+}
+
+canShowStockButtons(): boolean {
+  return this.companyId === 1;
 }
 }

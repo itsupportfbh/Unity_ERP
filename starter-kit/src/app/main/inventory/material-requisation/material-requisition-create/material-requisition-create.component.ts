@@ -90,21 +90,21 @@ export class MaterialRequisitionCreateComponent implements OnInit {
     this.userId = localStorage.getItem('id');
   }
 
-  ngOnInit(): void {
-    this.header.requesterName = String(localStorage.getItem('username') ?? '');
+ngOnInit(): void {
+  this.header.requesterName = String(localStorage.getItem('username') ?? '');
 
-    const idParam = this.route.snapshot.paramMap.get('id');
-    this.editId = idParam ? Number(idParam) : null;
-    this.isEdit = !!this.editId;
+  const idParam = this.route.snapshot.paramMap.get('id');
+  this.editId = idParam ? Number(idParam) : null;
+  this.isEdit = !!this.editId;
 
-    this.loadItem(() => {
-      if (this.isEdit && this.editId) {
-        this.loadById(this.editId);
-      }
-    });
+  this.loadItem(() => {
+    if (this.isEdit && this.editId) {
+      this.loadById(this.editId);
+    }
+  });
 
-    this.loadOutlets();
-  }
+  this.loadOutlets();
+}
 
 loadItem(done?: () => void): void {
   this.itemMasterService.getAllItemMaster().subscribe({
@@ -136,17 +136,43 @@ loadItem(done?: () => void): void {
   });
 }
 
-  loadOutlets(): void {
-    this.outletService.getWarehouse().subscribe({
-      next: (res: any) => {
-        this.OutletList = res?.data ?? [];
-      },
-      error: (err) => {
-        console.error('Outlet load error:', err);
-        this.OutletList = [];
+loadOutlets(): void {
+  this.outletService.getWarehouse().subscribe({
+    next: (res: any) => {
+      this.OutletList = res?.data ?? [];
+
+      // Edit mode skip
+      if (this.isEdit) {
+        return;
       }
-    });
-  }
+
+      const locationId = this.getLocalLocationId();
+
+      if (!locationId) {
+        return;
+      }
+
+      console.log('LocationId from localStorage:', locationId);
+
+      // Find warehouse mapped to location
+      const warehouse = this.OutletList.find(
+        (x: any) =>
+          Number(x.locationId ?? x.LocationId ?? 0) === locationId
+      );
+
+      if (warehouse) {
+        this.header.OutletId = Number(warehouse.id);
+
+        // Auto load bins
+        this.loadBinsByOutlet(this.header.OutletId);
+      }
+    },
+    error: (err) => {
+      console.error('Warehouse load error:', err);
+      this.OutletList = [];
+    }
+  });
+}
 
   onOutletChanged(): void {
     const outletId = this.header.OutletId != null ? Number(this.header.OutletId) : null;
@@ -159,29 +185,44 @@ loadItem(done?: () => void): void {
     this.loadBinsByOutlet(outletId);
   }
 
-  loadBinsByOutlet(outletId: number, keepSelectedBinId: number | null = null): void {
-    this.outletService.getBinNameByIdAsync(outletId).subscribe({
-      next: (res: any) => {
-        const data = res?.data ?? [];
+loadBinsByOutlet(
+  outletId: number,
+  keepSelectedBinId: number | null = null
+): void {
+  this.outletService.getBinNameByIdAsync(outletId).subscribe({
+    next: (res: any) => {
+      const data = res?.data ?? [];
 
-        this.binList = (data || [])
-          .map((b: any) => ({
-            id: Number(b.binID ?? b.binId ?? b.id ?? 0),
-            binName: String(b.binName ?? b.name ?? '')
-          }))
-          .filter((x: BinDto) => x.id > 0 && !!x.binName)
-          .sort((a: BinDto, b: BinDto) => a.binName.localeCompare(b.binName));
+      this.binList = (data || [])
+        .map((b: any) => ({
+          id: Number(b.binID ?? b.binId ?? b.id ?? 0),
+          binName: String(b.binName ?? b.name ?? '')
+        }))
+        .filter((x: BinDto) => x.id > 0 && !!x.binName)
+        .sort((a: BinDto, b: BinDto) =>
+          a.binName.localeCompare(b.binName)
+        );
 
-        if (keepSelectedBinId && this.binList.some(x => x.id === keepSelectedBinId)) {
-          this.header.BinId = keepSelectedBinId;
-        }
-      },
-      error: (err) => {
-        console.error('Bin load error:', err);
-        this.binList = [];
+      // Edit mode existing bin
+      if (
+        keepSelectedBinId &&
+        this.binList.some(x => x.id === keepSelectedBinId)
+      ) {
+        this.header.BinId = keepSelectedBinId;
+        return;
       }
-    });
-  }
+
+      // Create mode auto select first bin
+if (!this.isEdit) {
+  this.header.BinId = null;
+}
+    },
+    error: (err) => {
+      console.error('Bin load error:', err);
+      this.binList = [];
+    }
+  });
+}
 
   loadById(id: number): void {
     Swal.fire({
@@ -484,6 +525,18 @@ receivedQty: 0
   close(): void {
     this.router.navigate(['/Inventory/list-material-requisition']);
   }
+
+
+  private getLocalLocationId(): number | null {
+  const val =
+    localStorage.getItem('locationId') ||
+    localStorage.getItem('LocationId') ||
+    localStorage.getItem('locationID');
+
+  const id = Number(val ?? 0);
+
+  return id > 0 ? id : null;
+}
 
   private emptyRow(): MrqLine {
     return {

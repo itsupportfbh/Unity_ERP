@@ -159,9 +159,8 @@
                                   <td>{{ inv.dueDate | date:'dd-MMM-yyyy' }}</td>
                                   <td class="text-right">
                                     {{ inv.grandTotal | number:'1.2-2' }}
-                                    <span *ngIf="inv.currencyName"
-                                      style="font-size:0.75rem;color:#6b7280;">
-                                      {{ inv.currencyName }}
+                                    <span style="font-size:0.75rem;color:#6b7280;">
+                                      {{ inv.currencyName || 'SGD' }}
                                     </span>
                                   </td>
                                   <td class="text-right text-success">{{ inv.paidAmount | number:'1.2-2' }}</td>
@@ -266,16 +265,13 @@
                       <td>{{ p.paymentMethodName || getPaymentMethodName(p.paymentMethodId) }}</td>
                       <td class="text-right">
                         {{ p.amount | number:'1.2-2' }}
-                        <!-- ✅ Payment currency show (SGD or INR) -->
                         <span style="font-size:0.75rem;color:#6b7280;margin-left:3px;">
                           {{ p.currencyName || 'SGD' }}
                         </span>
                       </td>
-                      <!-- ✅ Base SGD -->
                       <td class="text-right" style="color:#2E5F73;font-weight:600;">
                         {{ (p.amountBase || p.amount) | number:'1.2-2' }} SGD
                       </td>
-                      <!-- ✅ FX Rate -->
                       <td class="text-right" style="color:#6b7280;font-size:0.85rem;">
                         {{ (p.fxRate && p.fxRate !== 1) ? (p.fxRate | number:'1.4-4') : '-' }}
                       </td>
@@ -336,23 +332,78 @@
               </div>
 
               <!-- Supplier totals -->
-              <div class="col-md-9 col-12 d-flex align-items-center">
-                <div class="d-flex flex-wrap w-100 supplier-totals">
-                  <div class="sup-total-pill">INV: {{ supTotalInvoice | number:'1.2-2' }}</div>
-                  <div class="sup-total-pill text-success">PAID: {{ supTotalPaid | number:'1.2-2' }}</div>
-                  <div class="sup-total-pill text-danger">DN: {{ supTotalDebitNote | number:'1.2-2' }}</div>
-                  <div class="sup-total-pill text-success">ADV: {{ supTotalAdvance | number:'1.2-2' }}</div>
-                  <div class="sup-total-pill text-brand font-weight-bold">OS: {{ supTotalNetOutstanding | number:'1.2-2' }}</div>
-                  <div class="sup-total-pill text-brand font-weight-bold">PAYABLE: {{ supTotalPayable | number:'1.2-2' }}</div>
-                  <!-- Invoice currency info -->
-                  <div class="sup-total-pill"
-                    *ngIf="invoiceCurrencyName"
-                    style="background:#fff3cd;color:#856404;font-size:0.78rem;">
-                    Invoice: {{ invoiceCurrencyName }}
-                    ({{ invoiceFxRate | number:'1.4-4' }})
-                  </div>
-                </div>
-              </div>
+          <div class="col-md-9 col-12 d-flex align-items-center">
+  <div class="d-flex flex-wrap w-100 supplier-totals">
+
+    <!-- INV -->
+    <div class="sup-total-pill">
+      <div>INV: {{ supTotalInvoice | number:'1.2-2' }}
+        <span *ngIf="invoiceCurrencyName"
+          style="font-size:0.75rem;color:#6b7280;">
+          {{ invoiceCurrencyName }}
+        </span>
+      </div>
+      <div *ngIf="invoiceCurrencyName && invoiceCurrencyName !== 'SGD'"
+        style="font-size:0.73rem;color:#2E5F73;">
+        ≈ {{ (supTotalInvoice * invoiceFxRate) | number:'1.2-2' }} SGD
+      </div>
+    </div>
+
+    <!-- PAID -->
+    <div class="sup-total-pill text-success">
+      <div>PAID: {{ supTotalPaid | number:'1.2-2' }}
+        <span *ngIf="invoiceCurrencyName"
+          style="font-size:0.75rem;">
+          {{ invoiceCurrencyName }}
+        </span>
+      </div>
+      <div *ngIf="invoiceCurrencyName && invoiceCurrencyName !== 'SGD'"
+        style="font-size:0.73rem;color:#2E5F73;">
+        ≈ {{ (supTotalPaid * invoiceFxRate) | number:'1.2-2' }} SGD
+      </div>
+    </div>
+
+    <!-- DN -->
+    <div class="sup-total-pill text-danger">
+      <div>DN: {{ supTotalDebitNote | number:'1.2-2' }}</div>
+      <div *ngIf="invoiceCurrencyName && invoiceCurrencyName !== 'SGD'"
+        style="font-size:0.73rem;color:#2E5F73;">
+        ≈ {{ (supTotalDebitNote * invoiceFxRate) | number:'1.2-2' }} SGD
+      </div>
+    </div>
+
+    <!-- ADV -->
+    <div class="sup-total-pill text-success">
+      <div>ADV: {{ supTotalAdvance | number:'1.2-2' }}
+        <span *ngIf="invoiceCurrencyName"
+          style="font-size:0.75rem;">
+          {{ invoiceCurrencyName }}
+        </span>
+      </div>
+      <div *ngIf="invoiceCurrencyName && invoiceCurrencyName !== 'SGD'"
+        style="font-size:0.73rem;color:#2E5F73;">
+        ≈ {{ (supTotalAdvance * invoiceFxRate) | number:'1.2-2' }} SGD
+      </div>
+    </div>
+
+  
+
+    <!-- PAYABLE -->
+    <div class="sup-total-pill text-brand font-weight-bold">
+      <div>PAYABLE: {{ supTotalPayable | number:'1.2-2' }}
+        <span *ngIf="invoiceCurrencyName"
+          style="font-size:0.75rem;">
+          {{ invoiceCurrencyName }}
+        </span>
+      </div>
+      <div *ngIf="invoiceCurrencyName && invoiceCurrencyName !== 'SGD'"
+        style="font-size:0.73rem;color:#2E5F73;font-weight:700;">
+        ≈ {{ (supTotalPayable * invoiceFxRate) | number:'1.2-2' }} SGD
+      </div>
+    </div>
+
+  </div>
+</div>
 
               <!-- Date -->
               <div class="col-md-2 col-12 mt-1">
@@ -399,13 +450,12 @@
                 </div>
               </div>
 
-              <!-- ✅ Pay Currency dropdown -->
+              <!-- ✅ Pay Currency -->
               <div class="col-md-2 col-12 mt-1">
                 <div class="form-group">
                   <label>
                     Pay Currency
-                    <span *ngIf="fxRateLoading"
-                      style="font-size:0.75rem;color:#0e3a4c;">⏳</span>
+                    <span *ngIf="fxRateLoading" style="font-size:0.75rem;color:#0e3a4c;">⏳</span>
                   </label>
                   <select class="form-control"
                     [(ngModel)]="paymentCurrencyId"
@@ -435,7 +485,7 @@
                 </div>
               </div>
 
-              <!-- ✅ FX Rate — non-base currency மட்டும் -->
+              <!-- ✅ FX Rate — foreign currency மட்டும் -->
               <div class="col-md-2 col-12 mt-1"
                 *ngIf="paymentCurrencyId !== getBaseCurrencyId()">
                 <div class="form-group">
@@ -446,15 +496,14 @@
                   <input type="number" class="form-control text-right"
                     [(ngModel)]="payFxRate"
                     (input)="recalcPaymentBase()"
-                    step="0.000001"
-                    placeholder="0.0000" />
+                    step="0.000001" placeholder="0.0000" />
                   <small class="text-muted" style="font-size:0.75rem;">
                     1 {{ paymentCurrencyName }} = {{ payFxRate | number:'1.4-4' }} SGD
                   </small>
                 </div>
               </div>
 
-              <!-- ✅ Base SGD — non-base currency மட்டும் -->
+              <!-- ✅ Base SGD — foreign currency மட்டும் -->
               <div class="col-md-2 col-12 mt-1"
                 *ngIf="paymentCurrencyId !== getBaseCurrencyId()">
                 <div class="form-group">
@@ -525,11 +574,24 @@
                         <th style="background-color:#2E5F73;color:#fff;">Invoice No</th>
                         <th style="background-color:#2E5F73;color:#fff;">Invoice Date</th>
                         <th style="background-color:#2E5F73;color:#fff;">Due Date</th>
-                        <th style="background-color:#2E5F73;color:#fff;" class="text-right">Amount</th>
+                        <th style="background-color:#2E5F73;color:#fff;" class="text-right">
+                          Amount
+                          <!-- ✅ Invoice currency header -->
+                          <span *ngIf="invoiceCurrencyName"
+                            style="font-size:0.75rem;font-weight:400;">
+                            ({{ invoiceCurrencyName }})
+                          </span>
+                        </th>
                         <th style="background-color:#2E5F73;color:#fff;" class="text-right">Paid</th>
                         <th style="background-color:#2E5F73;color:#fff;" class="text-right">Debit Note</th>
                         <th style="background-color:#2E5F73;color:#fff;" class="text-right">Advance</th>
-                        <th style="background-color:#2E5F73;color:#fff;" class="text-right">Payable</th>
+                        <th style="background-color:#2E5F73;color:#fff;" class="text-right">
+                          Payable
+                          <span *ngIf="invoiceCurrencyName"
+                            style="font-size:0.75rem;font-weight:400;">
+                            ({{ invoiceCurrencyName }})
+                          </span>
+                        </th>
                         <th style="background-color:#2E5F73;color:#fff;" class="text-center">Status</th>
                       </tr>
                     </thead>
@@ -545,15 +607,27 @@
                           <td>{{ si.dueDate | date:'dd-MMM-yyyy' }}</td>
                           <td class="text-right">
                             {{ si.grandTotal | number:'1.2-2' }}
-                            <span *ngIf="si.currencyName"
-                              style="font-size:0.75rem;color:#6b7280;">
-                              {{ si.currencyName }}
+                            <!-- ✅ currency மட்டும், SGD default -->
+                            <span style="font-size:0.72rem;color:#6b7280;">
+                              {{ si.currencyName || 'SGD' }}
                             </span>
                           </td>
                           <td class="text-right text-success">{{ si.paidAmount | number:'1.2-2' }}</td>
                           <td class="text-right text-danger">{{ si.debitNoteAmount | number:'1.2-2' }}</td>
                           <td class="text-right text-success">{{ si.advanceAmount | number:'1.2-2' }}</td>
-                          <td class="text-right font-weight-bold">{{ si.payableAfterAdvance | number:'1.2-2' }}</td>
+                       
+<td class="text-right font-weight-bold">
+  <!-- INR amount -->
+  {{ si.payableAfterAdvance | number:'1.2-2' }}
+  <span style="font-size:0.72rem;color:#6b7280;">
+    {{ si.currencyName || 'SGD' }}
+  </span>
+ 
+  <div *ngIf="si.currencyName && si.currencyName !== 'SGD'"
+    style="font-size:0.78rem;color:#2E5F73;font-weight:700;">
+    = {{ (si.payableAfterAdvance * (si.fxRate || invoiceFxRate)) | number:'1.2-2' }} SGD
+  </div>
+</td>
                           <td class="text-center">
                             <span class="badge status-pill"
                               [ngClass]="getInvoiceStatusClassByAmounts(si)">
@@ -690,15 +764,9 @@
               </div>
 
               <div class="d-flex flex-wrap mb-1">
-                <div class="sup-total-pill mr-1">
-                  Total: {{ totalAdvanceAmount | number:'1.2-2' }}
-                </div>
-                <div class="sup-total-pill text-success mr-1">
-                  Utilised: {{ totalAdvanceUtilised | number:'1.2-2' }}
-                </div>
-                <div class="sup-total-pill text-brand font-weight-bold mr-1">
-                  Balance: {{ totalAdvanceBalance | number:'1.2-2' }}
-                </div>
+                <div class="sup-total-pill mr-1">Total: {{ totalAdvanceAmount | number:'1.2-2' }}</div>
+                <div class="sup-total-pill text-success mr-1">Utilised: {{ totalAdvanceUtilised | number:'1.2-2' }}</div>
+                <div class="sup-total-pill text-brand font-weight-bold mr-1">Balance: {{ totalAdvanceBalance | number:'1.2-2' }}</div>
               </div>
 
               <div *ngIf="isPeriodLocked"

@@ -79,35 +79,88 @@
               <input *ngIf="paymentMode === 'BANK'" type="number" class="form-control text-end"
                 [(ngModel)]="amountReceived" name="amountReceivedBank" (input)="onAmountReceivedChange()" />
             </div>
+         
+
+<!-- Pay Currency -->
+<div class="col-md-2 col-6">
+  <label class="form-label">
+    Pay Currency
+    <span *ngIf="fxRateLoading"
+      style="font-size:0.75rem;color:#0e3a4c;">⏳</span>
+  </label>
+  <select class="form-control"
+    [(ngModel)]="paymentCurrencyId"
+    name="paymentCurrency"
+    (change)="onPaymentCurrencyChange()">
+    <option *ngFor="let c of availableCurrencies"
+      [ngValue]="c.id || c.Id">
+      {{ c.currencyName || c.CurrencyName }}
+    </option>
+  </select>
+</div>
+
+
+<div class="col-md-2 col-6" *ngIf="isForeignCurrency()">
+  <label class="form-label">FX Rate</label>
+  <input type="number" class="form-control text-end"
+    [(ngModel)]="fxRate" name="fxRate"
+    step="0.000001"
+    (input)="recalcBase()" />
+  <small class="text-muted" style="font-size:0.75rem;">
+    1 {{ paymentCurrencyName }} = {{ fxRate | number:'1.4-4' }} {{ baseCurrencyName }}
+  </small>
+</div>
           </div>
 
-          <!-- Totals row -->
-          <div class="row mb-2">
-            <div class="col-md-6"></div>
-            <div class="col-md-6">
-              <div class="d-flex justify-content-end small text-muted gap-2 flex-wrap">
-                <span>
-                  Amount Received:
-                  <strong>{{ amountReceived | number:'1.2-2' }}</strong>
-                </span>
-                <span>|</span>
-                <span>
-                  Total Allocated:
-                  <strong>{{ totalAllocated | number:'1.2-2' }}</strong>
-                </span>
-                <span>|</span>
-                <span>
-                  Unallocated:
-                  <strong [ngClass]="{
-                    'text-success': unallocatedAmount >= 0,
-                    'text-danger': unallocatedAmount < 0
-                  }">
-                    {{ unallocatedAmount | number:'1.2-2' }}
-                  </strong>
-                </span>
-              </div>
-            </div>
-          </div>
+         <!-- Totals row update -->
+<div class="row mb-2">
+  <div class="col-md-6"></div>
+  <div class="col-md-6">
+    <div class="d-flex justify-content-end small text-muted gap-2 flex-wrap">
+      <span>
+        Amount Received:
+        <strong>{{ amountReceived | number:'1.2-2' }}
+          {{ paymentCurrencyName || 'SGD' }}
+        </strong>
+      </span>
+
+      <!-- ✅ Base SGD — foreign currency மட்டும் -->
+      <ng-container *ngIf="isForeignCurrency()">
+        <span>|</span>
+        <span style="color:#2E5F73;font-weight:600;">
+          ≈ {{ amountBase | number:'1.2-2' }} {{ baseCurrencyName }}
+        </span>
+      </ng-container>
+
+      <span>|</span>
+      <span>
+        Total Allocated:
+        <strong>{{ totalAllocated | number:'1.2-2' }}</strong>
+      </span>
+      <span>|</span>
+      <span>
+        Unallocated:
+        <strong [ngClass]="{
+          'text-success': unallocatedAmount >= 0,
+          'text-danger':  unallocatedAmount < 0
+        }">
+          {{ unallocatedAmount | number:'1.2-2' }}
+        </strong>
+      </span>
+    </div>
+
+    <!-- ✅ Exchange Gain/Loss -->
+    <div *ngIf="isForeignCurrency() && exchangeGainLoss !== 0"
+      class="d-flex justify-content-end mt-1">
+      <span [style.color]="exchangeGainLoss > 0 ? '#dc3545' : '#28a745'"
+        style="font-size:0.85rem;font-weight:700;">
+        Exchange {{ exchangeGainLoss > 0 ? 'Loss' : 'Gain' }}:
+        {{ Math.abs(exchangeGainLoss) | number:'1.2-2' }} {{ baseCurrencyName }}
+        <small style="color:#6b7280;">(Auto GL)</small>
+      </span>
+    </div>
+  </div>
+</div>
 
           <!-- Allocation grid -->
           <div class="table-responsive" *ngIf="customerId">
@@ -121,47 +174,81 @@
                   </th>
                   <th>Invoice</th>
                   <th>Date</th>
-                  <th class="text-end">Amount</th>
-                  <th class="text-end">Paid</th>
-                  <th class="text-end">Balance</th>
-                  <th class="text-end">Allocate</th>
+                 <!-- Amount column header update -->
+<th class="text-end">
+  Amount
+  <span *ngIf="invoiceCurrencyName"
+    style="font-size:0.75rem;font-weight:400;">
+    ({{ invoiceCurrencyName }})
+  </span>
+</th>
+<th class="text-end">Paid</th>
+<th class="text-end">
+  Balance
+  <span *ngIf="invoiceCurrencyName"
+    style="font-size:0.75rem;font-weight:400;">
+    ({{ invoiceCurrencyName }})
+  </span>
+</th>
+<th class="text-end">Allocate</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr *ngFor="let inv of invoices; let i = index">
-                  <!-- Row checkbox -->
-                  <td class="text-center">
-                    <input type="checkbox" [checked]="allocations[i]?.selected"
-                      (change)="onRowCheckboxChange(i, $event.target.checked)" />
-                  </td>
+       <tbody>
+  <tr *ngFor="let inv of invoices; let i = index">
+    
+    <!-- Checkbox -->
+    <td class="text-center">
+      <input type="checkbox"
+        [checked]="allocations[i]?.selected"
+        (change)="onRowCheckboxChange(i, $event.target.checked)" />
+    </td>
 
-                  <td>{{ inv.invoiceNo }}</td>
-                  <td>{{ inv.invoiceDate | date:'dd-MMM-yyyy' }}</td>
-                  <td class="text-end">{{ inv.amount | number:'1.2-2' }}</td>
+    <td>{{ inv.invoiceNo }}</td>
+    <td>{{ inv.invoiceDate | date:'dd-MMM-yyyy' }}</td>
 
-                  <!-- Paid = already paid + allocation -->
-                  <td class="text-end">
-                    {{ rowPaid(inv, i) | number:'1.2-2' }}
-                  </td>
+    <!-- Amount -->
+    <td class="text-end">
+      {{ inv.amount | number:'1.2-2' }}
+      <span *ngIf="inv.currencyName"
+        style="font-size:0.72rem;color:#6b7280;margin-left:2px;">
+        {{ inv.currencyName }}
+      </span>
+    </td>
 
-                  <!-- Balance = amount - (already paid + allocation) -->
-                  <td class="text-end">
-                    {{ rowBalance(inv, i) | number:'1.2-2' }}
-                  </td>
+    <!-- Paid -->
+    <td class="text-end">
+      {{ rowPaid(inv, i) | number:'1.2-2' }}
+    </td>
 
-                  <!-- Allocate -->
-                  <td class="text-end">
-                    <input type="number" min="0" class="form-control form-control-sm text-end"
-                      [(ngModel)]="allocations[i].allocatedAmount" name="alloc_{{ i }}" (input)="onAllocateChange(i)" />
-                  </td>
-                </tr>
+    <!-- Balance -->
+    <td class="text-end">
+      {{ rowBalance(inv, i) | number:'1.2-2' }}
+      <span *ngIf="inv.currencyName"
+        style="font-size:0.72rem;color:#6b7280;margin-left:2px;">
+        {{ inv.currencyName }}
+      </span>
+    </td>
 
-                <tr *ngIf="!invoices.length">
-                  <td colspan="7" class="text-center text-muted py-3">
-                    No open invoices for this customer
-                  </td>
-                </tr>
-              </tbody>
+    <!-- ✅ Allocate — ngIf guard -->
+    <td class="text-end" *ngIf="allocations[i]; else emptyAlloc">
+      <input type="number" min="0"
+        class="form-control form-control-sm text-end"
+        [(ngModel)]="allocations[i].allocatedAmount"
+        name="alloc_{{ i }}"
+        (input)="onAllocateChange(i)" />
+    </td>
+    <ng-template #emptyAlloc>
+      <td></td>
+    </ng-template>
+
+  </tr>
+
+  <tr *ngIf="!invoices.length">
+    <td colspan="7" class="text-center text-muted py-3">
+      No open invoices for this customer
+    </td>
+  </tr>
+</tbody>
 
               <tfoot *ngIf="invoices.length">
                 <tr class="fw-semibold">

@@ -132,7 +132,24 @@
                 {{ row.deliveryDate | date:'dd-MM-yyyy' }}
               </ng-template>
             </ngx-datatable-column>
-
+<!-- ✅ Grand Total column — Status column-க்கு முன்னாடி add பண்ணுங்க -->
+<ngx-datatable-column name="Grand Total" [width]="160">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <div>
+      <span style="font-weight:600;">
+        {{ row.grandTotal | number:'1.2-2' }}
+      </span>
+      <span style="font-size:0.78rem;color:#6b7280;margin-left:3px;">
+        {{ row.currencyName || 'SGD' }}
+      </span>
+    </div>
+    
+    <div *ngIf="row.currencyName && row.currencyName !== 'SGD'"
+      style="font-size:0.78rem;color:#2E5F73;font-weight:600;">
+      ≈ {{ (row.grandTotal * (row.fxRate || 1)) | number:'1.2-2' }} SGD
+    </div>
+  </ng-template>
+</ngx-datatable-column>
             <ngx-datatable-column name="Status" prop="status" [width]="120">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 <span class="badge badge-pill"
@@ -162,10 +179,27 @@
 
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="backdrop">
   <div (click)="$event.stopPropagation()" class="modal-card">
-    <div class="modal-head">
-      <h3>SO Lines</h3>
-      <button (click)="closeLinesModal()" aria-label="Close" class="modal-close">X</button>
+   <div class="modal-head">
+  <div>
+    <h3>SO Lines</h3>
+    <!-- ✅ Currency info -->
+    <div *ngIf="activeRow?.currencyName"
+      style="font-size:0.82rem;color:#6b7280;margin-top:2px;">
+      Currency:
+      <strong style="color:#2E5F73;">
+        {{ activeRow?.currencyName || 'SGD' }}
+      </strong>
+      <span *ngIf="activeRow?.currencyName && activeRow?.currencyName !== 'SGD'"
+        style="margin-left:8px;">
+        FX Rate:
+        <strong style="color:#2E5F73;">
+          {{ activeRow?.fxRate | number:'1.4-4' }}
+        </strong>
+      </span>
     </div>
+  </div>
+  <button (click)="closeLinesModal()" aria-label="Close" class="modal-close">X</button>
+</div>
     <div class="modal-body">
       <div class="lines-wrap">
         <table class="lines-table">
@@ -205,12 +239,27 @@
               <td [attr.colspan]="getLinesColsCount()" class="empty">No lines</td>
             </tr>
           </tbody>
-          <tfoot *ngIf="modalLines?.length">
-            <tr>
-              <td [attr.colspan]="getLinesColsCount() - 1" class="total-label">Total</td>
-              <td class="total-val num">{{ modalTotal | number:'1.2-2' }}</td>
-            </tr>
-          </tfoot>
+       <tfoot *ngIf="modalLines?.length">
+  <tr>
+    <td [attr.colspan]="getLinesColsCount() - 1" class="total-label">Total</td>
+    <td class="total-val num">
+      {{ modalTotal | number:'1.2-2' }}
+      <span style="font-size:0.75rem;color:#6b7280;margin-left:2px;">
+        {{ activeRow?.currencyName || 'SGD' }}
+      </span>
+    </td>
+  </tr>
+  <!-- ✅ Base SGD total -->
+  <tr *ngIf="activeRow?.currencyName && activeRow?.currencyName !== 'SGD'">
+    <td [attr.colspan]="getLinesColsCount() - 1" class="total-label"
+      style="color:#2E5F73;">
+      Base (SGD)
+    </td>
+    <td class="total-val num" style="color:#2E5F73;font-weight:700;">
+      {{ (modalTotal * (activeRow?.fxRate || 1)) | number:'1.2-2' }} SGD
+    </td>
+  </tr>
+</tfoot>
         </table>
       </div>
     </div>

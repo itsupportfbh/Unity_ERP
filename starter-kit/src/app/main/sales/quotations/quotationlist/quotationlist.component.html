@@ -120,13 +120,24 @@
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="Grand Total" [width]="160">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="cell-clip" [title]="row.grandTotal || 0">
-                  {{ row.grandTotal | currency:getCurrencyCode(row.currencyId) }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
+          <ngx-datatable-column name="Grand Total" [width]="180">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <div>
+      <!-- Amount + Currency -->
+      <span style="font-weight:600;">
+        {{ row.grandTotal | number:'1.2-2' }}
+      </span>
+      <span style="font-size:0.78rem;color:#6b7280;margin-left:3px;">
+        {{ getCurrencyCode(row.currencyId) || 'SGD' }}
+      </span>
+    </div>
+  
+    <div *ngIf="getCurrencyCode(row.currencyId) && getCurrencyCode(row.currencyId) !== 'SGD'"
+      style="font-size:0.78rem;color:#2E5F73;font-weight:600;">
+      ≈ {{ (row.grandTotal * (row.fxRate || 1)) | number:'1.2-2' }} SGD
+    </div>
+  </ng-template>
+</ngx-datatable-column>
 
             <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="140">
               <ng-template let-row="row" ngx-datatable-cell-template>
@@ -209,55 +220,113 @@
 
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="overlay">
   <div (click)="$event.stopPropagation()" class="modal-card">
-    <div class="modal-head">
-      <h3>Quotation Lines — {{ activeQt?.number }}</h3>
-      <button (click)="closeLinesModal()" aria-label="Close" class="close-btn">×</button>
+ <div class="modal-head">
+  <div>
+    <h3>Quotation Lines — {{ activeQt?.number }}</h3>
+    <!-- ✅ Currency + FxRate info -->
+    <div *ngIf="activeQt"
+      style="font-size:0.82rem;color:#6b7280;margin-top:2px;">
+      Currency:
+      <strong style="color:#2E5F73;">
+        {{ getCurrencyCode(activeQt.currencyId) || 'SGD' }}
+      </strong>
+      <span *ngIf="getCurrencyCode(activeQt.currencyId) && getCurrencyCode(activeQt.currencyId) !== 'SGD'"
+        style="margin-left:8px;">
+        FX Rate:
+        <strong style="color:#2E5F73;">
+          {{ activeQt.fxRate | number:'1.4-4' }}
+        </strong>
+      </span>
     </div>
+  </div>
+  <button (click)="closeLinesModal()" aria-label="Close" class="close-btn">×</button>
+</div>
 
-    <div class="modal-body">
-      <div class="table-wrap">
-        <table class="lines-table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>UOM</th>
-              <th class="ta-right">Qty</th>
-              <th class="ta-right">Unit Price</th>
-              <th class="ta-right">Discount %</th>
-              <th class="ta-right">Line Net</th>
-              <th class="ta-right">Tax</th>
-              <th class="ta-right">Line Total</th>
-            </tr>
-          </thead>
+<div class="modal-body">
+  <div class="table-wrap">
+    <table class="lines-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>UOM</th>
+          <th class="ta-right">Qty</th>
+          <th class="ta-right">
+            Unit Price
+            <span *ngIf="activeQt && getCurrencyCode(activeQt.currencyId) !== 'SGD'"
+              style="font-size:0.75rem;font-weight:400;opacity:0.85;">
+              ({{ getCurrencyCode(activeQt?.currencyId) }})
+            </span>
+          </th>
+          <th class="ta-right">Discount %</th>
+          <th class="ta-right">
+            Line Net
+            <span *ngIf="activeQt && getCurrencyCode(activeQt.currencyId) !== 'SGD'"
+              style="font-size:0.75rem;font-weight:400;opacity:0.85;">
+              ({{ getCurrencyCode(activeQt?.currencyId) }})
+            </span>
+          </th>
+          <th class="ta-right">Tax</th>
+          <th class="ta-right">
+            Line Total
+            <span *ngIf="activeQt && getCurrencyCode(activeQt.currencyId) !== 'SGD'"
+              style="font-size:0.75rem;font-weight:400;opacity:0.85;">
+              ({{ getCurrencyCode(activeQt?.currencyId) }})
+            </span>
+          </th>
+          <!-- ✅ SGD column — foreign currency மட்டும் -->
+          <th class="ta-right"
+            *ngIf="activeQt && getCurrencyCode(activeQt.currencyId) !== 'SGD'">
+            Total (SGD)
+          </th>
+        </tr>
+      </thead>
 
-          <tbody>
-            <tr *ngFor="let l of modalLines; let i = index" [class.zebra]="i % 2 === 0">
-              <td>{{ l.itemName || getItemName(l.itemId) || l.itemId }}</td>
-              <td>{{ l.uomName || getUomName(l.uomId) || '-' }}</td>
-              <td class="ta-right">{{ l.qty | number:'1.0-3' }}</td>
-              <td class="ta-right">{{ l.unitPrice | number:'1.2-4' }}</td>
-              <td class="ta-right">{{ l.discountPct | number:'1.0-2' }}</td>
-              <td class="ta-right">{{ l.lineNet | number:'1.2-2' }}</td>
-              <td class="ta-right">{{ l.lineTax | number:'1.2-2' }}</td>
-              <td class="ta-right">{{ l.lineTotal | number:'1.2-2' }}</td>
-            </tr>
+      <tbody>
+        <tr *ngFor="let l of modalLines; let i = index" [class.zebra]="i % 2 === 0">
+          <td>{{ l.itemName || getItemName(l.itemId) || l.itemId }}</td>
+          <td>{{ l.uomName || getUomName(l.uomId) || '-' }}</td>
+          <td class="ta-right">{{ l.qty | number:'1.0-3' }}</td>
+          <td class="ta-right">{{ l.unitPrice | number:'1.2-4' }}</td>
+          <td class="ta-right">{{ l.discountPct | number:'1.0-2' }}</td>
+          <td class="ta-right">{{ l.lineNet | number:'1.2-2' }}</td>
+          <td class="ta-right">{{ l.lineTax | number:'1.2-2' }}</td>
+          <td class="ta-right">{{ l.lineTotal | number:'1.2-2' }}</td>
+          <!-- ✅ SGD equivalent per line -->
+          <td class="ta-right"
+            *ngIf="activeQt && getCurrencyCode(activeQt.currencyId) !== 'SGD'"
+            style="color:#2E5F73;font-weight:600;">
+            {{ (l.lineTotal * (activeQt?.fxRate || 1)) | number:'1.2-2' }}
+          </td>
+        </tr>
 
-            <tr *ngIf="!modalLines?.length">
-              <td colspan="8" class="empty">No lines</td>
-            </tr>
-          </tbody>
+        <tr *ngIf="!modalLines?.length">
+          <td [colspan]="activeQt && getCurrencyCode(activeQt.currencyId) !== 'SGD' ? 9 : 8"
+            class="empty">No lines</td>
+        </tr>
+      </tbody>
 
-          <tfoot *ngIf="modalLines?.length">
-            <tr>
-              <td colspan="5" class="fw-700">Totals</td>
-              <td class="ta-right fw-700">{{ modalTotals.net | number:'1.2-2' }}</td>
-              <td class="ta-right fw-700">{{ modalTotals.tax | number:'1.2-2' }}</td>
-              <td class="ta-right fw-700">{{ modalTotals.total | number:'1.2-2' }}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
+      <tfoot *ngIf="modalLines?.length">
+        <tr>
+          <td colspan="5" class="fw-700">Totals</td>
+          <td class="ta-right fw-700">{{ modalTotals.net | number:'1.2-2' }}</td>
+          <td class="ta-right fw-700">{{ modalTotals.tax | number:'1.2-2' }}</td>
+          <td class="ta-right fw-700">
+            {{ modalTotals.total | number:'1.2-2' }}
+            <span style="font-size:0.75rem;color:#6b7280;margin-left:2px;">
+              {{ getCurrencyCode(activeQt?.currencyId) || 'SGD' }}
+            </span>
+          </td>
+          <!-- ✅ SGD total -->
+          <td class="ta-right fw-700"
+            *ngIf="activeQt && getCurrencyCode(activeQt.currencyId) !== 'SGD'"
+            style="color:#2E5F73;">
+            {{ (modalTotals.total * (activeQt?.fxRate || 1)) | number:'1.2-2' }} SGD
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
 
     <div class="modal-foot">
       <button (click)="closeLinesModal()" class="btn-primary">Close</button>

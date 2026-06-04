@@ -47,7 +47,22 @@ export class ReceiptCreateComponent implements OnInit {
   bankAccounts: any;
   bankAvailableBalance: any;
   isAmountManual = false;
-
+// ✅ FxRate properties
+fxRate:           number  = 1;
+currencyId:       number  = 0;
+currencyName:     string  = 'SGD';
+baseCurrencyId:   number  = 0;
+baseCurrencyName: string  = 'SGD';
+amountBase:       number  = 0;
+exchangeGainLoss: number  = 0;
+fxRateLoading:    boolean = false;
+availableCurrencies: any[] = [];
+paymentCurrencyId:   number = 0;
+paymentCurrencyName: string = 'SGD';
+invoiceFxRate:    number  = 1;
+invoiceCurrencyId: number = 0;
+invoiceCurrencyName: string = '';
+Math = Math;
   constructor(
     private receiptService: ReceiptService,
     private location: Location,
@@ -62,6 +77,11 @@ export class ReceiptCreateComponent implements OnInit {
   }
 
   ngOnInit(): void {
+      this.baseCurrencyId   = Number(localStorage.getItem('companyCurrencyId') || 0);
+  this.baseCurrencyName = 'SGD';
+
+    this.loadCurrencies();
+
 
     this._bankService.getAllBank().subscribe((res: any) => {
       this.banks = res.data || [];
@@ -88,7 +108,165 @@ export class ReceiptCreateComponent implements OnInit {
       }
     });
   }
+// ✅ Load currencies
+loadCurrencies(): void {
+  this.apSvc.getCurrencies().subscribe({
+    next: (res: any) => {
+      this.availableCurrencies = res?.data || res || [];
+      this.setDefaultPaymentCurrency();
+    },
+    error: () => {}
+  });
+}
 
+private setDefaultPaymentCurrency(): void {
+  const base = this.availableCurrencies.find(
+    c => Number(c.id || c.Id) === this.baseCurrencyId
+  );
+  this.paymentCurrencyId   = this.baseCurrencyId;
+  this.paymentCurrencyName = base?.currencyName || base?.CurrencyName || 'SGD';
+}
+
+onPaymentCurrencyChange(): void {
+  const sel = this.availableCurrencies.find(
+    c => Number(c.id || c.Id) === Number(this.paymentCurrencyId)
+  );
+  if (!sel) return;
+
+  this.paymentCurrencyName = sel.currencyName || sel.CurrencyName || '';
+
+  const baseCurrId = this.baseCurrencyId;
+
+  if (Number(this.paymentCurrencyId) === baseCurrId) {
+    // SGD → FxRate = 1, recalc
+    this.fxRate = 1;
+    this.recalcAllocationsForCurrencyChange();
+    this.recalcBase();
+  } else {
+    // Foreign → fetch rate then recalc
+    this.fetchPaymentFxRate();
+  }
+}
+
+fetchPaymentFxRate(): void {
+  if (!this.paymentCurrencyId || !this.baseCurrencyId) return;
+  this.fxRateLoading = true;
+  const today = new Date().toISOString().substring(0, 10);
+
+  this.apSvc.getExchangeRate(
+    this.paymentCurrencyId,
+    this.baseCurrencyId,
+    today
+  ).subscribe({
+    next: (res: any) => {
+      this.fxRateLoading = false;
+      this.fxRate = res?.isSuccess && res?.data?.rate
+        ? Number(res.data.rate)
+        : Number(this.invoiceFxRate || 1);
+
+      this.recalcAllocationsForCurrencyChange();
+      this.recalcBase();
+    },
+    error: () => {
+      this.fxRateLoading = false;
+      this.fxRate = Number(this.invoiceFxRate || 1);
+      this.recalcAllocationsForCurrencyChange();
+    }
+  });
+}
+
+recalcAllocationsForCurrencyChange(): void {
+  const baseCurrId = this.baseCurrencyId;
+  const isPaySGD   = Number(this.paymentCurrencyId) === baseCurrId;
+
+  this.allocations.forEach((a, i) => {
+    if (!a.selected) return;
+
+    const inv     = this.invoices[i];
+    if (!inv) return;
+
+    const balance    = Number(inv.balance   || 0);
+    const invFx      = Number(inv.fxRate    || 1);
+    const invCurrId  = Number(inv.currencyId || 0);
+
+    if (isPaySGD) {
+      // ✅ Pay SGD
+      if (invCurrId !== baseCurrId) {
+        // Foreign invoice (INR) → balance × fxRate = SGD
+        a.allocatedAmount = +(balance * invFx).toFixed(2);
+      } else {
+        // SGD invoice → as-is
+        a.allocatedAmount = balance;
+      }
+    } else {
+      // ✅ Pay foreign (INR)
+      const payCurrId = Number(this.paymentCurrencyId);
+      if (invCurrId === payCurrId) {
+        // ✅ Invoice currency = Pay currency → balance as-is
+        a.allocatedAmount = balance;
+      } else if (invCurrId === baseCurrId) {
+        // SGD invoice, paying INR → SGD balance ÷ fxRate = INR
+        const payFx = Number(this.fxRate || 1);
+        a.allocatedAmount = payFx > 0
+          ? +(balance / payFx).toFixed(2)
+          : balance;
+      } else {
+        // Different foreign currencies → as-is
+        a.allocatedAmount = balance;
+      }
+    }
+  });
+
+  this.recalculateTotals();
+}
+
+recalcBase(): void {
+  const fx         = Number(this.fxRate || 1);
+  const amt        = Number(this.amountReceived || 0);
+  const baseCurrId = this.baseCurrencyId;
+
+  if (Number(this.paymentCurrencyId) === baseCurrId) {
+    // ✅ Pay SGD → base = amount
+    this.amountBase       = amt;
+    this.exchangeGainLoss = 0;
+    return;
+  }
+
+  // ✅ Foreign currency pay
+  this.amountBase = +(amt * fx).toFixed(2);
+
+  // ✅ Exchange Gain/Loss only when:
+  // Pay currency = Invoice currency AND FxRate differs from invoice rate
+  const selectedInvoices = this.allocations
+    .filter(a => a.selected)
+    .map((a, i) => this.invoices[i])
+    .filter(inv => inv);
+
+  // Same currency invoices மட்டும் gain/loss calculate
+  const sameCurrInvoices = selectedInvoices.filter(inv =>
+    Number(inv?.currencyId || 0) === Number(this.paymentCurrencyId)
+  );
+
+  if (sameCurrInvoices.length === 0) {
+    // ✅ No same-currency invoice → no gain/loss
+    this.exchangeGainLoss = 0;
+    return;
+  }
+
+  // ✅ Compare pay FxRate vs invoice FxRate
+  const invFx = Number(sameCurrInvoices[0]?.fxRate || 1);
+  if (Math.abs(fx - invFx) > 0.000001) {
+    this.exchangeGainLoss = +(amt * fx - amt * invFx).toFixed(2);
+  } else {
+    this.exchangeGainLoss = 0;
+  }
+}
+isForeignCurrency(): boolean {
+  return !!(
+    this.paymentCurrencyId &&
+    this.paymentCurrencyId !== this.baseCurrencyId
+  );
+}
   // ==========================
   // LOAD EXISTING RECEIPT
   // ==========================
@@ -142,14 +320,26 @@ export class ReceiptCreateComponent implements OnInit {
   // ==========================
   // CUSTOMER
   // ==========================
-  onCustomerChange(event: any): void {
-    this.customerId = event.customerId;
-    const selected = this.customerList.find(c => c.id === this.customerId);
-    this.customerName = selected ? selected.customerName : '';
-    this.amountReceived = 0;
-    this.isAmountManual = false;
-    this.loadInvoicesForCustomer();
-  }
+onCustomerChange(event: any): void {
+  this.customerId = event?.customerId ?? event?.id ?? event;
+  const selected  = this.customerList.find(
+    c => (c.customerId || c.id) === this.customerId
+  );
+  this.customerName = selected?.customerName || '';
+  this.amountReceived  = 0;
+  this.isAmountManual  = false;
+
+  // ✅ reset FxRate
+  this.fxRate              = 1;
+  this.invoiceFxRate       = 1;
+  this.invoiceCurrencyId   = 0;
+  this.invoiceCurrencyName = '';
+  this.amountBase          = 0;
+  this.exchangeGainLoss    = 0;
+  this.setDefaultPaymentCurrency();
+
+  this.loadInvoicesForCustomer();
+}
 
   openCustomerLookup(): void {
     // demo only
@@ -158,39 +348,53 @@ export class ReceiptCreateComponent implements OnInit {
     this.loadInvoicesForCustomer();
   }
 
-  loadInvoicesForCustomer(): void {
-    if (!this.customerId) return;
+loadInvoicesForCustomer(): void {
+  if (!this.customerId) return;
 
-    this.receiptService.getOpenInvoices(this.customerId).subscribe(res => {
-      const src = res || [];
+  this.receiptService.getOpenInvoices(this.customerId).subscribe(res => {
+    const src = res || [];
 
-      this.invoices = src.map((i: any) => ({
-        id: i.id,
-        invoiceNo: i.invoiceNo,
-        invoiceDate: i.invoiceDate,
-        amount: Number(i.amount || 0),
-        paidBefore: Number(i.paidAmount || 0),
-        balance: Number(i.balance || 0)
+    console.log('Raw API response[0]:', src[0]);
+    console.log('All keys:', Object.keys(src[0] || {}));
+
+    // ✅ invoices set first
+    this.invoices = src
+      .filter((i: any) => i.id && i.invoiceNo)
+      .map((i: any) => ({
+        id:           i.id,
+        invoiceNo:    i.invoiceNo,
+        invoiceDate:  i.invoiceDate,
+        amount:       Number(i.amount    || 0),
+        paidBefore:   Number(i.paidAmount || 0),
+        balance:      Number(i.balance   || 0),
+        fxRate:       Number(i.fxRate    ?? i.FxRate    ?? 1),
+        currencyId:   Number(i.currencyId ?? i.CurrencyId ?? 0),
+        currencyName: i.currencyName      ?? i.CurrencyName ?? ''
       }));
 
-      // merge existing allocations if we are editing
-      const existing = new Map<number, number>();
-      this.allocations.forEach(a => existing.set(a.invoiceId, a.allocatedAmount));
+    // ✅ FxRate from first invoice
+    const first = this.invoices[0];
+    if (first) {
+      this.invoiceFxRate       = Number(first.fxRate    || 1);
+      this.invoiceCurrencyId   = Number(first.currencyId || 0);
+      this.invoiceCurrencyName = first.currencyName      || '';
+    }
 
-      this.allocations = this.invoices.map((i: any) => {
-        const amt = existing.get(i.id) || 0;
-        return {
-          invoiceId: i.id,
-          invoiceNo: i.invoiceNo,
-          allocatedAmount: amt,
-          selected: amt > 0
-        };
-      });
+    // ✅ allocations — invoices-க்கு match ஆக create
+    const existing = new Map<number, number>();
+    (this.allocations || []).forEach(a => existing.set(a.invoiceId, a.allocatedAmount));
 
-      this.recalculateTotals();
-    });
-  }
+    // ✅ invoices length-க்கு match ஆக allocations create
+    this.allocations = this.invoices.map((i: any) => ({
+      invoiceId:       i.id,
+      invoiceNo:       i.invoiceNo,
+      allocatedAmount: existing.get(i.id) || 0,
+      selected:        (existing.get(i.id) || 0) > 0
+    }));
 
+    this.recalculateTotals();
+  });
+}
   // ==========================
   // HEADER EVENTS
   // ==========================
@@ -216,6 +420,7 @@ export class ReceiptCreateComponent implements OnInit {
   onAmountReceivedChange(): void {
     this.isAmountManual = true;
     this.recalculateTotals();
+     this.recalcBase();
   }
 
   // ==========================
@@ -225,45 +430,93 @@ export class ReceiptCreateComponent implements OnInit {
     return this.allocations.length > 0 && this.allocations.every(a => a.selected);
   }
 
-  onHeaderCheckboxChange(checked: boolean): void {
-    this.allocations.forEach((a, i) => {
-      const inv = this.invoices[i];
-      a.selected = checked;
 
-      if (checked) {
-        const maxExtra = Number(inv.balance || 0);
-        a.allocatedAmount = maxExtra;
+onRowCheckboxChange(index: number, checked: boolean): void {
+  const inv    = this.invoices[index];
+  const alloc  = this.allocations[index];
+    console.log('=== onRowCheckboxChange ===');
+  console.log('inv:', inv);
+  console.log('inv.balance:', inv?.balance);
+  console.log('inv.fxRate:', inv?.fxRate);
+  console.log('inv.currencyId:', inv?.currencyId);
+  console.log('paymentCurrencyId:', this.paymentCurrencyId);
+  console.log('baseCurrencyId:', this.baseCurrencyId);
+  console.log('checked:', checked);
+  if (!inv || !alloc) return;
+
+  alloc.selected = checked;
+
+  if (checked) {
+    const balance    = Number(inv.balance  || 0);
+    const invFx      = Number(inv.fxRate   || 1);
+    const invCurrId  = Number(inv.currencyId || 0);
+    const baseCurrId = this.baseCurrencyId;
+    const payCurrId  = Number(this.paymentCurrencyId);
+
+    if (payCurrId === baseCurrId) {
+      // ✅ Pay SGD
+      if (invCurrId !== baseCurrId && invFx > 0) {
+        // INR invoice → SGD amount = INR balance × fxRate
+        alloc.allocatedAmount = +(balance * invFx).toFixed(2);
       } else {
-        a.allocatedAmount = 0;
+        // SGD invoice → as-is
+        alloc.allocatedAmount = balance;
       }
-    });
-
-    this.recalculateTotals();
-  }
-
-  onRowCheckboxChange(index: number, checked: boolean): void {
-    const inv = this.invoices[index];
-    const alloc = this.allocations[index];
-    if (!inv || !alloc) return;
-
-    alloc.selected = checked;
-
-    if (checked) {
-      const maxExtra = Number(inv.balance || 0);
-      alloc.allocatedAmount = maxExtra;
+    } else if (payCurrId === invCurrId) {
+      // ✅ Pay INR, Invoice INR → as-is
+      alloc.allocatedAmount = balance;
     } else {
-      alloc.allocatedAmount = 0;
+      // ✅ Different foreign currencies
+      alloc.allocatedAmount = balance;
     }
-
-    this.recalculateTotals();
+  } else {
+    alloc.allocatedAmount = 0;
   }
 
+  this.recalculateTotals();
+}
+
+onHeaderCheckboxChange(checked: boolean): void {
+  const baseCurrId = this.baseCurrencyId;
+  const payCurrId  = Number(this.paymentCurrencyId);
+
+  this.allocations.forEach((a, i) => {
+    const inv = this.invoices[i];
+    a.selected = checked;
+
+    if (checked && inv) {
+      const balance   = Number(inv.balance   || 0);
+      const invFx     = Number(inv.fxRate    || 1);
+      const invCurrId = Number(inv.currencyId || 0);
+
+      if (payCurrId === baseCurrId) {
+        // ✅ Pay SGD
+        if (invCurrId !== baseCurrId && invFx > 0) {
+          // INR invoice → SGD = balance × fxRate
+          a.allocatedAmount = +(balance * invFx).toFixed(2);
+        } else {
+          a.allocatedAmount = balance;
+        }
+      } else if (payCurrId === invCurrId) {
+        // ✅ Pay INR, Invoice INR
+        a.allocatedAmount = balance;
+      } else {
+        a.allocatedAmount = balance;
+      }
+    } else {
+      a.allocatedAmount = 0;
+    }
+  });
+
+  this.recalculateTotals();
+}
   // ==========================
   // ALLOCATE EVENTS
   // ==========================
   onAllocateChange(index: number): void {
     const inv = this.invoices[index];
     const alloc = this.allocations[index];
+    
     if (!inv || !alloc) {
       this.recalculateTotals();
       return;
@@ -281,25 +534,51 @@ export class ReceiptCreateComponent implements OnInit {
     this.recalculateTotals();
   }
 
-  rowPaid(inv: any, index: number): number {
-    const base = Number(inv.amount || 0) - Number(inv.balance || 0);
-    const extra = Number(this.allocations[index]?.allocatedAmount || 0);
-    return +(base + extra).toFixed(2);
+ rowPaid(inv: any, index: number): number {
+  const base      = Number(inv.amount  || 0) - Number(inv.balance || 0);
+  const allocSGD  = Number(this.allocations[index]?.allocatedAmount || 0);
+  const invFx     = Number(inv.fxRate || 1);
+  const baseCurrId = this.baseCurrencyId;
+
+  if (Number(this.paymentCurrencyId) === baseCurrId) {
+    // ✅ Pay SGD → convert back to invoice currency
+    const allocInInvCurr = invFx > 0 ? +(allocSGD / invFx).toFixed(2) : allocSGD;
+    return +(base + allocInInvCurr).toFixed(2);
+  } else {
+    // ✅ Pay same currency → direct
+    return +(base + allocSGD).toFixed(2);
+  }
+}
+
+rowBalance(inv: any, index: number): number {
+  const openBal   = Number(inv.balance || 0);
+  const allocSGD  = Number(this.allocations[index]?.allocatedAmount || 0);
+  const invFx     = Number(inv.fxRate || 1);
+  const baseCurrId = this.baseCurrencyId;
+
+  let deduct: number;
+
+  if (Number(this.paymentCurrencyId) === baseCurrId) {
+    // ✅ Pay SGD → convert to invoice currency
+    deduct = invFx > 0 ? +(allocSGD / invFx).toFixed(2) : allocSGD;
+  } else {
+    // ✅ Pay same currency → direct
+    deduct = allocSGD;
   }
 
-  rowBalance(inv: any, index: number): number {
-    const openBal = Number(inv.balance || 0);
-    const extra = Number(this.allocations[index]?.allocatedAmount || 0);
-    const bal = openBal - extra;
-    return bal < 0 ? 0 : +bal.toFixed(2);
-  }
+  const bal = openBal - deduct;
+  return bal < 0 ? 0 : +bal.toFixed(2);
+}
 
   // ==========================
   // TOTALS
   // ==========================
-  get totalAllocated(): number {
-    return this.allocations.reduce((s, a) => s + (a.allocatedAmount || 0), 0);
-  }
+// ✅ getter already correct — allocations already in pay currency
+get totalAllocated(): number {
+  return +this.allocations
+    .reduce((s, a) => s + (a.allocatedAmount || 0), 0)
+    .toFixed(2);
+}
 
   get unallocatedAmount(): number {
     return (this.amountReceived || 0) - this.totalAllocated;
@@ -310,6 +589,7 @@ export class ReceiptCreateComponent implements OnInit {
       if (!this.isAmountManual) {
     this.amountReceived = this.totalAllocated;
   }
+   this.recalcBase();
   }
 
   // ==========================
@@ -332,7 +612,13 @@ export class ReceiptCreateComponent implements OnInit {
       paymentMode: this.paymentMode,
       bankId: this.paymentMode === 'BANK' ? this.selectedBankId : null,
       amountReceived: this.amountReceived,
-      allocations: this.allocations.filter(a => a.allocatedAmount > 0)
+      allocations: this.allocations.filter(a => a.allocatedAmount > 0),
+       fxRate:             this.fxRate,
+    amountBase:         this.amountBase,
+    currencyId:         this.paymentCurrencyId   || 0,
+    currencyName:       this.paymentCurrencyName || 'SGD',
+    exchangeGainLoss:   this.exchangeGainLoss    || 0,
+    companyCurrencyId:  this.baseCurrencyId
     };
 
     this.isSaving = true;
@@ -355,4 +641,12 @@ export class ReceiptCreateComponent implements OnInit {
   cancel(): void {
     this.router.navigate(['/financial/AR'], { queryParams: { tab: 'receipts' } });
   }
+  // ✅ Safe allocation getter
+getAlloc(index: number): AllocationRow | null {
+  return this.allocations[index] ?? null;
+}
+
+getAllocAmount(index: number): number {
+  return this.allocations[index]?.allocatedAmount ?? 0;
+}
 }

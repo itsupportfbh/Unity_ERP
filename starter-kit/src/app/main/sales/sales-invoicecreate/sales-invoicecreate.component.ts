@@ -99,7 +99,13 @@ isGstLocked = false;
 gstLockMessage = '';
 
 isGlPosted = false;
-
+// ✅ FxRate properties
+fxRate:           number  = 1;
+currencyId:       number  = 0;
+currencyName:     string  = 'SGD';
+baseCurrencyId:   number  = 0;
+baseCurrencyName: string  = 'SGD';
+grandTotalBase:   number  = 0;
   constructor(
     private api: SalesInvoiceService,
     private taxCodeService: TaxCodeService,
@@ -131,6 +137,8 @@ private showApiError(err: any): void {
   // Lifecycle
   // ============================================================
   ngOnInit(): void {
+     this.baseCurrencyId   = Number(localStorage.getItem('companyCurrencyId') || 0);
+  this.baseCurrencyName = 'SGD';
     this.loadAccountHeads();
 this.checkGstLock();
     this.route.paramMap
@@ -458,7 +466,9 @@ this.checkGstLock();
         // header total tax if needed: hdr.taxAmount
         this.totalTax = Number(hdr.taxAmount ?? hdr.TaxAmount ?? 0);
         this.remarks = hdr.remarks ?? hdr.Remarks ?? '';
-
+ this.fxRate       = Number(hdr.fxRate       ?? hdr.FxRate       ?? 1);
+      this.currencyId   = Number(hdr.currencyId   ?? hdr.CurrencyId   ?? 0);
+      this.currencyName = hdr.currencyName         ?? hdr.CurrencyName  ?? 'SGD';
         this.refreshCustomerFromSource(hdr);
 
         this.lines = (rows as any[]).map(r => {
@@ -495,7 +505,19 @@ this.checkGstLock();
         Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load invoice.' })
     });
   }
+calcGrandTotalBase(): void {
+  const fx = Number(this.fxRate || 1);
+  this.grandTotalBase = +(Number(this.netTotal || 0) * fx).toFixed(2);
+}
 
+isForeignCurrency(): boolean {
+  return !!(
+    this.currencyId &&
+    this.currencyId !== this.baseCurrencyId &&
+    this.currencyName &&
+    this.currencyName !== this.baseCurrencyName
+  );
+}
   // ============================================================
   // Header controls
   // ============================================================
@@ -504,41 +526,45 @@ this.checkGstLock();
     this.resetForCreate();
   }
 
-  onSoChanged(val: any): void {
-    if (this.isEdit) return;
+onSoChanged(val: any): void {
+  if (this.isEdit) return;
 
-    const id = typeof val === 'number' ? val : val?.id;
-    this.sourceId = id || null;
+  const id = typeof val === 'number' ? val : val?.id;
+  this.sourceId = id || null;
 
-    if (!id) {
-      this.customerName = '';
-      this.customerId = null;
-      this.lines = [];
-      this.advanceList = [];
-      this.selectedAdvanceId = null;
-      this.advanceApplyAmount = 0;
-      this.advanceTotalApplied = 0;
-      this.recalc();
-      return;
-    }
-
-    const so = this.soList.find((s: any) => +s.id === +id);
-
-    this.customerName =
-      so?.customerName ||
-      so?.CustomerName ||
-      so?.customer ||
-      so?.customer_name ||
-      '';
-
-    this.customerId =
-      so?.customerId ??
-      so?.CustomerId ??
-      null;
-
-    this.loadAvailableAdvances();
-    this.loadSourceLines();
+  if (!id) {
+    this.customerName  = '';
+    this.customerId    = null;
+    this.lines         = [];
+    this.advanceList   = [];
+    this.selectedAdvanceId   = null;
+    this.advanceApplyAmount  = 0;
+    this.advanceTotalApplied = 0;
+    // ✅ reset
+    this.fxRate       = 1;
+    this.currencyId   = 0;
+    this.currencyName = 'SGD';
+    this.grandTotalBase = 0;
+    this.recalc();
+    return;
   }
+
+  const so = this.soList.find((s: any) => +s.id === +id);
+
+  this.customerName =
+    so?.customerName ?? so?.CustomerName ?? so?.customer ?? '';
+
+  this.customerId =
+    so?.customerId ?? so?.CustomerId ?? null;
+
+  // ✅ FxRate from SO
+  this.fxRate       = Number(so?.fxRate       ?? so?.FxRate       ?? 1);
+  this.currencyId   = Number(so?.currencyId   ?? so?.CurrencyId   ?? 0);
+  this.currencyName = so?.currencyName         ?? so?.CurrencyName  ?? 'SGD';
+
+  this.loadAvailableAdvances();
+  this.loadSourceLines();
+}
 
   onDoChanged(val: any): void {
     if (this.isEdit) return;
@@ -826,6 +852,8 @@ addLine() {
 
     this.netTotal = +net.toFixed(2);
     this.total = this.netTotal;
+
+    this.calcGrandTotalBase();
   }
 
   // ============================================================
@@ -1033,6 +1061,9 @@ if (this.isInvoiceBlocked()) return;
       total: this.total,
       remarks: this.remarks || 'Test',
       advanceAdjustments,
+        fxRate:        this.fxRate       || 1,
+  currencyId:    this.currencyId   || 0,
+  currencyName:  this.currencyName || 'SGD',
 
       lines: this.lines.map(l => {
 

@@ -111,28 +111,31 @@ export class SalesOrderCreateComponent implements OnInit {
   // ✅ get LocationId from localStorage
   locationId: number = 0;
 
-  soHdr: any = {
-    id: 0,
-    quotationNo: '',
-    customerId: 0,
-    requestedDate: '',
-    deliveryDate: '',
-    deliveryTo: '',
-    remarks: '',
+soHdr: any = {
+  id: 0,
+  quotationNo: '',
+  customerId: 0,
+  requestedDate: '',
+  deliveryDate: '',
+  deliveryTo: '',
+  remarks: '',
+  lineSourceId: 1,
+  itemSets: [] as ItemSetRef[],
+  shipping: 0,
+  discount: 0,
+  gstPct: 0,
+  taxAmount: 0,
+  subTotal: 0,
+  grandTotal: 0,
+  status: 2,
+  statusText: 'Approved',
+  orderTime: null,
 
-    lineSourceId: 1,
-    itemSets: [] as ItemSetRef[],
-
-    shipping: 0,
-    discount: 0,
-    gstPct: 0,
-    taxAmount: 0,
-    subTotal: 0,
-    grandTotal: 0,
-    status: 2,
-    statusText: 'Approved',
-     orderTime: null
-  };
+  // ✅ FxRate fields
+  fxRate:       1,
+  currencyId:   0,
+  currencyName: 'SGD'
+};
 
   customers: any[] = [];
   quotationList: any[] = [];
@@ -173,7 +176,10 @@ export class SalesOrderCreateComponent implements OnInit {
 
   countries: any[] = [];
   todayStr = this.toInputDate(new Date());
-
+// ✅ FxRate
+baseCurrencyId:   number  = 0;
+baseCurrencyName: string  = 'SGD';
+grandTotalBase:   number  = 0;
   // local cache to reduce repeated calls (key = itemId|supplyMethodId)
   private availabilityCache = new Map<string, number>();
   companyId: number = 0;
@@ -248,6 +254,8 @@ export class SalesOrderCreateComponent implements OnInit {
   ngOnInit(): void {
     this.loadSOPermission();
 
+     this.baseCurrencyId   = Number(localStorage.getItem('companyCurrencyId') || 0);
+  this.baseCurrencyName = 'SGD';
     const idParam = this.route.snapshot.paramMap.get('id');
     this.editMode = !!idParam;
     this.routeId = idParam ? Number(idParam) : null;
@@ -263,6 +271,7 @@ export class SalesOrderCreateComponent implements OnInit {
         gstPercentage: Number(c.gstPercentage ?? c.GSTPercentage ?? 0)
       }));
     });
+    this.loadSOPermission();
 
     forkJoin({
       quotations: this.quotationSvc.getAllQuotation(),
@@ -615,6 +624,9 @@ this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
         this.soHdr.quotationNo = head.quotationNo;
         this.soHdr.customerId = head.customerId;
         this.soHdr.orderTime = head.orderTime;
+         this.soHdr.fxRate       = Number(head.fxRate       ?? head.FxRate       ?? 1);
+      this.soHdr.currencyId   = Number(head.currencyId   ?? head.CurrencyId   ?? 0);
+      this.soHdr.currencyName = head.currencyName         ?? head.CurrencyName  ?? 'SGD';
         this.searchTexts['quotationNo'] = head.number || head.quotationNo?.toString() || '';
        this.searchTexts['customer'] =
   head.customerId === 0 || head.customerId == null
@@ -679,6 +691,7 @@ this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
           this.applyFulfillmentFromFlagsIfEmpty(ln);
           this.applySupplyFromFulfillment(ln);
           this.computeLine(ln);
+           this.calcGrandTotalBase();
 
           return ln;
         });
@@ -698,7 +711,19 @@ this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
       }
     });
   }
+calcGrandTotalBase(): void {
+  const fx = Number(this.soHdr.fxRate || 1);
+  this.grandTotalBase = +(Number(this.totals.grandTotal || 0) * fx).toFixed(2);
+}
 
+isForeignCurrency(): boolean {
+  return !!(
+    this.soHdr.currencyId &&
+    this.soHdr.currencyId !== this.baseCurrencyId &&
+    this.soHdr.currencyName &&
+    this.soHdr.currencyName !== this.baseCurrencyName
+  );
+}
   /* ============ Header select (Quotation) ============ */
   select(field: 'quotationNo' | 'customer', item: any) {
     if (this.editMode) return;
@@ -724,7 +749,12 @@ this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
         this.soHdr.orderTime=(head.orderTime)
         this.soHdr.deliveryTo = (head?.deliveryTo ?? head?.DeliveryTo ?? '');
         this.soHdr.remarks = (head?.remarks ?? head?.Remarks ?? '');
+ this.soHdr.fxRate       = Number(head?.fxRate       ?? head?.FxRate       ?? 1);
+  this.soHdr.currencyId   = Number(head?.currencyId   ?? head?.CurrencyId   ?? 0);
+  this.soHdr.currencyName = head?.currencyName         ?? head?.CurrencyName  ?? 'SGD';
 
+  // ✅ Base SGD calculate
+  this.calcGrandTotalBase();
         this.setHeaderLineSourceAndItemSets(head);
 
         this.soHdr.gstPct = Number(head?.gstPct ?? head?.gst ?? 0);
@@ -947,6 +977,7 @@ this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
       subTotal: t.subTotal,
       grandTotal: t.grandTotal
     };
+    this.calcGrandTotalBase();
   }
 
   /* ================= Group actions ================= */
@@ -1083,6 +1114,9 @@ this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
       createdBy: this.userId,
       updatedBy: this.userId,
       companyId: this.companyId,
+      fxRate:       this.soHdr.fxRate       || 1,
+    currencyId:   this.soHdr.currencyId   || 0,
+    currencyName: this.soHdr.currencyName || 'SGD',
 
      lineItems: this.soLines.map(l => ({
   id: l.__id || 0,

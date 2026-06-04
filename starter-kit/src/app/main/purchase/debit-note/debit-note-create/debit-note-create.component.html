@@ -13,11 +13,12 @@
       This Debit Note is already GL posted. You cannot edit or post it again.
     </div>
 
+    <!-- ✅ Header Grid — all fields inline -->
     <div class="dnHdrGrid">
 
+      <!-- Invoice -->
       <div class="dnField dnCol--grn invoice-combobox">
         <label class="dnLabel">Supplier Invoice PIN</label>
-
         <div class="dnCombo">
           <input
             type="text"
@@ -27,7 +28,6 @@
             (focus)="onInvoiceFocus()"
             placeholder="Search invoice"
             [disabled]="isGstLocked || isGlPosted" />
-
           <button
             type="button"
             class="dnCaretBtn"
@@ -40,27 +40,30 @@
 
         <div *ngIf="invoiceOpen && !isGstLocked && !isGlPosted" class="dnDropdown">
           <div class="dnDropHead">Choose Supplier Invoice</div>
-
           <button
             type="button"
             class="dnDropItem"
             *ngFor="let invoice of invoiceFiltered"
             (click)="toggleInvoice(invoice)">
             <span class="xNo">{{ invoice.invoiceNo }}</span>
-
             <span class="xPo" *ngIf="invoice.grnInvoiceNos">
               <span class="xSep">-</span> GRN: {{ invoice.grnInvoiceNos }}
             </span>
-
+            <!-- ✅ Currency badge in dropdown -->
+            <span *ngIf="invoice.currencyName && invoice.currencyName !== 'SGD'"
+              style="font-size:0.75rem;color:#2E5F73;margin-left:6px;
+                     background:#e8f4fd;padding:1px 5px;border-radius:3px;">
+              {{ invoice.currencyName }}
+            </span>
             <span class="xRight" *ngIf="isInvoiceSelected(invoice.id)">
               <i class="fas fa-check"></i>
             </span>
           </button>
-
           <div *ngIf="!invoiceFiltered?.length" class="dnDropEmpty">No results</div>
         </div>
       </div>
 
+      <!-- Supplier -->
       <div class="dnField dnCol--sup">
         <label class="dnLabel">Supplier</label>
         <input
@@ -69,6 +72,7 @@
           readonly />
       </div>
 
+      <!-- Reason -->
       <div class="dnField dnCol--reason">
         <label class="dnLabel">Reason</label>
         <select
@@ -82,23 +86,48 @@
         </select>
       </div>
 
+      <!-- Date -->
       <div class="dnField dnCol--date">
         <label class="dnLabel">Date</label>
-
         <input
           type="date"
           class="dnInput"
           [(ngModel)]="noteDate"
           (change)="checkGstLock()"
           [disabled]="isGstLocked || isGlPosted" />
-
         <div *ngIf="isGstLocked" class="alert alert-warning mt-2">
           {{ gstLockMessage || 'GST period is locked. Debit note cannot be changed.' }}
         </div>
       </div>
 
+      <!-- ✅ Currency + FX Rate — foreign currency மட்டும், inline -->
+      <div class="dnField"
+        *ngIf="currencyName && currencyName !== 'SGD'">
+        <label class="dnLabel">
+          Currency / FX Rate
+        </label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input
+            class="dnInput dnInput--readonly"
+            [value]="currencyName"
+            readonly
+            style="width:70px;font-weight:600;
+                   color:#2E5F73;background:#f0f9ff;
+                   text-align:center;" />
+          <input
+            class="dnInput dnInput--readonly"
+            [value]="fxRate | number:'1.4-4'"
+            readonly
+            style="background:#f8f9fa;" />
+        </div>
+        <small style="color:#6b7280;font-size:0.75rem;margin-top:3px;display:block;">
+          1 {{ currencyName }} = {{ fxRate | number:'1.4-4' }} SGD
+        </small>
+      </div>
+
     </div>
 
+    <!-- ✅ Table -->
     <div class="dnTableWrap">
       <table class="dnTable">
         <thead>
@@ -106,7 +135,13 @@
             <th>Item</th>
             <th>Total Qty</th>
             <th>Variance Qty</th>
-            <th>Price</th>
+            <th>
+              Price
+              <span *ngIf="currencyName"
+                style="font-size:0.75rem;font-weight:400;opacity:0.85;">
+                ({{ currencyName }})
+              </span>
+            </th>
             <th>Remarks</th>
             <th class="tRight"></th>
           </tr>
@@ -141,6 +176,7 @@
                 class="dnCellInput"
                 [(ngModel)]="retRows[i].varianceQty"
                 [name]="'varianceQty_' + i"
+                (ngModelChange)="onRowValueChange(retRows[i])"
                 [disabled]="isGstLocked || isGlPosted" />
             </td>
 
@@ -150,6 +186,7 @@
                 class="dnCellInput"
                 [(ngModel)]="retRows[i].price"
                 [name]="'price_' + i"
+                (ngModelChange)="onRowValueChange(retRows[i])"
                 [disabled]="isGstLocked || isGlPosted" />
             </td>
 
@@ -174,6 +211,7 @@
         </tbody>
       </table>
 
+      <!-- ✅ Footer — Total + SGD -->
       <div class="dnTableFoot">
         <button
           type="button"
@@ -184,11 +222,47 @@
         </button>
 
         <div class="dnTotal">
-          Total: {{ totalAmount | number:'1.2-2' }}
+          <!-- Amount -->
+          <div>
+            Total:
+            <strong>{{ totalAmount | number:'1.2-2' }}</strong>
+            <span *ngIf="currencyName"
+              style="font-size:0.82rem;color:#6b7280;margin-left:3px;">
+              {{ currencyName }}
+            </span>
+          </div>
+
+          <!-- ✅ SGD equivalent -->
+          <div *ngIf="currencyName && currencyName !== 'SGD' && totalAmount > 0"
+            style="font-size:0.85rem;color:#2E5F73;font-weight:600;">
+            ≈ {{ totalAmountBase | number:'1.2-2' }} SGD
+          </div>
+
+          <!-- Tax -->
+          <div style="font-size:0.85rem;color:#6b7280;margin-top:2px;">
+            Tax: {{ totalTaxAmount | number:'1.2-2' }}
+          </div>
+
+          <!-- Net -->
+          <div style="font-weight:700;margin-top:2px;">
+            Net:
+            <strong>{{ totalNetAmount | number:'1.2-2' }}</strong>
+            <span *ngIf="currencyName"
+              style="font-size:0.82rem;color:#6b7280;margin-left:3px;">
+              {{ currencyName }}
+            </span>
+          </div>
+
+          <!-- ✅ Net Base SGD -->
+          <div *ngIf="currencyName && currencyName !== 'SGD' && totalNetAmount > 0"
+            style="font-size:0.85rem;color:#2E5F73;font-weight:700;margin-top:2px;">
+            Net Base: {{ totalNetAmountBase | number:'1.2-2' }} SGD
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- Actions -->
     <div class="dnActions">
       <button
         class="btn btn-outline-secondary"

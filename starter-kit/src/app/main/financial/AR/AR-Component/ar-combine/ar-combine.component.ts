@@ -8,19 +8,24 @@ import Swal from 'sweetalert2';
 type ArTab = 'invoices' | 'receipts' | 'advance' | 'aging';
 
 interface ArAdvanceListRow {
-  id: number;
-  customerId: number;
-  customerName: string;
-  advanceNo: string;
-  advanceDate: string | Date;
+  id:            number;
+  customerId:    number;
+  customerName:  string;
+  advanceNo:     string;
+  advanceDate:   string | Date;
   salesOrderId?: number | null;
   salesOrderNo?: string | null;
-  amount: number;
+  amount:        number;
   balanceAmount: number;
-  paymentMode: string;
+  paymentMode:   string;
   bankAccountId?: number | null;
-  bankName?: string | null;
-  remarks?: string | null;
+  bankName?:     string | null;
+  remarks?:      string | null;
+  // ✅ add
+  fxRate?:       number;
+  amountBase?:   number;
+  currencyId?:   number;
+  currencyName?: string;
 }
 
 @Component({
@@ -50,6 +55,7 @@ export class ARCombineComponent implements OnInit {
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
+  arTotalAdvanceUtilised: number;
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -181,46 +187,64 @@ export class ARCombineComponent implements OnInit {
   // ================== ADVANCE LIST – LOAD & PAGING ==================
 
   loadArAdvances(): void {
-    this.arService.getSupplierAdvancesList().subscribe({
-      next: (res: any) => {
-        const raw = res?.data || res || [];
+  this.arService.getSupplierAdvancesList().subscribe({
+    next: (res: any) => {
+      const raw = res?.data || res || [];
+const first = raw[0];
+      
+      
+      console.log('amountBase:', first?.amountBase, first?.AmountBase);
+      console.log('fxRate:', first?.fxRate, first?.FxRate);
+      console.log('currencyName:', first?.currencyName, first?.CurrencyName);
+      console.log('currencyId:', first?.currencyId, first?.CurrencyId);
+      console.log('ALL KEYS:', Object.keys(first || {}));
+      this.arAdvances = (raw as any[]).map(x => ({
+        id:            x.id,
+        customerId:    x.customerId,
+        customerName:  x.customerName || '',
+        advanceNo:     x.advanceNo,
+        advanceDate:   x.advanceDate,
+        salesOrderId:  x.salesOrderId,
+        salesOrderNo:  x.salesOrderNo,
+        amount:        Number(x.amount        || 0),
+        balanceAmount: Number(x.balanceAmount || 0),
+        paymentMode:   x.paymentMode,
+        bankAccountId: x.bankAccountId,
+        bankName:      x.bankName,
+        remarks:       x.remarks,
+        // ✅ FxRate fields
+      fxRate:       Number(x.fxRate       ?? x.FxRate       ?? 1),
+  // ✅ amountBase — DB-ல் 0.72 இருக்கு, அதை use பண்ணு
+  amountBase:   Number(x.amountBase   ?? x.AmountBase   ?? 0)
+                || Number(x.amount || 0) * Number(x.fxRate || 1),
+  currencyId:   Number(x.currencyId   ?? x.CurrencyId   ?? 0),
+  currencyName: (x.currencyName ?? x.CurrencyName ?? '').toString().trim()
+      }));
 
-        this.arAdvances = (raw as any[]).map(x => ({
-          id: x.id,
-          customerId: x.customerId,
-          customerName: x.customerName || '',
-          advanceNo: x.advanceNo,
-          advanceDate: x.advanceDate,
-          salesOrderId: x.salesOrderId,
-          salesOrderNo: x.salesOrderNo,
-          amount: Number(x.amount || 0),
-          balanceAmount: Number(x.balanceAmount || 0),
-          paymentMode: x.paymentMode,
-          bankAccountId: x.bankAccountId,
-          bankName: x.bankName,
-          remarks: x.remarks
-        }));
+      // totals
+      this.arTotalAdvanceAmount   = 0;
+      this.arTotalAdvanceBalance  = 0;
+      this.arTotalAdvanceUtilised = 0;
 
-        // totals
-        this.arTotalAdvanceAmount = 0;
-        this.arTotalAdvanceBalance = 0;
-        this.arAdvances.forEach(r => {
-          this.arTotalAdvanceAmount += r.amount;
-          this.arTotalAdvanceBalance += r.balanceAmount;
-        });
+      this.arAdvances.forEach(r => {
+        this.arTotalAdvanceAmount  += r.amount;
+        this.arTotalAdvanceBalance += r.balanceAmount;
+        this.arTotalAdvanceUtilised += (r.amount - r.balanceAmount);
+      });
 
-        this.arAdvPage = 1;
-        this.recalcArAdvPaging();
-      },
-      error: err => {
-        console.error('Failed to load customer advances', err);
-        this.arAdvances = [];
-        this.pagedArAdvances = [];
-        this.arTotalAdvanceAmount = 0;
-        this.arTotalAdvanceBalance = 0;
-      }
-    });
-  }
+      this.arAdvPage = 1;
+      this.recalcArAdvPaging();
+    },
+    error: err => {
+      console.error('Failed to load customer advances', err);
+      this.arAdvances        = [];
+      this.pagedArAdvances   = [];
+      this.arTotalAdvanceAmount   = 0;
+      this.arTotalAdvanceBalance  = 0;
+      this.arTotalAdvanceUtilised = 0;
+    }
+  });
+}
 
   recalcArAdvPaging(): void {
     const total = this.arAdvances.length || 0;

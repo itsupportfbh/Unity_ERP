@@ -122,14 +122,23 @@ export class ReceiptComponent implements OnInit {
   });
 }
 
-
-  // ---------- List / search ----------
-  loadReceipts(): void {
-    this.receiptService.getReceipt().subscribe((res: any) => {
-      this.receipts = res.data || [];
+loadReceipts(): void {
+  this.receiptService.getReceipt().subscribe({
+    next: (res: any) => {
+      console.log('Receipt API:', res); // debug
+      const data = Array.isArray(res)
+        ? res
+        : (res?.data?.items ?? res?.data ?? res ?? []);
+      this.receipts = data;
       this.filtered = [...this.receipts];
-    });
-  }
+    },
+    error: (err) => {
+      console.error('Receipt load error:', err);
+      this.receipts = [];
+      this.filtered = [];
+    }
+  });
+}
 
   onSearch(value: string): void {
     this.searchValue = (value || '').toLowerCase();

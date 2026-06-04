@@ -18,6 +18,9 @@ type SiListRow = {
   customerName?: string;
   printCount?: number;
   glPosted: boolean;
+  fxRate?:       number;
+  currencyId?:   number;
+  currencyName?: string;
 };
 
 type SiLine = {
@@ -241,7 +244,10 @@ canModify(row: any): boolean {
           total: Number(x.total || 0),
           customerName: x.customerName || '',
           printCount: Number(x.printCount || 0),
-          glPosted: x.glPosted === true || x.GlPosted === true || x.glPosted === 1 || x.GlPosted === 1
+          glPosted: x.glPosted === true || x.GlPosted === true || x.glPosted === 1 || x.GlPosted === 1,
+           fxRate:       Number(x.fxRate       ?? x.FxRate       ?? 1),
+  currencyId:   Number(x.currencyId   ?? x.CurrencyId   ?? 0),
+  currencyName: x.currencyName         ?? x.CurrencyName  ?? ''
         }));
 
         this.rows = mapped;

@@ -79,53 +79,76 @@
         </div>
 
             <!-- Advances table -->
-            <div class="table-responsive">
-              <table class="table mb-0 ap-table">
-                <thead>
-                  <tr>
-                    <th style="background-color:#2E5F73; color:#ffffff;">Advance No</th>
-                    <th style="background-color:#2E5F73; color:#ffffff;">Customer</th>
-                    <th style="background-color:#2E5F73; color:#ffffff;">Advance Date</th>
-                    <th style="background-color:#2E5F73; color:#ffffff;">Sales Order</th>
-                    <th style="background-color:#2E5F73; color:#ffffff;">Mode</th>
-                    <th style="background-color:#2E5F73; color:#ffffff;">Bank</th>
-                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
-                    <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Balance</th>
-                    <th style="background-color:#2E5F73; color:#ffffff;">Remarks</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let a of pagedArAdvances">
-                    <td>{{ a.advanceNo }}</td>
-                    <td>{{ a.customerName }}</td>
-                    <td>{{ a.advanceDate | date:'dd-MMM-yyyy' }}</td>
-                    <td>{{ a.salesOrderNo || '-' }}</td>
-                    <td>{{ a.paymentMode }}</td>
-                    <td>{{ a.bankName || '-' }}</td>
-                    <td class="text-right">
-                      {{ a.amount | number:'1.2-2' }}
-                    </td>
-                    <td
-                      class="text-right"
-                      [ngClass]="{
-                        'text-success': a.balanceAmount > 0,
-                        'text-muted': a.balanceAmount === 0
-                      }">
-                      {{ a.balanceAmount | number:'1.2-2' }}
-                    </td>
-                    <td class="text-truncate" style="max-width:160px;" [title]="a.remarks">
-                      {{ a.remarks }}
-                    </td>
-                  </tr>
+      <!-- Advances table -->
+<div class="table-responsive">
+  <table class="table mb-0 ap-table">
+    <thead>
+      <tr>
+        <th style="background-color:#2E5F73;color:#ffffff;">Advance No</th>
+        <th style="background-color:#2E5F73;color:#ffffff;">Customer</th>
+        <th style="background-color:#2E5F73;color:#ffffff;">Advance Date</th>
+        <th style="background-color:#2E5F73;color:#ffffff;">Sales Order</th>
+        <th style="background-color:#2E5F73;color:#ffffff;">Mode</th>
+        <th style="background-color:#2E5F73;color:#ffffff;">Bank</th>
+        <th style="background-color:#2E5F73;color:#ffffff;" class="text-right">Amount</th>
+        <!-- ✅ Base SGD column add -->
+        <th style="background-color:#2E5F73;color:#ffffff;" class="text-right">
+          Base (SGD)
+        </th>
+        <th style="background-color:#2E5F73;color:#ffffff;" class="text-right">Balance</th>
+        <th style="background-color:#2E5F73;color:#ffffff;">Remarks</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let a of pagedArAdvances">
+        <td>{{ a.advanceNo }}</td>
+        <td>{{ a.customerName }}</td>
+        <td>{{ a.advanceDate | date:'dd-MMM-yyyy' }}</td>
+        <td>{{ a.salesOrderNo || '-' }}</td>
+        <td>{{ a.paymentMode }}</td>
+        <td>{{ a.bankName || '-' }}</td>
 
-                  <tr *ngIf="arAdvances.length === 0">
-                    <td colspan="9" class="text-center text-muted py-2">
-                      No customer advances found.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+        <!-- ✅ Amount + Currency -->
+        <td class="text-right">
+          {{ a.amount | number:'1.2-2' }}
+          <span *ngIf="a.currencyName && a.currencyName !== 'SGD'"
+            style="font-size:0.75rem;color:#6b7280;margin-left:2px;">
+            {{ a.currencyName }}
+          </span>
+        </td>
+
+        <!-- ✅ Base SGD -->
+        <td class="text-right" style="color:#2E5F73;font-weight:600;">
+          <ng-container *ngIf="a.currencyName && a.currencyName !== 'SGD'">
+            {{ a.amountBase | number:'1.2-2' }} SGD
+          </ng-container>
+          <ng-container *ngIf="!a.currencyName || a.currencyName === 'SGD'">
+            {{ a.amount | number:'1.2-2' }} SGD
+          </ng-container>
+        </td>
+
+        <!-- Balance -->
+        <td class="text-right"
+          [ngClass]="{
+            'text-success': a.balanceAmount > 0,
+            'text-muted':   a.balanceAmount === 0
+          }">
+          {{ a.balanceAmount | number:'1.2-2' }}
+        </td>
+
+        <td class="text-truncate" style="max-width:160px;" [title]="a.remarks">
+          {{ a.remarks }}
+        </td>
+      </tr>
+
+      <tr *ngIf="arAdvances.length === 0">
+        <td colspan="10" class="text-center text-muted py-2">
+          No customer advances found.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
             <!-- Pagination -->
             <div

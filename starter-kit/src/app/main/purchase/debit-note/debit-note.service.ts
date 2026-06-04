@@ -27,6 +27,10 @@ export interface DebitNoteDto {
   updatedBy?: any;
   countryId?:any;
   createdDate?: Date;
+   fxRate:any,
+      amountBase: any,
+      currencyId:  any,
+      currencyName: any
 }
 
 @Injectable({

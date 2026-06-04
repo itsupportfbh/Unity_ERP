@@ -20,6 +20,8 @@ import { CurrencyService } from 'app/main/master/currency/currency.service';
 import { PaymentTermsService } from 'app/main/master/payment-terms/payment-terms.service';
 import { QuotationHeader, QuotationLine, QuotationsService } from '../quotations.service';
 import { ItemsetService } from 'app/main/master/itemset/itemsetservice/itemset.service';
+import { environment } from 'environments/environment';
+import { HttpClient } from '@angular/common/http';
 
 type SimpleItem = { id: number; itemName: string; itemCode?: string; uomId?: number; baseUomId?: number; catagoryName: string };
 type LineTaxMode = 'Standard-Rated' | 'Zero-Rated' | 'Exempt';
@@ -230,6 +232,11 @@ timeOptions: { label: string; value: string }[] = [];
 
   modalPreview: { net: number; tax: number; total: number } | null = null;
 
+baseCurrencyId:   number  = 0;
+baseCurrencyName: string  = 'SGD';
+grandTotalBase:   number  = 0;
+fxRateLoading:    boolean = false;
+private apiUrl = environment.apiUrl;
   constructor(
     private router: Router,
     private route: ActivatedRoute,
@@ -241,7 +248,8 @@ timeOptions: { label: string; value: string }[] = [];
     private customerService: CustomerMasterService,
     private currencyService: CurrencyService,
     private paymentTermsService: PaymentTermsService,
-    private itemSetService: ItemsetService
+    private itemSetService: ItemsetService,
+    private http: HttpClient
   ) {}
 
   private normalizeUomName(v: any): string {
@@ -415,6 +423,8 @@ timeOptions: { label: string; value: string }[] = [];
     this.loadLookups();
 //  this.generate15MinTimeOptions();
 //   this.header.orderTime = this.getRoundedCurrentTime();
+ this.baseCurrencyId   = Number(localStorage.getItem('companyCurrencyId') || 0);
+  this.baseCurrencyName = 'SGD';
     const idStr = this.route.snapshot.paramMap.get('id');
     this.editId = idStr ? +idStr : null;
 
@@ -422,7 +432,56 @@ timeOptions: { label: string; value: string }[] = [];
       this.loadForEdit(this.editId);
     }
   }
+// ✅ இந்த 4 methods add பண்ணுங்க — எங்கயாவது class-ல்
 
+fetchFxRate(fromCurrencyId: number): void {
+  if (!fromCurrencyId || !this.baseCurrencyId) return;
+  this.fxRateLoading = true;
+  const today = new Date().toISOString().substring(0, 10);
+
+  this.http.get<any>(`${this.apiUrl}/ExchangeRate/GetRate`, {
+    params: {
+      fromCurrencyId: fromCurrencyId.toString(),
+      toCurrencyId:   this.baseCurrencyId.toString(),
+      rateDate:       today
+    }
+  }).subscribe({
+    next: (res: any) => {
+      this.fxRateLoading = false;
+      if (res?.isSuccess && res?.data?.rate) {
+        this.header.fxRate = Number(res.data.rate);
+      } else if (res?.data && typeof res.data === 'number') {
+        this.header.fxRate = Number(res.data) || 1;
+      } else {
+        this.header.fxRate = 1;
+      }
+      this.calcGrandTotalBase();
+    },
+    error: () => {
+      this.fxRateLoading = false;
+      this.header.fxRate = 1;
+      this.calcGrandTotalBase();
+    }
+  });
+}
+
+calcGrandTotalBase(): void {
+  const fx = Number(this.header.fxRate || 1);
+  this.grandTotalBase = +(Number(this.header.grandTotal || 0) * fx).toFixed(2);
+}
+
+onFxRateChange(): void {
+  this.calcGrandTotalBase();
+}
+
+isForeignCurrency(): boolean {
+  return !!(
+    this.header.currencyId &&
+    this.header.currencyId !== this.baseCurrencyId &&
+    this.header.currency   &&
+    this.header.currency   !== this.baseCurrencyName
+  );
+}
 //   generate15MinTimeOptions(): void {
 //   const options: { label: string; value: string }[] = [];
 
@@ -963,13 +1022,21 @@ timeOptions: { label: string; value: string }[] = [];
     this.currencyDdOpen = true;
   }
 
-  selectCurrency(cur: CurrencyRow) {
-    this.currencySearch = cur.name;
-    this.currencyDdOpen = false;
-    this.header.currencyId = cur.id;
-    this.header.currency = cur.name;
+selectCurrency(cur: CurrencyRow) {
+  this.currencySearch    = cur.name;
+  this.currencyDdOpen    = false;
+  this.header.currencyId = cur.id;
+  this.header.currency   = cur.name;
+
+  if (cur.id === this.baseCurrencyId) {
+    this.header.fxRate = 1;
+    this.computeTotals();
+    this.calcGrandTotalBase();
+  } else {
+    this.fetchFxRate(cur.id);
     this.computeTotals();
   }
+}
 
   openPaymentTermsDropdown() {
     this.paymentTermsDdOpen = true;
@@ -1255,6 +1322,8 @@ const uomId = item?.baseUomId ?? item?.uomId ?? this.resolveUomIdFromItemSetRow(
     this.header.grandTotal = this.round2(this.header.netTotal + this.header.taxAmount + rounding);
 
     this.header.needsHodApproval = hod;
+
+    this.calcGrandTotalBase();
   }
 
  private validateBeforeSave(): boolean {

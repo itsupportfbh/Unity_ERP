@@ -98,11 +98,23 @@
 
             <ngx-datatable-column name="Source Ref" prop="sourceRef"></ngx-datatable-column>
 
-            <ngx-datatable-column name="Total" [width]="140">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="text-right">{{ row.total | number:'1.2-2' }}</div>
-              </ng-template>
-            </ngx-datatable-column>
+           <ngx-datatable-column name="Total" [width]="160">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <div>
+      <span style="font-weight:600;">
+        {{ row.total | number:'1.2-2' }}
+      </span>
+      <span style="font-size:0.78rem;color:#6b7280;margin-left:3px;">
+        {{ row.currencyName || 'SGD' }}
+      </span>
+    </div>
+    <!-- ✅ Base SGD -->
+    <div *ngIf="row.currencyName && row.currencyName !== 'SGD'"
+      style="font-size:0.78rem;color:#2E5F73;font-weight:600;">
+      ≈ {{ (row.total * (row.fxRate || 1)) | number:'1.2-2' }} SGD
+    </div>
+  </ng-template>
+</ngx-datatable-column>
 <!-- <ngx-datatable-column name="GL Status" [width]="120">
   <ng-template let-row="row" ngx-datatable-cell-template>
 

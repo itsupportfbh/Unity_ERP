@@ -57,6 +57,9 @@ type SoHeader = {
   approvedBy?: number | null;
   subtotal?: number;
   grandTotal?: number;
+  fxRate?:       number;
+  currencyId?:   number;
+  currencyName?: string;
 };
 
 type SalesOrderGrnAlert = {
@@ -131,7 +134,7 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading      = false;
-
+activeRow: SoHeader | null = null;
   constructor(
     private salesOrderService: SalesOrderService,
     private router: Router,
@@ -252,18 +255,24 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   // ===================================================
   // LOAD / FILTER
   // ===================================================
-  loadRequests(): void {
-    this.salesOrderService.getSO().subscribe({
-      next: (res: any) => {
-        const list: SoHeader[] = (res ?? []).map((r: any) => ({ ...r }));
-        this.rows     = list;
-        this.tempData = list;
-        this.filterUpdate({ target: { value: this.searchValue } });
-        this.refreshGrnAlerts();
-      },
-      error: (err) => console.error('Error loading SO list', err)
-    });
-  }
+loadRequests(): void {
+  this.salesOrderService.getSO().subscribe({
+    next: (res: any) => {
+      const list: SoHeader[] = (res ?? []).map((r: any) => ({
+        ...r,
+        
+        fxRate:       Number(r.fxRate       ?? r.FxRate       ?? 1),
+        currencyId:   Number(r.currencyId   ?? r.CurrencyId   ?? 0),
+        currencyName: r.currencyName         ?? r.CurrencyName  ?? ''
+      }));
+      this.rows     = list;
+      this.tempData = list;
+      this.filterUpdate({ target: { value: this.searchValue } });
+      this.refreshGrnAlerts();
+    },
+    error: (err) => console.error('Error loading SO list', err)
+  });
+}
 
   filterUpdate(event: any): void {
     const val = (event?.target?.value ?? this.searchValue ?? '').toString().toLowerCase().trim();
@@ -391,13 +400,17 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   // LINES MODAL
   // ===================================================
   openLinesModal(row: SoHeader): void {
+    this.activeRow   = row; 
     const lines = this.extractLinesFromRow(row);
     this.modalTotal  = (lines || []).reduce((s, l: any) => s + (isNaN(Number(l?.total)) ? 0 : Number(l?.total ?? 0)), 0);
     this.modalLines  = lines ?? [];
     this.showLinesModal = true;
   }
 
-  closeLinesModal(): void { this.showLinesModal = false; }
+ closeLinesModal(): void {
+  this.showLinesModal = false;
+  this.activeRow      = null;  // ✅ add
+}
 
   // ===================================================
   // DRAFTS MODAL

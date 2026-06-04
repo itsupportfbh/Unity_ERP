@@ -75,10 +75,10 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   invPage     = 1;
   invPageSize = 10;
 
-  payments: any[]    = [];
-  showPaymentForm    = false;
-  payListPage        = 1;
-  payListPageSize    = 10;
+  payments: any[]  = [];
+  showPaymentForm  = false;
+  payListPage      = 1;
+  payListPageSize  = 10;
 
   paySupplierId: number | null = null;
   supplierInvoicesAll: any[]   = [];
@@ -90,15 +90,15 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   payReference = '';
   payAmount    = 0;
   payNotes     = '';
-  payInvSelectAll       = false;
-  amountEditedManually  = false;
+  payInvSelectAll      = false;
+  amountEditedManually = false;
 
-  supTotalInvoice         = 0;
-  supTotalPaid            = 0;
-  supTotalDebitNote       = 0;
-  supTotalAdvance         = 0;
-  supTotalNetOutstanding  = 0;
-  supTotalPayable         = 0;
+  supTotalInvoice        = 0;
+  supTotalPaid           = 0;
+  supTotalDebitNote      = 0;
+  supTotalAdvance        = 0;
+  supTotalNetOutstanding = 0;
+  supTotalPayable        = 0;
 
   // ✅ Payment Currency + FxRate
   payFxRate:           number  = 1;
@@ -133,11 +133,11 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   userId: any;
   Math = Math;
 
-  functionId          = 'ap';
-  permission:         FunctionPermission;
-  isPermissionLoaded  = false;
-  isPageLoading       = false;
-  periodName          = '';
+  functionId         = 'ap';
+  permission:        FunctionPermission;
+  isPermissionLoaded = false;
+  isPageLoading      = false;
+  periodName         = '';
 
   constructor(
     private apSvc: AccountsPayableService,
@@ -145,8 +145,8 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     public router: Router,
     private permissionService: PermissionService
   ) {
-    this.payDate   = new Date().toISOString().substring(0, 10);
-    this.userId    = Number(localStorage.getItem('id'));
+    this.payDate    = new Date().toISOString().substring(0, 10);
+    this.userId     = Number(localStorage.getItem('id'));
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
@@ -162,12 +162,10 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     feather.replace();
   }
 
-  // ✅ Base currency id
   getBaseCurrencyId(): number {
     return Number(localStorage.getItem('companyCurrencyId') || 0);
   }
 
-  // ✅ Load currencies
   loadCurrencies(): void {
     this.apSvc.getCurrencies().subscribe({
       next: (res: any) => {
@@ -178,7 +176,6 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // ✅ Set default = SGD (base currency)
   private setDefaultPaymentCurrency(): void {
     const baseCurrId = this.getBaseCurrencyId();
     const base = this.availableCurrencies.find(
@@ -190,7 +187,6 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     this.payFxRate           = 1;
   }
 
-  // ✅ Currency dropdown change
   onPaymentCurrencyChange(): void {
     const sel = this.availableCurrencies.find(
       c => Number(c.id || c.Id) === Number(this.paymentCurrencyId)
@@ -201,16 +197,16 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     this.payCurrencyName     = this.paymentCurrencyName;
 
     const baseCurrId = this.getBaseCurrencyId();
-
     if (Number(this.paymentCurrencyId) === baseCurrId) {
       this.payFxRate = 1;
-      this.recalcPaymentBase();
+      // ✅ SGD select → INR amounts re-convert
+      this.amountEditedManually = false;
+      this.recalcSelectedAmount();
     } else {
       this.fetchPaymentFxRate();
     }
   }
 
-  // ✅ Fetch FxRate for selected currency
   fetchPaymentFxRate(): void {
     const baseCurrId = this.getBaseCurrencyId();
     if (!baseCurrId || !this.paymentCurrencyId) return;
@@ -230,19 +226,20 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
         } else {
           this.payFxRate = Number(this.invoiceFxRate || 1);
         }
-        this.recalcPaymentBase();
+        this.amountEditedManually = false;
+        this.recalcSelectedAmount();
       },
       error: () => {
         this.fxRateLoading = false;
         this.payFxRate = Number(this.invoiceFxRate || 1);
-        this.recalcPaymentBase();
+        this.recalcSelectedAmount();
       }
     });
   }
 
   loadPermission(): void {
     if (!this.userId || this.userId <= 0) {
-      this.permission        = this.permissionService.getEmptyPermission(this.functionId);
+      this.permission         = this.permissionService.getEmptyPermission(this.functionId);
       this.isPermissionLoaded = true;
       Swal.fire({ icon: 'warning', title: 'Access Denied',
         text: 'User not found. Please login again.', confirmButtonColor: '#0e3a4c' });
@@ -255,11 +252,8 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
         this.permission         = res || this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading      = false;
-
         if (!this.canView()) {
-          this.invoices       = [];
-          this.allInvoices    = [];
-          this.supplierGroups = [];
+          this.invoices = []; this.allInvoices = []; this.supplierGroups = [];
           Swal.fire('Access Denied', 'You do not have view permission.', 'warning');
           return;
         }
@@ -282,10 +276,14 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
 
   setTab(tab: ApTab): void {
     this.activeTab = tab;
-    if (tab === 'invoices')  this.loadInvoices();
-    if (tab === 'payments')  { this.showPaymentForm = false; this.loadPayments(); this.cancelPayment(); }
-    if (tab === 'match')     this.loadMatch();
-    if (tab === 'advances')  this.loadAdvances();
+    if (tab === 'invoices') this.loadInvoices();
+    if (tab === 'payments') {
+      this.showPaymentForm = false;
+      this.loadPayments();
+      this.cancelPayment();
+    }
+    if (tab === 'match')    this.loadMatch();
+    if (tab === 'advances') this.loadAdvances();
   }
 
   loadSuppliers(): void {
@@ -319,14 +317,14 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
 
         const utilisedAdvanceMap = new Map<number, number>();
         advanceRows.forEach((a: any) => {
-          const supplierId = Number(a.supplierId || a.SupplierId || 0);
-          const original   = Number(a.originalAmount || a.OriginalAmount || 0);
-          const utilised   = Number(a.utilisedAmount || a.UtilisedAmount || 0);
-          const balance    = Number(a.balanceAmount  || a.BalanceAmount  || 0);
-          const applied    = utilised > 0 ? utilised : Math.max(original - balance, 0);
-          if (supplierId > 0 && applied > 0) {
-            utilisedAdvanceMap.set(supplierId,
-              Number(((utilisedAdvanceMap.get(supplierId) || 0) + applied).toFixed(2)));
+          const sid      = Number(a.supplierId || a.SupplierId || 0);
+          const original = Number(a.originalAmount || a.OriginalAmount || 0);
+          const utilised = Number(a.utilisedAmount || a.UtilisedAmount || 0);
+          const balance  = Number(a.balanceAmount  || a.BalanceAmount  || 0);
+          const applied  = utilised > 0 ? utilised : Math.max(original - balance, 0);
+          if (sid > 0 && applied > 0) {
+            utilisedAdvanceMap.set(sid,
+              Number(((utilisedAdvanceMap.get(sid) || 0) + applied).toFixed(2)));
           }
         });
 
@@ -350,9 +348,8 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     const debitNoteAmount = Number(x.debitNoteAmount || x.DebitNoteAmount || 0);
     const advanceAmount   = Number(x.advanceAmount || x.AdvanceAmount ||
       x.advanceAppliedAmount || x.AdvanceAppliedAmount || 0);
-
-    const beforeAdvance = Math.max(grandTotal - paidAmount - debitNoteAmount, 0);
-    const outstanding   = Math.max(beforeAdvance - advanceAmount, 0);
+    const beforeAdvance   = Math.max(grandTotal - paidAmount - debitNoteAmount, 0);
+    const outstanding     = Math.max(beforeAdvance - advanceAmount, 0);
 
     return {
       ...x,
@@ -369,9 +366,9 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
       outstandingBeforeAdvance: Number(beforeAdvance.toFixed(2)),
       outstandingAmount:        Number(outstanding.toFixed(2)),
       payableAfterAdvance:      Number(outstanding.toFixed(2)),
-      debitNoteNo:              x.debitNoteNo  || x.DebitNoteNo  || '',
+      debitNoteNo:              x.debitNoteNo   || x.DebitNoteNo  || '',
       debitNoteDate:            x.debitNoteDate || x.DebitNoteDate,
-      status:                   x.status       || x.Status,
+      status:                   x.status        || x.Status,
       fxRate:       Number(x.fxRate       ?? x.FxRate       ?? 1),
       currencyId:   Number(x.currencyId   ?? x.CurrencyId   ?? 0),
       currencyName: x.currencyName        ?? x.CurrencyName  ?? '',
@@ -391,22 +388,22 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     grouped.forEach((list) => {
       list.forEach(inv => {
         const sid            = Number(inv.supplierId || 0);
-        let remaining        = Number(utilisedAdvanceMap.get(sid) || 0);
+        const remaining      = Number(utilisedAdvanceMap.get(sid) || 0);
         const alreadyAdvance = Number(inv.advanceAmount || 0);
 
         if (alreadyAdvance > 0) {
-          utilisedAdvanceMap.set(sid, Number(Math.max(remaining - alreadyAdvance, 0).toFixed(2)));
+          utilisedAdvanceMap.set(sid,
+            Number(Math.max(remaining - alreadyAdvance, 0).toFixed(2)));
           return;
         }
 
         const before  = Number(inv.outstandingBeforeAdvance || 0);
         const applied = Math.min(before, remaining);
-
         inv.advanceAmount       = Number(applied.toFixed(2));
         inv.outstandingAmount   = Number(Math.max(before - applied, 0).toFixed(2));
         inv.payableAfterAdvance = inv.outstandingAmount;
-
-        utilisedAdvanceMap.set(sid, Number(Math.max(remaining - applied, 0).toFixed(2)));
+        utilisedAdvanceMap.set(sid,
+          Number(Math.max(remaining - applied, 0).toFixed(2)));
       });
     });
   }
@@ -436,13 +433,11 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     this.invoices.forEach(inv => {
       const sid = Number(inv.supplierId || 0);
       if (!sid) return;
-
       if (!map.has(sid)) {
         map.set(sid, { supplierId: sid, supplierName: inv.supplierName || '',
           totalGrandTotal: 0, totalPaid: 0, totalDebitNote: 0,
           totalAdvance: 0, totalPayable: 0, invoices: [] });
       }
-
       const g = map.get(sid)!;
       g.totalGrandTotal += Number(inv.grandTotal          || 0);
       g.totalPaid       += Number(inv.paidAmount          || 0);
@@ -488,9 +483,9 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   }
 
   getInvoiceStatusTextByAmounts(row: any): string {
-    const paid = Number(row.paidAmount || 0);
-    const dn   = Number(row.debitNoteAmount || 0);
-    const adv  = Number(row.advanceAmount || 0);
+    const paid = Number(row.paidAmount          || 0);
+    const dn   = Number(row.debitNoteAmount     || 0);
+    const adv  = Number(row.advanceAmount       || 0);
     const os   = Number(row.payableAfterAdvance || 0);
     if (os <= 0 && (paid > 0 || dn > 0 || adv > 0)) return 'Paid';
     if ((paid > 0 || dn > 0 || adv > 0) && os > 0)  return 'Partial';
@@ -563,9 +558,7 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     this.invoiceCurrencyName    = '';
     this.invoiceFxRate          = 1;
 
-    // ✅ Default SGD always
     this.setDefaultPaymentCurrency();
-
     if (!this.paySupplierId) return;
 
     forkJoin({
@@ -577,8 +570,10 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
         const advanceRows = res.advances?.data || res.advances || [];
 
         const openAdvanceBalance = advanceRows
-          .filter((a: any) => Number(a.supplierId || a.SupplierId || 0) === Number(this.paySupplierId))
-          .reduce((sum: number, a: any) => sum + Number(a.balanceAmount || a.BalanceAmount || 0), 0);
+          .filter((a: any) =>
+            Number(a.supplierId || a.SupplierId || 0) === Number(this.paySupplierId))
+          .reduce((sum: number, a: any) =>
+            sum + Number(a.balanceAmount || a.BalanceAmount || 0), 0);
 
         let remainingAdvance = Number(openAdvanceBalance || 0);
 
@@ -587,9 +582,9 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
           .sort((a: any, b: any) =>
             new Date(a.invoiceDate).getTime() - new Date(b.invoiceDate).getTime())
           .map((inv: any) => {
-            const before        = Number(inv.outstandingBeforeAdvance || 0);
-            const existing      = Number(inv.advanceAmount || 0);
-            const extra         = existing > 0 ? 0 : Math.min(before, remainingAdvance);
+            const before   = Number(inv.outstandingBeforeAdvance || 0);
+            const existing = Number(inv.advanceAmount || 0);
+            const extra    = existing > 0 ? 0 : Math.min(before, remainingAdvance);
             inv.advanceAmount       = Number((existing + extra).toFixed(2));
             inv.outstandingAmount   = Number(Math.max(before - inv.advanceAmount, 0).toFixed(2));
             inv.payableAfterAdvance = inv.outstandingAmount;
@@ -614,13 +609,13 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
         this.supTotalNetOutstanding = Number(this.supTotalNetOutstanding.toFixed(2));
         this.supTotalPayable        = Number(this.supTotalPayable.toFixed(2));
 
-        // ✅ Store invoice currency (reference only)
+        // ✅ Invoice currency store
         const first              = this.supplierInvoicesAll[0];
         this.invoiceCurrencyId   = Number(first?.currencyId   || 0);
         this.invoiceCurrencyName = first?.currencyName        || '';
         this.invoiceFxRate       = Number(first?.fxRate       || 1);
 
-        // ✅ Payment currency = SGD (default, user can change)
+        // ✅ Default SGD payment
         this.setDefaultPaymentCurrency();
         this.recalcPaymentBase();
         this.recalcBankBalanceAfterPayment();
@@ -644,13 +639,34 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     this.recalcSelectedAmount();
   }
 
+  // ✅ KEY FIX: INR → SGD convert பண்ணு
   recalcSelectedAmount(): void {
     if (this.amountEditedManually) return;
-    let total = 0;
+
+    const baseCurrId  = this.getBaseCurrencyId();
+    const isBaseCurr  = Number(this.paymentCurrencyId) === baseCurrId;
+
+    let totalSGD = 0;
+    let totalINR = 0;
+
     this.supplierInvoicesAll.forEach(x => {
-      if (x.isSelected) total += Number(x.payableAfterAdvance || 0);
+      if (!x.isSelected) return;
+      const payable = Number(x.payableAfterAdvance || 0);
+      const fx      = Number(x.fxRate || this.invoiceFxRate || 1);
+
+      if (isBaseCurr) {
+        // ✅ SGD pay → INR amount × fxRate = SGD
+        totalSGD += payable * fx;
+      } else {
+        // ✅ INR pay → INR amount as-is
+        totalINR += payable;
+      }
     });
-    this.payAmount = Number(total.toFixed(2));
+
+    this.payAmount = isBaseCurr
+      ? Number(totalSGD.toFixed(2))
+      : Number(totalINR.toFixed(2));
+
     this.recalcBankBalanceAfterPayment();
     this.recalcPaymentBase();
   }
@@ -666,8 +682,8 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     if (this.payMethodId === 2 || this.payMethodId === 3) {
       this.onBankChange();
     } else {
-      this.selectedBankId = null;
-      this.bankAvailableBalance = null;
+      this.selectedBankId          = null;
+      this.bankAvailableBalance    = null;
       this.bankBalanceAfterPayment = null;
     }
   }
@@ -679,28 +695,28 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   }
 
   recalcBankBalanceAfterPayment(): void {
-    if (this.bankAvailableBalance == null) { this.bankBalanceAfterPayment = null; return; }
+    if (this.bankAvailableBalance == null) {
+      this.bankBalanceAfterPayment = null; return;
+    }
     this.bankBalanceAfterPayment =
       Number(this.bankAvailableBalance || 0) - Number(this.payAmount || 0);
   }
 
-  // ✅ FxRate + Exchange Gain/Loss
   recalcPaymentBase(): void {
     const fx  = Number(this.payFxRate || 1);
     const amt = Number(this.payAmount || 0);
-
-    // If paying in SGD (base) → amountBase = amount (no conversion)
     const baseCurrId = this.getBaseCurrencyId();
+
     if (Number(this.paymentCurrencyId) === baseCurrId) {
+      // SGD pay → base = amount (1:1)
       this.payAmountBase       = amt;
       this.payExchangeGainLoss = 0;
       return;
     }
 
-    // Foreign currency payment
+    // Foreign currency
     this.payAmountBase = +(amt * fx).toFixed(2);
 
-    // Exchange Gain/Loss = payment FxRate vs invoice FxRate
     const invFx = Number(this.invoiceFxRate || 1);
     if (
       this.invoiceCurrencyId === Number(this.paymentCurrencyId) &&
@@ -735,34 +751,54 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
       Swal.fire('Warning', 'Select Bank Account', 'warning'); return;
     }
 
-    const baseCurrId  = this.getBaseCurrencyId();
-    const isBaseCurr  = Number(this.paymentCurrencyId) === baseCurrId;
+    const baseCurrId = this.getBaseCurrencyId();
+    const isBaseCurr = Number(this.paymentCurrencyId) === baseCurrId;
 
-    const buildPayload = (inv: any, amount: number) => ({
-      supplierInvoiceId:    inv.id,
-      supplierId:           this.paySupplierId,
-      paymentDate:          this.payDate,
-      paymentMethodId:      this.payMethodId,
-      referenceNo:          this.payReference,
-      amount:               amount,
-      advanceAppliedAmount: Number(inv.advanceAmount || 0),
-      notes:                this.payNotes,
-      bankAccountId:        this.selectedBankId,
-      bankId:               this.selectedBankId,
-      createdBy:            this.userId,
-      countryId:            Number(localStorage.getItem('countryId') || 1),
-      // ✅ FxRate fields
-      fxRate:               isBaseCurr ? 1 : this.payFxRate,
-      amountBase:           isBaseCurr ? amount : +(amount * this.payFxRate).toFixed(2),
-      currencyName:         this.paymentCurrencyName, // ✅ SGD or INR
-      currencyId:           this.paymentCurrencyId,
-      companyCurrencyId:    baseCurrId
-    });
+    // ✅ Multi invoice → each invoice SGD amount calculate
+    const buildPayload = (inv: any, amountInPayCurr: number) => {
+      const invFx    = Number(inv.fxRate || this.invoiceFxRate || 1);
+      const base     = isBaseCurr
+        ? amountInPayCurr                          // SGD pay → base = same
+        : +(amountInPayCurr * this.payFxRate).toFixed(2); // INR pay → × fxRate
 
-    const requests = selected.length === 1
-      ? [this.apSvc.createPayment(buildPayload(selected[0], Number(this.payAmount || 0)))]
-      : selected.map(inv =>
-          this.apSvc.createPayment(buildPayload(inv, Number(inv.payableAfterAdvance || 0))));
+      return {
+        supplierInvoiceId:    inv.id,
+        supplierId:           this.paySupplierId,
+        paymentDate:          this.payDate,
+        paymentMethodId:      this.payMethodId,
+        referenceNo:          this.payReference,
+        amount:               amountInPayCurr,
+        advanceAppliedAmount: Number(inv.advanceAmount || 0),
+        notes:                this.payNotes,
+        bankAccountId:        this.selectedBankId,
+        bankId:               this.selectedBankId,
+        createdBy:            this.userId,
+        countryId:            Number(localStorage.getItem('countryId') || 1),
+        fxRate:               isBaseCurr ? invFx : this.payFxRate,
+        amountBase:           base,
+        currencyName:         this.paymentCurrencyName,
+        currencyId:           this.paymentCurrencyId,
+        companyCurrencyId:    baseCurrId
+      };
+    };
+
+    let requests: any[];
+
+    if (selected.length === 1) {
+      requests = [this.apSvc.createPayment(
+        buildPayload(selected[0], Number(this.payAmount || 0))
+      )];
+    } else {
+      // ✅ Multi: each invoice → SGD or INR amount calculate
+      requests = selected.map(inv => {
+        const payable = Number(inv.payableAfterAdvance || 0);
+        const invFx   = Number(inv.fxRate || this.invoiceFxRate || 1);
+        const amount  = isBaseCurr
+          ? Number((payable * invFx).toFixed(2))  // INR → SGD
+          : payable;                               // INR as-is
+        return this.apSvc.createPayment(buildPayload(inv, amount));
+      });
+    }
 
     forkJoin(requests).subscribe({
       next: (results: any[]) => {

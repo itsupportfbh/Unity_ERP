@@ -52,6 +52,7 @@
                 <th>Date</th>
                 <th>Method</th>
                 <th class="text-end">Amount</th>
+                <th class="text-end">Base (SGD)</th>
                 <th>Status</th>
                 <th class="text-center" style="width: 140px;">Action</th>
               </tr>
@@ -63,7 +64,24 @@
                 <td>{{ r.customerName }}</td>
                 <td>{{ r.receiptDate | date:'dd-MMM-yyyy' }}</td>
                 <td>{{ r.paymentMode }}</td>
-                <td class="text-end">{{ r.amountReceived | number:'1.2-2' }}</td>
+               <!-- Amount cell -->
+<td class="text-end">
+  {{ r.amountReceived | number:'1.2-2' }}
+  <span *ngIf="r.currencyName && r.currencyName !== 'SGD'"
+    style="font-size:0.75rem;color:#6b7280;margin-left:2px;">
+    {{ r.currencyName }}
+  </span>
+</td>
+
+<!-- ✅ Base SGD cell -->
+<td class="text-end" style="color:#2E5F73;font-weight:600;">
+  <ng-container *ngIf="r.currencyName && r.currencyName !== 'SGD'">
+    {{ r.amountBase | number:'1.2-2' }} SGD
+  </ng-container>
+  <ng-container *ngIf="!r.currencyName || r.currencyName === 'SGD'">
+    {{ r.amountReceived | number:'1.2-2' }} SGD
+  </ng-container>
+</td>
                 <td>
                   <span class="badge rounded-pill" style="background-color:#108c44;">
                     {{ r.status || 'Posted' }}

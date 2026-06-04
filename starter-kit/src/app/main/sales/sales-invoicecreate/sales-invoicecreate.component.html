@@ -369,98 +369,119 @@
       </div>
 
       <!-- SUMMARY CARD -->
-      <div class="col-lg-6 col-md-6">
-        <div class="prl-summary-card">
-          <!-- Sub Total -->
-          <div class="prl-summary-row">
-            <span class="prl-summary-label">Sub Total</span>
-            <input class="prl-summary-input"
-                   type="text"
-                   [value]="subtotal | number:'1.2-2'"
-                   readonly>
-          </div>
+     <!-- SUMMARY CARD -->
+<div class="col-lg-6 col-md-6">
+  <div class="prl-summary-card">
 
-          <!-- Discount -->
-          <div class="prl-summary-row">
-            <span class="prl-summary-label">Discount</span>
-            <input class="prl-summary-input"
-                   type="text"
-                   [value]="totalDiscount | number:'1.2-2'"
-                   readonly>
-          </div>
+    <!-- ✅ Currency badge -->
+    <div class="prl-summary-row" *ngIf="currencyName">
+      <span class="prl-summary-label">Currency</span>
+      <span class="prl-summary-input"
+        style="font-weight:700;color:#2E5F73;">
+        {{ currencyName }}
+        <span *ngIf="isForeignCurrency()"
+          style="font-size:0.78rem;color:#6b7280;margin-left:4px;">
+          (1 {{ currencyName }} = {{ fxRate | number:'1.4-4' }} {{ baseCurrencyName }})
+        </span>
+      </span>
+    </div>
 
-          <!-- Tax -->
-          <div class="prl-summary-row">
-            <span class="prl-summary-label">Tax (GST)</span>
-            <input class="prl-summary-input"
-                   type="text"
-                   [value]="totalTax | number:'1.2-2'"
-                   readonly>
-          </div>
+    <!-- Sub Total -->
+    <div class="prl-summary-row">
+      <span class="prl-summary-label">Sub Total</span>
+      <input class="prl-summary-input" type="text"
+        [value]="subtotal | number:'1.2-2'" readonly>
+    </div>
 
-          <!-- Shipping -->
-          <div class="prl-summary-row">
-            <span class="prl-summary-label">Shipping</span>
-            <input class="prl-summary-input"
-                   type="number"
-                   step="0.01"
-                   [(ngModel)]="shipping"
-                   (input)="updateNetTotal()"
-                   [ngModelOptions]="{ standalone: true }">
-          </div>
+    <!-- Discount -->
+    <div class="prl-summary-row">
+      <span class="prl-summary-label">Discount</span>
+      <input class="prl-summary-input" type="text"
+        [value]="totalDiscount | number:'1.2-2'" readonly>
+    </div>
 
-          <!-- Apply Advance -->
-          <div class="prl-summary-row" *ngIf="advanceList?.length">
-            <span class="prl-summary-label">Apply Advance</span>
-            <ng-select
-              class="prl-summary-select"
-              [items]="advanceList"
-              bindLabel="advanceNo"
-              bindValue="id"
-              [(ngModel)]="selectedAdvanceId"
-              (change)="onAdvanceSelected()"
-              [ngModelOptions]="{standalone:true}"
-              placeholder="Select Advance…">
-              <ng-template ng-option-tmp let-a="item">
-                <div class="d-flex flex-column">
-                  <span class="fw-600">{{ a.advanceNo }}</span>
-                  <small class="text-muted">
-                    Date: {{ a.advanceDate | date:'dd-MMM-yyyy' }}
-                    • Balance: {{ a.balanceAmount || a.BalanceAmount | number:'1.2-2' }}
-                  </small>
-                </div>
-              </ng-template>
-            </ng-select>
-          </div>
+    <!-- Tax -->
+    <div class="prl-summary-row">
+      <span class="prl-summary-label">Tax (GST)</span>
+      <input class="prl-summary-input" type="text"
+        [value]="totalTax | number:'1.2-2'" readonly>
+    </div>
 
-          <!-- Amount to apply -->
-          <div class="prl-summary-row" *ngIf="advanceList?.length">
-            <span class="prl-summary-label small">Amount to apply</span>
-            <input class="prl-summary-input text-end"
-                   type="number"
-                   step="0.01"
-                   [(ngModel)]="advanceApplyAmount"
-                   (input)="onAdvanceAmountChanged()"
-                   [ngModelOptions]="{standalone:true}">
-          </div>
+    <!-- Shipping -->
+    <div class="prl-summary-row">
+      <span class="prl-summary-label">Shipping</span>
+      <input class="prl-summary-input" type="number" step="0.01"
+        [(ngModel)]="shipping" (input)="updateNetTotal()"
+        [ngModelOptions]="{standalone:true}">
+    </div>
 
-          <!-- Advance Applied -->
-          <div class="prl-summary-row" *ngIf="advanceTotalApplied > 0">
-            <span class="prl-summary-label text-success">Advance Applied</span>
-            <span class="prl-summary-input text-success">
-              - {{ advanceTotalApplied | number:'1.2-2' }}
-            </span>
+    <!-- Apply Advance -->
+    <div class="prl-summary-row" *ngIf="advanceList?.length">
+      <span class="prl-summary-label">Apply Advance</span>
+      <ng-select class="prl-summary-select"
+        [items]="advanceList" bindLabel="advanceNo" bindValue="id"
+        [(ngModel)]="selectedAdvanceId" (change)="onAdvanceSelected()"
+        [ngModelOptions]="{standalone:true}" placeholder="Select Advance…">
+        <ng-template ng-option-tmp let-a="item">
+          <div class="d-flex flex-column">
+            <span class="fw-600">{{ a.advanceNo }}</span>
+            <small class="text-muted">
+              Date: {{ a.advanceDate | date:'dd-MMM-yyyy' }}
+              • Balance: {{ a.balanceAmount || a.BalanceAmount | number:'1.2-2' }}
+            </small>
           </div>
+        </ng-template>
+      </ng-select>
+    </div>
 
-          <!-- Net Total -->
-          <div class="prl-summary-total-row">
-            <span>Net Total</span>
-            <span class="prl-summary-total-value">
-              {{ netTotal | number:'1.2-2' }}
-            </span>
-          </div>
-        </div>
-      </div>
+    <!-- Amount to apply -->
+    <div class="prl-summary-row" *ngIf="advanceList?.length">
+      <span class="prl-summary-label small">Amount to apply</span>
+      <input class="prl-summary-input text-end" type="number" step="0.01"
+        [(ngModel)]="advanceApplyAmount" (input)="onAdvanceAmountChanged()"
+        [ngModelOptions]="{standalone:true}">
+    </div>
+
+    <!-- Advance Applied -->
+    <div class="prl-summary-row" *ngIf="advanceTotalApplied > 0">
+      <span class="prl-summary-label text-success">Advance Applied</span>
+      <span class="prl-summary-input text-success">
+        - {{ advanceTotalApplied | number:'1.2-2' }}
+      </span>
+    </div>
+
+    <!-- Net Total -->
+    <div class="prl-summary-total-row">
+      <span>
+        Net Total
+        <span *ngIf="currencyName"
+          style="font-size:0.82rem;color:#6b7280;margin-left:4px;">
+          ({{ currencyName }})
+        </span>
+      </span>
+      <span class="prl-summary-total-value">
+        {{ netTotal | number:'1.2-2' }}
+      </span>
+    </div>
+
+    <!-- ✅ Base SGD — foreign currency மட்டும் -->
+    <div class="prl-summary-total-row"
+      *ngIf="isForeignCurrency()"
+      style="border-top:1px dashed #d1d5db;margin-top:4px;padding-top:8px;">
+      <span style="color:#2E5F73;font-weight:700;">
+        Base ({{ baseCurrencyName }})
+        <small style="font-size:0.75rem;color:#6b7280;display:block;">
+          {{ netTotal | number:'1.2-2' }} {{ currencyName }}
+          × {{ fxRate | number:'1.4-4' }}
+        </small>
+      </span>
+      <span class="prl-summary-total-value" style="color:#2E5F73;">
+        {{ grandTotalBase | number:'1.2-2' }} {{ baseCurrencyName }}
+      </span>
+    </div>
+
+  </div>
+</div>
     </div>
 
   </div>

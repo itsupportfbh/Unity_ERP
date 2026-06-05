@@ -74,6 +74,10 @@ export interface LineRow {
   poQty?: number | null;        // ordered qty from PO
   remainingQty?: number | null; // for now same as poQty (later remaining)
   isPartial?: boolean;
+  sourceType?: string | null;
+  isRecipeShortage?: boolean;
+  reservedWarehouseId?: number | null;
+  reservedBinId?: number | null;
 }
 
 interface GeneratedGRN {
@@ -249,6 +253,19 @@ currentPoFxRate = 1;
       if (!r.warehouseId) errors.push(`${rowNo}) ${itemLabel}: Please select warehouse`);
       if (!r.binId) errors.push(`${rowNo}) ${itemLabel}: Please select bin`);
       if (!r.strategyId) errors.push(`${rowNo}) ${itemLabel}: Please select Frequency`);
+      if (r.isRecipeShortage) {
+      const reservedWh = Number(r.reservedWarehouseId || 0);
+      const reservedBin = Number(r.reservedBinId || 0);
+
+      // Item already reserved in actual bin, user must select same bin
+      if (reservedWh > 0 && reservedBin > 0) {
+        if (Number(r.warehouseId) !== reservedWh || Number(r.binId) !== reservedBin) {
+          errors.push(
+            `${rowNo}) ${itemLabel}: Recipe shortage item already reserved in Warehouse ${reservedWh}, Bin ${reservedBin}. Please select same warehouse/bin.`
+          );
+          }
+        }
+      }
 
       const qty = Number(r.qtyReceived);
       if (!r.qtyReceived && r.qtyReceived !== 0) errors.push(`${rowNo}) ${itemLabel}: Please enter received qty`);
@@ -281,6 +298,10 @@ currentPoFxRate = 1;
       binId: r.binId ?? null,
       warehouseName: r.warehouseName ?? this.lookupWarehouseName(r.warehouseId),
       binName: r.binName ?? this.lookupBinName(r.binId),
+      sourceType: r.sourceType ?? null,
+      isRecipeShortage: !!r.isRecipeShortage,
+      reservedWarehouseId: r.reservedWarehouseId ?? null,
+      reservedBinId: r.reservedBinId ?? null,
 
       strategyId: r.strategyId ?? null,
       strategyName: r.strategyName ?? this.lookupStrategyName(r.strategyId),
@@ -330,20 +351,46 @@ const payload: any = {
   isActive: true
 };
 
+this.purchaseGoodReceiptService.validateRecipeShortageBin(payload).subscribe({
+  next: () => {
     this.purchaseGoodReceiptService.createGRN(payload).subscribe({
       next: (res: any) => {
         const grnId = res?.data || res?.id || res;
-        Swal.fire({ icon: 'success', title: 'Saved', text: res?.message || 'GRN saved.', confirmButtonColor: '#0e3a4c' });
+        Swal.fire({
+          icon: 'success',
+          title: 'Saved',
+          text: res?.message || 'GRN saved.',
+          confirmButtonColor: '#0e3a4c'
+        });
+
         if (grnId) {
           this.showSummary = true;
           this.loadSummaryForCreate(grnId);
         }
       },
       error: (err: any) => {
-        console.error('Save failed', err);
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to save GRN.', confirmButtonColor: '#0e3a4c' });
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || 'Failed to save GRN.',
+          confirmButtonColor: '#0e3a4c'
+        });
       }
     });
+  },
+  error: (err: any) => {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Recipe Shortage Bin Mismatch',
+      text:
+        err?.error?.message ||
+        err?.error?.data ||
+        err?.message ||
+        'Wrong bin selected for recipe shortage item.',
+      confirmButtonColor: '#0e3a4c'
+    });
+  }
+});
   }
 
   /* ===================== POST ONE ROW ===================== */
@@ -365,6 +412,10 @@ const payload: any = {
         binId: row.binId ?? null,
         strategyId: row.strategyId ?? null,
         qtyDelta: qty,
+        sourceType: row.sourceType ?? null,
+        isRecipeShortage: !!row.isRecipeShortage,
+        reservedWarehouseId: row.reservedWarehouseId ?? null,
+        reservedBinId: row.reservedBinId ?? null,
         batchFlag: !!row.batchSerial,
         serialFlag: false,
         barcode: row.batchSerial ?? row.barcode ?? null,
@@ -379,6 +430,10 @@ const payload: any = {
       binId: row.binId ?? null,
       strategyId: row.strategyId ?? null,
       qtyDelta: qty,
+      sourceType: row.sourceType ?? null,
+      isRecipeShortage: !!row.isRecipeShortage,
+      reservedWarehouseId: row.reservedWarehouseId ?? null,
+      reservedBinId: row.reservedBinId ?? null,
       batchFlag: !!row.batchSerial,
       serialFlag: false,
       supplierId: row.supplierId ?? this.currentSupplierId ?? null,
@@ -426,7 +481,19 @@ const payload: any = {
       },
       error: (err) => {
         console.error('Apply GRN to inventory failed', err);
-        Swal.fire('Failed', 'Could not post this row to inventory.', 'error');
+
+        const msg =
+          err?.error?.message ||
+          err?.error ||
+          err?.message ||
+          'Could not post this row to inventory.';
+
+        Swal.fire({
+          icon: 'warning',
+          title: 'Recipe Shortage Validation',
+          text: msg,
+          confirmButtonColor: '#0e3a4c'
+        });
       }
     });
   }
@@ -710,7 +777,11 @@ private buildRowsFromPo(
       null;
 
     const barcode = line?.barcode ?? line?.Barcode ?? null;
+    const sourceType = String(line?.sourceType ?? line?.SourceType ?? '').toUpperCase();
+    const isRecipeShortage = sourceType === 'RECIPE_SHORTAGE';
 
+    const reservedWarehouseId = this.toNum(line?.reservedWarehouseId ?? line?.ReservedWarehouseId);
+    const reservedBinId = this.toNum(line?.reservedBinId ?? line?.ReservedBinId);
     return {
       itemText,
       itemCode,
@@ -720,8 +791,14 @@ private buildRowsFromPo(
       supplierName,
 
       // existing...
-      warehouseId: null,
-      binId: null,
+      warehouseId: isRecipeShortage && reservedWarehouseId ? reservedWarehouseId : null,
+      binId: isRecipeShortage && reservedBinId ? reservedBinId : null,
+      sourceType: (line?.sourceType ?? line?.SourceType ?? '').toString(),
+      isRecipeShortage:
+        String(line?.sourceType ?? line?.SourceType ?? '').toUpperCase() === 'RECIPE_SHORTAGE',
+
+      reservedWarehouseId: this.toNum(line?.reservedWarehouseId ?? line?.ReservedWarehouseId),
+      reservedBinId: this.toNum(line?.reservedBinId ?? line?.ReservedBinId),
       strategyId: null,
       qtyReceived: null,
 
@@ -991,6 +1068,10 @@ private buildRowsFromPo(
             warehouseId,
             binId,
             strategyId,
+            sourceType: r?.sourceType ?? null,
+            isRecipeShortage: !!r?.isRecipeShortage,
+            reservedWarehouseId: this.toNum(r?.reservedWarehouseId),
+            reservedBinId: this.toNum(r?.reservedBinId),
             warehouseName: r?.warehouseName ?? this.lookupWarehouseName(warehouseId),
             binName: r?.binName ?? this.lookupBinName(binId),
             strategyName: r?.strategyName ?? this.lookupStrategyName(strategyId),
@@ -1061,6 +1142,10 @@ private buildRowsFromPo(
             warehouseId,
             binId,
             strategyId,
+            sourceType: r?.sourceType ?? null,
+            isRecipeShortage: !!r?.isRecipeShortage,
+            reservedWarehouseId: this.toNum(r?.reservedWarehouseId),
+            reservedBinId: this.toNum(r?.reservedBinId),
             warehouseName: r?.warehouseName ?? this.lookupWarehouseName(warehouseId),
             binName: r?.binName ?? this.lookupBinName(binId),
             strategyName: r?.strategyName ?? this.lookupStrategyName(strategyId),

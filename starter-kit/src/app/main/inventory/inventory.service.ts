@@ -20,6 +20,11 @@ export interface ApplyGrnLine {
   barcode    ?: string | null;
   price      ?: number | null;
   remarks    ?: string | null;
+  // Recipe shortage reservation move
+  sourceType?: string | null;
+  isRecipeShortage?: boolean;
+  reservedWarehouseId?: number | null;
+  reservedBinId?: number | null;
 }
 
 export interface ApplyGrnRequest {
@@ -42,6 +47,11 @@ export interface UpdateWarehouseAndSupplierPriceDto {
   barcode    ?: string | null;
   remarks    ?: string | null;
   updatedBy  ?: any;
+   // Recipe shortage reservation move
+  sourceType?: string | null;
+  isRecipeShortage?: boolean;
+  reservedWarehouseId?: number | null;
+  reservedBinId?: number | null;
 }
 
 // ── Stock History filter interfaces ───────────────────────────────

@@ -87,4 +87,10 @@ applyGrnToSalesOrder(grnId: number, updatedBy: number = 0): Observable<any> {
     {}
   );
 }
+validateRecipeShortageBin(payload: any): Observable<any> {
+  return this.http.post(
+    `${this.url}/PurchaseGoodReceipt/validate-recipe-shortage-bin`,
+    payload
+  );
+}
 }

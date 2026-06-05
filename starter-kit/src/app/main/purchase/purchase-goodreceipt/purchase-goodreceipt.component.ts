@@ -76,6 +76,7 @@ export interface LineRow {
   isPartial?: boolean;
   sourceType?: string | null;
   isRecipeShortage?: boolean;
+  isDirectDOShortage?: boolean;
   reservedWarehouseId?: number | null;
   reservedBinId?: number | null;
 }
@@ -119,6 +120,7 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
   isPoDateDisabled = false;
 
   selectedPO: number | null = null;
+  currentSourceType: string = '';
   receiptDate = '';
   overReceiptTolerance = 0;
 
@@ -152,7 +154,9 @@ export class PurchaseGoodreceiptComponent implements OnInit, AfterViewInit, Afte
       initial: '',
       remarks: '',
       createdAt: new Date(), photos: [],
-      isFlagIssue: false, isPostInventory: false, flagIssueId: null
+      isFlagIssue: false, isPostInventory: false, flagIssueId: null,
+      sourceType: null, isRecipeShortage: false, isDirectDOShortage: false,
+      reservedWarehouseId: null, reservedBinId: null
     }
   ];
 
@@ -166,6 +170,8 @@ currentPoFxRate = 1;
     poDate?: string;
     deliveryDate?: string;
     fxRate?: number;
+    sourceType?: string | null;
+    sourceRefId?: number | null;
   }> = [];
 
   flagIssuesList: any[] = [];
@@ -253,16 +259,21 @@ currentPoFxRate = 1;
       if (!r.warehouseId) errors.push(`${rowNo}) ${itemLabel}: Please select warehouse`);
       if (!r.binId) errors.push(`${rowNo}) ${itemLabel}: Please select bin`);
       if (!r.strategyId) errors.push(`${rowNo}) ${itemLabel}: Please select Frequency`);
-      if (r.isRecipeShortage) {
-      const reservedWh = Number(r.reservedWarehouseId || 0);
-      const reservedBin = Number(r.reservedBinId || 0);
+      const rowSourceType = String(r.sourceType || this.currentSourceType || '').trim().toUpperCase();
+      const isShortageRow = !!r.isRecipeShortage || !!r.isDirectDOShortage || rowSourceType === 'SO';
 
-      // Item already reserved in actual bin, user must select same bin
-      if (reservedWh > 0 && reservedBin > 0) {
-        if (Number(r.warehouseId) !== reservedWh || Number(r.binId) !== reservedBin) {
-          errors.push(
-            `${rowNo}) ${itemLabel}: Recipe shortage item already reserved in Warehouse ${reservedWh}, Bin ${reservedBin}. Please select same warehouse/bin.`
-          );
+      if (isShortageRow) {
+        const reservedWh = Number(r.reservedWarehouseId || 0);
+        const reservedBin = Number(r.reservedBinId || 0);
+
+        // If reserved bin already came from source, user must select same bin.
+        // If reserved id is not available, backend validation will fetch it from ItemWarehouseStock.
+        if (reservedWh > 0 && reservedBin > 0) {
+          if (Number(r.warehouseId) !== reservedWh || Number(r.binId) !== reservedBin) {
+            const flowName = !!r.isRecipeShortage ? 'Recipe shortage' : 'Direct DO shortage';
+            errors.push(
+              `${rowNo}) ${itemLabel}: ${flowName} item already reserved in Warehouse ${reservedWh}, Bin ${reservedBin}. Please select same warehouse/bin.`
+            );
           }
         }
       }
@@ -298,8 +309,9 @@ currentPoFxRate = 1;
       binId: r.binId ?? null,
       warehouseName: r.warehouseName ?? this.lookupWarehouseName(r.warehouseId),
       binName: r.binName ?? this.lookupBinName(r.binId),
-      sourceType: r.sourceType ?? null,
+      sourceType: r.sourceType ?? this.currentSourceType ?? null,
       isRecipeShortage: !!r.isRecipeShortage,
+      isDirectDOShortage: !!r.isDirectDOShortage || String(r.sourceType || this.currentSourceType || '').trim().toUpperCase() === 'SO',
       reservedWarehouseId: r.reservedWarehouseId ?? null,
       reservedBinId: r.reservedBinId ?? null,
 
@@ -344,6 +356,7 @@ const payload: any = {
   overReceiptTolerance: this.overReceiptTolerance,
 
   isPartial: isPartial,
+  sourceType: this.currentSourceType || null,
   invoiceNo: inv,
 
   grnJson: JSON.stringify(rowsForApi),
@@ -378,18 +391,31 @@ this.purchaseGoodReceiptService.validateRecipeShortageBin(payload).subscribe({
       }
     });
   },
-  error: (err: any) => {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Recipe Shortage Bin Mismatch',
-      text:
-        err?.error?.message ||
-        err?.error?.data ||
-        err?.message ||
-        'Wrong bin selected for recipe shortage item.',
-      confirmButtonColor: '#0e3a4c'
-    });
-  }
+error: (err: any) => {
+  const raw =
+    err?.error?.message ||
+    err?.error?.data ||
+    err?.message ||
+    'Wrong bin selected for shortage item.';
+
+  const msg = String(raw);
+  const parts = msg.split('|');
+
+  const title = parts.length > 1
+    ? parts[0]
+    : 'Shortage Bin Mismatch';
+
+  const text = parts.length > 1
+    ? parts.slice(1).join('|')
+    : msg;
+
+  Swal.fire({
+    icon: 'warning',
+    title,
+    text,
+    confirmButtonColor: '#0e3a4c'
+  });
+}
 });
   }
 
@@ -412,8 +438,9 @@ this.purchaseGoodReceiptService.validateRecipeShortageBin(payload).subscribe({
         binId: row.binId ?? null,
         strategyId: row.strategyId ?? null,
         qtyDelta: qty,
-        sourceType: row.sourceType ?? null,
+        sourceType: row.sourceType ?? this.currentSourceType ?? null,
         isRecipeShortage: !!row.isRecipeShortage,
+        isDirectDOShortage: !!row.isDirectDOShortage || String(row.sourceType || this.currentSourceType || '').trim().toUpperCase() === 'SO',
         reservedWarehouseId: row.reservedWarehouseId ?? null,
         reservedBinId: row.reservedBinId ?? null,
         batchFlag: !!row.batchSerial,
@@ -430,7 +457,7 @@ this.purchaseGoodReceiptService.validateRecipeShortageBin(payload).subscribe({
       binId: row.binId ?? null,
       strategyId: row.strategyId ?? null,
       qtyDelta: qty,
-      sourceType: row.sourceType ?? null,
+      sourceType: row.sourceType ?? this.currentSourceType ?? null,
       isRecipeShortage: !!row.isRecipeShortage,
       reservedWarehouseId: row.reservedWarehouseId ?? null,
       reservedBinId: row.reservedBinId ?? null,
@@ -681,7 +708,10 @@ private redirectIfAllDone() {
           supplierName: p.supplierName ?? p.SupplierName,
           poLines: p.poLines ?? p.PoLines,
           poDate: p.poDate ?? p.PoDate,
-          deliveryDate: p.deliveryDate ?? p.DeliveryDate
+          deliveryDate: p.deliveryDate ?? p.DeliveryDate,
+          fxRate: Number(p.fxRate ?? p.FxRate ?? 1),
+          sourceType: p.sourceType ?? p.SourceType ?? null,
+          sourceRefId: this.toNum(p.sourceRefId ?? p.SourceRefId)
         }));
       },
       error: (err) => console.error('Error loading POs', err)
@@ -697,6 +727,7 @@ private redirectIfAllDone() {
 
     const po = this.purchaseOrder.find(p => p.id === selectedId);
     this.currentPoFxRate = Number(po?.fxRate || 1);
+    this.currentSourceType = String(po?.sourceType || '').trim().toUpperCase();
     if (!po) {
       this.resetForm();
       this.isPoDateDisabled = false;
@@ -754,7 +785,7 @@ this.purchaseGoodReceiptService.getReceivedAggByPO(selectedId).subscribe({
   }
 
 private buildRowsFromPo(
-  po: { poLines?: string },
+  po: { poLines?: string; sourceType?: string | null },
   supplierId: number | null,
   supplierName: string
 ) {
@@ -777,8 +808,9 @@ private buildRowsFromPo(
       null;
 
     const barcode = line?.barcode ?? line?.Barcode ?? null;
-    const sourceType = String(line?.sourceType ?? line?.SourceType ?? '').toUpperCase();
+    const sourceType = String(line?.sourceType ?? line?.SourceType ?? po?.sourceType ?? this.currentSourceType ?? '').trim().toUpperCase();
     const isRecipeShortage = sourceType === 'RECIPE_SHORTAGE';
+    const isDirectDOShortage = sourceType === 'SO';
 
     const reservedWarehouseId = this.toNum(line?.reservedWarehouseId ?? line?.ReservedWarehouseId);
     const reservedBinId = this.toNum(line?.reservedBinId ?? line?.ReservedBinId);
@@ -793,9 +825,9 @@ private buildRowsFromPo(
       // existing...
       warehouseId: isRecipeShortage && reservedWarehouseId ? reservedWarehouseId : null,
       binId: isRecipeShortage && reservedBinId ? reservedBinId : null,
-      sourceType: (line?.sourceType ?? line?.SourceType ?? '').toString(),
-      isRecipeShortage:
-        String(line?.sourceType ?? line?.SourceType ?? '').toUpperCase() === 'RECIPE_SHORTAGE',
+      sourceType: sourceType,
+      isRecipeShortage: isRecipeShortage,
+      isDirectDOShortage: isDirectDOShortage,
 
       reservedWarehouseId: this.toNum(line?.reservedWarehouseId ?? line?.ReservedWarehouseId),
       reservedBinId: this.toNum(line?.reservedBinId ?? line?.ReservedBinId),
@@ -950,6 +982,7 @@ private buildRowsFromPo(
   /* ================= Utils ================= */
   resetForm() {
     this.selectedPO = null;
+    this.currentSourceType = '';
     this.receiptDate = '';
     this.isPoDateDisabled = false;
     this.overReceiptTolerance = 0;
@@ -980,7 +1013,9 @@ private buildRowsFromPo(
       remarks: '',
       createdAt: new Date(),
       photos: [],
-      isFlagIssue: false, isPostInventory: false, flagIssueId: null
+      isFlagIssue: false, isPostInventory: false, flagIssueId: null,
+      sourceType: null, isRecipeShortage: false, isDirectDOShortage: false,
+      reservedWarehouseId: null, reservedBinId: null
     }];
 
     this.applyDefaultWarehouseToRows();
@@ -1040,6 +1075,7 @@ private buildRowsFromPo(
         const data = res?.data ?? res;
 
         this.selectedPO = this.toNum(data?.poid ?? data?.POId);
+        this.currentSourceType = String(data?.sourceType ?? data?.SourceType ?? '').trim().toUpperCase();
 
         const rec = data?.receptionDate ?? data?.ReceptionDate ?? data?.Reception_Date;
         this.receiptDate = rec ? this.toDateInput(rec) : this.toDateInput(new Date());
@@ -1068,8 +1104,9 @@ private buildRowsFromPo(
             warehouseId,
             binId,
             strategyId,
-            sourceType: r?.sourceType ?? null,
+            sourceType: r?.sourceType ?? this.currentSourceType ?? null,
             isRecipeShortage: !!r?.isRecipeShortage,
+            isDirectDOShortage: !!r?.isDirectDOShortage || String(r?.sourceType || this.currentSourceType || '').trim().toUpperCase() === 'SO',
             reservedWarehouseId: this.toNum(r?.reservedWarehouseId),
             reservedBinId: this.toNum(r?.reservedBinId),
             warehouseName: r?.warehouseName ?? this.lookupWarehouseName(warehouseId),
@@ -1112,6 +1149,7 @@ private buildRowsFromPo(
         const data = res?.data ?? res;
 
         this.selectedPO = this.toNum(data?.poid ?? data?.POId);
+        this.currentSourceType = String(data?.sourceType ?? data?.SourceType ?? '').trim().toUpperCase();
 
         const rec = data?.receptionDate ?? data?.ReceptionDate ?? data?.Reception_Date;
         this.receiptDate = rec ? this.toDateInput(rec) : this.toDateInput(new Date());
@@ -1142,8 +1180,9 @@ private buildRowsFromPo(
             warehouseId,
             binId,
             strategyId,
-            sourceType: r?.sourceType ?? null,
+            sourceType: r?.sourceType ?? this.currentSourceType ?? null,
             isRecipeShortage: !!r?.isRecipeShortage,
+            isDirectDOShortage: !!r?.isDirectDOShortage || String(r?.sourceType || this.currentSourceType || '').trim().toUpperCase() === 'SO',
             reservedWarehouseId: this.toNum(r?.reservedWarehouseId),
             reservedBinId: this.toNum(r?.reservedBinId),
             warehouseName: r?.warehouseName ?? this.lookupWarehouseName(warehouseId),

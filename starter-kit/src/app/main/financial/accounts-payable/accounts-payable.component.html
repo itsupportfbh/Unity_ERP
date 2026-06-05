@@ -681,12 +681,252 @@
             </div>
           </div>
 
-          <!-- ========== AGING TAB ========== -->
-          <div class="tab-pane" [ngClass]="{'active show': activeTab==='aging'}"
-            *ngIf="activeTab==='aging'">
-            <app-ap-aging></app-ap-aging>
-          </div>
+        <!-- ========== AGING TAB ========== -->
+<div class="tab-pane" [ngClass]="{'active show': activeTab==='aging'}"
+  *ngIf="activeTab==='aging'">
 
+  <div *ngIf="agingIsLoading" class="text-center py-3">
+    Loading aging data…
+  </div>
+
+  <div *ngIf="!agingIsLoading">
+
+    <!-- Header + Export -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0" style="color:#2E5F73;font-weight:700;">AP Aging</h5>
+      <button class="btn btn-outline-secondary btn-sm"
+        (click)="exportAgingToExcel()"
+        [disabled]="!agingFilteredRows?.length">
+        <i class="far fa-file-excel me-25"></i> Excel
+      </button>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-2">
+      <div class="col-md-3 col-6 mb-1">
+        <div class="ap-summary-card ap-summary-outstanding">
+          <div class="ap-summary-icon">
+            <i class="fas fa-balance-scale"></i>
+          </div>
+          <div class="ap-summary-text">
+            <div class="label">Total Outstanding (SGD)</div>
+            <div class="value text-danger">
+              {{ agingTotalBase | number:'1.2-2' }}
+              <small style="font-size:0.7rem;"> SGD</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 mb-1">
+        <div class="ap-summary-card ap-summary-paid">
+          <div class="ap-summary-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="ap-summary-text">
+            <div class="label">0–30 Days (SGD)</div>
+            <div class="value">
+              {{ aging0_30Base | number:'1.2-2' }}
+              <small style="font-size:0.7rem;"> SGD</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 mb-1">
+        <div class="ap-summary-card ap-summary-debit">
+          <div class="ap-summary-icon">
+            <i class="fas fa-exclamation-circle"></i>
+          </div>
+          <div class="ap-summary-text">
+            <div class="label">31–60 Days (SGD)</div>
+            <div class="value">
+              {{ aging31_60Base | number:'1.2-2' }}
+              <small style="font-size:0.7rem;"> SGD</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 mb-1">
+        <div class="ap-summary-card ap-summary-total">
+          <div class="ap-summary-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="ap-summary-text">
+            <div class="label">61–90 &amp; 90+ (SGD)</div>
+            <div class="value">
+              {{ (aging61_90Base + aging90PlusBase) | number:'1.2-2' }}
+              <small style="font-size:0.7rem;"> SGD</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="d-flex align-items-center flex-wrap mb-2" style="gap:12px;">
+      <div class="d-flex align-items-center" style="gap:6px;">
+        <span class="small text-muted">From</span>
+        <input type="date" class="form-control form-control-sm"
+          style="width:150px;"
+          [(ngModel)]="agingFromDate"
+          (change)="onAgingFilterChange()" />
+      </div>
+      <div class="d-flex align-items-center" style="gap:6px;">
+        <span class="small text-muted">To</span>
+        <input type="date" class="form-control form-control-sm"
+          style="width:150px;"
+          [(ngModel)]="agingToDate"
+          (change)="onAgingFilterChange()" />
+      </div>
+      <div class="d-flex align-items-center" style="gap:6px;">
+        <span class="small text-muted">Supplier</span>
+        <select class="form-control form-control-sm"
+          style="width:200px;"
+          [(ngModel)]="agingSelectedSupplierFilter"
+          (change)="onAgingSupplierFilterChange()">
+          <option [ngValue]="null">All Suppliers</option>
+          <option *ngFor="let r of agingRows" [ngValue]="r.supplierId">
+            {{ r.supplierName }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Summary Table -->
+    <div class="table-responsive ap-table-wrap">
+      <table class="table mb-0 ap-table">
+        <thead>
+          <tr>
+            <th style="background-color:#2E5F73;color:#fff;">Supplier</th>
+            <th style="background-color:#2E5F73;color:#fff;" class="text-right">0-30 (SGD)</th>
+            <th style="background-color:#2E5F73;color:#fff;" class="text-right">31-60 (SGD)</th>
+            <th style="background-color:#2E5F73;color:#fff;" class="text-right">61-90 (SGD)</th>
+            <th style="background-color:#2E5F73;color:#fff;" class="text-right">90+ (SGD)</th>
+            <th style="background-color:#2E5F73;color:#fff;" class="text-right">Total (SGD)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of agingFilteredRows"
+            (click)="openAgingDetail(r)"
+            style="cursor:pointer;"
+            [style.background]="agingSelectedSupplierId === r.supplierId ? '#f0f7fb' : ''">
+            <td><strong>{{ r.supplierName }}</strong></td>
+            <td class="text-right">{{ r.bucket0_30Base   | number:'1.2-2' }}</td>
+            <td class="text-right">{{ r.bucket31_60Base  | number:'1.2-2' }}</td>
+            <td class="text-right">{{ r.bucket61_90Base  | number:'1.2-2' }}</td>
+            <td class="text-right">{{ r.bucket90PlusBase | number:'1.2-2' }}</td>
+            <td class="text-right font-weight-bold" style="color:#2E5F73;">
+              {{ r.totalOutstandingBase | number:'1.2-2' }} SGD
+            </td>
+          </tr>
+          <tr *ngIf="!agingFilteredRows?.length">
+            <td colspan="6" class="text-center text-muted py-3">
+              No aging data found.
+            </td>
+          </tr>
+        </tbody>
+        <!-- Footer totals -->
+        <tfoot *ngIf="agingFilteredRows?.length">
+          <tr style="background:#f8f9fa;font-weight:700;">
+            <td>Total</td>
+            <td class="text-right">{{ aging0_30Base   | number:'1.2-2' }}</td>
+            <td class="text-right">{{ aging31_60Base  | number:'1.2-2' }}</td>
+            <td class="text-right">{{ aging61_90Base  | number:'1.2-2' }}</td>
+            <td class="text-right">{{ aging90PlusBase | number:'1.2-2' }}</td>
+            <td class="text-right" style="color:#2E5F73;">
+              {{ agingTotalBase | number:'1.2-2' }} SGD
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Detail Panel -->
+    <div class="mt-2" *ngIf="agingIsDetailOpen">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <h6 class="mb-0">
+          {{ agingSelectedSupplierName }}
+          <small class="text-muted"> — Invoice Details</small>
+        </h6>
+        <button class="btn btn-outline-secondary btn-sm"
+          (click)="closeAgingDetail()">Close</button>
+      </div>
+
+      <div class="table-responsive ap-table-wrap">
+        <table class="table table-sm mb-0 ap-table">
+          <thead>
+            <tr>
+              <th style="background-color:#2E5F73;color:#fff;">Invoice</th>
+              <th style="background-color:#2E5F73;color:#fff;">Date</th>
+              <th style="background-color:#2E5F73;color:#fff;">Due</th>
+              <th style="background-color:#2E5F73;color:#fff;" class="text-right">Days</th>
+              <th style="background-color:#2E5F73;color:#fff;" class="text-right">Original</th>
+              <th style="background-color:#2E5F73;color:#fff;" class="text-right">Paid</th>
+              <th style="background-color:#2E5F73;color:#fff;" class="text-right">Credit</th>
+              <th style="background-color:#2E5F73;color:#fff;" class="text-right">Balance</th>
+              <th style="background-color:#2E5F73;color:#fff;" class="text-right">Balance (SGD)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of agingDetailRows">
+              <td>{{ d.invoiceNo }}</td>
+              <td>{{ d.invoiceDate | date:'dd-MM-yyyy' }}</td>
+              <td>{{ d.dueDate    | date:'dd-MM-yyyy' }}</td>
+              <td class="text-right">{{ d.ageDays }}</td>
+              <td class="text-right">
+                {{ d.originalAmount | number:'1.2-2' }}
+                <span *ngIf="d.currencyName && d.currencyName !== 'SGD'"
+                  style="font-size:0.72rem;color:#6b7280;margin-left:2px;">
+                  {{ d.currencyName }}
+                </span>
+              </td>
+              <td class="text-right text-success">
+                {{ d.paidAmount | number:'1.2-2' }}
+              </td>
+              <td class="text-right text-danger">
+                {{ d.creditAmount | number:'1.2-2' }}
+              </td>
+              <td class="text-right font-weight-bold">
+                {{ d.balance | number:'1.2-2' }}
+                <span *ngIf="d.currencyName && d.currencyName !== 'SGD'"
+                  style="font-size:0.72rem;color:#6b7280;margin-left:2px;">
+                  {{ d.currencyName }}
+                </span>
+              </td>
+              <td class="text-right font-weight-bold" style="color:#2E5F73;">
+                {{ d.balanceBase | number:'1.2-2' }} SGD
+              </td>
+            </tr>
+            <tr *ngIf="!agingDetailRows?.length">
+              <td colspan="9" class="text-center text-muted py-3">
+                No invoices found.
+              </td>
+            </tr>
+          </tbody>
+          <!-- Detail Footer -->
+          <tfoot *ngIf="agingDetailRows?.length">
+            <tr style="font-weight:700;background:#f8f9fa;">
+              <td colspan="4" class="text-right">Total</td>
+              <td class="text-right">
+                {{ agingDetailOriginal | number:'1.2-2' }}
+              </td>
+              <td class="text-right text-success">
+                {{ agingDetailPaid | number:'1.2-2' }}
+              </td>
+              <td class="text-right">-</td>
+              <td class="text-right">
+                {{ agingDetailBalance | number:'1.2-2' }}
+              </td>
+              <td class="text-right" style="color:#2E5F73;">
+                {{ agingDetailBalanceBase | number:'1.2-2' }} SGD
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
           <!-- ========== MATCH TAB ========== -->
           <div class="tab-pane" [ngClass]="{'active show': activeTab==='match'}"
             *ngIf="activeTab==='match'">

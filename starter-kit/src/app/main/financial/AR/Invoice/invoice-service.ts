@@ -25,6 +25,11 @@ export interface ArInvoiceListItem {
     customerCreditStatus?: number;
       referenceNo?: string | null;
       advanceAmount?: number;
+       fxRate?:       number;
+  currencyId?:   number;
+  currencyName?: string;
+   paidAmountFC?:        number;
+  receiptCurrencyName?: string;
 }
 
 /** Grouped by customer for UI */
@@ -47,6 +52,9 @@ export interface ArCustomerGroup {
     creditNoteDate?: string | null;
     creditNoteStatus?: number;
     totalAdvance: number;
+       fxRate?:       number;
+  currencyId?:   number;
+  currencyName?: string;
 }
 
 @Injectable({ providedIn: 'root' })

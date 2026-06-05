@@ -57,20 +57,20 @@ private buildGroups(rows: ArInvoiceListItem[]): void {
   for (const r of rows) {
     if (!map.has(r.customerId)) {
       map.set(r.customerId, {
-        customerId: r.customerId,
-        customerName: r.customerName,
-        invoiceCount: 0,
-        totalAmount: 0,
-        totalPaid: 0,
-        totalCreditNote: 0,
-        totalAdvance: 0,
+        customerId:       r.customerId,
+        customerName:     r.customerName,
+        invoiceCount:     0,
+        totalAmount:      0,
+        totalPaid:        0,
+        totalCreditNote:  0,
+        totalAdvance:     0,
         totalOutstanding: 0,
-        netOutstanding: 0,
-        invoices: [],
-        creditNotes: [],
-        expanded: false,
-        creditNoteNo: undefined,
-        creditNoteDate: undefined,
+        netOutstanding:   0,
+        invoices:         [],
+        creditNotes:      [],
+        expanded:         false,
+        creditNoteNo:     undefined,
+        creditNoteDate:   undefined,
         creditNoteStatus: undefined
       });
     }
@@ -78,33 +78,34 @@ private buildGroups(rows: ArInvoiceListItem[]): void {
     const g = map.get(r.customerId)!;
 
     if (r.rowType === 'CN') {
-      // standalone credit-note display row
       g.creditNotes.push(r);
-
-      // total CN for display (always +ve)
       g.totalCreditNote += Math.abs(r.customerCreditNoteAmount || r.amount || 0);
-    }
-    else {
-      // normal invoice row
-      g.invoices.push(r);
-      g.totalAmount      += r.amount || 0;
-      g.totalPaid        += r.paid || 0;
-      g.totalAdvance     += r.advanceAmount || 0;
-      g.totalOutstanding += r.outstanding || 0;
-    }
+   } else {
+  r.fxRate              = Number(r.fxRate              ?? 1);
+  r.currencyId          = Number(r.currencyId          ?? 0);
+  r.currencyName        = r.currencyName               ?? 'SGD';
+  r.advanceAmount       = Number(r.advanceAmount       ?? 0);
+  // ✅ Receipt fields
+  r.paidAmountFC        = Number(r.paidAmountFC        ?? r.paid ?? 0);
+  r.receiptCurrencyName = r.receiptCurrencyName        ?? 'SGD';
+
+  g.invoices.push(r);
+  g.totalAmount      += r.amount       || 0;
+  g.totalPaid        += r.paid         || 0;
+  g.totalAdvance     += r.advanceAmount || 0;
+  g.totalOutstanding += r.outstanding  || 0;
+}
   }
 
   this.groups = Array.from(map.values()).map(g => {
     g.invoiceCount = g.invoices.length;
 
-    // unapplied CN = CN rows with NO invoiceId
     const unappliedCn = g.creditNotes
       .filter(cn => !cn.invoiceId || cn.invoiceId <= 0)
-      .reduce((sum, cn) => sum + Math.abs(cn.customerCreditNoteAmount || cn.amount || 0), 0);
+      .reduce((sum, cn) =>
+        sum + Math.abs(cn.customerCreditNoteAmount || cn.amount || 0), 0);
 
-    // net outstanding = invoices outstanding – **unapplied** credits
     g.netOutstanding = g.totalOutstanding - unappliedCn;
-
     return g;
   });
 }

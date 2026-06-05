@@ -44,3 +44,6 @@ testem.log
 .DS_Store
 Thumbs.db
 *.angulardoc.json
+
+# Local API override (see src/environments/environment.local.ts.example)
+src/environments/environment.local.ts

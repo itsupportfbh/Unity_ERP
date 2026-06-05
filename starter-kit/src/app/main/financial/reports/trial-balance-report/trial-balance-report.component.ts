@@ -20,6 +20,8 @@ interface TbNode extends TrialBalance {
   isEditingOpening?: boolean;
   openingDebitEdit?: number | null;
   openingCreditEdit?: number | null;
+  closingDebitBase: number | null;
+  closingCreditBase: number | null;
 }
 
 @Component({
@@ -67,7 +69,8 @@ export class TrialBalanceReportComponent implements OnInit {
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
-
+totalClosingDebitBase  = 0;
+totalClosingCreditBase = 0;
   constructor(private reportsService: ReportsService,private permissionService: PermissionService) {
     this.userId = localStorage.getItem('id');
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -174,7 +177,9 @@ runTB(): void {
           children: [],
           isEditingOpening: false,
           openingDebitEdit: r.openingDebit,
-          openingCreditEdit: r.openingCredit
+          openingCreditEdit: r.openingCredit,
+           closingDebitBase:  Number(r.closingDebitBase  ?? r.ClosingDebitBase  ?? r.closingDebit  ?? 0),
+  closingCreditBase: Number(r.closingCreditBase ?? r.ClosingCreditBase ?? r.closingCredit ?? 0),
         };
         mapByCode.set(String(node.headCode), node);
       });
@@ -211,15 +216,16 @@ runTB(): void {
       this.roots.forEach(r => (r.expanded = false));
       this.rebuildDisplayRows();
 
-      // ✅ FIX: Leaf nodes மட்டும் sum பண்ணு — double count avoid
-     // ✅ இதை வைக்குங்க — leaf nodes மட்டும் total
+ 
 const leafNodes: TbNode[] = [];
 this.collectLeaves(this.roots, leafNodes);
-// runTB() method-ல recalcTotalsRecursive பண்ணிட்டு:
-this.totalOpeningDebit  = this.roots.reduce((s, r) => s + (r.openingDebit  || 0), 0);
-this.totalOpeningCredit = this.roots.reduce((s, r) => s + (r.openingCredit || 0), 0);
-this.totalClosingDebit  = this.roots.reduce((s, r) => s + (r.closingDebit  || 0), 0);
-this.totalClosingCredit = this.roots.reduce((s, r) => s + (r.closingCredit || 0), 0);
+this.totalOpeningDebit   = this.roots.reduce((s,r) => s + (r.openingDebit      || 0), 0);
+this.totalOpeningCredit  = this.roots.reduce((s,r) => s + (r.openingCredit     || 0), 0);
+this.totalClosingDebit   = this.roots.reduce((s,r) => s + (r.closingDebit      || 0), 0);
+this.totalClosingCredit  = this.roots.reduce((s,r) => s + (r.closingCredit     || 0), 0);
+// ✅ Base SGD
+this.totalClosingDebitBase  = this.roots.reduce((s,r) => s + (r.closingDebitBase  || 0), 0);
+this.totalClosingCreditBase = this.roots.reduce((s,r) => s + (r.closingCreditBase || 0), 0);
 
       this.isLoading = false;
     },
@@ -235,6 +241,13 @@ this.totalClosingCredit = this.roots.reduce((s, r) => s + (r.closingCredit || 0)
   });
 }
 
+getClosingDebitBaseDisplay(node: TbNode): number {
+  return this.isHeadingExpanded(node) ? 0 : (node.closingDebitBase || 0);
+}
+
+getClosingCreditBaseDisplay(node: TbNode): number {
+  return this.isHeadingExpanded(node) ? 0 : (node.closingCreditBase || 0);
+}
 private recalcTotalsRecursive(node: TbNode): void {
   if (!node.children.length) {
     // Leaf — API values as-is
@@ -253,6 +266,8 @@ private recalcTotalsRecursive(node: TbNode): void {
   node.openingCredit = ownOC + node.children.reduce((s,n) => s + (n.openingCredit || 0), 0);
   node.closingDebit  = ownCD + node.children.reduce((s,n) => s + (n.closingDebit  || 0), 0);
   node.closingCredit = ownCC + node.children.reduce((s,n) => s + (n.closingCredit || 0), 0);
+    node.closingDebitBase  = ownCD + node.children.reduce((s,n) => s + (n.closingDebitBase  || 0), 0);
+  node.closingCreditBase = ownCC + node.children.reduce((s,n) => s + (n.closingCreditBase || 0), 0);
 }
 
   private collectLeaves(nodes: TbNode[], bucket: TbNode[]): void {
@@ -469,44 +484,44 @@ private recalcTotalsRecursive(node: TbNode): void {
     return end > this.totalRows ? this.totalRows : end;
   }
 
-  private buildTbExportRows(): any[] {
-    // 1) take only leaf nodes
-    const leaves: TbNode[] = [];
-    this.collectLeaves(this.roots, leaves);
+private buildTbExportRows(): any[] {
+  const leaves: TbNode[] = [];
+  this.collectLeaves(this.roots, leaves);
 
-    // 2) keep only rows where any value > 0
-    const valueRows = leaves.filter(n => {
-      const od = this.getOpeningDebitDisplay(n) || 0;
-      const oc = this.getOpeningCreditDisplay(n) || 0;
-      const cd = this.getClosingDebitDisplay(n) || 0;
-      const cc = this.getClosingCreditDisplay(n) || 0;
-      return od !== 0 || oc !== 0 || cd !== 0 || cc !== 0;
-    });
+  const valueRows = leaves.filter(n =>
+    (this.getOpeningDebitDisplay(n)  || 0) !== 0 ||
+    (this.getOpeningCreditDisplay(n) || 0) !== 0 ||
+    (this.getClosingDebitDisplay(n)  || 0) !== 0 ||
+    (this.getClosingCreditDisplay(n) || 0) !== 0
+  );
 
-    // 3) map to export format
-    const rows: any[] = valueRows.map((n, idx) => ({
-      'Sl. No': idx + 1,
-      'Head Code': n.headCode,
-      'Head Name': n.headName,
-      'Opening Debit': this.getOpeningDebitDisplay(n),
-      'Opening Credit': this.getOpeningCreditDisplay(n),
-      'Closing Debit': this.getClosingDebitDisplay(n),
-      'Closing Credit': this.getClosingCreditDisplay(n)
-    }));
+  const rows: any[] = valueRows.map((n, idx) => ({
+    'Sl. No':          idx + 1,
+    'Head Code':       n.headCode,
+    'Head Name':       n.headName,
+    'Opening Debit':   this.getOpeningDebitDisplay(n),
+    'Opening Credit':  this.getOpeningCreditDisplay(n),
+    'Closing Debit':   this.getClosingDebitDisplay(n),
+    'Closing Credit':  this.getClosingCreditDisplay(n),
+    // ✅ Base SGD
+    'Closing (SGD)':   this.getClosingDebitDisplay(n) > 0
+      ? this.getClosingDebitBaseDisplay(n)
+      : -this.getClosingCreditBaseDisplay(n)
+  }));
 
-    // 4) add TOTAL row (always show)
-    rows.push({
-      'Sl. No': '',
-      'Head Code': '',
-      'Head Name': 'Total',
-      'Opening Debit': this.totalOpeningDebit,
-      'Opening Credit': this.totalOpeningCredit,
-      'Closing Debit': this.totalClosingDebit,
-      'Closing Credit': this.totalClosingCredit
-    });
+  rows.push({
+    'Sl. No':         '',
+    'Head Code':      '',
+    'Head Name':      'Total',
+    'Opening Debit':  this.totalOpeningDebit,
+    'Opening Credit': this.totalOpeningCredit,
+    'Closing Debit':  this.totalClosingDebit,
+    'Closing Credit': this.totalClosingCredit,
+    'Closing (SGD)':  this.totalClosingDebitBase
+  });
 
-    return rows;
-  }
+  return rows;
+}
 
 
 

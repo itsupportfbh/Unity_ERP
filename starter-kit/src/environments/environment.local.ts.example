@@ -1,0 +1,6 @@
+// Copy to environment.local.ts (gitignored) for machine-specific API URL.
+// Example: LAN testing from another PC on the same network.
+
+export const environmentLocal = {
+  apiUrl: 'http://192.168.6.137:7182/api',
+};

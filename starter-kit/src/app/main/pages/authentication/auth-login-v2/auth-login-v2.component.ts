@@ -127,7 +127,9 @@ export class AuthLoginV2Component implements OnInit, AfterViewInit, OnDestroy {
     localStorage.setItem('menuIds', JSON.stringify(data.allowedMenuIds || []));
 
     // CORRECT MAPPING
-    localStorage.setItem('companyId', String(data.companyId ?? 0));
+    const companyId = Number(data.companyId ?? 0) || 0;
+    localStorage.setItem('companyId', String(companyId));
+    localStorage.setItem('CompanyId', String(companyId));
     localStorage.setItem('companyName', data.companyName ?? '');
     localStorage.setItem('locationId', String(data.locationId ?? 0));
     localStorage.setItem('departmentId', String(data.departmentId ?? 0));
@@ -155,6 +157,7 @@ localStorage.setItem('companyCurrencyName', data.companyCurrencyName ?? '');
     localStorage.removeItem('allowedMenuIds');
     localStorage.removeItem('menuIds');
     localStorage.removeItem('companyId');
+    localStorage.removeItem('CompanyId');
     localStorage.removeItem('companyName');
     localStorage.removeItem('locationId');
     localStorage.removeItem('departmentId');
@@ -268,7 +271,7 @@ private async openCompanySelectionPopup(companies: any[], password: string, reme
     email,
     password,
     selectedCompanyId: Number(selectedCompanyId),
-    selectedOrgGuid
+    selectedOrgGuid: selectedOrgGuid || null
   };
 
   this.authService.userLogin(payload).subscribe({

@@ -26,6 +26,7 @@ private apiurl = environment.apiUrl;
   private baseUrl = environment.apiUrl + '/finance/ap';
 private baseUrl1 = environment.apiUrl + '/PeriodClose';
 private baseUrl2 = environment.apiUrl + '/BankAccounts';
+private baseUrl3 = environment.apiUrl + '/ApAging';
   constructor(private http: HttpClient) { }
 
   // INVOICES TAB
@@ -78,6 +79,19 @@ getSupplierAdvances() {
 getSupplierAdvancesList() {
   return this.http.get<any>(`${this.baseUrl}/list`);
 }
+
+getApAgingSummary(fromDate: string, toDate: string): Observable<any> {
+  return this.http.get<any>(`${this.baseUrl3}/summary`, {
+    params: { fromDate, toDate }
+  });
+}
+
+getApAgingDetail(supplierId: number, fromDate: string, toDate: string): Observable<any> {
+  return this.http.get<any>(`${this.baseUrl3}/supplierInvoices/${supplierId}`, {
+    params: { fromDate, toDate }
+  });
+}
+
 getCurrencies(): Observable<any> {
   return this.http.get(`${this.apiurl}/Currency/GetCurrencies`);
 }

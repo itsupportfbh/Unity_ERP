@@ -144,131 +144,170 @@
 
           <!-- ===== Trial Balance (hierarchical) ===== -->
           <div class="table-responsive mb-3">
-            <table class="table table-hover trial-table">
-              <thead class="thead-light">
-                <tr>
-                  <th>Account</th>
-                  <th class="text-end">Opening Debit</th>
-                  <th class="text-end">Opening Credit</th>
-                  <th class="text-end">Closing Debit</th>
-                  <th class="text-end">Closing Credit</th>
-                  <th class="text-center" style="width:80px;">Action</th>
-                </tr>
-              </thead>
+          <table class="table table-hover trial-table">
+  <thead class="thead-light">
+    <tr>
+      <th>Account</th>
+      <th class="text-end">Opening Debit</th>
+      <th class="text-end">Opening Credit</th>
+      <th class="text-end">Closing Debit</th>
+      <th class="text-end">Closing Credit</th>
+      <th class="text-end" style="color:#2E5F73;">Closing (SGD)</th>
+      <th class="text-center" style="width:80px;">Action</th>
+    </tr>
+  </thead>
 
-              <tbody>
-                <ng-container *ngFor="let r of displayRows">
+  <tbody>
+    <ng-container *ngFor="let r of displayRows">
 
-                  <!-- MAIN ROW (group or leaf) -->
-                  <tr (click)="onRowClick(r)" style="cursor:pointer;">
-                    <td class="tb-account-col">
-                      <span [style.padding-left.px]="r.level * 20"></span>
+      <tr (click)="onRowClick(r)" style="cursor:pointer;">
+        <td class="tb-account-col">
+          <span [style.padding-left.px]="r.level * 20"></span>
+          <span *ngIf="r.children && r.children.length" class="me-50"
+            (click)="toggleNode(r, $event)">
+            <i class="fas"
+              [ngClass]="r.expanded ? 'fa-chevron-down' : 'fa-chevron-right'">
+            </i>
+          </span>
+          <span [ngStyle]="{'font-weight': r.children.length ? '600' : '400'}">
+            {{ r.headCode }} - {{ r.headName }}
+          </span>
+        </td>
 
-                      <span *ngIf="r.children && r.children.length" class="me-50" (click)="toggleNode(r, $event)">
-                        <i class="fas" [ngClass]="r.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                      </span>
+        <!-- Opening Debit -->
+        <td class="text-end">
+          <ng-container *ngIf="r.isLeaf && r.isEditingOpening; else openingDebitRead">
+            <input type="number" class="form-control form-control-sm text-end"
+              [(ngModel)]="r.openingDebitEdit">
+          </ng-container>
+          <ng-template #openingDebitRead>
+            {{ getOpeningDebitDisplay(r) | number:'1.2-2' }}
+          </ng-template>
+        </td>
 
-                      <span [ngStyle]="{'font-weight': r.children.length ? '600' : '400'}">
-                        {{ r.headCode }} - {{ r.headName }}
-                      </span>
-                    </td>
+        <!-- Opening Credit -->
+        <td class="text-end">
+          <ng-container *ngIf="r.isLeaf && r.isEditingOpening; else openingCreditRead">
+            <input type="number" class="form-control form-control-sm text-end"
+              [(ngModel)]="r.openingCreditEdit">
+          </ng-container>
+          <ng-template #openingCreditRead>
+            {{ getOpeningCreditDisplay(r) | number:'1.2-2' }}
+          </ng-template>
+        </td>
 
-                    <td class="text-end">
-                      <ng-container *ngIf="r.isLeaf && r.isEditingOpening; else openingDebitRead">
-                        <input type="number" class="form-control form-control-sm text-end"
-                          [(ngModel)]="r.openingDebitEdit">
-                      </ng-container>
-                      <ng-template #openingDebitRead>
-                        {{ getOpeningDebitDisplay(r) | number:'1.2-2' }}
-                      </ng-template>
-                    </td>
+        <!-- Closing Debit -->
+        <td class="text-end">
+          {{ getClosingDebitDisplay(r) | number:'1.2-2' }}
+        </td>
 
-                    <td class="text-end">
-                      <ng-container *ngIf="r.isLeaf && r.isEditingOpening; else openingCreditRead">
-                        <input type="number" class="form-control form-control-sm text-end"
-                          [(ngModel)]="r.openingCreditEdit">
-                      </ng-container>
-                      <ng-template #openingCreditRead>
-                        {{ getOpeningCreditDisplay(r) | number:'1.2-2' }}
-                      </ng-template>
-                    </td>
+        <!-- Closing Credit -->
+        <td class="text-end">
+          {{ getClosingCreditDisplay(r) | number:'1.2-2' }}
+        </td>
 
-                    <td class="text-end">{{ getClosingDebitDisplay(r) | number:'1.2-2' }}</td>
-                    <td class="text-end">{{ getClosingCreditDisplay(r) | number:'1.2-2' }}</td>
-                    <td class="text-center">
-                      <ng-container *ngIf="r.isLeaf">
-                        <!-- Edit button -->
-                        <button *ngIf="!r.isEditingOpening" class="btn btn-sm btn-link p-0 tb-action-btn"
-                          (click)="startEditOpening(r, $event)" title="Edit opening">
-                          <i data-feather="edit-2" class="tb-action-icon"></i>
-                        </button>
+        <!-- ✅ Closing SGD -->
+      <!-- ✅ Closing SGD — net value show பண்ணு -->
+<td class="text-end" style="color:#2E5F73;font-weight:600;">
+  <ng-container *ngIf="getClosingDebitBaseDisplay(r) > 0 && getClosingCreditBaseDisplay(r) === 0">
+    {{ getClosingDebitBaseDisplay(r) | number:'1.2-2' }}
+  </ng-container>
 
-                        <!-- Save / Cancel buttons -->
-                        <ng-container *ngIf="r.isEditingOpening">
-                          <button class="btn btn-sm btn-link p-0 me-25 tb-action-btn" (click)="saveOpening(r, $event)"
-                            title="Save">
-                            <i data-feather="check" class="tb-action-icon"></i>
-                          </button>
-                          <button class="btn btn-sm btn-link p-0 tb-action-btn" (click)="cancelEditOpening(r, $event)"
-                            title="Cancel">
-                            <i data-feather="x" class="tb-action-icon"></i>
-                          </button>
-                        </ng-container>
-                      </ng-container>
-                    </td>
-                  </tr>
+  <ng-container *ngIf="getClosingCreditBaseDisplay(r) > 0 && getClosingDebitBaseDisplay(r) === 0">
+    ({{ getClosingCreditBaseDisplay(r) | number:'1.2-2' }})
+  </ng-container>
 
-                  <!-- DETAIL ROW -->
-                  <tr *ngIf="selectedHead && selectedHead.headId === r.headId">
-                    <td colspan="5" style="background:#fafafa;">
-                      <h6 class="mb-1">
-                        Details: {{ selectedHead.headCode }} - {{ selectedHead.headName }}
-                      </h6>
+  <!-- Both > 0 → net show -->
+  <ng-container *ngIf="getClosingDebitBaseDisplay(r) > 0 && getClosingCreditBaseDisplay(r) > 0">
+    <ng-container *ngIf="getClosingDebitBaseDisplay(r) >= getClosingCreditBaseDisplay(r)">
+      {{ (getClosingDebitBaseDisplay(r) - getClosingCreditBaseDisplay(r)) | number:'1.2-2' }}
+    </ng-container>
+    <ng-container *ngIf="getClosingDebitBaseDisplay(r) < getClosingCreditBaseDisplay(r)">
+      ({{ (getClosingCreditBaseDisplay(r) - getClosingDebitBaseDisplay(r)) | number:'1.2-2' }})
+    </ng-container>
+  </ng-container>
 
-                      <table class="table table-sm trial-table mb-0">
-                        <thead>
-                          <tr>
-                            <th>Date</th>
-                            <th>Source</th>
-                            <th>No</th>
-                            <th>Description</th>
-                            <th class="text-end">Debit</th>
-                            <th class="text-end">Credit</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr *ngFor="let d of detailRows">
-                            <td>{{ d.transDate | date:'dd-MM-yyyy' }}</td>
-                            <td>{{ d.sourceType }}</td>
-                            <td>{{ d.sourceNo }}</td>
-                            <td>{{ d.description }}</td>
-                            <td class="text-end">{{ d.debit | number:'1.2-2' }}</td>
-                            <td class="text-end">{{ d.credit | number:'1.2-2' }}</td>
-                          </tr>
-                          <tr *ngIf="!detailRows.length && !detailLoading">
-                            <td colspan="6" class="text-center text-muted">
-                              No transactions.
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
+  <!-- Both 0 -->
+  <ng-container *ngIf="getClosingDebitBaseDisplay(r) === 0 && getClosingCreditBaseDisplay(r) === 0">
+    -
+  </ng-container>
+</td>
 
-                </ng-container>
-              </tbody>
+        <!-- Action -->
+        <td class="text-center">
+          <ng-container *ngIf="r.isLeaf">
+            <button *ngIf="!r.isEditingOpening"
+              class="btn btn-sm btn-link p-0 tb-action-btn"
+              (click)="startEditOpening(r, $event)" title="Edit opening">
+              <i data-feather="edit-2" class="tb-action-icon"></i>
+            </button>
+            <ng-container *ngIf="r.isEditingOpening">
+              <button class="btn btn-sm btn-link p-0 me-25 tb-action-btn"
+                (click)="saveOpening(r, $event)" title="Save">
+                <i data-feather="check" class="tb-action-icon"></i>
+              </button>
+              <button class="btn btn-sm btn-link p-0 tb-action-btn"
+                (click)="cancelEditOpening(r, $event)" title="Cancel">
+                <i data-feather="x" class="tb-action-icon"></i>
+              </button>
+            </ng-container>
+          </ng-container>
+        </td>
+      </tr>
 
-              <tfoot *ngIf="displayRows.length">
-                <tr class="fw-bold">
-                  <td>Total</td>
-                  <td class="text-end">{{ totalOpeningDebit | number:'1.2-2' }}</td>
-                  <td class="text-end">{{ totalOpeningCredit | number:'1.2-2' }}</td>
-                  <td class="text-end">{{ totalClosingDebit | number:'1.2-2' }}</td>
-                  <td class="text-end">{{ totalClosingCredit | number:'1.2-2' }}</td>
-                </tr>
-              </tfoot>
+      <!-- Detail Row -->
+      <tr *ngIf="selectedHead && selectedHead.headId === r.headId">
+        <td colspan="7" style="background:#fafafa;">
+          <h6 class="mb-1">
+            Details: {{ selectedHead.headCode }} - {{ selectedHead.headName }}
+          </h6>
+          <table class="table table-sm trial-table mb-0">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Source</th>
+                <th>No</th>
+                <th>Description</th>
+                <th class="text-end">Debit</th>
+                <th class="text-end">Credit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let d of detailRows">
+                <td>{{ d.transDate | date:'dd-MM-yyyy' }}</td>
+                <td>{{ d.sourceType }}</td>
+                <td>{{ d.sourceNo }}</td>
+                <td>{{ d.description }}</td>
+                <td class="text-end">{{ d.debit  | number:'1.2-2' }}</td>
+                <td class="text-end">{{ d.credit | number:'1.2-2' }}</td>
+              </tr>
+              <tr *ngIf="!detailRows.length && !detailLoading">
+                <td colspan="6" class="text-center text-muted">
+                  No transactions.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
 
-            </table>
+    </ng-container>
+  </tbody>
+
+  <tfoot *ngIf="displayRows.length">
+    <tr class="fw-bold">
+      <td>Total</td>
+      <td class="text-end">{{ totalOpeningDebit  | number:'1.2-2' }}</td>
+      <td class="text-end">{{ totalOpeningCredit | number:'1.2-2' }}</td>
+      <td class="text-end">{{ totalClosingDebit  | number:'1.2-2' }}</td>
+      <td class="text-end">{{ totalClosingCredit | number:'1.2-2' }}</td>
+      <td class="text-end" style="color:#2E5F73;">
+        {{ totalClosingDebitBase | number:'1.2-2' }} SGD
+      </td>
+      <td></td>
+    </tr>
+  </tfoot>
+</table>
           </div>
           <div class="d-flex justify-content-between align-items-center mt-1">
 

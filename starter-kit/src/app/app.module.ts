@@ -25,7 +25,6 @@ import { AuthGuard } from './auth/helpers';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { MobileLinkInterceptor} from './main/purchase/mobile-receiving/mr-token.interceptor';
 import { RecipemastercreateComponent } from './main/Recipe/recipemastercreate/recipemastercreate.component';
-import { TenantInterceptor } from 'tenant.interceptor';
 import { AuthTenantInterceptor } from 'auth-tenant.interceptor';
 
 
@@ -124,14 +123,11 @@ const appRoutes: Routes = [
   bootstrap: [AppComponent],
    providers: [
     { provide: HTTP_INTERCEPTORS, useClass: MobileLinkInterceptor, multi: true },
-    {provide: HTTP_INTERCEPTORS,
-    useClass: TenantInterceptor,
-    multi: true},
-      {
-    provide: HTTP_INTERCEPTORS,
-    useClass: AuthTenantInterceptor,
-    multi: true
-  }
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthTenantInterceptor,
+      multi: true
+    }
   ]
 })
 export class AppModule { }

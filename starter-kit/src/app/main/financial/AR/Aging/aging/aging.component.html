@@ -1,130 +1,97 @@
-<!-- src/app/main/financial/AR/Aging/aging/aging.component.html -->
-
 <div class="content-wrapper p-0">
   <div class="content-body">
     <section class="users-list-wrapper">
       <div class="card shadow-sm ar-card">
-
         <div class="card-header border-0 pb-0"></div>
 
         <div class="card-body" *ngIf="!isLoading; else loadingTpl">
 
-            <!-- ===== Header + Export buttons ===== -->
- <div class="d-flex justify-content-between align-items-center mb-1 aging-header">
-  <h4 class="mb-0 aging-title">AR Aging</h4>
+          <!-- Header + Export -->
+          <div class="d-flex justify-content-between align-items-center mb-1 aging-header">
+            <h4 class="mb-0 aging-title">AR Aging</h4>
+            <div class="d-flex align-items-center gst-export">
+              <button class="btn btn-outline-secondary btn-sm"
+                (click)="exportToPdf()" [disabled]="!rows?.length">
+                <i class="far fa-file-pdf me-25"></i> PDF
+              </button>
+              <button class="btn btn-outline-secondary btn-sm"
+                (click)="exportToExcel()" [disabled]="!rows?.length">
+                <i class="far fa-file-excel me-25"></i> Excel
+              </button>
+            </div>
+          </div>
 
-  <div class="d-flex align-items-center gst-export">
-    <button class="btn btn-outline-secondary btn-sm"
-            (click)="exportToPdf()"
-            [disabled]="!rows?.length">
-      <i class="far fa-file-pdf me-25"></i>
-      <span>PDF</span>
-    </button>
-
-    <button class="btn btn-outline-secondary btn-sm"
-            (click)="exportToExcel()"
-            [disabled]="!rows?.length">
-      <i class="far fa-file-excel me-25"></i>
-      <span>Excel</span>
-    </button>
-  </div>
-</div>
-
-          <!-- ===== AR summary cards ===== -->
+          <!-- Summary Cards -->
           <div class="row ar-summary-row mb-2">
-            <!-- Total Outstanding -->
             <div class="col-md-3 col-6 mb-1">
               <div class="ar-summary-card ar-card-total">
-                <div class="ar-summary-icon">
-                  <i data-feather="file-text"></i>
-                </div>
+                <div class="ar-summary-icon"><i data-feather="file-text"></i></div>
                 <div class="ar-summary-content">
-                  <div class="ar-summary-label">Total Outstanding</div>
+                  <div class="ar-summary-label">Total Outstanding (SGD)</div>
                   <div class="ar-summary-value text-danger">
-                    {{ totalOutstandingAll | number:'1.2-2' }}
+                    {{ totalOutstandingAllBase | number:'1.2-2' }}
+                    <small style="font-size:0.7rem;">SGD</small>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- 0-30 -->
             <div class="col-md-3 col-6 mb-1">
               <div class="ar-summary-card ar-card-030">
-                <div class="ar-summary-icon">
-                  <i data-feather="clock"></i>
-                </div>
+                <div class="ar-summary-icon"><i data-feather="clock"></i></div>
                 <div class="ar-summary-content">
-                  <div class="ar-summary-label">0–30 Days</div>
+                  <div class="ar-summary-label">0–30 Days (SGD)</div>
                   <div class="ar-summary-value">
-                    {{ total0_30 | number:'1.2-2' }}
+                    {{ total0_30Base | number:'1.2-2' }}
+                    <small style="font-size:0.7rem;">SGD</small>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- 31-60 -->
             <div class="col-md-3 col-6 mb-1">
               <div class="ar-summary-card ar-card-3160">
-                <div class="ar-summary-icon">
-                  <i data-feather="alert-circle"></i>
-                </div>
+                <div class="ar-summary-icon"><i data-feather="alert-circle"></i></div>
                 <div class="ar-summary-content">
-                  <div class="ar-summary-label">31–60 Days</div>
+                  <div class="ar-summary-label">31–60 Days (SGD)</div>
                   <div class="ar-summary-value">
-                    {{ total31_60 | number:'1.2-2' }}
+                    {{ total31_60Base | number:'1.2-2' }}
+                    <small style="font-size:0.7rem;">SGD</small>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- 61-90 & 90+ -->
             <div class="col-md-3 col-6 mb-1">
               <div class="ar-summary-card ar-card-90">
-                <div class="ar-summary-icon">
-                  <i data-feather="alert-triangle"></i>
-                </div>
+                <div class="ar-summary-icon"><i data-feather="alert-triangle"></i></div>
                 <div class="ar-summary-content">
-                  <div class="ar-summary-label">61–90 &amp; 90+</div>
+                  <div class="ar-summary-label">61–90 &amp; 90+ (SGD)</div>
                   <div class="ar-summary-value">
-                    {{ total61_90_90Plus | number:'1.2-2' }}
+                    {{ total61_90_90PlusBase | number:'1.2-2' }}
+                    <small style="font-size:0.7rem;">SGD</small>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- ===== Filters (From / To / Customer) ===== -->
+          <!-- Filters -->
           <div class="d-flex align-items-center flex-wrap aging-filters mb-2">
-            <!-- From -->
             <div class="d-flex align-items-center aging-filter-item">
               <span class="aging-filter-label">From</span>
-              <input
-                type="date"
-                class="form-control form-control-sm aging-filter-control"
-                [(ngModel)]="fromDate"
-                (change)="onFilterChange()"
-              />
+              <input type="date" class="form-control form-control-sm aging-filter-control"
+                [(ngModel)]="fromDate" (change)="onFilterChange()" />
             </div>
-
-            <!-- To -->
             <div class="d-flex align-items-center aging-filter-item">
               <span class="aging-filter-label">To</span>
-              <input
-                type="date"
-                class="form-control form-control-sm aging-filter-control"
-                [(ngModel)]="toDate"
-                (change)="onFilterChange()"
-              />
+              <input type="date" class="form-control form-control-sm aging-filter-control"
+                [(ngModel)]="toDate" (change)="onFilterChange()" />
             </div>
-
-            <!-- Customer -->
             <div class="d-flex align-items-center aging-filter-item">
               <span class="aging-filter-label">Customer</span>
-              <select
-                class="form-control form-control-sm aging-filter-control"
-                [(ngModel)]="selectedCustomerId"
-                (change)="onCustomerChange()"
-              >
+              <select class="form-control form-control-sm aging-filter-control"
+                [(ngModel)]="selectedCustomerId" (change)="onCustomerChange()">
                 <option [ngValue]="null">All Customers</option>
                 <option *ngFor="let c of customerOptions" [ngValue]="c.customerId">
                   {{ c.customerName }}
@@ -133,48 +100,62 @@
             </div>
           </div>
 
-          <!-- ===== Summary table ===== -->
+          <!-- Summary Table — SGD only -->
           <table class="table table-hover aging-table">
             <thead>
               <tr>
                 <th>Customer</th>
-                <th class="text-end">0-30</th>
-                <th class="text-end">31-60</th>
-                <th class="text-end">61-90</th>
-                <th class="text-end">90+</th>
-                <th class="text-end">Total Outstanding</th>
+                <th class="text-end">0-30 (SGD)</th>
+                <th class="text-end">31-60 (SGD)</th>
+                <th class="text-end">61-90 (SGD)</th>
+                <th class="text-end">90+ (SGD)</th>
+                <th class="text-end">Total (SGD)</th>
               </tr>
             </thead>
             <tbody>
-              <tr
-                *ngFor="let r of filteredRows"
-                (click)="openDetail(r)"
-                style="cursor: pointer;"
-              >
-                <td>{{ r.customerName }}</td>
-                <td class="text-end">{{ r.bucket0_30   | number : '1.2-2' }}</td>
-                <td class="text-end">{{ r.bucket31_60  | number : '1.2-2' }}</td>
-                <td class="text-end">{{ r.bucket61_90  | number : '1.2-2' }}</td>
-                <td class="text-end">{{ r.bucket90Plus | number : '1.2-2' }}</td>
-                <td class="text-end fw-bold">
-                  {{ r.totalOutstanding | number : '1.2-2' }}
+              <tr *ngFor="let r of filteredRows"
+                (click)="openDetail(r)" style="cursor:pointer;">
+                <td><strong>{{ r.customerName }}</strong></td>
+                <td class="text-end">{{ r.bucket0_30Base   | number:'1.2-2' }}</td>
+                <td class="text-end">{{ r.bucket31_60Base  | number:'1.2-2' }}</td>
+                <td class="text-end">{{ r.bucket61_90Base  | number:'1.2-2' }}</td>
+                <td class="text-end">{{ r.bucket90PlusBase | number:'1.2-2' }}</td>
+                <td class="text-end fw-bold" style="color:#2E5F73;">
+                  {{ r.totalOutstandingBase | number:'1.2-2' }} SGD
+                </td>
+              </tr>
+              <tr *ngIf="!filteredRows?.length">
+                <td colspan="6" class="text-center text-muted py-3">
+                  No aging data found.
                 </td>
               </tr>
             </tbody>
+            <!-- Footer totals -->
+            <tfoot *ngIf="filteredRows?.length">
+              <tr style="background:#f8f9fa;font-weight:700;">
+                <td>Total</td>
+                <td class="text-end">{{ total0_30Base          | number:'1.2-2' }}</td>
+                <td class="text-end">{{ total31_60Base         | number:'1.2-2' }}</td>
+                <td class="text-end">{{ total61_90Base         | number:'1.2-2' }}</td>
+                <td class="text-end">{{ total90PlusBase        | number:'1.2-2' }}</td>
+                <td class="text-end" style="color:#2E5F73;">
+                  {{ totalOutstandingAllBase | number:'1.2-2' }} SGD
+                </td>
+              </tr>
+            </tfoot>
           </table>
 
-          <!-- ===== Detail drawer ===== -->
-          <div class="mt-2" *ngIf="isDetailOpen">
+          <!-- Detail Panel -->
+          <div class="mt-3" *ngIf="isDetailOpen">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <h5 class="mb-0">
-                Invoices for {{ selectedCustomerName }}
+                {{ selectedCustomerName }}
+                <small class="text-muted" style="font-size:0.82rem;">
+                  — Invoice Details
+                </small>
               </h5>
-              <button
-                class="btn btn-outline-secondary btn-sm"
-                (click)="closeDetail()"
-              >
-                Close
-              </button>
+              <button class="btn btn-outline-secondary btn-sm"
+                (click)="closeDetail()">Close</button>
             </div>
 
             <table class="table table-sm table-striped aging-table">
@@ -183,92 +164,123 @@
                   <th>Invoice</th>
                   <th>Date</th>
                   <th>Due</th>
-                  <th class="text-end">OverDue Days</th>
+                  <th class="text-end">Days</th>
                   <th class="text-end">Original</th>
                   <th class="text-end">Paid</th>
                   <th class="text-end">Advance</th>
                   <th class="text-end">Credit</th>
                   <th class="text-end">Balance</th>
+                  <th class="text-end" style="color:#2E5F73;">Balance (SGD)</th>
                   <th class="text-center">Email</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let d of detailRows">
                   <td>{{ d.invoiceNo }}</td>
-                  <td>{{ d.invoiceDate | date }}</td>
-                  <td>{{ d.dueDate | date }}</td>
+                  <td>{{ d.invoiceDate | date:'dd-MM-yyyy' }}</td>
+                  <td>{{ d.dueDate    | date:'dd-MM-yyyy' }}</td>
                   <td class="text-end">{{ d.ageDays }}</td>
-                  <td class="text-end">{{ d.originalAmount | number : '1.2-2' }}</td>
-                  <td class="text-end">{{ d.paidAmount    | number : '1.2-2' }}</td>
-                  <td class="text-end">{{ d.advanceAmount | number : '1.2-2' }}</td>
-                  <td class="text-end">{{ d.creditAmount  | number : '1.2-2' }}</td>
-                  <td class="text-end fw-bold">{{ d.balance | number : '1.2-2' }}</td>
 
-                  <!-- 🔹 Email button -->
+                  <!-- Original — with currency -->
+                  <td class="text-end">
+                    {{ d.originalAmount | number:'1.2-2' }}
+                    <span *ngIf="d.currencyName && d.currencyName !== 'SGD'"
+                      style="font-size:0.72rem;color:#6b7280;margin-left:2px;">
+                      {{ d.currencyName }}
+                    </span>
+                  </td>
+
+                  <td class="text-end">{{ d.paidAmount    | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ d.advanceAmount | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ d.creditAmount  | number:'1.2-2' }}</td>
+
+                  <!-- Balance — with currency -->
+                  <td class="text-end fw-bold">
+                    {{ d.balance | number:'1.2-2' }}
+                    <span *ngIf="d.currencyName && d.currencyName !== 'SGD'"
+                      style="font-size:0.72rem;color:#6b7280;margin-left:2px;">
+                      {{ d.currencyName }}
+                    </span>
+                  </td>
+
+                  <!-- Balance SGD -->
+                  <td class="text-end fw-bold" style="color:#2E5F73;">
+                    {{ d.balanceBase | number:'1.2-2' }} SGD
+                  </td>
+
                   <td class="text-center">
-                    <button
-                      type="button"
+                    <button type="button"
                       class="btn btn-sm btn-outline-primary"
-                      (click)="openEmailModal(d); $event.stopPropagation()"
-                      title="Email Invoice"
-                    >
+                      (click)="openEmailModal(d); $event.stopPropagation()">
                       <i class="fas fa-envelope"></i>
                     </button>
                   </td>
                 </tr>
+
+                <tr *ngIf="!detailRows?.length">
+                  <td colspan="11" class="text-center text-muted py-3">
+                    No invoices found.
+                  </td>
+                </tr>
               </tbody>
+
+              <!-- Detail footer totals -->
+              <tfoot *ngIf="detailRows?.length">
+                <tr style="font-weight:700;background:#f8f9fa;">
+                  <td colspan="4" class="text-end">Total</td>
+                  <td class="text-end">
+                    {{ detailOriginalTotal | number:'1.2-2' }}
+                  </td>
+                  <td class="text-end">
+                    {{ detailPaidTotal | number:'1.2-2' }}
+                  </td>
+                  <td class="text-end">
+                    {{ detailAdvanceTotal | number:'1.2-2' }}
+                  </td>
+                  <td class="text-end">
+                    {{ detailCreditTotal | number:'1.2-2' }}
+                  </td>
+                  <td class="text-end">
+                    {{ detailBalanceTotal | number:'1.2-2' }}
+                  </td>
+                  <td class="text-end" style="color:#2E5F73;">
+                    {{ detailBalanceBaseTotal | number:'1.2-2' }} SGD
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
 
         </div>
 
         <ng-template #loadingTpl>
-          <div class="p-2 text-center">
-            Loading aging data…
-          </div>
+          <div class="p-3 text-center">Loading aging data…</div>
         </ng-template>
 
       </div>
 
-      <!-- ============== EMAIL MODAL ============== -->
-      <div
-        class="modal fade"
-        tabindex="-1"
-        role="dialog"
-        [ngClass]="{ 'show d-block': showEmailModal }"
+      <!-- Email Modal -->
+      <div class="modal fade" tabindex="-1" role="dialog"
+        [ngClass]="{'show d-block': showEmailModal}"
         *ngIf="showEmailModal"
         (click)="onEmailModalBackdropClick($event)">
         <div class="modal-dialog modal-lg modal-dialog-centered"
-             role="document"
-             (click)="$event.stopPropagation()">
+          role="document" (click)="$event.stopPropagation()">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title">
-                Email Customer Invoice
-              </h5>
-              <button
-                type="button"
-                class="close"
-                aria-label="Close"
-                (click)="closeEmailModal()">
-                <span aria-hidden="true">&times;</span>
+              <h5 class="modal-title">Email Customer Invoice</h5>
+              <button type="button" class="close" (click)="closeEmailModal()">
+                <span>&times;</span>
               </button>
             </div>
-
             <div class="modal-body">
-              <!-- Reuse your email component -->
-              <app-invoice-email
-                [invoice]="selectedInvoiceForEmail">
+              <app-invoice-email [invoice]="selectedInvoiceForEmail">
               </app-invoice-email>
             </div>
-
             <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-outline-secondary"
-                (click)="closeEmailModal()">
-                Close
-              </button>
+              <button type="button" class="btn btn-outline-secondary"
+                (click)="closeEmailModal()">Close</button>
             </div>
           </div>
         </div>

@@ -182,6 +182,7 @@
     ({{ invoiceCurrencyName }})
   </span>
 </th>
+<th class="text-end">Advance</th>
 <th class="text-end">Paid</th>
 <th class="text-end">
   Balance
@@ -214,7 +215,9 @@
         {{ inv.currencyName }}
       </span>
     </td>
-
+<td class="text-end text-success">
+  {{ r.advanceAmount | number:'1.2-2' }}
+</td>
     <!-- Paid -->
     <td class="text-end">
       {{ rowPaid(inv, i) | number:'1.2-2' }}

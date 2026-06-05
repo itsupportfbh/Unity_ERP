@@ -126,7 +126,24 @@
                                                             <ng-template #noDue>-</ng-template>
                                                         </td>
                                                         <td class="text-end">{{ r.amount | number:'1.2-2' }}</td>
-                                                        <td class="text-end">{{ r.paid | number:'1.2-2' }}</td>
+                                                        <!-- Paid column -->
+<td class="text-end">
+  <!-- ✅ Line 1: Receipt actual amount + receipt currency -->
+  <div style="font-weight:600;">
+    {{ r.paidAmountFC | number:'1.2-2' }}
+    <span style="font-size:0.72rem;color:#6b7280;margin-left:2px;">
+      {{ r.receiptCurrencyName || 'SGD' }}
+    </span>
+  </div>
+
+  <!-- ✅ Line 2: Invoice currency converted — only when different -->
+  <div *ngIf="r.receiptCurrencyName && r.currencyName &&
+              r.receiptCurrencyName !== r.currencyName"
+    style="font-size:0.78rem;color:#2E5F73;">
+    ≈ {{ r.paid | number:'1.2-2' }}
+    <span style="font-size:0.72rem;">{{ r.currencyName }}</span>
+  </div>
+</td>
                                                         <td class="text-end text-success">
                                                                 {{ r.advanceAmount | number:'1.2-2' }}
                                                                 </td>

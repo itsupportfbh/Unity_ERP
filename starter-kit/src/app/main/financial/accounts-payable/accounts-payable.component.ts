@@ -7,6 +7,7 @@ import {
 import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import * as feather from 'feather-icons';
+import * as XLSX from 'xlsx';
 
 import { AccountsPayableService } from './accounts-payable.service';
 import { SupplierService } from 'app/main/businessPartners/supplier/supplier.service';
@@ -139,6 +140,34 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   isPageLoading      = false;
   periodName         = '';
 
+  // =====================================================
+// ✅ AP AGING PROPERTIES
+// =====================================================
+agingRows:         any[] = [];
+agingFilteredRows: any[] = [];
+agingDetailRows:   any[] = [];
+
+agingFromDate = '';
+agingToDate   = '';
+
+agingIsLoading    = false;
+agingIsDetailOpen = false;
+agingSelectedSupplierName  = '';
+agingSelectedSupplierId:   number | null = null;
+agingSelectedSupplierFilter: number | null = null;
+
+// SGD totals
+agingTotalBase   = 0;
+aging0_30Base    = 0;
+aging31_60Base   = 0;
+aging61_90Base   = 0;
+aging90PlusBase  = 0;
+
+// Detail totals
+agingDetailOriginal    = 0;
+agingDetailPaid        = 0;
+agingDetailBalance     = 0;
+agingDetailBalanceBase = 0;
   constructor(
     private apSvc: AccountsPayableService,
     private supplierSvc: SupplierService,
@@ -150,13 +179,20 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
-  ngOnInit(): void {
-    this.checkPeriodLockForDate(this.payDate);
-    this.loadSuppliers();
-    this.loadBankAccounts();
-    this.loadPermission();
-    this.loadCurrencies();
-  }
+ ngOnInit(): void {
+  // ✅ Aging dates init
+  const today        = new Date();
+  this.agingToDate   = today.toISOString().substring(0, 10);
+  const first        = new Date(today.getFullYear(), today.getMonth(), 1);
+  this.agingFromDate = first.toISOString().substring(0, 10);
+
+  // existing...
+  this.checkPeriodLockForDate(this.payDate);
+  this.loadSuppliers();
+  this.loadBankAccounts();
+  this.loadPermission();
+  this.loadCurrencies();
+}
 
   ngAfterViewInit(): void {
     feather.replace();
@@ -274,17 +310,121 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   canDelete():  boolean { return this.permissionService.hasDelete(this.permission); }
   canApprove(): boolean { return this.permissionService.hasApprove(this.permission); }
 
-  setTab(tab: ApTab): void {
-    this.activeTab = tab;
-    if (tab === 'invoices') this.loadInvoices();
-    if (tab === 'payments') {
-      this.showPaymentForm = false;
-      this.loadPayments();
-      this.cancelPayment();
-    }
-    if (tab === 'match')    this.loadMatch();
-    if (tab === 'advances') this.loadAdvances();
+setTab(tab: ApTab): void {
+  this.activeTab = tab;
+  if (tab === 'invoices') this.loadInvoices();
+  if (tab === 'payments') {
+    this.showPaymentForm = false;
+    this.loadPayments();
+    this.cancelPayment();
   }
+  if (tab === 'match')    this.loadMatch();
+  if (tab === 'advances') this.loadAdvances();
+  // ✅ add
+  if (tab === 'aging')    this.loadAgingSummary();
+}
+// =====================================================
+// ✅ AP AGING METHODS
+// =====================================================
+loadAgingSummary(): void {
+  this.agingIsLoading = true;
+
+  this.apSvc.getApAgingSummary(this.agingFromDate, this.agingToDate).subscribe({
+    next: (res: any) => {
+      this.agingRows      = Array.isArray(res) ? res : (res?.data || []);
+      this.agingIsLoading = false;
+      this.applyAgingFilter();
+    },
+    error: () => {
+      this.agingIsLoading   = false;
+      this.agingRows        = [];
+      this.agingFilteredRows = [];
+      this.recalcAgingTotals();
+    }
+  });
+}
+
+applyAgingFilter(): void {
+  this.agingFilteredRows = this.agingSelectedSupplierFilter == null
+    ? this.agingRows
+    : this.agingRows.filter(r => r.supplierId === this.agingSelectedSupplierFilter);
+  this.recalcAgingTotals();
+}
+
+recalcAgingTotals(): void {
+  const src = this.agingFilteredRows || [];
+  this.agingTotalBase  = src.reduce((s,r) => s + (r.totalOutstandingBase ?? 0), 0);
+  this.aging0_30Base   = src.reduce((s,r) => s + (r.bucket0_30Base       ?? 0), 0);
+  this.aging31_60Base  = src.reduce((s,r) => s + (r.bucket31_60Base      ?? 0), 0);
+  this.aging61_90Base  = src.reduce((s,r) => s + (r.bucket61_90Base      ?? 0), 0);
+  this.aging90PlusBase = src.reduce((s,r) => s + (r.bucket90PlusBase     ?? 0), 0);
+}
+
+onAgingFilterChange(): void {
+  this.loadAgingSummary();
+  this.agingIsDetailOpen = false;
+  this.agingDetailRows   = [];
+}
+
+onAgingSupplierFilterChange(): void {
+  this.applyAgingFilter();
+  this.agingIsDetailOpen = false;
+  this.agingDetailRows   = [];
+}
+
+openAgingDetail(row: any): void {
+  this.agingSelectedSupplierName = row.supplierName;
+  this.agingSelectedSupplierId   = row.supplierId;
+  this.agingIsDetailOpen         = true;
+
+  this.apSvc.getApAgingDetail(
+    row.supplierId,
+    this.agingFromDate,
+    this.agingToDate
+  ).subscribe({
+    next: (res: any) => {
+      this.agingDetailRows = Array.isArray(res) ? res : (res?.data || []);
+      this.recalcAgingDetailTotals();
+    },
+    error: () => { this.agingDetailRows = []; }
+  });
+}
+
+closeAgingDetail(): void {
+  this.agingIsDetailOpen         = false;
+  this.agingDetailRows           = [];
+  this.agingSelectedSupplierId   = null;
+  this.agingDetailOriginal       = 0;
+  this.agingDetailPaid           = 0;
+  this.agingDetailBalance        = 0;
+  this.agingDetailBalanceBase    = 0;
+}
+
+recalcAgingDetailTotals(): void {
+  const src = this.agingDetailRows || [];
+  this.agingDetailOriginal    = src.reduce((s,d) => s + (d.originalAmount ?? 0), 0);
+  this.agingDetailPaid        = src.reduce((s,d) => s + (d.paidAmount     ?? 0), 0);
+  this.agingDetailBalance     = src.reduce((s,d) => s + (d.balance        ?? 0), 0);
+  this.agingDetailBalanceBase = src.reduce((s,d) => s + (d.balanceBase    ?? 0), 0);
+}
+
+exportAgingToExcel(): void {
+  const data = (this.agingFilteredRows || []).map((r, i) => ({
+    'Sl.No':       i + 1,
+    'Supplier':    r.supplierName,
+    '0-30 (SGD)':  +(r.bucket0_30Base   ?? 0).toFixed(2),
+    '31-60 (SGD)': +(r.bucket31_60Base  ?? 0).toFixed(2),
+    '61-90 (SGD)': +(r.bucket61_90Base  ?? 0).toFixed(2),
+    '90+ (SGD)':   +(r.bucket90PlusBase ?? 0).toFixed(2),
+    'Total (SGD)': +(r.totalOutstandingBase ?? 0).toFixed(2)
+  }));
+  if (!data.length) return;
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'AP Aging');
+  XLSX.writeFile(wb, `AP-Aging-${this.agingFromDate}-to-${this.agingToDate}.xlsx`);
+}
 
   loadSuppliers(): void {
     this.supplierSvc.GetAllSupplier().subscribe({

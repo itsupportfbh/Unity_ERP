@@ -1,5 +1,3 @@
-// src/app/main/financial/AR/Aging/aging/aging.component.ts
-
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { ArAgingInvoice, ArAgingSummary } from './aging-model';
 import { ArAgingService } from '../aging-service';
@@ -9,8 +7,6 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-
-// If you already have a shared ResponseResult<T>, remove this and import instead
 interface ResponseResult<T> {
   data: T;
   isSuccess?: boolean;
@@ -24,297 +20,256 @@ interface ResponseResult<T> {
 })
 export class AgingComponent implements OnInit, AfterViewInit {
 
-  // ================== FILTERS ==================
+  // Filters
   fromDate: string;
-  toDate: string;
+  toDate:   string;
 
-  // ================== DATA ==================
-  rows: ArAgingSummary[] = [];
+  // Data
+  rows:         ArAgingSummary[] = [];
   filteredRows: ArAgingSummary[] = [];
-  detailRows: ArAgingInvoice[] = [];
+  detailRows:   ArAgingInvoice[] = [];
 
   customerOptions: Array<{ customerId: number; customerName: string }> = [];
   selectedCustomerId: number | null = null;
 
-  isLoading = false;
+  isLoading    = false;
   isDetailOpen = false;
   selectedCustomerName = '';
 
-  // ================== SUMMARY TOTALS ==================
-  totalOutstandingAll = 0;
-  total0_30 = 0;
-  total31_60 = 0;
-  total61_90_90Plus = 0;
+  // ✅ Summary totals — SGD
+  totalOutstandingAllBase  = 0;
+  total0_30Base            = 0;
+  total31_60Base           = 0;
+  total61_90Base           = 0;
+  total90PlusBase          = 0;
+  total61_90_90PlusBase    = 0;
 
-  // ================== EMAIL MODAL ==================
-  showEmailModal = false;
-  selectedInvoiceForEmail: any = null; // passed into <app-invoice-email>
+  // ✅ Detail totals
+  detailOriginalTotal    = 0;
+  detailPaidTotal        = 0;
+  detailAdvanceTotal     = 0;
+  detailCreditTotal      = 0;
+  detailBalanceTotal     = 0;
+  detailBalanceBaseTotal = 0;
+
+  // Email modal
+  showEmailModal           = false;
+  selectedInvoiceForEmail: any = null;
 
   constructor(
     private agingService: ArAgingService,
-    private _customerMasterService: CustomerMasterService
+    private customerService: CustomerMasterService
   ) {
     const today = new Date();
-    this.toDate = today.toISOString().substring(0, 10);
-    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    this.fromDate = firstOfMonth.toISOString().substring(0, 10);
+    this.toDate   = today.toISOString().substring(0, 10);
+    const first   = new Date(today.getFullYear(), today.getMonth(), 1);
+    this.fromDate = first.toISOString().substring(0, 10);
   }
 
-  // =====================================================
-  //  LIFECYCLE
-  // =====================================================
   ngOnInit(): void {
     this.loadSummary();
     this.loadCustomers();
   }
 
-  ngAfterViewInit(): void {
-    feather.replace();
-  }
+  ngAfterViewInit(): void { feather.replace(); }
 
   // =====================================================
-  //  LOAD SUMMARY
+  // LOAD SUMMARY
   // =====================================================
   loadSummary(): void {
     this.isLoading = true;
 
     this.agingService.getSummary(this.fromDate, this.toDate).subscribe({
       next: (res: ArAgingSummary[] | ResponseResult<ArAgingSummary[]>) => {
-        // 🔹 Normalize to a plain array to fix TS union error
-        const rows: ArAgingSummary[] = Array.isArray(res)
-          ? res
-          : (res.data || []);
-
-        this.rows = rows;
+        this.rows      = Array.isArray(res) ? res : (res.data || []);
         this.isLoading = false;
-
         this.applyCustomerFilter();
-
         setTimeout(() => feather.replace(), 0);
       },
-      error: _ => {
-        this.isLoading = false;
-        this.rows = [];
+      error: () => {
+        this.isLoading   = false;
+        this.rows        = [];
         this.filteredRows = [];
         this.recalculateTotals();
-
         setTimeout(() => feather.replace(), 0);
       }
     });
   }
 
   // =====================================================
-  //  LOAD CUSTOMERS
+  // LOAD CUSTOMERS
   // =====================================================
   loadCustomers(): void {
-    this._customerMasterService.GetAllCustomerDetails()
-      .subscribe((res: any) => {
-        const data = res?.data || res || [];
-        this.customerOptions = data.map((x: any) => ({
-          customerId: x.customerId ?? x.CustomerId ?? x.id ?? x.Id,
-          customerName: x.customerName ?? x.CustomerName ?? x.name ?? x.Name
-        }));
-      });
+    this.customerService.GetAllCustomerDetails().subscribe((res: any) => {
+      const data = res?.data || res || [];
+      this.customerOptions = data.map((x: any) => ({
+        customerId:   x.customerId   ?? x.CustomerId   ?? x.id ?? x.Id,
+        customerName: x.customerName ?? x.CustomerName ?? x.name ?? x.Name
+      }));
+    });
   }
 
   // =====================================================
-  //  FILTER EVENTS
+  // FILTER EVENTS
   // =====================================================
   onFilterChange(): void {
     this.loadSummary();
     if (this.isDetailOpen) {
       this.isDetailOpen = false;
-      this.detailRows = [];
+      this.detailRows   = [];
     }
   }
 
   onCustomerChange(): void {
     this.applyCustomerFilter();
     this.isDetailOpen = false;
-    this.detailRows = [];
+    this.detailRows   = [];
     setTimeout(() => feather.replace(), 0);
   }
 
   private applyCustomerFilter(): void {
-    if (this.selectedCustomerId == null) {
-      this.filteredRows = this.rows;
-    } else {
-      this.filteredRows = this.rows.filter(
-        r => r.customerId === this.selectedCustomerId
-      );
-    }
+    this.filteredRows = this.selectedCustomerId == null
+      ? this.rows
+      : this.rows.filter(r => r.customerId === this.selectedCustomerId);
     this.recalculateTotals();
   }
 
   // =====================================================
-  //  SUMMARY CARD TOTALS
+  // TOTALS
   // =====================================================
   private recalculateTotals(): void {
     const src = this.filteredRows || [];
 
-    this.totalOutstandingAll = src
-      .reduce((sum, r) => sum + (r.totalOutstanding || 0), 0);
+    // ✅ SGD totals
+    this.totalOutstandingAllBase = src.reduce((s,r) => s + (r.totalOutstandingBase ?? 0), 0);
+    this.total0_30Base           = src.reduce((s,r) => s + (r.bucket0_30Base       ?? 0), 0);
+    this.total31_60Base          = src.reduce((s,r) => s + (r.bucket31_60Base      ?? 0), 0);
+    this.total61_90Base          = src.reduce((s,r) => s + (r.bucket61_90Base      ?? 0), 0);
+    this.total90PlusBase         = src.reduce((s,r) => s + (r.bucket90PlusBase     ?? 0), 0);
+    this.total61_90_90PlusBase   = this.total61_90Base + this.total90PlusBase;
+  }
 
-    this.total0_30 = src
-      .reduce((sum, r) => sum + (r.bucket0_30 || 0), 0);
-
-    this.total31_60 = src
-      .reduce((sum, r) => sum + (r.bucket31_60 || 0), 0);
-
-    const total61_90 = src
-      .reduce((sum, r) => sum + (r.bucket61_90 || 0), 0);
-
-    const total90Plus = src
-      .reduce((sum, r) => sum + (r.bucket90Plus || 0), 0);
-
-    this.total61_90_90Plus = total61_90 + total90Plus;
+  private recalcDetailTotals(): void {
+    const src = this.detailRows || [];
+    this.detailOriginalTotal    = src.reduce((s,d) => s + (d.originalAmount ?? 0), 0);
+    this.detailPaidTotal        = src.reduce((s,d) => s + (d.paidAmount     ?? 0), 0);
+    this.detailAdvanceTotal     = src.reduce((s,d) => s + (d.advanceAmount  ?? 0), 0);
+    this.detailCreditTotal      = src.reduce((s,d) => s + (d.creditAmount   ?? 0), 0);
+    this.detailBalanceTotal     = src.reduce((s,d) => s + (d.balance        ?? 0), 0);
+    this.detailBalanceBaseTotal = src.reduce((s,d) => s + (d.balanceBase    ?? 0), 0);
   }
 
   // =====================================================
-  //  DETAIL PANEL
+  // DETAIL PANEL
   // =====================================================
   openDetail(row: ArAgingSummary): void {
     this.selectedCustomerName = row.customerName;
-    this.isDetailOpen = true;
+    this.isDetailOpen         = true;
 
     this.agingService.getCustomerInvoices(
       row.customerId,
       this.fromDate,
       this.toDate
-    )
-      .subscribe((res: ArAgingInvoice[] | ResponseResult<ArAgingInvoice[]>) => {
-        const rows: ArAgingInvoice[] = Array.isArray(res)
-          ? res
-          : (res.data || []);
-        this.detailRows = rows;
-
-        setTimeout(() => feather.replace(), 0);
-      });
+    ).subscribe((res: ArAgingInvoice[] | ResponseResult<ArAgingInvoice[]>) => {
+      this.detailRows = Array.isArray(res) ? res : (res.data || []);
+      this.recalcDetailTotals();
+      setTimeout(() => feather.replace(), 0);
+    });
   }
 
   closeDetail(): void {
     this.isDetailOpen = false;
-    this.detailRows = [];
+    this.detailRows   = [];
+    this.detailOriginalTotal    = 0;
+    this.detailPaidTotal        = 0;
+    this.detailAdvanceTotal     = 0;
+    this.detailCreditTotal      = 0;
+    this.detailBalanceTotal     = 0;
+    this.detailBalanceBaseTotal = 0;
   }
 
   // =====================================================
-  //  EMAIL FROM AGING DETAIL
+  // EMAIL MODAL
   // =====================================================
   openEmailModal(row: ArAgingInvoice): void {
-    // This object goes into <app-invoice-email [invoice]="...">
-    // InvoiceEmailComponent will call getInvoiceInfo() and pick up email.
     this.selectedInvoiceForEmail = {
-      id: row.invoiceId,          // AR invoice Id
-      docType: 'SI',              // 'SI' = Sales Invoice
+      id:        row.invoiceId,
+      docType:   'SI',
       invoiceNo: row.invoiceNo,
       partyName: row.customerName
-      // email is fetched in InvoiceEmailComponent via getInvoiceInfo()
     };
-
     this.showEmailModal = true;
   }
 
   closeEmailModal(): void {
-    this.showEmailModal = false;
+    this.showEmailModal          = false;
     this.selectedInvoiceForEmail = null;
   }
 
   onEmailModalBackdropClick(event: MouseEvent): void {
-    // click on grey area outside dialog
     this.closeEmailModal();
   }
-  // build plain objects for export from current filteredRows
+
+  // =====================================================
+  // EXPORT
+  // =====================================================
   private buildExportRows() {
-    return (this.filteredRows || []).map((r, index) => ({
-      'Sl.No': index + 1,
-      Customer: r.customerName,
-      '0-30': r.bucket0_30 || 0,
-      '31-60': r.bucket31_60 || 0,
-      '61-90': r.bucket61_90 || 0,
-      '90+': r.bucket90Plus || 0,
-      'Total Outstanding': r.totalOutstanding || 0
+    return (this.filteredRows || []).map((r, i) => ({
+      'Sl.No':             i + 1,
+      'Customer':          r.customerName,
+      '0-30 (SGD)':        +(r.bucket0_30Base   ?? 0).toFixed(2),
+      '31-60 (SGD)':       +(r.bucket31_60Base  ?? 0).toFixed(2),
+      '61-90 (SGD)':       +(r.bucket61_90Base  ?? 0).toFixed(2),
+      '90+ (SGD)':         +(r.bucket90PlusBase ?? 0).toFixed(2),
+      'Total (SGD)':       +(r.totalOutstandingBase ?? 0).toFixed(2)
     }));
   }
 
   exportToExcel(): void {
     const data = this.buildExportRows();
-    if (!data.length) {
-      return;
-    }
+    if (!data.length) return;
 
-    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'AR Aging');
-
-    const fileName = `AR-Aging-${this.fromDate}-to-${this.toDate}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    XLSX.writeFile(wb, `AR-Aging-${this.fromDate}-to-${this.toDate}.xlsx`);
   }
 
   exportToPdf(): void {
     const rows = this.filteredRows || [];
-    if (!rows.length) {
-      return;
-    }
+    if (!rows.length) return;
 
-    const doc = new jsPDF('l', 'pt', 'a4'); // landscape
-
-    // ===== Centered title =====
+    const doc       = new jsPDF('l', 'pt', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
-    const title = `AR Aging (${this.fromDate} to ${this.toDate})`;
     doc.setFontSize(12);
-    doc.text(title, pageWidth / 2, 30, { align: 'center' });
+    doc.text(
+      `AR Aging (${this.fromDate} to ${this.toDate}) — Amounts in SGD`,
+      pageWidth / 2, 30, { align: 'center' }
+    );
 
-    // ===== Table header (add Sl. No) =====
-    const head = [[
-      'Sl. No',
-      'Customer',
-      '0-30',
-      '31-60',
-      '61-90',
-      '90+',
-      'Total Outstanding'
-    ]];
-
-    // ===== Table body =====
-    const body = rows.map((r, index) => [
-      (index + 1).toString(),                                // Sl. No
-      r.customerName,                                        // Customer
-      (r.bucket0_30 || 0).toFixed(2),                      // 0-30
-      (r.bucket31_60 || 0).toFixed(2),                      // 31-60
-      (r.bucket61_90 || 0).toFixed(2),                      // 61-90
-      (r.bucket90Plus || 0).toFixed(2),                      // 90+
-      (r.totalOutstanding || 0).toFixed(2)                   // Total
+    const head = [['Sl.No','Customer','0-30','31-60','61-90','90+','Total (SGD)']];
+    const body = rows.map((r, i) => [
+      (i + 1).toString(),
+      r.customerName,
+      (r.bucket0_30Base   ?? 0).toFixed(2),
+      (r.bucket31_60Base  ?? 0).toFixed(2),
+      (r.bucket61_90Base  ?? 0).toFixed(2),
+      (r.bucket90PlusBase ?? 0).toFixed(2),
+      (r.totalOutstandingBase ?? 0).toFixed(2)
     ]);
 
     autoTable(doc, {
-      head,
-      body,
+      head, body,
       startY: 45,
-      margin: { left: 40, right: 40 }, // keep table nicely centered
-      styles: {
-        fontSize: 9,
-        halign: 'right',               // default: numbers right aligned
-        valign: 'middle'
-      },
+      margin: { left: 40, right: 40 },
+      styles: { fontSize: 9, halign: 'right', valign: 'middle' },
       columnStyles: {
-        0: { halign: 'center' },       // Sl. No center
-        1: { halign: 'left' },
-        2: { halign: 'left' },
-        3: { halign: 'left' },
-        4: { halign: 'left' },
-        5: { halign: 'left' },
-        6: { halign: 'left' },
-        7: { halign: 'left' }         
-        // others use default halign: 'right'
+        0: { halign: 'center' },
+        1: { halign: 'left' }
       },
-      headStyles: {
-        halign: 'left'
-      }
+      headStyles: { halign: 'left' }
     });
 
-    const fileName = `AR-Aging-${this.fromDate}-to-${this.toDate}.pdf`;
-    doc.save(fileName);
+    doc.save(`AR-Aging-${this.fromDate}-to-${this.toDate}.pdf`);
   }
-
-
 }

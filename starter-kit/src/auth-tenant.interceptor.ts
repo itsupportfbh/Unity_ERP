@@ -6,24 +6,41 @@ import {
   HttpRequest
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from 'environments/environment';
+import { TenantContextService } from 'app/core/services/tenant-context.service';
 
+/**
+ * Sends JWT + tenant headers on every FinanceApi request.
+ * Backend resolves org → tenant DB (TenantResolutionMiddleware) and companyId from JWT.
+ */
 @Injectable()
 export class AuthTenantInterceptor implements HttpInterceptor {
+  constructor(private tenant: TenantContextService) {}
+
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const token = localStorage.getItem('token');
-    const orgGuid = localStorage.getItem('orgGuid');
-    const organizationId = localStorage.getItem('organizationId');
+    const isApi = req.url.startsWith(environment.apiUrl);
+    if (!isApi) {
+      return next.handle(req);
+    }
 
     let headers = req.headers;
 
-    if (token && token !== 'undefined' && token !== 'null') {
+    const token = this.tenant.token;
+    if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
     }
 
-    if (orgGuid && orgGuid !== 'undefined' && orgGuid !== 'null') {
+    const orgGuid = this.tenant.orgGuid;
+    if (orgGuid) {
       headers = headers.set('X-Org-Guid', orgGuid);
     }
 
+    const companyId = this.tenant.companyId;
+    if (companyId > 0) {
+      headers = headers.set('X-Company-Id', String(companyId));
+    }
+
+    const organizationId = localStorage.getItem('organizationId');
     if (organizationId && organizationId !== 'undefined' && organizationId !== 'null') {
       headers = headers.set('X-Organization-Id', organizationId);
     }

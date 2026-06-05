@@ -54,7 +54,7 @@
                 <th class="text-end">Amount</th>
                 <th class="text-end">Base (SGD)</th>
                 <th>Status</th>
-                <th class="text-center" style="width: 140px;">Action</th>
+                <!-- <th class="text-center" style="width: 140px;">Action</th> -->
               </tr>
             </thead>
             <tbody>
@@ -87,12 +87,12 @@
                     {{ r.status || 'Posted' }}
                   </span>
                 </td>
-                <td class="text-center">
+                <!-- <td class="text-center">
                   <div class="actions">
                     <i *ngIf="canEdit()" class="fas fa-pen text-primary" title="Edit" (click)="edit(r.id)"></i>
                     <i *ngIf="canDelete()" class="fas fa-trash text-danger" title="Delete" (click)="delete(r.id)"></i>
                   </div>
-                </td>
+                </td> -->
               </tr>
 
               <tr *ngIf="!filtered.length">

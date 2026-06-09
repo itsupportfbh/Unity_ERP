@@ -13,3 +13,24 @@
   word-break: break-word;
   overflow-wrap: anywhere;
 }
+.text-ellipsis-cell {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
+::ng-deep .ngx-datatable .datatable-body-cell-label {
+  width: 100%;
+}
+
+.text-ellipsis-cell {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}

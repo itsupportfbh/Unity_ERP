@@ -85,7 +85,7 @@
             [headerHeight]="50"
             [footerHeight]="50"
             [limit]="selectedOption"
-            [columnMode]="'force'"
+            [columnMode]="ColumnMode.standard"
             [scrollbarH]="true"
             [reorderable]="true">
 
@@ -105,23 +105,29 @@
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="CN No" prop="creditNoteNo" [width]="140">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                {{ row.creditNoteNo || '-' }}
-              </ng-template>
-            </ngx-datatable-column>
+          <ngx-datatable-column name="CN No" prop="creditNoteNo" [width]="200">
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <div class="text-ellipsis-cell" [title]="row.creditNoteNo || '-'">
+              {{ row.creditNoteNo || '-' }}
+            </div>
+          </ng-template>
+        </ngx-datatable-column>
 
-            <ngx-datatable-column name="DO No" prop="doNumber" [width]="120">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                {{ row.doNumber || '-' }}
-              </ng-template>
-            </ngx-datatable-column>
+        <ngx-datatable-column name="DO No" prop="doNumber" [width]="200">
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <div class="text-ellipsis-cell" [title]="row.doNumber || '-'">
+              {{ row.doNumber || '-' }}
+            </div>
+          </ng-template>
+        </ngx-datatable-column>
 
-            <ngx-datatable-column name="SI No" prop="siNumber" [width]="200">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                {{ row.siNumber || '-' }}
-              </ng-template>
-            </ngx-datatable-column>
+        <ngx-datatable-column name="SI No" prop="siNumber" [width]="200">
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <div class="text-ellipsis-cell" [title]="row.siNumber || '-'">
+              {{ row.siNumber || '-' }}
+            </div>
+          </ng-template>
+        </ngx-datatable-column>
 <ngx-datatable-column name="Amount" [width]="140">
   <ng-template let-row="row" ngx-datatable-cell-template>
     <div class="text-right">

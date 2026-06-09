@@ -1163,6 +1163,7 @@ isForeignCurrency(): boolean {
   });
 }
 async post(): Promise<void> {
+  debugger
   if (!this.canSaveSO()) {
     Swal.fire({
       icon: 'warning',
@@ -1295,6 +1296,7 @@ async post(): Promise<void> {
   }
 
 private getDirectDoShortageLines() {
+  debugger
   return (this.soLines || []).filter(l => {
     const req = Number(l.qty || 0);
     const avl = Number(l.availability ?? 0);

@@ -55,6 +55,7 @@ export class StockTakeComponent implements OnInit {
     { id: 2, label: 'Cycle', }
   ];
   strategies: any
+  stockTakeDate: string = new Date().toISOString().substring(0, 10);
   warehouseTypeId: any
   supplierId: number = 0;  // default ALL
   takeTypeId: any;  
@@ -119,6 +120,7 @@ export class StockTakeComponent implements OnInit {
         this.stockTakeService.getStockTakeById(this.stockTakeId).subscribe((res: any) => {
           console.log(res)
           this.warehouseTypeId = res.data.warehouseTypeId,
+          this.stockTakeDate = res.data.stockTakeDate,
           this.supplierId = res.data.supplierId,
           this.takeTypeId = res.data.takeTypeId,
           this.strategyId = res.data.strategyId,
@@ -427,10 +429,11 @@ private syncReviewRow(line: StockTakeLine): void {
       });
       return;
     }
-
+debugger
     const payload = {
       id: this.stockTakeId ?? 0,
       warehouseTypeId: this.warehouseTypeId,
+      stockTakeDate: this.stockTakeDate,
       supplierId: this.supplierId,
       //takeTypeId: this.takeTypeId,
       strategyId: this.strategyId,
@@ -567,6 +570,7 @@ private syncReviewRow(line: StockTakeLine): void {
     const payload = {
       id: this.stockTakeId ?? 0,
       warehouseTypeId: this.warehouseTypeId,
+      stockTakeDate: this.stockTakeDate,
       supplierId: this.supplierId,
       //takeTypeId: this.takeTypeId,
       strategyId: this.strategyId,

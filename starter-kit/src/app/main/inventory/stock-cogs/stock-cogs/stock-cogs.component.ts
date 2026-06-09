@@ -289,8 +289,8 @@ private buildCogsExportRows(): any[] {
       r.openingBaseQty,
       r.baseUomName
     ),
-    'Opening Price': Number(r.openingPrice ?? this.unitPrice(r.openingValue, r.openingQty) ?? 0),
-    'Opening Value': Number(r.openingValue || 0),
+    'Opening Unit Price': Number(r.openingPrice ?? this.unitPrice(r.openingValue, r.openingQty) ?? 0),
+    'Total Opening': Number(r.openingValue || 0),
 
     'Purchase Qty': this.qtyExportText(
       r.purchaseQty,
@@ -298,8 +298,8 @@ private buildCogsExportRows(): any[] {
       r.purchaseBaseQty,
       r.baseUomName
     ),
-    'Purchase Price': Number(r.purchasePrice ?? this.unitPrice(r.purchaseValue, r.purchaseQty) ?? 0),
-    'Purchase Value': Number(r.purchaseValue || 0),
+    'Purchase Unit Price': Number(r.purchasePrice ?? this.unitPrice(r.purchaseValue, r.purchaseQty) ?? 0),
+    'Total Purchase': Number(r.purchaseValue || 0),
 
     'Closing Qty': this.qtyExportText(
       r.closingQty,
@@ -307,8 +307,8 @@ private buildCogsExportRows(): any[] {
       r.closingBaseQty,
       r.baseUomName
     ),
-    'Closing Price': Number(r.closingPrice ?? this.unitPrice(r.closingValue, r.closingQty) ?? 0),
-    'Closing Value': Number(r.closingValue || 0),
+    'Closing Unit Price': Number(r.closingPrice ?? this.unitPrice(r.closingValue, r.closingQty) ?? 0),
+    'Total Closing': Number(r.closingValue || 0),
 
     'COGS': Number(r.cogsValue || 0)
   }));
@@ -466,14 +466,14 @@ exportToPdf(): void {
     'Item Code',
     'Item Name',
     'Opening Qty',
-    'Opening Price',
-    'Opening',
+    'Opening Unit Price',
+    'Total Opening',
     'Purchase Qty',
-    'Purchase Price',
-    'Purchases',
+    'Purchase Unit Price',
+    'Total Purchases',
     'Closing Qty',
-    'Closing Price',
-    'Closing',
+    'Closing Unit Price',
+    'Total Closing',
     'COGS'
   ]];
 

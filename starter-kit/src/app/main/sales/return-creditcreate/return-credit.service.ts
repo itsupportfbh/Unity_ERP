@@ -100,4 +100,7 @@ getAvailableDeliveryOrdersForCreditNote() {
     `${this.url}/DeliveryOrder/available-delivery-orders`
   );
 }
+getSiForFxRate(siId: number): Observable<any> {
+  return this.http.get(`${this.url}/SalesInvoice/${siId}/fxrate`);
+}
 }

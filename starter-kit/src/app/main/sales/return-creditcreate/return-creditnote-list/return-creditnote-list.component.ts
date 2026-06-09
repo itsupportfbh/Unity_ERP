@@ -242,49 +242,49 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
     });
   }
 
-  loadList(): void {
-    this.api.getCreditNote().subscribe({
-      next: (res: any) => {
-        const list = res?.data ?? res ?? [];
+loadList(): void {
+  this.api.getCreditNote().subscribe({
+    next: (res: any) => {
+      const list = res?.data ?? res ?? [];
 
-        this.rows = (list || []).map((r: any) => ({
-          id: Number(r.id ?? r.Id ?? 0),
-          creditNoteNo: r.creditNoteNo ?? r.CreditNoteNo ?? '',
-          doNumber: r.doNumber ?? r.DoNumber ?? '',
-          siNumber: r.siNumber ?? r.SiNumber ?? '',
-          customerName: r.customerName ?? r.CustomerName ?? '',
-          creditNoteDate: r.creditNoteDate ?? r.CreditNoteDate ?? null,
-          status: Number(r.status ?? r.Status ?? 1),
-          subtotal: Number(r.subtotal ?? r.Subtotal ?? 0),
-          lineItems: r.lines ?? r.Lines ?? r.lineItems ?? r.LineItems ?? [],
-          glPosted: r.glPosted === true || r.GlPosted === true || r.glPosted === 1 || r.GlPosted === 1
-        }));
+      this.rows = (list || []).map((r: any) => ({
+        id:             Number(r.id             ?? r.Id             ?? 0),
+        creditNoteNo:   r.creditNoteNo           ?? r.CreditNoteNo   ?? '',
+        doNumber:       r.doNumber               ?? r.DoNumber       ?? '',
+        siNumber:       r.siNumber               ?? r.SiNumber       ?? '',
+        customerName:   r.customerName           ?? r.CustomerName   ?? '',
+        creditNoteDate: r.creditNoteDate         ?? r.CreditNoteDate ?? null,
+        status:         Number(r.status          ?? r.Status         ?? 1),
+        subtotal:       Number(r.subtotal        ?? r.Subtotal       ?? 0),
+        lineItems:      r.lines ?? r.Lines ?? r.lineItems ?? r.LineItems ?? [],
+        glPosted:       r.glPosted === true || r.GlPosted === true ||
+                        r.glPosted === 1   || r.GlPosted === 1,
+        // ✅ FxRate + Base SGD
+        fxRate:         Number(r.fxRate         ?? r.FxRate         ?? 1),
+        currencyId:     Number(r.currencyId     ?? r.CurrencyId     ?? 0),
+        currencyName:   r.currencyName          ?? r.CurrencyName   ?? 'SGD',
+        subtotalBase:   Number(r.subtotalBase   ?? r.SubtotalBase   ??
+                          (r.subtotal ?? 0) * (r.fxRate ?? 1))
+      }));
 
-        this.tempData = [...this.rows];
-        this.checkRowsGstLock(this.rows, 'creditNoteDate');
+      this.tempData = [...this.rows];
+      this.checkRowsGstLock(this.rows, 'creditNoteDate');
 
-        if (this.initialCnParam) {
-          this.searchValue = this.initialCnParam;
-          this.filterUpdate(null);
-        }
-
-        if (this.table) {
-          this.table.offset = 0;
-        }
-      },
-      error: () => {
-        this.rows = [];
-        this.tempData = [];
-        this.lockedRowMap = {};
-
-        Swal.fire({
-          icon: 'error',
-          title: 'Failed',
-          text: 'Load credit notes'
-        });
+      if (this.initialCnParam) {
+        this.searchValue = this.initialCnParam;
+        this.filterUpdate(null);
       }
-    });
-  }
+
+      if (this.table) { this.table.offset = 0; }
+    },
+    error: () => {
+      this.rows = [];
+      this.tempData = [];
+      this.lockedRowMap = {};
+      Swal.fire({ icon: 'error', title: 'Failed', text: 'Load credit notes' });
+    }
+  });
+}
 
   filterUpdate(event: any): void {
     const val = (event?.target?.value ?? this.searchValue ?? '').toString().toLowerCase().trim();

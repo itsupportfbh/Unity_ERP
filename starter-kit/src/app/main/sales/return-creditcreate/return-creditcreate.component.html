@@ -67,6 +67,40 @@
           {{ gstLockMessage || 'GST period is locked. Credit note cannot be changed.' }}
         </div>
       </div>
+      <!-- ✅ FxRate info bar -->
+<div class="col-lg-4 col-md-6" *ngIf="fxRate && fxRate !== 1">
+  <label class="form-label prl-label">Exchange Rate</label>
+  <div class="form-control prl-input"
+    style="background:#f0f7fb;color:#2E5F73;font-weight:600;">
+    1 {{ currencyName }} = {{ fxRate | number:'1.4-4' }} SGD
+  </div>
+</div>
+
+<div class="col-lg-4 col-md-6" *ngIf="subtotal > 0">
+  <label class="form-label prl-label">
+    Amount
+    <span *ngIf="currencyName && currencyName !== 'SGD'"
+      style="font-size:0.8rem;color:#6b7280;">
+      ({{ currencyName }})
+    </span>
+  </label>
+  <div class="form-control prl-input" style="background:#f8f9fa;">
+    {{ subtotal | number:'1.2-2' }}
+    <span *ngIf="currencyName && currencyName !== 'SGD'"
+      style="font-size:0.75rem;color:#6b7280;margin-left:4px;">
+      {{ currencyName }}
+    </span>
+  </div>
+</div>
+
+<!-- ✅ Base SGD -->
+<div class="col-lg-4 col-md-6" *ngIf="subtotal > 0 && fxRate && fxRate !== 1">
+  <label class="form-label prl-label">Amount (SGD)</label>
+  <div class="form-control prl-input"
+    style="background:#f0f7fb;color:#2E5F73;font-weight:700;">
+    {{ subtotalBase | number:'1.2-2' }} SGD
+  </div>
+</div>
     </div>
 
     <div class="d-flex justify-content-end mt-2">
@@ -219,5 +253,23 @@
         Save & Approve
       </button>
     </div>
+    <!-- ✅ Summary bar -->
+<div class="d-flex justify-content-end mt-2 mb-1" *ngIf="subtotal > 0">
+  <div class="d-flex align-items-center gap-3"
+    style="background:#f8f9fa;padding:8px 16px;border-radius:8px;">
+    <span style="font-size:0.9rem;color:#374151;">
+      Subtotal:
+      <strong>{{ subtotal | number:'1.2-2' }}
+        <span *ngIf="currencyName && currencyName !== 'SGD'">
+          {{ currencyName }}
+        </span>
+      </strong>
+    </span>
+    <span *ngIf="fxRate && fxRate !== 1"
+      style="font-size:0.9rem;color:#2E5F73;font-weight:700;">
+      ≈ {{ subtotalBase | number:'1.2-2' }} SGD
+    </span>
+  </div>
+</div>
   </div>
 </div>

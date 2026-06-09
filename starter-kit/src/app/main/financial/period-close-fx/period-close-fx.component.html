@@ -59,17 +59,61 @@
                   [disabled]="isRunningFx">
               </div>
 
-              <div class="col-lg-3 col-md-12 mb-1 text-md-right text-left mt-1 mt-md-0">
-                <button
-                  class="btn btn-brand"
-                  style="background-color:#2E5F73;border-color:#2E5F73;color:white;"
-                  (click)="runFxRevaluation()"
-                  [disabled]="isRunningFx || !selectedPeriodId || !fxRevalDate || (!canCreate() && !canPost())">
+             <!-- Run button -->
+<div class="col-lg-3 col-md-12 mb-1 d-flex align-items-end">
+  <button
+    class="btn btn-brand w-100"
+    style="background-color:#2E5F73;border-color:#2E5F73;color:white;"
+    (click)="runFxRevaluation()"
+    [disabled]="isRunningFx || !selectedPeriodId || !fxRevalDate ||
+                (!canCreate() && !canPost())">
+    <i class="fas fa-sync-alt mr-25"
+      [class.fa-spin]="isRunningFx"></i>
+    {{ isRunningFx ? 'Running…' : 'Run FX Revaluation' }}
+  </button>
+</div>
 
-                  <i class="fas fa-sync-alt mr-25"></i>
-                  {{ isRunningFx ? 'Running…' : 'Run Quarterly GST Computation' }}
-                </button>
-              </div>
+<!-- ✅ Last run result bar -->
+<div class="col-12 mt-1" *ngIf="lastRunResult">
+  <div class="alert mb-0"
+    [ngClass]="{
+      'alert-success': lastRunResult.net >= 0,
+      'alert-warning': lastRunResult.net < 0
+    }"
+    style="font-size:0.88rem;">
+
+    <div class="d-flex align-items-center flex-wrap" style="gap:16px;">
+      <span>
+        <i class="fas fa-check-circle mr-25"></i>
+        <strong>
+          FXR-{{ lastRunResult.fxDate?.replace('-','')?.replace('-','') }}-{{ lastRunResult.runId }}
+        </strong>
+        posted
+      </span>
+
+      <span *ngIf="lastRunResult.totalGain > 0" style="color:#28a745;">
+        Gain: <strong>{{ lastRunResult.totalGain | number:'1.2-2' }} SGD</strong>
+      </span>
+
+      <span *ngIf="lastRunResult.totalLoss > 0" style="color:#dc3545;">
+        Loss: <strong>{{ lastRunResult.totalLoss | number:'1.2-2' }} SGD</strong>
+      </span>
+
+      <span style="border-left:1px solid #ccc;padding-left:16px;">
+        Net:
+        <strong
+          [style.color]="lastRunResult.net >= 0 ? '#28a745' : '#dc3545'">
+          {{ lastRunResult.net >= 0 ? '+' : '' }}
+          {{ lastRunResult.net | number:'1.2-2' }} SGD
+        </strong>
+      </span>
+
+      <span style="color:#6b7280;font-size:0.8rem;">
+        {{ lastRunResult.fxDate }}
+      </span>
+    </div>
+  </div>
+</div>
             </div>
 
             <div class="row mt-1">

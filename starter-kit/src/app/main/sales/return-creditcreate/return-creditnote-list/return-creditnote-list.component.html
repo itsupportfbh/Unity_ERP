@@ -122,7 +122,30 @@
                 {{ row.siNumber || '-' }}
               </ng-template>
             </ngx-datatable-column>
+<ngx-datatable-column name="Amount" [width]="140">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <div class="text-right">
+      {{ row.subtotal | number:'1.2-2' }}
+      <span *ngIf="row.currencyName && row.currencyName !== 'SGD'"
+        style="font-size:0.75rem;color:#6b7280;margin-left:2px;">
+        {{ row.currencyName }}
+      </span>
+    </div>
+  </ng-template>
+</ngx-datatable-column>
 
+<!-- ✅ Base SGD column -->
+<ngx-datatable-column name="Amount (SGD)" [width]="150">
+  <ng-template let-row="row" ngx-datatable-cell-template>
+    <div class="text-right" style="color:#2E5F73;font-weight:600;">
+      {{ row.subtotalBase | number:'1.2-2' }} SGD
+      <div *ngIf="row.fxRate && row.fxRate !== 1"
+        style="font-size:0.72rem;color:#6b7280;">
+        @ {{ row.fxRate | number:'1.4-4' }}
+      </div>
+    </div>
+  </ng-template>
+</ngx-datatable-column>
             <ngx-datatable-column name="Customer" prop="customerName" [width]="160">
               <ng-template let-row="row" ngx-datatable-cell-template>
                 <div class="po-wrap-cell" [title]="row.customerName">

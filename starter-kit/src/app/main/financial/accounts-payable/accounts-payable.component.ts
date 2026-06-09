@@ -1,8 +1,5 @@
 import {
-  Component,
-  OnInit,
-  AfterViewInit,
-  ViewEncapsulation
+  Component, OnInit, AfterViewInit, ViewEncapsulation
 } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -17,52 +14,50 @@ import { FunctionPermission, PermissionService } from 'app/shared/permission.ser
 type ApTab = 'invoices' | 'payments' | 'aging' | 'advances' | 'match';
 
 type SupplierInvoiceGroup = {
-  supplierId: number;
-  supplierName: string;
+  supplierId:     number;
+  supplierName:   string;
   totalGrandTotal: number;
-  totalPaid: number;
-  totalDebitNote: number;
-  totalAdvance: number;
-  totalPayable: number;
-  invoices: any[];
+  totalPaid:       number;
+  totalDebitNote:  number;
+  totalAdvance:    number;
+  totalPayable:    number;
+  invoices:        any[];
 };
 
 interface SupplierAdvanceRow {
-  id: number;
-  advanceNo: string;
-  supplierId: number;
-  supplierName: string;
-  advanceDate: string | Date;
+  id:             number;
+  advanceNo:      string;
+  supplierId:     number;
+  supplierName:   string;t
+  advanceDate:    string | Date;
   originalAmount: number;
   utilisedAmount: number;
-  balanceAmount: number;
-  currencyName: string;
-  fxRate: number;
-  amountBase: number;
+  balanceAmount:  number;
+  currencyName:   string;
+  fxRate:         number;
+  amountBase:     number;
 }
 
 @Component({
-  selector: 'app-accounts-payable',
-  templateUrl: './accounts-payable.component.html',
-  styleUrls: ['./accounts-payable.component.scss'],
+  selector:      'app-accounts-payable',
+  templateUrl:   './accounts-payable.component.html',
+  styleUrls:     ['./accounts-payable.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
 export class AccountsPayableComponent implements OnInit, AfterViewInit {
+
   activeTab: ApTab = 'invoices';
-
-  showEmailModal = false;
+  showEmailModal             = false;
   selectedInvoiceForEmail: any = null;
-
   suppliers: Array<{ id: number; name: string }> = [];
-
-  bankAccounts: any[] = [];
-  selectedBankId: number | null = null;
-  bankAvailableBalance: number | null = null;
+  bankAccounts:            any[] = [];
+  selectedBankId:          number | null = null;
+  bankAvailableBalance:    number | null = null;
   bankBalanceAfterPayment: number | null = null;
 
-  invoices: any[] = [];
+  invoices:      any[] = [];
   private allInvoices: any[] = [];
-  invoiceSearch = '';
+  invoiceSearch  = '';
 
   totalInvAmount      = 0;
   totalInvPaid        = 0;
@@ -70,19 +65,18 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   totalInvAdvance     = 0;
   totalInvOutstanding = 0;
 
-  supplierGroups: SupplierInvoiceGroup[] = [];
-  expandedSupplierIds = new Set<number>();
-
+  supplierGroups:      SupplierInvoiceGroup[] = [];
+  expandedSupplierIds  = new Set<number>();
   invPage     = 1;
   invPageSize = 10;
 
-  payments: any[]  = [];
-  showPaymentForm  = false;
+  payments:       any[] = [];
+  showPaymentForm = false;
   payListPage      = 1;
   payListPageSize  = 10;
 
-  paySupplierId: number | null = null;
-  supplierInvoicesAll: any[]   = [];
+  paySupplierId:       number | null = null;
+  supplierInvoicesAll: any[]         = [];
   payInvPage     = 1;
   payInvPageSize = 10;
 
@@ -101,7 +95,7 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   supTotalNetOutstanding = 0;
   supTotalPayable        = 0;
 
-  // ✅ Payment Currency + FxRate
+  // Payment Currency + FxRate
   payFxRate:           number  = 1;
   payAmountBase:       number  = 0;
   payExchangeGainLoss: number  = 0;
@@ -111,7 +105,7 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   availableCurrencies: any[]   = [];
   fxRateLoading:       boolean = false;
 
-  // Invoice currency (reference only)
+  // Invoice currency
   invoiceCurrencyId:   number = 0;
   invoiceCurrencyName: string = '';
   invoiceFxRate:       number = 1;
@@ -141,37 +135,34 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   periodName         = '';
 
   // =====================================================
-// ✅ AP AGING PROPERTIES
-// =====================================================
-agingRows:         any[] = [];
-agingFilteredRows: any[] = [];
-agingDetailRows:   any[] = [];
+  // AP AGING PROPERTIES
+  // =====================================================
+  agingRows:         any[] = [];
+  agingFilteredRows: any[] = [];
+  agingDetailRows:   any[] = [];
+  agingFromDate = '';
+  agingToDate   = '';
+  agingIsLoading    = false;
+  agingIsDetailOpen = false;
+  agingSelectedSupplierName    = '';
+  agingSelectedSupplierId:     number | null = null;
+  agingSelectedSupplierFilter: number | null = null;
 
-agingFromDate = '';
-agingToDate   = '';
+  agingTotalBase   = 0;
+  aging0_30Base    = 0;
+  aging31_60Base   = 0;
+  aging61_90Base   = 0;
+  aging90PlusBase  = 0;
 
-agingIsLoading    = false;
-agingIsDetailOpen = false;
-agingSelectedSupplierName  = '';
-agingSelectedSupplierId:   number | null = null;
-agingSelectedSupplierFilter: number | null = null;
+  agingDetailOriginal    = 0;
+  agingDetailPaid        = 0;
+  agingDetailBalance     = 0;
+  agingDetailBalanceBase = 0;
 
-// SGD totals
-agingTotalBase   = 0;
-aging0_30Base    = 0;
-aging31_60Base   = 0;
-aging61_90Base   = 0;
-aging90PlusBase  = 0;
-
-// Detail totals
-agingDetailOriginal    = 0;
-agingDetailPaid        = 0;
-agingDetailBalance     = 0;
-agingDetailBalanceBase = 0;
   constructor(
-    private apSvc: AccountsPayableService,
-    private supplierSvc: SupplierService,
-    public router: Router,
+    private apSvc:           AccountsPayableService,
+    private supplierSvc:     SupplierService,
+    public  router:          Router,
     private permissionService: PermissionService
   ) {
     this.payDate    = new Date().toISOString().substring(0, 10);
@@ -179,27 +170,35 @@ agingDetailBalanceBase = 0;
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
- ngOnInit(): void {
-  // ✅ Aging dates init
-  const today        = new Date();
-  this.agingToDate   = today.toISOString().substring(0, 10);
-  const first        = new Date(today.getFullYear(), today.getMonth(), 1);
-  this.agingFromDate = first.toISOString().substring(0, 10);
+  ngOnInit(): void {
+    const today        = new Date();
+    this.agingToDate   = today.toISOString().substring(0, 10);
+    const first        = new Date(today.getFullYear(), today.getMonth(), 1);
+    this.agingFromDate = first.toISOString().substring(0, 10);
 
-  // existing...
-  this.checkPeriodLockForDate(this.payDate);
-  this.loadSuppliers();
-  this.loadBankAccounts();
-  this.loadPermission();
-  this.loadCurrencies();
-}
-
-  ngAfterViewInit(): void {
-    feather.replace();
+    this.checkPeriodLockForDate(this.payDate);
+    this.loadSuppliers();
+    this.loadBankAccounts();
+    this.loadPermission();
+    this.loadCurrencies();
   }
+
+  ngAfterViewInit(): void { feather.replace(); }
 
   getBaseCurrencyId(): number {
     return Number(localStorage.getItem('companyCurrencyId') || 0);
+  }
+
+  // ✅ Base SGD helper — fix amountBase = 0 bug
+  getAmountBaseSgd(p: any): number {
+    const base   = Number(p.amountBase ?? 0);
+    const amount = Number(p.amount     ?? 0);
+    const fx     = Number(p.fxRate     ?? 1);
+    // amountBase = 0 but has fxRate → recalculate
+    if (base === 0 && fx > 0 && fx !== 1 && amount > 0) {
+      return +(amount * fx).toFixed(4);
+    }
+    return base;
   }
 
   loadCurrencies(): void {
@@ -234,8 +233,9 @@ agingDetailBalanceBase = 0;
 
     const baseCurrId = this.getBaseCurrencyId();
     if (Number(this.paymentCurrencyId) === baseCurrId) {
-      this.payFxRate = 1;
-      // ✅ SGD select → INR amounts re-convert
+      this.payFxRate            = 1;
+      this.paymentCurrencyName  = sel.currencyName || sel.CurrencyName || 'SGD';
+      this.payCurrencyName      = this.paymentCurrencyName;
       this.amountEditedManually = false;
       this.recalcSelectedAmount();
     } else {
@@ -257,11 +257,9 @@ agingDetailBalanceBase = 0;
     ).subscribe({
       next: (res: any) => {
         this.fxRateLoading = false;
-        if (res?.isSuccess && res?.data?.rate) {
-          this.payFxRate = Number(res.data.rate);
-        } else {
-          this.payFxRate = Number(this.invoiceFxRate || 1);
-        }
+        this.payFxRate = (res?.isSuccess && res?.data?.rate)
+          ? Number(res.data.rate)
+          : Number(this.invoiceFxRate || 1);
         this.amountEditedManually = false;
         this.recalcSelectedAmount();
       },
@@ -310,122 +308,119 @@ agingDetailBalanceBase = 0;
   canDelete():  boolean { return this.permissionService.hasDelete(this.permission); }
   canApprove(): boolean { return this.permissionService.hasApprove(this.permission); }
 
-setTab(tab: ApTab): void {
-  this.activeTab = tab;
-  if (tab === 'invoices') this.loadInvoices();
-  if (tab === 'payments') {
-    this.showPaymentForm = false;
-    this.loadPayments();
-    this.cancelPayment();
-  }
-  if (tab === 'match')    this.loadMatch();
-  if (tab === 'advances') this.loadAdvances();
-  // ✅ add
-  if (tab === 'aging')    this.loadAgingSummary();
-}
-// =====================================================
-// ✅ AP AGING METHODS
-// =====================================================
-loadAgingSummary(): void {
-  this.agingIsLoading = true;
-
-  this.apSvc.getApAgingSummary(this.agingFromDate, this.agingToDate).subscribe({
-    next: (res: any) => {
-      this.agingRows      = Array.isArray(res) ? res : (res?.data || []);
-      this.agingIsLoading = false;
-      this.applyAgingFilter();
-    },
-    error: () => {
-      this.agingIsLoading   = false;
-      this.agingRows        = [];
-      this.agingFilteredRows = [];
-      this.recalcAgingTotals();
+  setTab(tab: ApTab): void {
+    this.activeTab = tab;
+    if (tab === 'invoices') this.loadInvoices();
+    if (tab === 'payments') {
+      this.showPaymentForm = false;
+      this.loadPayments();
+      this.cancelPayment();
     }
-  });
-}
+    if (tab === 'match')    this.loadMatch();
+    if (tab === 'advances') this.loadAdvances();
+    if (tab === 'aging')    this.loadAgingSummary();
+  }
 
-applyAgingFilter(): void {
-  this.agingFilteredRows = this.agingSelectedSupplierFilter == null
-    ? this.agingRows
-    : this.agingRows.filter(r => r.supplierId === this.agingSelectedSupplierFilter);
-  this.recalcAgingTotals();
-}
+  // =====================================================
+  // AP AGING METHODS
+  // =====================================================
+  loadAgingSummary(): void {
+    this.agingIsLoading = true;
+    this.apSvc.getApAgingSummary(this.agingFromDate, this.agingToDate).subscribe({
+      next: (res: any) => {
+        this.agingRows      = Array.isArray(res) ? res : (res?.data || []);
+        this.agingIsLoading = false;
+        this.applyAgingFilter();
+      },
+      error: () => {
+        this.agingIsLoading    = false;
+        this.agingRows         = [];
+        this.agingFilteredRows = [];
+        this.recalcAgingTotals();
+      }
+    });
+  }
 
-recalcAgingTotals(): void {
-  const src = this.agingFilteredRows || [];
-  this.agingTotalBase  = src.reduce((s,r) => s + (r.totalOutstandingBase ?? 0), 0);
-  this.aging0_30Base   = src.reduce((s,r) => s + (r.bucket0_30Base       ?? 0), 0);
-  this.aging31_60Base  = src.reduce((s,r) => s + (r.bucket31_60Base      ?? 0), 0);
-  this.aging61_90Base  = src.reduce((s,r) => s + (r.bucket61_90Base      ?? 0), 0);
-  this.aging90PlusBase = src.reduce((s,r) => s + (r.bucket90PlusBase     ?? 0), 0);
-}
+  applyAgingFilter(): void {
+    this.agingFilteredRows = this.agingSelectedSupplierFilter == null
+      ? this.agingRows
+      : this.agingRows.filter(r => r.supplierId === this.agingSelectedSupplierFilter);
+    this.recalcAgingTotals();
+  }
 
-onAgingFilterChange(): void {
-  this.loadAgingSummary();
-  this.agingIsDetailOpen = false;
-  this.agingDetailRows   = [];
-}
+  recalcAgingTotals(): void {
+    const src = this.agingFilteredRows || [];
+    this.agingTotalBase  = src.reduce((s,r) => s + (r.totalOutstandingBase ?? 0), 0);
+    this.aging0_30Base   = src.reduce((s,r) => s + (r.bucket0_30Base       ?? 0), 0);
+    this.aging31_60Base  = src.reduce((s,r) => s + (r.bucket31_60Base      ?? 0), 0);
+    this.aging61_90Base  = src.reduce((s,r) => s + (r.bucket61_90Base      ?? 0), 0);
+    this.aging90PlusBase = src.reduce((s,r) => s + (r.bucket90PlusBase     ?? 0), 0);
+  }
 
-onAgingSupplierFilterChange(): void {
-  this.applyAgingFilter();
-  this.agingIsDetailOpen = false;
-  this.agingDetailRows   = [];
-}
+  onAgingFilterChange(): void {
+    this.loadAgingSummary();
+    this.agingIsDetailOpen = false;
+    this.agingDetailRows   = [];
+  }
 
-openAgingDetail(row: any): void {
-  this.agingSelectedSupplierName = row.supplierName;
-  this.agingSelectedSupplierId   = row.supplierId;
-  this.agingIsDetailOpen         = true;
+  onAgingSupplierFilterChange(): void {
+    this.applyAgingFilter();
+    this.agingIsDetailOpen = false;
+    this.agingDetailRows   = [];
+  }
 
-  this.apSvc.getApAgingDetail(
-    row.supplierId,
-    this.agingFromDate,
-    this.agingToDate
-  ).subscribe({
-    next: (res: any) => {
-      this.agingDetailRows = Array.isArray(res) ? res : (res?.data || []);
-      this.recalcAgingDetailTotals();
-    },
-    error: () => { this.agingDetailRows = []; }
-  });
-}
+  openAgingDetail(row: any): void {
+    this.agingSelectedSupplierName = row.supplierName;
+    this.agingSelectedSupplierId   = row.supplierId;
+    this.agingIsDetailOpen         = true;
+    this.apSvc.getApAgingDetail(row.supplierId, this.agingFromDate, this.agingToDate)
+      .subscribe({
+        next: (res: any) => {
+          this.agingDetailRows = Array.isArray(res) ? res : (res?.data || []);
+          this.recalcAgingDetailTotals();
+        },
+        error: () => { this.agingDetailRows = []; }
+      });
+  }
 
-closeAgingDetail(): void {
-  this.agingIsDetailOpen         = false;
-  this.agingDetailRows           = [];
-  this.agingSelectedSupplierId   = null;
-  this.agingDetailOriginal       = 0;
-  this.agingDetailPaid           = 0;
-  this.agingDetailBalance        = 0;
-  this.agingDetailBalanceBase    = 0;
-}
+  closeAgingDetail(): void {
+    this.agingIsDetailOpen       = false;
+    this.agingDetailRows         = [];
+    this.agingSelectedSupplierId = null;
+    this.agingDetailOriginal     = 0;
+    this.agingDetailPaid         = 0;
+    this.agingDetailBalance      = 0;
+    this.agingDetailBalanceBase  = 0;
+  }
 
-recalcAgingDetailTotals(): void {
-  const src = this.agingDetailRows || [];
-  this.agingDetailOriginal    = src.reduce((s,d) => s + (d.originalAmount ?? 0), 0);
-  this.agingDetailPaid        = src.reduce((s,d) => s + (d.paidAmount     ?? 0), 0);
-  this.agingDetailBalance     = src.reduce((s,d) => s + (d.balance        ?? 0), 0);
-  this.agingDetailBalanceBase = src.reduce((s,d) => s + (d.balanceBase    ?? 0), 0);
-}
+  recalcAgingDetailTotals(): void {
+    const src = this.agingDetailRows || [];
+    this.agingDetailOriginal    = src.reduce((s,d) => s + (d.originalAmount ?? 0), 0);
+    this.agingDetailPaid        = src.reduce((s,d) => s + (d.paidAmount     ?? 0), 0);
+    this.agingDetailBalance     = src.reduce((s,d) => s + (d.balance        ?? 0), 0);
+    this.agingDetailBalanceBase = src.reduce((s,d) => s + (d.balanceBase    ?? 0), 0);
+  }
 
-exportAgingToExcel(): void {
-  const data = (this.agingFilteredRows || []).map((r, i) => ({
-    'Sl.No':       i + 1,
-    'Supplier':    r.supplierName,
-    '0-30 (SGD)':  +(r.bucket0_30Base   ?? 0).toFixed(2),
-    '31-60 (SGD)': +(r.bucket31_60Base  ?? 0).toFixed(2),
-    '61-90 (SGD)': +(r.bucket61_90Base  ?? 0).toFixed(2),
-    '90+ (SGD)':   +(r.bucket90PlusBase ?? 0).toFixed(2),
-    'Total (SGD)': +(r.totalOutstandingBase ?? 0).toFixed(2)
-  }));
-  if (!data.length) return;
+  exportAgingToExcel(): void {
+    const data = (this.agingFilteredRows || []).map((r, i) => ({
+      'Sl.No':       i + 1,
+      'Supplier':    r.supplierName,
+      '0-30 (SGD)':  +(r.bucket0_30Base   ?? 0).toFixed(2),
+      '31-60 (SGD)': +(r.bucket31_60Base  ?? 0).toFixed(2),
+      '61-90 (SGD)': +(r.bucket61_90Base  ?? 0).toFixed(2),
+      '90+ (SGD)':   +(r.bucket90PlusBase ?? 0).toFixed(2),
+      'Total (SGD)': +(r.totalOutstandingBase ?? 0).toFixed(2)
+    }));
+    if (!data.length) return;
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'AP Aging');
+    XLSX.writeFile(wb, `AP-Aging-${this.agingFromDate}-to-${this.agingToDate}.xlsx`);
+  }
 
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'AP Aging');
-  XLSX.writeFile(wb, `AP-Aging-${this.agingFromDate}-to-${this.agingToDate}.xlsx`);
-}
-
+  // =====================================================
+  // SUPPLIERS + BANK
+  // =====================================================
   loadSuppliers(): void {
     this.supplierSvc.GetAllSupplier().subscribe({
       next: (res: any) => {
@@ -446,6 +441,9 @@ exportAgingToExcel(): void {
     });
   }
 
+  // =====================================================
+  // INVOICES
+  // =====================================================
   loadInvoices(): void {
     forkJoin({
       invoices: this.apSvc.getApInvoices(),
@@ -551,7 +549,6 @@ exportAgingToExcel(): void {
   calcInvoiceTotals(): void {
     this.totalInvAmount = this.totalInvPaid = this.totalInvDebitNote =
     this.totalInvAdvance = this.totalInvOutstanding = 0;
-
     this.invoices.forEach(i => {
       this.totalInvAmount      += Number(i.grandTotal          || 0);
       this.totalInvPaid        += Number(i.paidAmount          || 0);
@@ -559,7 +556,6 @@ exportAgingToExcel(): void {
       this.totalInvAdvance     += Number(i.advanceAmount       || 0);
       this.totalInvOutstanding += Number(i.payableAfterAdvance || 0);
     });
-
     this.totalInvAmount      = Number(this.totalInvAmount.toFixed(2));
     this.totalInvPaid        = Number(this.totalInvPaid.toFixed(2));
     this.totalInvDebitNote   = Number(this.totalInvDebitNote.toFixed(2));
@@ -569,7 +565,6 @@ exportAgingToExcel(): void {
 
   buildSupplierGroups(): void {
     const map = new Map<number, SupplierInvoiceGroup>();
-
     this.invoices.forEach(inv => {
       const sid = Number(inv.supplierId || 0);
       if (!sid) return;
@@ -653,6 +648,9 @@ exportAgingToExcel(): void {
     this.invPage = p;
   }
 
+  // =====================================================
+  // PAYMENTS
+  // =====================================================
   loadPayments(): void {
     this.apSvc.getPayments().subscribe({
       next: (res: any) => { this.payments = res?.data || res || []; this.payListPage = 1; },
@@ -749,13 +747,11 @@ exportAgingToExcel(): void {
         this.supTotalNetOutstanding = Number(this.supTotalNetOutstanding.toFixed(2));
         this.supTotalPayable        = Number(this.supTotalPayable.toFixed(2));
 
-        // ✅ Invoice currency store
         const first              = this.supplierInvoicesAll[0];
         this.invoiceCurrencyId   = Number(first?.currencyId   || 0);
         this.invoiceCurrencyName = first?.currencyName        || '';
         this.invoiceFxRate       = Number(first?.fxRate       || 1);
 
-        // ✅ Default SGD payment
         this.setDefaultPaymentCurrency();
         this.recalcPaymentBase();
         this.recalcBankBalanceAfterPayment();
@@ -779,12 +775,11 @@ exportAgingToExcel(): void {
     this.recalcSelectedAmount();
   }
 
-  // ✅ KEY FIX: INR → SGD convert பண்ணு
   recalcSelectedAmount(): void {
     if (this.amountEditedManually) return;
 
-    const baseCurrId  = this.getBaseCurrencyId();
-    const isBaseCurr  = Number(this.paymentCurrencyId) === baseCurrId;
+    const baseCurrId = this.getBaseCurrencyId();
+    const isBaseCurr = Number(this.paymentCurrencyId) === baseCurrId;
 
     let totalSGD = 0;
     let totalINR = 0;
@@ -793,12 +788,9 @@ exportAgingToExcel(): void {
       if (!x.isSelected) return;
       const payable = Number(x.payableAfterAdvance || 0);
       const fx      = Number(x.fxRate || this.invoiceFxRate || 1);
-
       if (isBaseCurr) {
-        // ✅ SGD pay → INR amount × fxRate = SGD
         totalSGD += payable * fx;
       } else {
-        // ✅ INR pay → INR amount as-is
         totalINR += payable;
       }
     });
@@ -843,18 +835,16 @@ exportAgingToExcel(): void {
   }
 
   recalcPaymentBase(): void {
-    const fx  = Number(this.payFxRate || 1);
-    const amt = Number(this.payAmount || 0);
+    const fx         = Number(this.payFxRate || 1);
+    const amt        = Number(this.payAmount || 0);
     const baseCurrId = this.getBaseCurrencyId();
 
     if (Number(this.paymentCurrencyId) === baseCurrId) {
-      // SGD pay → base = amount (1:1)
       this.payAmountBase       = amt;
       this.payExchangeGainLoss = 0;
       return;
     }
 
-    // Foreign currency
     this.payAmountBase = +(amt * fx).toFixed(2);
 
     const invFx = Number(this.invoiceFxRate || 1);
@@ -894,12 +884,10 @@ exportAgingToExcel(): void {
     const baseCurrId = this.getBaseCurrencyId();
     const isBaseCurr = Number(this.paymentCurrencyId) === baseCurrId;
 
-    // ✅ Multi invoice → each invoice SGD amount calculate
     const buildPayload = (inv: any, amountInPayCurr: number) => {
-      const invFx    = Number(inv.fxRate || this.invoiceFxRate || 1);
-      const base     = isBaseCurr
-        ? amountInPayCurr                          // SGD pay → base = same
-        : +(amountInPayCurr * this.payFxRate).toFixed(2); // INR pay → × fxRate
+      const base = isBaseCurr
+        ? amountInPayCurr
+        : +(amountInPayCurr * this.payFxRate).toFixed(2);
 
       return {
         supplierInvoiceId:    inv.id,
@@ -914,11 +902,13 @@ exportAgingToExcel(): void {
         bankId:               this.selectedBankId,
         createdBy:            this.userId,
         countryId:            Number(localStorage.getItem('countryId') || 1),
-        fxRate:               isBaseCurr ? invFx : this.payFxRate,
+        // ✅ SGD → fxRate=1, INR → payFxRate
+        fxRate:               isBaseCurr ? 1 : this.payFxRate,
         amountBase:           base,
         currencyName:         this.paymentCurrencyName,
         currencyId:           this.paymentCurrencyId,
-        companyCurrencyId:    baseCurrId
+        companyCurrencyId:    baseCurrId,
+        exchangeGainLoss:     isBaseCurr ? 0 : this.payExchangeGainLoss
       };
     };
 
@@ -929,13 +919,12 @@ exportAgingToExcel(): void {
         buildPayload(selected[0], Number(this.payAmount || 0))
       )];
     } else {
-      // ✅ Multi: each invoice → SGD or INR amount calculate
       requests = selected.map(inv => {
         const payable = Number(inv.payableAfterAdvance || 0);
         const invFx   = Number(inv.fxRate || this.invoiceFxRate || 1);
         const amount  = isBaseCurr
-          ? Number((payable * invFx).toFixed(2))  // INR → SGD
-          : payable;                               // INR as-is
+          ? Number((payable * invFx).toFixed(2))
+          : payable;
         return this.apSvc.createPayment(buildPayload(inv, amount));
       });
     }
@@ -1053,6 +1042,9 @@ exportAgingToExcel(): void {
     this.payInvPage = p;
   }
 
+  // =====================================================
+  // ADVANCES
+  // =====================================================
   loadAdvances(): void {
     this.apSvc.getSupplierAdvances().subscribe({
       next: (res: any) => {
@@ -1101,6 +1093,9 @@ exportAgingToExcel(): void {
 
   openNewAdvance(): void { this.router.navigate(['/financial/ap-advance']); }
 
+  // =====================================================
+  // 3-WAY MATCH
+  // =====================================================
   loadMatch(): void {
     this.apSvc.getMatchList().subscribe({
       next: (res: any) => {
@@ -1147,13 +1142,16 @@ exportAgingToExcel(): void {
     this.matchPage = p;
   }
 
+  // =====================================================
+  // EMAIL + PERIOD LOCK
+  // =====================================================
   openEmailModal(inv: any): void {
     this.selectedInvoiceForEmail = inv;
     this.showEmailModal = true;
   }
 
   closeEmailModal(): void {
-    this.showEmailModal = false;
+    this.showEmailModal          = false;
     this.selectedInvoiceForEmail = null;
   }
 

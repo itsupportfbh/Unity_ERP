@@ -69,6 +69,11 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
   isGlPosted = false;
   gstLockMessage = '';
 
+  // ✅ FxRate + Base SGD
+fxRate        = 1;
+currencyId    = 0;
+currencyName  = 'SGD';
+subtotalBase  = 0;
   trackByLine = (_: number, r: CnLine) => r?.id ?? r?.doLineId ?? r?.itemId ?? _;
 
   constructor(
@@ -193,6 +198,7 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
         this.creditNoteDate = this.toDateInput(data.creditNoteDate);
         this.status = data.status ?? 1;
 
+        this.loadFxRateFromSi(this.siId);
         this.checkGstLock();
 
         this.lines = (data.lines ?? []).map((l: any) => ({
@@ -246,47 +252,75 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
     return this.formatYmdLocal(new Date());
   }
 
-  onDoChanged(): void {
-    if (this.isCreditNoteBlocked()) return;
+onDoChanged(): void {
+  if (this.isCreditNoteBlocked()) return;
 
-    const row = this.doList.find(d => +d.id === +this.doId!);
-    if (!row) {
-      this.clearHeaderFromDo();
-      return;
-    }
+  const row = this.doList.find(d => +d.id === +this.doId!);
+  if (!row) { this.clearHeaderFromDo(); return; }
 
-    this.doNumber = row.doNumber ?? row.DoNumber ?? '';
-    this.siNumber = row.siNumber ?? row.invoiceNo ?? row.InvoiceNo ?? row.SiNumber ?? '';
-    this.siId = +(row.siId ?? row.SiId ?? 0) || null;
-    this.customerId = row.customerId;
-    this.customerName = this.customers?.find(c => c.customerId == this.customerId)?.customerName ?? '';
+  this.doNumber    = row.doNumber    ?? row.DoNumber    ?? '';
+  this.siNumber    = row.siNumber    ?? row.invoiceNo   ?? row.InvoiceNo ?? row.SiNumber ?? '';
+  this.siId        = +(row.siId      ?? row.SiId        ?? 0) || null;
+  this.customerId  = row.customerId;
+  this.customerName = this.customers?.find(
+    c => c.customerId == this.customerId)?.customerName ?? '';
 
-    this.api.getLines(this.doId!, this.isEdit ? this.cnId : null).subscribe({
-      next: (res: any) => {
-        const raw = Array.isArray(res) ? res : [];
-        this.doPool = raw.map((r: any) => ({
-          doLineId: r.DoLineId ?? r.id ?? 0,
-          itemId: +r.ItemId,
-          itemName: r.ItemName,
-          uom: r.Uom ?? 'Pieces',
-          deliveredQty: +(r.QtyRemaining ?? r.QtyDelivered ?? r.Qty ?? 0),
-          unitPrice: +(r.UnitPrice ?? 0),
-          discountPct: +(r.DiscountPct ?? 0),
-          gstPct: +(r.GstPct ?? r.gstPct ?? 0),
-          tax: r.Tax ?? r.tax ?? 'STANDARD-RATED',
-          taxCodeId: r.TaxCodeId ?? null,
-          warehouseId: r.WarehouseId ?? null,
-          supplierId: r.SupplierId ?? null,
-          binId: r.BinId ?? null
-        })) as DoItem[];
+  // ✅ FxRate from SI → SO
+  this.loadFxRateFromSi(this.siId);
 
-        this.lines = [];
-        this.subtotal = 0;
-        this.refreshAvailable();
-      },
-      error: _ => Swal.fire({ icon: 'error', title: 'Failed', text: 'Load DO lines' })
-    });
-  }
+  this.api.getLines(this.doId!, this.isEdit ? this.cnId : null).subscribe({
+    next: (res: any) => {
+      const raw = Array.isArray(res) ? res : [];
+      this.doPool = raw.map((r: any) => ({
+        doLineId:    r.DoLineId ?? r.id ?? 0,
+        itemId:      +r.ItemId,
+        itemName:    r.ItemName,
+        uom:         r.Uom ?? 'Pieces',
+        deliveredQty: +(r.QtyRemaining ?? r.QtyDelivered ?? r.Qty ?? 0),
+        unitPrice:   +(r.UnitPrice    ?? 0),
+        discountPct: +(r.DiscountPct  ?? 0),
+        gstPct:      +(r.GstPct       ?? r.gstPct ?? 0),
+        tax:          r.Tax           ?? r.tax    ?? 'STANDARD-RATED',
+        taxCodeId:    r.TaxCodeId     ?? null,
+        warehouseId:  r.WarehouseId   ?? null,
+        supplierId:   r.SupplierId    ?? null,
+        binId:        r.BinId         ?? null
+      })) as DoItem[];
+
+      this.lines    = [];
+      this.subtotal = 0;
+      this.refreshAvailable();
+    },
+    error: _ => Swal.fire({ icon: 'error', title: 'Failed', text: 'Load DO lines' })
+  });
+}
+
+
+private loadFxRateFromSi(siId: number | null): void {
+  if (!siId) { this.resetFxRate(); return; }
+
+  this.api.getSiForFxRate(siId).subscribe({
+    next: (res: any) => {
+      const data = res?.data ?? res;
+      this.fxRate      = Number(data?.fxRate      ?? data?.FxRate      ?? 1);
+      this.currencyId  = Number(data?.currencyId  ?? data?.CurrencyId  ?? 0);
+      this.currencyName = data?.currencyName      ?? data?.CurrencyName ?? 'SGD';
+      this.recalcBase();
+    },
+    error: () => this.resetFxRate()
+  });
+}
+
+private resetFxRate(): void {
+  this.fxRate      = 1;
+  this.currencyId  = 0;
+  this.currencyName = 'SGD';
+  this.subtotalBase = 0;
+}
+
+private recalcBase(): void {
+  this.subtotalBase = +(this.subtotal * this.fxRate).toFixed(2);
+}
 
   private clearHeaderFromDo(): void {
     this.doNumber = null;
@@ -392,6 +426,7 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
 
   recalc(i: number): void {
     if (this.isCreditNoteBlocked(false)) return;
+    
 
     const r = this.lines[i];
     if (!r) { return; }
@@ -421,11 +456,13 @@ export class ReturnCreditcreateComponent implements OnInit, OnDestroy {
 
     r.lineNet = +lineNet.toFixed(2);
     this.subtotal = +this.lines.reduce((s, x) => s + (+x.lineNet || 0), 0).toFixed(2);
+    this.recalcBase();
   }
 
-  private recalcAll(): void {
-    this.lines.forEach((_, i) => this.recalc(i));
-  }
+ private recalcAll(): void {
+  this.lines.forEach((_, i) => this.recalc(i));
+  this.recalcBase(); // ✅ Base SGD update
+}
 
   save(status: number): void {
     if (this.isCreditNoteBlocked()) return;

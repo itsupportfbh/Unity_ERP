@@ -29,6 +29,13 @@ export class PeriodCloseFxComponent implements OnInit {
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
+  lastRunResult: {
+  runId:     number;
+  fxDate:    string;
+  totalGain: number;
+  totalLoss: number;
+  net:       number;
+} | null = null;
 
   constructor(
     private periodService: PeriodCloseService,
@@ -223,67 +230,131 @@ export class PeriodCloseFxComponent implements OnInit {
     });
   }
 
-  runFxRevaluation(): void {
-    if (!this.canCreate() && !this.canPost()) {
-      Swal.fire('Access denied', 'You do not have run GST computation permission.', 'warning');
-      return;
-    }
-
-    if (!this.selectedPeriodId || !this.fxRevalDate) {
-      Swal.fire('Missing data', 'Please choose a period and FX revaluation date.', 'warning');
-      return;
-    }
-
-    Swal.fire({
-      title: 'Run quarterly GST computation?',
-      text: 'This will compute GST for the selected period/date.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, run',
-      cancelButtonText: 'Cancel',
-      confirmButtonColor: '#2E5F73',
-      cancelButtonColor: '#6b7280',
-      reverseButtons: true
-    }).then(result => {
-      if (!result.isConfirmed) return;
-
-      this.isRunningFx = true;
-
-      this.periodService.runFxReval({
-        periodId: this.selectedPeriodId!,
-        fxDate: this.fxRevalDate
-      }).subscribe({
-        next: () => {
-          this.isRunningFx = false;
-          Swal.fire('Done', 'Quarterly GST computation completed successfully.', 'success');
-        },
-       error: err => {
-  console.error('Error running FX revaluation', err);
-  this.isRunningFx = false;
-
-  const msg =
-    err?.error?.message ||
-    err?.error?.title ||
-    err?.error ||
-    err?.message ||
-    'Error occurred while running FX revaluation.';
-
-  if (msg.toString().toLowerCase().includes('already completed')) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Already Completed',
-      text: 'FX Revaluation already completed for this period and date. You can run it only one time.',
-      confirmButtonColor: '#2E5F73'
-    });
+runFxRevaluation(): void {
+  if (!this.canCreate() && !this.canPost()) {
+    Swal.fire('Access denied',
+      'You do not have run permission.', 'warning');
     return;
   }
 
-  Swal.fire('Error', msg, 'error');
-}
-      });
-    });
+  if (!this.selectedPeriodId || !this.fxRevalDate) {
+    Swal.fire('Missing data',
+      'Please choose a period and FX revaluation date.', 'warning');
+    return;
   }
 
+  Swal.fire({
+    title: 'Run FX Revaluation?',
+    html: `
+      <div style="text-align:left;font-size:14px;line-height:1.8;">
+        <p>This will:</p>
+        <ul>
+          <li>Revalue all open AR/AP foreign currency balances</li>
+          <li>Calculate Unrealized Gain / Loss</li>
+          <li>Post GL Journal automatically</li>
+        </ul>
+      </div>`,
+    icon: 'question',
+    showCancelButton:   true,
+    confirmButtonText:  'Yes, Run',
+    cancelButtonText:   'Cancel',
+    confirmButtonColor: '#2E5F73',
+    cancelButtonColor:  '#6b7280',
+    reverseButtons:     true
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    this.isRunningFx = true;
+
+    this.periodService.runFxReval({
+      periodId: this.selectedPeriodId!,
+      fxDate:   this.fxRevalDate
+    }).subscribe({
+     next: (res: any) => {
+  this.isRunningFx = false;
+
+  const data      = res?.data ?? res ?? {};
+  const runId     = Number(data.runId     ?? 0);
+  const totalGain = Number(data.totalGain ?? 0);
+  const totalLoss = Number(data.totalLoss ?? 0);
+  const net       = totalGain - totalLoss;
+
+  this.lastRunResult = {
+    runId, fxDate: this.fxRevalDate,
+    totalGain, totalLoss, net
+  };
+
+  const gainHtml = totalGain > 0
+    ? `<p style="color:#28a745;margin:4px 0;">
+         FX Gain: <strong>${totalGain.toFixed(2)} SGD</strong>
+       </p>` : '';
+
+  const lossHtml = totalLoss > 0
+    ? `<p style="color:#dc3545;margin:4px 0;">
+         FX Loss: <strong>${totalLoss.toFixed(2)} SGD</strong>
+       </p>` : '';
+
+  const netHtml = (totalGain > 0 || totalLoss > 0)
+    ? `<p style="border-top:1px solid #eee;padding-top:8px;margin-top:8px;">
+         Net: <strong style="color:${net >= 0 ? '#28a745' : '#dc3545'}">
+           ${net >= 0 ? '+' : ''}${net.toFixed(2)} SGD
+         </strong>
+       </p>` : '';
+
+  const glHtml = runId > 0
+    ? `<p style="font-size:0.82rem;color:#6b7280;margin-top:6px;">
+         GL Journal:
+         <strong>FXR-${this.fxRevalDate?.replace(/-/g,'')}-${runId}</strong>
+         posted ✅
+       </p>` : '';
+
+  const noChangeHtml = (totalGain === 0 && totalLoss === 0)
+    ? `<p style="color:#6b7280;">
+         No FX differences found. No GL journal posted.
+       </p>` : '';
+
+  Swal.fire({
+    icon:  totalLoss > totalGain ? 'warning'
+         : totalGain > 0        ? 'success'
+         : 'info',
+    title: 'FX Revaluation Complete',
+    html: `
+      <div style="text-align:left;font-size:14px;line-height:1.8;">
+        ${gainHtml}
+        ${lossHtml}
+        ${netHtml}
+        ${glHtml}
+        ${noChangeHtml}
+      </div>`
+  });
+},
+
+      error: (err: any) => {
+        this.isRunningFx = false;
+
+        const msg = (
+          err?.error?.message ||
+          err?.error?.title   ||
+          err?.error          ||
+          err?.message        ||
+          'Error occurred while running FX revaluation.'
+        ).toString();
+
+        if (msg.toLowerCase().includes('already completed')) {
+          Swal.fire({
+            icon:               'warning',
+            title:              'Already Completed',
+            text:               'FX Revaluation already completed for this period and date. You can run it only once.',
+            confirmButtonColor: '#2E5F73'
+          });
+          return;
+        }
+
+        Swal.fire('Error', msg, 'error');
+      }
+    });
+  });
+}
   openTrialBalance(): void {
     if (!this.canView()) {
       Swal.fire('Access denied', 'You do not have view permission.', 'warning');

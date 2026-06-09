@@ -58,6 +58,11 @@
 
                         </ng-template>
                     </ngx-datatable-column>
+                    <ngx-datatable-column name="Date" [width]="120">
+  <ng-template ngx-datatable-cell-template let-row="row">
+    {{ row.stockTakeDate | date:'yyyy-MM-dd' }}
+  </ng-template>
+</ngx-datatable-column>
                     <ngx-datatable-column name="Warehouse" prop="warehouseName" [width]="120"></ngx-datatable-column>
                                 <ngx-datatable-column name="Supplier Name" prop="supplierName" [width]="200">
   <ng-template ngx-datatable-cell-template let-row="row">
@@ -108,12 +113,19 @@
                             </i>
 
 
-                            <button *ngIf="canEdit() && row.status === 2" class="btn btn-sm btn-success" title="Post inventory"
-                                [disabled]="row._posting" (click)="post(row)">
+                            <button
+                                *ngIf="row.status !== 3"
+                                class="btn btn-sm btn-success"
+                                title="Post inventory"
+                                [disabled]="row._posting || row.status === 3"
+                                (click)="post(row)">
                                 <i class="fas fa-upload"></i> Post
                             </button>
 
-                            <span *ngIf="row.status === 3" class="text-muted">Posted</span>
+                            <span *ngIf="row.status === 3"
+                                class="badge bg-dark">
+                                Posted
+                            </span>
 
                         </ng-template>
                     </ngx-datatable-column>
@@ -152,10 +164,10 @@
                             <th style="padding:10px 12px; text-align:left; font-weight:600;">Supplier</th>
                             <th style="padding:10px 12px; text-align:left; font-weight:600;">Item</th>
                             <th style="padding:10px 12px; text-align:left; font-weight:600;">Scan/Barcode</th>
-                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Available</th>
-                            <th style="padding:10px 12px; text-align:left; font-weight:600;white-space:nowrap">Accepted Qty</th>
-                            <th style="padding:10px 12px; text-align:left; font-weight:600;white-space:nowrap">Faulty Qty</th>
-                            <th style="padding:10px 12px; text-align:left; font-weight:600;white-space:nowrap">Total Qty</th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;">Available<small class="d-block" style="font-size:10px;color:#dbeafe;">Base UOM</small></th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;white-space:nowrap">Accepted Qty<small class="d-block" style="font-size:10px;color:#dbeafe;">Base UOM</small></th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;white-space:nowrap">Faulty Qty<small class="d-block" style="font-size:10px;color:#dbeafe;">Base UOM</small></th>
+                            <th style="padding:10px 12px; text-align:left; font-weight:600;white-space:nowrap">Total Qty<small class="d-block" style="font-size:10px;color:#dbeafe;">Base UOM</small></th>
                             <th style="padding:10px 12px; text-align:left; font-weight:600;">Variance</th>
                              <th style="padding:10px 12px; text-align:left; font-weight:600;">Reason</th>
                             <th style="padding:10px 12px; text-align:left; font-weight:600;">Remarks</th>
@@ -184,15 +196,19 @@
 
                             <td style="padding:10px 12px;">
                                 {{ l.onHand || 0 }}
+                                <small style="color:#6b7280;">{{ l.baseUomName || '' }}</small>
                             </td>
                             <td style="padding:10px 12px;">
                                 {{ l.countedQty || 0 }}
+                                <small style="color:#6b7280;">{{ l.baseUomName || '' }}</small>
                             </td>
                             <td style="padding:10px 12px;">
                                 {{ l.badCountedQty || 0 }}
+                                <small style="color:#6b7280;">{{ l.baseUomName || '' }}</small>
                             </td>
                             <td style="padding:10px 12px;">
                                 {{ l.totalQty || 0 }}
+                                <small style="color:#6b7280;">{{ l.baseUomName || '' }}</small>
                             </td>
                             <td style="padding:10px 12px;" [ngClass]="l.variance >= 0 ? 'text-success' : 'text-danger'">
                                 {{ l.variance }}

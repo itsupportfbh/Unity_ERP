@@ -17,6 +17,10 @@
         <!-- Header fields -->
         <div class="row g-3 align-items-end">
             <div class="col-sm-6 col-md-3">
+            <label class="form-label">Stock Take Date<span style="color:red">*</span></label>
+            <input type="date" class="form-control" [(ngModel)]="stockTakeDate" disabled>
+            </div>
+            <div class="col-sm-6 col-md-3">
                 <label class="form-label">Warehouse<span style="color:red">*</span></label>
                 <ng-select [items]="warehouseTypes" bindLabel="name" bindValue="id" [(ngModel)]="warehouseTypeId"
                     placeholder="Select warehouse"  class="w-100">

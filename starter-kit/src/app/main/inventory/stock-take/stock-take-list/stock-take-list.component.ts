@@ -215,7 +215,7 @@ export class StockTakeListComponent implements OnInit {
 
     // 2) normalize to numbers + safe strings
     const N = (v: any) => Number.isFinite(Number(v)) ? Number(v) : 0;
-
+debugger
     const lines = raw.map((l: any) => ({
       barcode: (l?.barcode ?? '-') as string,
       binId: (l?.binId),
@@ -225,6 +225,7 @@ export class StockTakeListComponent implements OnInit {
 
       itemName: l?.itemName ?? l?.name ?? this.getItemName(l?.itemId),
       onHand: N(l?.onHand ?? l?.available),
+      baseUomName: l?.baseUomName ?? '',
       countedQty: N(l?.countedQty),
       badCountedQty:N(l?.badCountedQty),
       totalQty: N(l?.countedQty)+N(l?.badCountedQty), 

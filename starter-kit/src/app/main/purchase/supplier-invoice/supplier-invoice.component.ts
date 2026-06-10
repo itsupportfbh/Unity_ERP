@@ -811,6 +811,8 @@ netPayableBase: number = 0; // ✅ SGD amount
       currencyId: v.currencyId != null ? Number(v.currencyId) : null,
       amount: Number(v.amount || 0),
       tax: Number(this.taxAmount || 0),
+      fxRate: Number(this.fxRate || 1),
+      baseAmount: Number(this.netPayableBase || 0),
       status: action === 'HOLD' ? 1 : 2,
       linesJson: JSON.stringify(this.lines.value),
       createdBy: this.userId,

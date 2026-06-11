@@ -1,4 +1,3 @@
-/* stock-cogs.component.scss */
 $c-brand: #2E5F73;
 
 .cogs-page {
@@ -6,7 +5,6 @@ $c-brand: #2E5F73;
   background: #f6f8fb;
 }
 
-/* ✅ Never allow cards/panels to exceed screen */
 .kpi-row,
 .filter-bar,
 .panel,
@@ -15,9 +13,6 @@ $c-brand: #2E5F73;
   min-width: 0;
 }
 
-/* =========================================================
-   KPI cards
-   ========================================================= */
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(180px, 1fr));
@@ -29,23 +24,32 @@ $c-brand: #2E5F73;
   background: #fff;
   border: 1px solid #e7edf5;
   border-radius: 16px;
-  padding: 14px 14px 12px;
+  padding: 14px;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
   position: relative;
 }
 
-.kpi-title { font-size: 13px; color: #607086; margin-bottom: 6px; }
+.kpi-title {
+  font-size: 13px;
+  color: #607086;
+  margin-bottom: 6px;
+}
 
 .kpi-value {
   font-size: 26px;
   font-weight: 800;
   color: #0f172a;
-  letter-spacing: 0.2px;
 }
 
-.kpi-sub { font-size: 12px; color: #7b8aa1; margin-top: 6px; }
+.kpi-sub {
+  font-size: 12px;
+  color: #7b8aa1;
+  margin-top: 6px;
+}
 
-.kpi-strong .kpi-value { color: $c-brand; }
+.kpi-strong .kpi-value {
+  color: $c-brand;
+}
 
 .kpi-pill {
   position: absolute;
@@ -59,9 +63,6 @@ $c-brand: #2E5F73;
   font-weight: 700;
 }
 
-/* =========================================================
-   Period Inputs
-   ========================================================= */
 .filter-bar {
   background: #fff;
   border: 1px solid #e7edf5;
@@ -72,14 +73,20 @@ $c-brand: #2E5F73;
 }
 
 .fb-head {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   margin-bottom: 12px;
 }
 
-.fb-title { font-size: 16px; font-weight: 900; color: #0f172a; }
-.fb-sub { font-size: 12px; color: #72839b; }
+.fb-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.fb-sub {
+  font-size: 12px;
+  color: #72839b;
+  margin-top: 4px;
+}
 
 .fb-fields {
   display: grid;
@@ -88,7 +95,11 @@ $c-brand: #2E5F73;
   align-items: end;
 }
 
-.lbl { font-size: 11px; color: #607086; margin-bottom: 6px; }
+.lbl {
+  font-size: 11px;
+  color: #607086;
+  margin-bottom: 6px;
+}
 
 .inp {
   width: 100%;
@@ -106,7 +117,6 @@ $c-brand: #2E5F73;
   box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.12);
 }
 
-/* Buttons */
 .btn {
   border: 0;
   border-radius: 12px;
@@ -115,23 +125,23 @@ $c-brand: #2E5F73;
   cursor: pointer;
 }
 
-.btn.primary { background: $c-brand; color: #fff; }
+.btn.primary {
+  background: $c-brand;
+  color: #fff;
+}
 
-.btn.primary:disabled { opacity: 0.65; cursor: not-allowed; }
+.btn.primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
 
 .fb-btn {
-  width: auto !important;
   min-width: 120px;
   height: 38px;
   padding: 6px 14px !important;
   font-size: 12px;
-  border-radius: 12px;
-  font-weight: 900;
 }
 
-/* =========================================================
-   COGS Summary Panel
-   ========================================================= */
 .panel {
   background: #fff;
   border: 1px solid #e7edf5;
@@ -140,41 +150,18 @@ $c-brand: #2E5F73;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 
-.panel.wide { padding: 16px 16px 12px; }
-
 .panel-head {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
-
-  flex-wrap: wrap; /* ✅ prevents overflow */
+  flex-wrap: wrap;
 }
-
-.panel-left { min-width: 0; }
 
 .panel-title {
   font-size: 16px;
   font-weight: 800;
   color: #0f172a;
-  margin-bottom: 4px;
-
-  white-space: nowrap;         /* ✅ no wrap */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.panel-sub {
-  font-size: 12px;
-  color: #72839b;
-  margin-top: 2px;
-
-  white-space: nowrap;         /* ✅ no wrap */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 
 .panel-tools {
@@ -182,12 +169,10 @@ $c-brand: #2E5F73;
   flex-direction: column;
   gap: 10px;
   align-items: flex-end;
-
   max-width: 100%;
-  width: 420px; /* ✅ stops pushing page */
+  width: 460px;
 }
 
-/* Search */
 .search {
   display: flex;
   align-items: center;
@@ -197,10 +182,7 @@ $c-brand: #2E5F73;
   padding: 10px 12px;
   background: #fff;
   width: 100%;
-  min-width: 240px;
 }
-
-.icon { font-size: 13px; opacity: 0.7; }
 
 .search-inp {
   border: 0;
@@ -209,14 +191,19 @@ $c-brand: #2E5F73;
   font-size: 13px;
 }
 
-/* Tabs */
+.tool-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .tabs {
   background: #f1f5f9;
   border-radius: 999px;
   padding: 4px;
   display: inline-flex;
   gap: 4px;
-  width: fit-content;
 }
 
 .tab {
@@ -236,21 +223,24 @@ $c-brand: #2E5F73;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
 }
 
-/* =========================================================
-   TABLE (✅ only table scrolls horizontally)
-   ========================================================= */
+.export-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ================= TABLE FIX ================= */
+
 .table-wrap {
   margin-top: 8px;
   width: 100%;
-  max-width: 100%;
-  overflow-x: auto;     /* ✅ horizontal scroll inside card */
+  overflow-x: hidden !important;
   overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
 }
 
 .cogs-table {
-  width: 100%;
-  min-width: 1200px;    /* ✅ forces scroll instead of expanding page */
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
   border-collapse: separate;
   border-spacing: 0;
   border-radius: 14px;
@@ -258,32 +248,82 @@ $c-brand: #2E5F73;
   overflow: hidden;
 }
 
+.cogs-table th,
+.cogs-table td {
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
 .cogs-table thead th {
-  background: $c-brand;
-  color: #fff;
-  font-weight: 900;
+  background: $c-brand !important;
+  color: #fff !important;
+  padding: 12px 10px;
   font-size: 12px;
-  text-align: left;
-  padding: 12px 12px;
-  border-bottom: 1px solid #e7edf5;
-  white-space: nowrap; /* ✅ no wrap in headers */
+  font-weight: 900;
+  white-space: nowrap;
+  border-bottom: 0;
 }
 
 .cogs-table tbody td {
-  padding: 12px 12px;
+  padding: 12px 10px;
   border-bottom: 1px solid #eef3f8;
   font-size: 13px;
   color: #0f172a;
-  white-space: nowrap; /* ✅ prevents odd wraps */
+  white-space: nowrap;
 }
 
-.cogs-table tbody tr:hover td { background: #fbfdff; }
+.cogs-table tbody tr:hover td {
+  background: #fbfdff;
+}
 
-.num { text-align: right; }
-.strong { font-weight: 900; }
+.cogs-table th:first-child,
+.cogs-table td:first-child {
+  text-align: center;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
 
-.item .name { font-weight: 900; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
-.muted { font-size: 12px; color: #7b8aa1; margin-top: 2px; }
+.item .name {
+  font-weight: 900;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted {
+  font-size: 12px;
+  color: #7b8aa1;
+  margin-top: 2px;
+}
+
+.num,
+.qty-cell,
+.text-end {
+  text-align: right !important;
+}
+
+.strong {
+  font-weight: 900;
+}
+
+.uom-cell {
+  text-align: left !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expand-btn {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #eef4f7;
+  color: $c-brand;
+  font-weight: 900;
+  cursor: pointer;
+}
 
 .empty {
   text-align: center;
@@ -291,7 +331,36 @@ $c-brand: #2E5F73;
   padding: 18px !important;
 }
 
-/* placeholders */
+/* ================= DETAILS ================= */
+
+.detail-row td {
+  background: #fbfdff !important;
+  white-space: normal;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 10px 18px;
+  padding: 14px 18px;
+  border: 1px solid #e7edf5;
+  border-radius: 12px;
+  background: #fff;
+  max-width: 520px;
+}
+
+.detail-grid div:nth-child(odd) {
+  color: #607086;
+  font-weight: 700;
+}
+
+.detail-grid div:nth-child(even) {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+/* ================= FORMULA ================= */
+
 .placeholder {
   border: 1px dashed #d7e1ee;
   border-radius: 14px;
@@ -299,25 +368,38 @@ $c-brand: #2E5F73;
   background: #fbfdff;
 }
 
-.ph-title { font-weight: 900; margin-bottom: 6px; }
-.ph-sub { color: #6b7f99; font-size: 13px; }
+.ph-title {
+  font-weight: 900;
+  margin-bottom: 6px;
+}
 
 .ph-box {
-  margin-top: 10px;
   background: #fff;
   border: 1px solid #e7edf5;
   border-radius: 14px;
   padding: 14px;
 }
 
-.eq { font-weight: 900; }
-.eq2 { margin-top: 8px; color: #475569; }
-.eq3 { margin-top: 8px; color: $c-brand; font-size: 18px; }
+.eq {
+  font-weight: 900;
+}
 
-/* =========================================================
-   ✅ Remove inner scroll (Vuexy wrappers) ONLY this page
-   ========================================================= */
-:host { display: block; }
+.eq2 {
+  margin-top: 8px;
+  color: #475569;
+}
+
+.eq3 {
+  margin-top: 8px;
+  color: $c-brand;
+  font-size: 18px;
+}
+
+/* ================= LAYOUT FIX ================= */
+
+:host {
+  display: block;
+}
 
 :host ::ng-deep .content-wrapper,
 :host ::ng-deep .content-body,
@@ -329,42 +411,39 @@ $c-brand: #2E5F73;
   overflow: visible !important;
 }
 
-:host ::ng-deep .ps,
-:host ::ng-deep .ps-content,
-:host ::ng-deep .ps-container,
-:host ::ng-deep perfect-scrollbar,
-:host ::ng-deep .perfect-scrollbar {
-  height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
-}
+/* ================= RESPONSIVE ================= */
 
-/* Responsive */
 @media (max-width: 1200px) {
-  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
-  .fb-fields { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
+  .fb-fields {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
 
-  .fb-btn { width: 100% !important; }
-
-  .panel-tools { width: 100%; }
+  .panel-tools {
+    width: 100%;
+    align-items: stretch;
+  }
 }
 
 @media (max-width: 640px) {
-  .kpi-row { grid-template-columns: 1fr; }
-  .fb-fields { grid-template-columns: 1fr; }
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
 
-  .panel-tools { align-items: stretch; }
-}
-.qty-main {
-  font-size: 14px;
-  font-weight: 700;
-  color: #172033;
-}
+  .fb-fields {
+    grid-template-columns: 1fr;
+  }
 
-.qty-sub {
-  margin-top: 3px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #7b8aa5;
+  .tool-row {
+    justify-content: flex-start;
+  }
+
+  .cogs-table thead th,
+  .cogs-table tbody td {
+    padding: 10px 6px;
+    font-size: 11px;
+  }
 }

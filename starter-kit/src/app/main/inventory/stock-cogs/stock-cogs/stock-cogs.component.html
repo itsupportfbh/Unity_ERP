@@ -1,201 +1,233 @@
-<div *ngIf="isPermissionLoaded; else loadingTemplate"  class="content-wrapper p-0">
-<!-- stock-cogs.component.html -->
-<div *ngIf="canView(); else noAccessTemplate" class="cogs-page">
+<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
+  <div *ngIf="canView(); else noAccessTemplate" class="cogs-page">
 
-  <!-- ✅ KPI ROW (4 boxes) -->
-  <div class="kpi-row">
-    <div class="kpi-card">
-      <div class="kpi-title">Opening Stock</div>
-      <div class="kpi-value">{{ money(report?.summary?.openingStock ?? 0) }}</div>
-      <div class="kpi-sub">From latest stocktake before period</div>
-    </div>
-
-    <div class="kpi-card">
-      <div class="kpi-title">Purchases</div>
-      <div class="kpi-value">{{ money(report?.summary?.purchases ?? 0) }}</div>
-      <div class="kpi-sub">GRN within selected dates</div>
-    </div>
-
-    <div class="kpi-card">
-      <div class="kpi-title">Closing Stock</div>
-      <div class="kpi-value">{{ money(report?.summary?.closingStock ?? 0) }}</div>
-      <div class="kpi-sub">Latest stocktake up to period end</div>
-    </div>
-
-    <div class="kpi-card kpi-strong">
-      <div class="kpi-title">COGS</div>
-      <div class="kpi-value">{{ money(report?.summary?.cogs ?? 0) }}</div>
-      <div class="kpi-pill">OK</div>
-    </div>
-  </div>
-
-  <!-- ✅ PERIOD INPUTS -->
-  <div class="filter-bar">
-    <div class="fb-head">
-      <div class="fb-title">Period Inputs</div>
-      <div class="fb-sub">Select period and optional warehouse then load.</div>
-    </div>
-
-    <div class="fb-fields">
-      <label class="fb-field">
-        <div class="lbl">From Date</div>
-        <input class="inp" type="date" [(ngModel)]="fromDate" />
-      </label>
-
-      <label class="fb-field">
-        <div class="lbl">To Date</div>
-        <input class="inp" type="date" [(ngModel)]="toDate" />
-      </label>
-
-      <label class="fb-field">
-      <div class="lbl">Warehouse</div>
-
-      <select class="inp" [(ngModel)]="warehouseId">
-        <option [ngValue]="null">-- Select Warehouse --</option>
-        <option *ngFor="let w of warehouseList" [ngValue]="w.id">
-          {{ w.name }}
-        </option>
-      </select>
-    </label>
-
-      <button class="btn primary fb-btn" (click)="load()" [disabled]="loading">
-        {{ loading ? 'Loading...' : 'Load COGS' }}
-      </button>
-    </div>
-  </div>
-
-  <!-- ✅ COGS SUMMARY -->
-  <div class="panel wide">
-    <div class="panel-head">
-      <div class="panel-left">
-        <div class="panel-title">COGS Summary</div>
-        <div class="panel-sub">COGS computed using: (Opening + Purchases) - Closing</div>
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-title">Opening Stock</div>
+        <div class="kpi-value">{{ money(report?.summary?.openingStock ?? 0) }}</div>
+        <div class="kpi-sub">Before period</div>
       </div>
 
-      <div class="panel-tools">
-        <div class="search">
-          <span class="icon">🔍</span>
-          <input class="search-inp" [(ngModel)]="search" placeholder="Search item..." />
-        </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Purchases</div>
+        <div class="kpi-value">{{ money(report?.summary?.purchases ?? 0) }}</div>
+        <div class="kpi-sub">GRN in selected period</div>
+      </div>
 
-        <div class="tabs">
-          <button class="tab" [class.active]="activeTab==='table'" (click)="setTab('table')">Table</button>
-          <!-- <button class="tab" [class.active]="activeTab==='chart'" (click)="setTab('chart')">Chart</button> -->
-          <button class="tab" [class.active]="activeTab==='formula'" (click)="setTab('formula')">Formula</button>
-        </div>
-        <div class="export-actions">
-        <button class="btn primary" type="button" (click)="exportToPdf()" [disabled]="!rows?.length">
-          PDF
-        </button>
-        <button class="btn primary" type="button" (click)="exportToExcel()" [disabled]="!rows?.length">
-          Excel
+      <div class="kpi-card">
+        <div class="kpi-title">Closing Stock</div>
+        <div class="kpi-value">{{ money(report?.summary?.closingStock ?? 0) }}</div>
+        <div class="kpi-sub">Stock up to period end</div>
+      </div>
+
+      <div class="kpi-card kpi-strong">
+        <div class="kpi-title">COGS</div>
+        <div class="kpi-value">{{ money(report?.summary?.cogs ?? 0) }}</div>
+        <div class="kpi-pill">OK</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="fb-head">
+        <div class="fb-title">Inventory COGS / Consumption Report</div>
+        <div class="fb-sub">Opening + Purchases - Closing = COGS</div>
+      </div>
+
+      <div class="fb-fields">
+        <label class="fb-field">
+          <div class="lbl">From Date</div>
+          <input class="inp" type="date" [(ngModel)]="fromDate" />
+        </label>
+
+        <label class="fb-field">
+          <div class="lbl">To Date</div>
+          <input class="inp" type="date" [(ngModel)]="toDate" />
+        </label>
+
+        <label class="fb-field">
+          <div class="lbl">Warehouse</div>
+          <select class="inp" [(ngModel)]="warehouseId">
+            <option [ngValue]="null">All Warehouses</option>
+            <option *ngFor="let w of warehouseList" [ngValue]="w.id">
+              {{ w.name }}
+            </option>
+          </select>
+        </label>
+
+        <button class="btn primary fb-btn" (click)="load()" [disabled]="loading">
+          {{ loading ? 'Loading...' : 'Load COGS' }}
         </button>
       </div>
-      </div>
     </div>
 
-    <!-- ✅ TABLE (horizontal scroll only here) -->
-    <div *ngIf="activeTab==='table'" class="table-wrap">
-      <table class="cogs-table">
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th class="num">Opening Qty</th>
-            <th class="num">Opening Unit Price</th>
-            <th class="num">Total Opening</th>
-            <th class="num">Purchase Qty</th>
-            <th class="num">Purchase Unit Price</th>
-            <th class="num">Total Purchases</th>
-            <th class="num">Closing Qty</th>
-            <th class="num">Closing Unit Price</th>
-            <th class="num">Total Closing</th>
-            <th class="num">COGS</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr *ngFor="let r of rows">
-            <td class="item">
-              <div class="name">
-                {{ r.itemName || r.itemText || r.itemCode || ('Item #' + r.itemId) }}
-              </div>
-              <div class="muted">
-                #{{ r.itemId }}
-                <span *ngIf="r.itemCode"> • {{ r.itemCode }}</span>
-              </div>
-            </td>
-
-            <td class="num">
-              <div class="qty-main">{{ r.openingQty }} {{ r.purchaseUomName }}</div>
-              <div class="qty-sub">Base-{{ r.openingBaseQty }} {{ r.baseUomName }}</div>
-            </td>
-            <td class="num">{{ money(unitPrice(r.openingValue, r.openingQty)) }}</td>
-            <td class="num">{{ money(r.openingValue) }}</td>
-
-            <td class="num">
-             <div class="qty-main">{{ r.purchaseQty }} {{ r.purchaseUomName }}</div>
-             <div class="qty-sub">Base-{{ r.purchaseBaseQty }} {{ r.baseUomName }}</div>
-            </td>
-            <td class="num">{{ money(unitPrice(r.purchaseValue, r.purchaseQty)) }}</td>
-            <td class="num">{{ money(r.purchaseValue) }}</td>
-
-            <td class="num">
-            <div class="qty-main">{{ r.closingQty }} {{ r.purchaseUomName }}</div>
-            <div class="qty-sub">Base-{{ r.closingBaseQty }} {{ r.baseUomName }}</div>
-            </td>
-            <td class="num">{{ money(unitPrice(r.closingValue, r.closingQty)) }}</td>
-            <td class="num">{{ money(r.closingValue) }}</td>
-
-            <td class="num strong">{{ money(r.cogsValue) }}</td>
-          </tr>
-
-          <tr *ngIf="!(rows?.length)">
-            <td colspan="11" class="empty">No rows</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- CHART -->
-    <div *ngIf="activeTab==='chart'" class="placeholder">
-      <div class="ph-title">Chart View</div>
-      <div class="ph-sub">You can plug in Chart.js later (Opening / Purchases / Closing / COGS).</div>
-    </div>
-
-    <!-- FORMULA -->
-    <div *ngIf="activeTab==='formula'" class="placeholder">
-      <div class="ph-title">Formula</div>
-      <div class="ph-box">
-        <div class="eq">COGS = (Opening Stock + Purchases) − Closing Stock</div>
-
-        <div class="eq2">
-          = ({{ money(report?.summary?.openingStock ?? 0) }} + {{ money(report?.summary?.purchases ?? 0) }})
-          − {{ money(report?.summary?.closingStock ?? 0) }}
+    <div class="panel wide">
+      <div class="panel-head">
+        <div class="panel-left">
+          <div class="panel-title">COGS Summary</div>
+          <!-- <div class="panel-sub">
+            Click item to view Opening, Purchase, Closing and Consumed details
+          </div> -->
         </div>
 
-        <div class="eq3 strong">= {{ money(report?.summary?.cogs ?? 0) }}</div>
+        <div class="panel-tools">
+          <div class="search">
+            <span class="icon">🔍</span>
+            <input class="search-inp" [(ngModel)]="search" placeholder="Search item..." />
+          </div>
+
+          <div class="tool-row">
+            <div class="tabs">
+              <button class="tab" [class.active]="activeTab==='table'" (click)="setTab('table')">
+                Table
+              </button>
+              <button class="tab" [class.active]="activeTab==='formula'" (click)="setTab('formula')">
+                Formula
+              </button>
+            </div>
+
+            <div class="export-actions">
+              <button class="btn primary" type="button" (click)="exportToPdf()" [disabled]="!rows?.length || !canExport()">
+                PDF
+              </button>
+              <button class="btn primary" type="button" (click)="exportToExcel()" [disabled]="!rows?.length || !canExport()">
+                Excel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="activeTab==='table'" class="table-wrap">
+          <table class="cogs-table">
+ <colgroup>
+    <col style="width:4%">
+    <col style="width:28%">
+    <col style="width:12%">
+    <col style="width:17%">
+    <col style="width:12%">
+    <col style="width:13%">
+    <col style="width:14%">
+</colgroup>
+
+  <thead>
+    <tr>
+      <th></th>
+      <th>Item</th>
+      <th class="text-end">Closing Qty</th>
+      <th>UOM</th>
+      <th class="text-end">Avg Cost</th>
+      <th class="text-end">Total Closing</th>
+      <th class="text-end">COGS</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <ng-container *ngFor="let r of rows">
+      <tr>
+        <td>
+          <button class="expand-btn" type="button" (click)="toggleRow(r.itemId)">
+            {{ expandedRow === r.itemId ? '−' : '+' }}
+          </button>
+        </td>
+
+        <td class="item">
+          <div class="name">
+            {{ r.itemName || r.itemText || r.itemCode || ('Item #' + r.itemId) }}
+          </div>
+          <div class="muted">
+            #{{ r.itemId }}
+            <span *ngIf="r.itemCode"> • {{ r.itemCode }}</span>
+          </div>
+        </td>
+
+        <td class="text-end qty-cell">
+          {{ formatQty(r.closingQty) }}
+        </td>
+
+        <td class="uom-cell">
+          {{ r.purchaseUomName || '-' }}
+        </td>
+
+        <td class="text-end num">
+          {{ money(r.avgCost) }}
+        </td>
+        <td class="text-end num strong">
+          {{ money(r.closingValue) }}
+        </td>
+        <td class="text-end num strong">
+          {{ money(r.cogsValue) }}
+        </td>
+      </tr>
+
+      <tr *ngIf="expandedRow === r.itemId" class="detail-row">
+        <td colspan="7">
+          <div class="detail-grid">
+            <div>Opening Qty</div>
+            <div>{{ formatQty(r.openingQty) }} {{ r.purchaseUomName }}</div>
+
+            <div>Purchase Qty</div>
+            <div>{{ formatQty(r.purchaseQty) }} {{ r.purchaseUomName }}</div>
+
+            <div>Closing Qty</div>
+            <div>{{ formatQty(r.closingQty) }} {{ r.purchaseUomName }}</div>
+
+            <div>Consumed Qty</div>
+            <div>{{ formatQty(r.issueQty) }} {{ r.purchaseUomName }}</div>
+
+            <div>Avg Cost</div>
+            <div>{{ money(r.avgCost) }}</div>
+
+            <div>Opening Value</div>
+            <div>{{ money(r.openingValue) }}</div>
+
+            <div>Purchase Value</div>
+            <div>{{ money(r.purchaseValue) }}</div>
+
+            <div>Closing Value</div>
+            <div>{{ money(r.closingValue) }}</div>
+
+            <div>COGS</div>
+            <div class="strong">{{ money(r.cogsValue) }}</div>
+          </div>
+        </td>
+      </tr>
+    </ng-container>
+
+    <tr *ngIf="!(rows?.length)">
+      <td colspan="7" class="empty">No rows</td>
+    </tr>
+  </tbody>
+</table>
+      </div>
+
+      <div *ngIf="activeTab==='formula'" class="placeholder">
+        <div class="ph-title">Formula</div>
+        <div class="ph-box">
+          <div class="eq">COGS = Opening Stock + Purchases - Closing Stock</div>
+          <div class="eq2">
+            = {{ money(report?.summary?.openingStock ?? 0) }}
+            + {{ money(report?.summary?.purchases ?? 0) }}
+            - {{ money(report?.summary?.closingStock ?? 0) }}
+          </div>
+          <div class="eq3 strong">
+            = {{ money(report?.summary?.cogs ?? 0) }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
-</div>
+
 <ng-template #loadingTemplate>
   <div class="content-wrapper p-0">
-    <div class="content-body">
-      <div class="alert alert-info mt-2">
-        Loading permission...
-      </div>
-    </div>
+    <div class="alert alert-info mt-2">Loading permission...</div>
   </div>
 </ng-template>
 
 <ng-template #noAccessTemplate>
   <div class="content-wrapper p-0">
-    <div class="content-body">
-      <div class="alert alert-warning mt-2">
-        You do not have permission to view this screen.
-      </div>
+    <div class="alert alert-warning mt-2">
+      You do not have permission to view this screen.
     </div>
   </div>
 </ng-template>
-

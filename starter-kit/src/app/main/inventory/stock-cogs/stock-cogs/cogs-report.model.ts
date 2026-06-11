@@ -1,37 +1,40 @@
 export interface CogsSummary {
-  periodFrom: string;
-  periodTo: string;
-  openingStock: number;
-  purchases: number;
-  closingStock: number;
-  goodsAvailable: number;
-  cogs: number;
+  periodFrom?: string;
+  periodTo?: string;
+  openingStock?: number;
+  purchases?: number;
+  closingStock?: number;
+  goodsAvailable?: number;
+  cogs?: number;
 }
 
 export interface CogsItemRow {
   itemId: number;
   itemCode?: string;
   itemName?: string;
+  itemText?: string;
 
-  openingQty: number;
-  openingBaseQty: number;
-  openingPrice: number;
-  openingValue: number;
+  baseUomName?: string;
+  purchaseUomName?: string;
 
-  purchaseQty: number;
-  purchaseBaseQty: number;
-  purchasePrice: number;
-  purchaseValue: number;
+  openingBaseQty?: number;
+  openingQty?: number;
 
-  closingQty: number;
-  closingBaseQty: number;
-  closingPrice: number;
-  closingValue: number;
+  purchaseBaseQty?: number;
+  purchaseQty?: number;
 
-  cogsValue: number;
+  closingBaseQty?: number;
+  closingQty?: number;
 
-  baseUomName: string;
-  purchaseUomName: string;
+  issueBaseQty?: number;
+  issueQty?: number;
+
+  avgCost?: number;
+
+  openingValue?: number;
+  purchaseValue?: number;
+  closingValue?: number;
+  cogsValue?: number;
 }
 
 export interface CogsReport {

@@ -8,7 +8,8 @@ import autoTable from 'jspdf-autotable';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
 import Swal from 'sweetalert2';
 
-type TabKey = 'table' | 'chart' | 'formula';
+type TabKey = 'table' | 'formula';
+
 type WarehouseDto = {
   id: number;
   name: string;
@@ -20,39 +21,43 @@ type WarehouseDto = {
   styleUrls: ['./stock-cogs.component.scss']
 })
 export class StockCogsComponent implements OnInit {
-
+  expandedRow: number | null = null;
   loading = false;
-
-  // UI state
   activeTab: TabKey = 'table';
   search = '';
 
-  // Inputs
   fromDate = this.toISODate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   toDate = this.toISODate(new Date());
+
   warehouseList: WarehouseDto[] = [];
   warehouseId: number | null = null;
   binId?: number;
 
-  // Data
   userId: any;
   report?: CogsReport;
+
   functionId = 'stockcogs';
-    
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
+  
 
-  constructor(private api: CogsReportService, private whApi: WarehouseService,
+  constructor(
+    private api: CogsReportService,
+    private whApi: WarehouseService,
     private permissionService: PermissionService
   ) {
-    this.userId = localStorage.getItem('id');
+    this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
   }
 
   ngOnInit(): void {
-  this.loadPermission();
+    this.loadPermission();
   }
+
+  toggleRow(itemId: number): void {
+  this.expandedRow = this.expandedRow === itemId ? null : itemId;
+}
   loadPermission(): void {
     if (!this.userId || this.userId <= 0) {
       this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -74,20 +79,14 @@ export class StockCogsComponent implements OnInit {
         this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
-        console.log('Permission:', this.permission);
-        console.log('Can Export:', this.canExport());
 
         if (this.canView()) {
-            this.loadWarehouses(() => {
-            this.load();
-            });
+          this.loadWarehouses(() => this.load());
         } else {
-           this.report = {} as CogsReport;
-          // this.isDisplay = false;
+          this.report = {} as CogsReport;
         }
       },
-      error: (err) => {
-        console.error('Permission load error:', err);
+      error: () => {
         this.permission = this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
@@ -117,46 +116,52 @@ export class StockCogsComponent implements OnInit {
   canDelete(): boolean {
     return this.permissionService.hasDelete(this.permission);
   }
+
   canExport(): boolean {
     return this.permissionService.hasExport(this.permission);
   }
 
   load(): void {
     if (!this.fromDate || !this.toDate) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Date Required',
-      text: 'Please select From Date and To Date.',
-      confirmButtonColor: '#0e3a4c'
-    });
-    return;
-  }
+      Swal.fire({
+        icon: 'warning',
+        title: 'Date Required',
+        text: 'Please select From Date and To Date.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
-  if (new Date(this.fromDate) > new Date(this.toDate)) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Invalid Date Range',
-      text: 'From Date should be less than or equal to To Date.',
-      confirmButtonColor: '#0e3a4c'
-    });
-    return;
-  }
+    if (new Date(this.fromDate) > new Date(this.toDate)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Date Range',
+        text: 'From Date should be less than or equal to To Date.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     this.loading = true;
 
-    this.api.getCogs(this.fromDate, this.toDate, this.warehouseId ?? undefined, this.binId).subscribe({
+    this.api.getCogs(
+      this.fromDate,
+      this.toDate,
+      this.warehouseId ?? undefined,
+      this.binId
+    ).subscribe({
       next: (res: any) => {
-        this.report = res?.data;
+        this.report = res?.data || res;
 
-        // optional: remove dummy row
         if (this.report?.items?.length) {
-          this.report.items = this.report.items.filter(x => (x?.itemId ?? 0) > 0);
+          this.report.items = this.report.items.filter(x => Number(x?.itemId || 0) > 0);
         }
 
-          if (!this.report?.items?.length) {
+        if (!this.report?.items?.length) {
           Swal.fire({
             icon: 'info',
             title: 'No Data',
-            text: 'No COGS data found for the selected date and warehouse.',
+            text: 'No COGS data found for selected filter.',
             confirmButtonColor: '#0e3a4c'
           });
         }
@@ -166,358 +171,278 @@ export class StockCogsComponent implements OnInit {
       error: (err) => {
         console.error(err);
         this.loading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to load COGS report.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }
+
   private loadWarehouses(done?: () => void): void {
-  this.whApi.getWarehouse().subscribe({
-    next: (res: any) => {
-      this.warehouseList = (res?.data || res || [])
-        .map((x: any) => ({
-          id: Number(x.id ?? x.Id ?? 0),
-          name: String(x.name ?? x.Name ?? '')
-        }))
-        .filter((x: WarehouseDto) => x.id > 0);
+    this.whApi.getWarehouse().subscribe({
+      next: (res: any) => {
+        this.warehouseList = (res?.data || res || [])
+          .map((x: any) => ({
+            id: Number(x.id ?? x.Id ?? 0),
+            name: String(x.name ?? x.Name ?? '')
+          }))
+          .filter((x: WarehouseDto) => x.id > 0);
 
-      this.setDefaultWarehouseIfNeeded();
-      done?.();
-    },
-    error: () => {
-      this.warehouseList = [];
-      this.warehouseId = null;
-      done?.();
+        this.setDefaultWarehouseIfNeeded();
+        done?.();
+      },
+      error: () => {
+        this.warehouseList = [];
+        this.warehouseId = null;
+        done?.();
+      }
+    });
+  }
+
+  private setDefaultWarehouseIfNeeded(): void {
+    if (this.warehouseId && this.warehouseId > 0) return;
+
+    const userWh = Number(localStorage.getItem('defaultWarehouseId') || 0);
+    if (userWh > 0) {
+      this.warehouseId = userWh;
+      return;
     }
-  });
-}
 
-private setDefaultWarehouseIfNeeded(): void {
-  if (this.warehouseId && this.warehouseId > 0) return;
-
-  const userWh = Number(localStorage.getItem('defaultWarehouseId') || 0);
-  if (userWh > 0) {
-    this.warehouseId = userWh;
-    return;
+    this.warehouseId = this.warehouseList.length > 0 ? this.warehouseList[0].id : null;
   }
 
-  if (this.warehouseList.length > 0) {
-    this.warehouseId = this.warehouseList[0].id;
-  } else {
-    this.warehouseId = null;
-  }
-}
-
-  setTab(t: TabKey) {
+  setTab(t: TabKey): void {
     this.activeTab = t;
   }
 
   get rows(): CogsItemRow[] {
     const items = this.report?.items ?? [];
     const q = (this.search || '').trim().toLowerCase();
+
     if (!q) return items;
 
-    return items.filter(x =>
-      (x.itemName || '').toLowerCase().includes(q) ||
-      String(x.itemId).includes(q)
+    return items.filter((x: any) =>
+      String(x.itemName || '').toLowerCase().includes(q) ||
+      String(x.itemCode || '').toLowerCase().includes(q) ||
+      String(x.itemId || '').includes(q)
     );
   }
+
   get selectedWarehouseName(): string {
-  if (this.warehouseId == null) return 'All Warehouses';
-  const wh = this.warehouseList.find(x => x.id === this.warehouseId);
-  return wh?.name || `Warehouse ${this.warehouseId}`;
-}
-
-money(n?: number) {
-  let v = Number(n ?? 0);
-
-  // fix -0.00 display
-  if (Math.abs(v) < 0.005) {
-    v = 0;
+    if (this.warehouseId == null) return 'All Warehouses';
+    const wh = this.warehouseList.find(x => x.id === this.warehouseId);
+    return wh?.name || `Warehouse ${this.warehouseId}`;
   }
 
-  return `$${v.toLocaleString('en-SG', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })}`;
-}
-  private toISODate(d: Date) {
+  money(n?: number): string {
+    let v = Number(n ?? 0);
+    if (Math.abs(v) < 0.005) v = 0;
+
+    return `$${v.toLocaleString('en-SG', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  }
+
+  formatQty(n?: number): string {
+    const v = Number(n ?? 0);
+    if (Math.abs(v) < 0.0005) return '0';
+
+    return v.toLocaleString('en-SG', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 4
+    });
+  }
+
+  qtyExportText(qty?: number, uom?: string): string {
+    return `${this.formatQty(qty)} ${uom || ''}`.trim();
+  }
+
+  private toISODate(d: Date): string {
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
   }
-  unitPrice(value: number, qty: number): number {
-  const q = Number(qty || 0);
-  const v = Number(value || 0);
-  if (!q) return 0;
-  return v / q;
-}
-formatQty(n?: number): string {
-  const v = Number(n ?? 0);
 
-  if (Math.abs(v) < 0.0005) return '0';
-
-  return v.toLocaleString('en-SG', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 4
-  });
-}
-
-qtyWithUom(qty?: number, uom?: string): string {
-  return `${this.formatQty(qty)} ${uom || ''}`.trim();
-}
-
-qtyExportText(
-  mainQty?: number,
-  mainUom?: string,
-  baseQty?: number,
-  baseUom?: string
-): string {
-  const main = this.qtyWithUom(mainQty, mainUom);
-  return `${main} | Base: ${this.formatQty(baseQty)} ${baseUom || ''}`.trim();
-}
 private buildCogsExportRows(): any[] {
-  const data = this.rows || [];
-
-  return data.map((r: any, idx: number) => ({
+  return (this.rows || []).map((r: any, idx: number) => ({
     'Sl. No': idx + 1,
     'Item Code': r.itemCode || '',
     'Item Name': r.itemName || r.itemText || '',
-
-    'Opening Qty': this.qtyExportText(
-      r.openingQty,
-      r.purchaseUomName,
-      r.openingBaseQty,
-      r.baseUomName
-    ),
-    'Opening Unit Price': Number(r.openingPrice ?? this.unitPrice(r.openingValue, r.openingQty) ?? 0),
-    'Total Opening': Number(r.openingValue || 0),
-
-    'Purchase Qty': this.qtyExportText(
-      r.purchaseQty,
-      r.purchaseUomName,
-      r.purchaseBaseQty,
-      r.baseUomName
-    ),
-    'Purchase Unit Price': Number(r.purchasePrice ?? this.unitPrice(r.purchaseValue, r.purchaseQty) ?? 0),
-    'Total Purchase': Number(r.purchaseValue || 0),
-
-    'Closing Qty': this.qtyExportText(
-      r.closingQty,
-      r.purchaseUomName,
-      r.closingBaseQty,
-      r.baseUomName
-    ),
-    'Closing Unit Price': Number(r.closingPrice ?? this.unitPrice(r.closingValue, r.closingQty) ?? 0),
-    'Total Closing': Number(r.closingValue || 0),
-
+    'Opening Qty': Number(r.openingQty || 0),
+    'Purchase Qty': Number(r.purchaseQty || 0),
+    'Consumed Qty': Number(r.issueQty || 0),
+    'Closing Qty': Number(r.closingQty || 0),
+    'UOM': r.purchaseUomName || '',
+    'Avg Cost': Number(r.avgCost || 0),
+    'Closing Value': Number(r.closingValue || 0),
     'COGS': Number(r.cogsValue || 0)
   }));
 }
 
-exportToExcel(): void {
-  const data = this.buildCogsExportRows();
-  if (!data.length) return;
+  exportToExcel(): void {
+    // const data = this.buildCogsExportRows();
+    // if (!data.length) return;
 
-  const from = this.fromDate || 'all';
-  const to = this.toDate || 'all';
-  const whName = this.selectedWarehouseName;
-  const safeWhName = whName.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-');
+    const excelData = (this.rows || []).map((r: any, idx: number) => ({
+  'Sl. No': idx + 1,
+  'Item Code': r.itemCode || '',
+  'Item Name': r.itemName || r.itemText || '',
+  'Closing Qty': Number(r.closingQty || 0),
+  'UOM': r.purchaseUomName || '',
+  'Avg Cost': Number(r.avgCost || 0),
+  'Closing Value': Number(r.closingValue || 0),
+  'COGS': Number(r.cogsValue || 0)
+}));
 
-  const summary = [
-    {
-      'From Date': from,
-      'To Date': to,
-      'Warehouse': whName,
-      'Opening Stock': Number(this.report?.summary?.openingStock || 0),
-      'Purchases': Number(this.report?.summary?.purchases || 0),
-      'Closing Stock': Number(this.report?.summary?.closingStock || 0),
-      'COGS': Number(this.report?.summary?.cogs || 0)
-    }
-  ];
+    const from = this.fromDate || 'all';
+    const to = this.toDate || 'all';
+    const whName = this.selectedWarehouseName;
+    const safeWhName = whName.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-');
 
-  const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
 
-  // Summary sheet
-  const wsSummary: XLSX.WorkSheet = XLSX.utils.json_to_sheet(summary);
+   
 
-  // column widths
-  wsSummary['!cols'] = [
-    { wch: 14 }, // From Date
-    { wch: 14 }, // To Date
-    { wch: 24 }, // Warehouse
-    { wch: 16 }, // Opening Stock
-    { wch: 16 }, // Purchases
-    { wch: 16 }, // Closing Stock
-    { wch: 14 }  // COGS
-  ];
+     const ws = XLSX.utils.aoa_to_sheet([
+      ['COGS Report'],
+      [],
+      ['From Date', from],
+      ['To Date', to],
+      ['Warehouse', whName],
+      [],
+      ['Opening Stock', Number(this.report?.summary?.openingStock || 0)],
+      ['Purchases', Number(this.report?.summary?.purchases || 0)],
+      ['Closing Stock', Number(this.report?.summary?.closingStock || 0)],
+      ['COGS', Number(this.report?.summary?.cogs || 0)],
+      [],
+    ]);
 
-  // Apply currency format to summary amount columns
-  ['D2', 'E2', 'F2', 'G2'].forEach(cellRef => {
-    if (wsSummary[cellRef]) {
-      wsSummary[cellRef].t = 'n';
-      wsSummary[cellRef].z = '$#,##0.00';
-    }
-  });
+    XLSX.utils.sheet_add_json(ws, excelData, {
+      origin: 'A13',
+      skipHeader: false,
+      header: [
+        'Sl. No',
+        'Item Code',
+        'Item Name',
+        'Closing Qty',
+        'UOM',
+        'Avg Cost',
+        'Closing Value',
+        'COGS'
+      ]
+    });
 
-  XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+    ws['!cols'] = [
+      { wch: 10 },
+      { wch: 14 },
+      { wch: 34 },
+      { wch: 14 },
+      { wch: 22 },
+      { wch: 14 },
+      { wch: 16 },
+      { wch: 14 }
+    ];
 
-  // Detail sheet
-  const wsDetail: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
-
-  // column widths
- wsDetail['!cols'] = [
-  { wch: 8 },
-  { wch: 14 },
-  { wch: 28 },
-  { wch: 24 }, // Opening Qty
-  { wch: 14 },
-  { wch: 14 },
-  { wch: 24 }, // Purchase Qty
-  { wch: 14 },
-  { wch: 14 },
-  { wch: 24 }, // Closing Qty
-  { wch: 14 },
-  { wch: 14 },
-  { wch: 12 }
-];
-
-  // Money columns in detail sheet:
-  // E = Opening Price
-  // F = Opening Value
-  // H = Purchase Price
-  // I = Purchase Value
-  // K = Closing Price
-  // L = Closing Value
-  // M = COGS
-  for (let row = 2; row <= data.length + 1; row++) {
-    ['E', 'F', 'H', 'I', 'K', 'L', 'M'].forEach(col => {
-      const cellRef = `${col}${row}`;
-      if (wsDetail[cellRef]) {
-        wsDetail[cellRef].t = 'n';
-        wsDetail[cellRef].z = '$#,##0.00';
+    ['B7', 'B8', 'B9', 'B10'].forEach(cellRef => {
+      if (ws[cellRef]) {
+        ws[cellRef].t = 'n';
+        ws[cellRef].z = '$#,##0.00';
       }
     });
-  }
-  for (let row = 2; row <= data.length + 1; row++) {
-  ['D', 'G', 'J'].forEach(col => {
-    const cellRef = `${col}${row}`;
 
-    if (wsDetail[cellRef]) {
-  wsDetail[cellRef].t = 's';
-  wsDetail[cellRef].v = String(wsDetail[cellRef].v || '');
-  wsDetail[cellRef].w = String(wsDetail[cellRef].v || '');
-}
-  });
-}
-wsDetail['!rows'] = [];
-
-for (let row = 1; row <= data.length; row++) {
-  wsDetail['!rows'][row] = { hpt: 36 };
-}
-
-  XLSX.utils.book_append_sheet(wb, wsDetail, 'COGS Details');
-
-  const fileName = `COGS-${from}-to-${to}-${safeWhName}.xlsx`;
-  XLSX.writeFile(wb, fileName);
-}
-
-exportToPdf(): void {
-  const data = this.buildCogsExportRows();
-  if (!data.length) return;
-
-  const doc = new jsPDF('l', 'pt', 'a4');
-  const pageWidth = doc.internal.pageSize.getWidth();
-
-  const from = this.fromDate || 'All';
-  const to = this.toDate || 'All';
- const wh = this.selectedWarehouseName;
-
-  const title = `COGS Report (${from} to ${to})`;
-
-  doc.setFontSize(12);
-  doc.text(title, pageWidth / 2, 30, { align: 'center' });
-
-  doc.setFontSize(10);
-  doc.text(`Warehouse: ${wh}`, 40, 50);
-
-  doc.text(
-    `Opening Stock: ${this.money(this.report?.summary?.openingStock || 0)}`,
-    40,
-    70
-  );
-  doc.text(
-    `Purchases: ${this.money(this.report?.summary?.purchases || 0)}`,
-    220,
-    70
-  );
-  doc.text(
-    `Closing Stock: ${this.money(this.report?.summary?.closingStock || 0)}`,
-    380,
-    70
-  );
-  doc.text(
-    `COGS: ${this.money(this.report?.summary?.cogs || 0)}`,
-    570,
-    70
-  );
-
-  const head = [[
-    'Sl. No',
-    'Item Code',
-    'Item Name',
-    'Opening Qty',
-    'Opening Unit Price',
-    'Total Opening',
-    'Purchase Qty',
-    'Purchase Unit Price',
-    'Total Purchases',
-    'Closing Qty',
-    'Closing Unit Price',
-    'Total Closing',
-    'COGS'
-  ]];
-
- const body = data.map(r => [
-  String(r['Sl. No'] ?? ''),
-  String(r['Item Code'] ?? ''),
-  String(r['Item Name'] ?? ''),
-  String(r['Opening Qty'] || ''),
-  this.money(r['Opening Price'] || 0),
-  this.money(r['Opening Value'] || 0),
-  String(r['Purchase Qty'] || ''),
-  this.money(r['Purchase Price'] || 0),
-  this.money(r['Purchase Value'] || 0),
-  String(r['Closing Qty'] || ''),
-  this.money(r['Closing Price'] || 0),
-  this.money(r['Closing Value'] || 0),
-  this.money(r['COGS'] || 0)
-]);
-
-  autoTable(doc, {
-    head,
-    body,
-    startY: 85,
-    margin: { left: 20, right: 20 },
-    styles: {
-    fontSize: 8,
-    valign: 'middle',
-    halign: 'right'
-    },
-    bodyStyles: {
-      minCellHeight: 24
-    },
-    columnStyles: {
-      0: { halign: 'center' },
-      1: { halign: 'left' },
-      2: { halign: 'left' }
-    },
-    headStyles: {
-      halign: 'left'
+    for (let row = 14; row <= excelData.length + 13; row++) {
+      ['F', 'G', 'H'].forEach(col => {
+        const cellRef = `${col}${row}`;
+        if (ws[cellRef]) {
+          ws[cellRef].t = 'n';
+          ws[cellRef].z = '$#,##0.00';
+        }
+      });
     }
-  });
 
-  const fileName = `COGS-${from}-to-${to}-WH-${wh}.pdf`;
-  doc.save(fileName);
-}
+    XLSX.utils.book_append_sheet(wb, ws, 'COGS Report');
+    XLSX.writeFile(wb, `COGS-${from}-to-${to}-${safeWhName}.xlsx`);
+  }
 
+  exportToPdf(): void {
+    const data = this.buildCogsExportRows();
+    if (!data.length) return;
+
+    const doc = new jsPDF('l', 'pt', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const from = this.fromDate || 'All';
+    const to = this.toDate || 'All';
+    const wh = this.selectedWarehouseName;
+
+    doc.setFontSize(12);
+    doc.text(`Inventory COGS Report (${from} to ${to})`, pageWidth / 2, 30, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.text(`Warehouse: ${wh}`, 40, 50);
+
+    doc.text(`Opening: ${this.money(this.report?.summary?.openingStock || 0)}`, 40, 70);
+    doc.text(`Purchases: ${this.money(this.report?.summary?.purchases || 0)}`, 200, 70);
+    doc.text(`Closing: ${this.money(this.report?.summary?.closingStock || 0)}`, 360, 70);
+    doc.text(`COGS: ${this.money(this.report?.summary?.cogs || 0)}`, 520, 70);
+
+    const head = [[
+      'Sl',
+      'Item Code',
+      'Item Name',
+      'Opening Qty',
+      'Purchase Qty',
+      'Consumed Qty',
+      'Closing Qty',
+      'UOM',
+      'Avg Cost',
+      'Closing Value',
+      'COGS'
+    ]];
+
+    const body = data.map(r => [
+      String(r['Sl. No'] ?? ''),
+      String(r['Item Code'] ?? ''),
+      String(r['Item Name'] ?? ''),
+      String(r['Opening Qty'] ?? 0),
+      String(r['Purchase Qty'] ?? 0),
+      String(r['Consumed Qty'] ?? 0),
+      String(r['Closing Qty'] ?? 0),
+      String(r['UOM'] || ''),
+      this.money(r['Avg Cost'] || 0),
+      this.money(r['Closing Value'] || 0),
+      this.money(r['COGS'] || 0)
+    ]);
+    autoTable(doc, {
+      head,
+      body,
+      startY: 90,
+      margin: { left: 20, right: 20 },
+      styles: {
+        fontSize: 8,
+        valign: 'middle',
+        halign: 'right'
+      },
+      columnStyles: {
+        0: { halign: 'center' }, // Sl
+        1: { halign: 'left' },   // Item Code
+        2: { halign: 'left' },   // Item Name
+        7: { halign: 'left' },   // UOM
+        8: { halign: 'right' },  // Avg Cost
+        9: { halign: 'right' },  // Closing Value
+        10: { halign: 'right' }  // COGS
+      },
+      headStyles: {
+        halign: 'left'
+      }
+    });
+
+    doc.save(`COGS-${from}-to-${to}.pdf`);
+  }
 }

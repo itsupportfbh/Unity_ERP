@@ -1,28 +1,67 @@
 <div class="dashA">
 
-  <!-- Title row -->
   <div class="dashA__top">
     <div class="dashA__title">
       <div class="h1">ERP Dashboard</div>
-      <div class="sub">ERP Dashboard – Analytics Style (Angular Prototype)</div>
+      <div class="sub">Live data from CCSPL ERP</div>
     </div>
 
     <div class="dashA__meta">
-      <span class="pill"><i class="fa fa-calendar"></i> Today: {{ today | date:'yyyy-MM-dd' }}</span>
-      <span class="pill"><i class="fa fa-user-shield"></i> Role: {{ roleName }}</span>
+      <span class="pill">
+        <i class="fa fa-calendar"></i> Today: {{ today | date:'yyyy-MM-dd' }}
+      </span>
+      <span class="pill">
+        <i class="fa fa-user-shield"></i> Role: {{ roleName }}
+      </span>
     </div>
   </div>
 
-  <!-- Filters -->
   <div class="dashA__filters card">
     <div class="filtersGrid">
-      <div class="fItem">
+
+      <div class="fItem fItem--company">
         <label>Company</label>
-        <ng-select class="ngSel"
-          [items]="companies"
+
+        <ng-select
+          class="ngSel"
+          [items]="companyOptions"
           bindLabel="name"
           bindValue="id"
-          [(ngModel)]="filters.companyId">
+          [multiple]="true"
+          [closeOnSelect]="false"
+          [clearable]="true"
+          placeholder="All Companies"
+          [(ngModel)]="filters.companyIds"
+          (ngModelChange)="onCompanyChange($event)">
+
+          <ng-template ng-option-tmp let-item="item">
+            <div class="cmpOpt" [class.cmpOpt--all]="item.id === 0">
+              <i class="fa fa-check cmpOpt__chk"
+                 *ngIf="item.id === 0 && (!filters.companyIds || filters.companyIds.length === 0)">
+              </i>
+
+              <i class="fa fa-layer-group cmpOpt__ico" *ngIf="item.id === 0"></i>
+              <i class="fa fa-building cmpOpt__ico" *ngIf="item.id !== 0"></i>
+
+              <span class="cmpOpt__name" [title]="item.name">{{ item.name }}</span>
+            </div>
+          </ng-template>
+
+          <ng-template ng-label-tmp let-item="item" let-clear="clear">
+            <span class="cmpLabelText" [title]="item.name">{{ item.name }}</span>
+
+            <span class="cmpLabelX"
+                  *ngIf="item.id !== 0"
+                  (click)="clear(item); $event.stopPropagation()"
+                  aria-hidden="true">
+              ×
+            </span>
+          </ng-template>
+
+          <ng-template ng-placeholder-tmp>
+            <span><i class="fa fa-layer-group"></i> All Companies</span>
+          </ng-template>
+
         </ng-select>
       </div>
 
@@ -36,75 +75,82 @@
         <input class="i" type="date" [(ngModel)]="filters.to" />
       </div>
 
-      <div class="fItem">
-        <label>Search tiles</label>
-        <div class="searchWrap">
-          <i class="fa fa-search"></i>
-          <input class="i i--search" type="text"
-                 placeholder="Sales invoice, GRN, AR..."
-                 [(ngModel)]="filters.q" />
-        </div>
-      </div>
-
       <div class="fActions">
-        <button class="btn btnDark" (click)="refresh()">
-          <i class="fa fa-rotate"></i> Refresh
+        <button class="btn btnDark" (click)="refresh()" [disabled]="loading" type="button">
+          <i class="fa"
+             [class.fa-rotate]="!loading"
+             [class.fa-spinner]="loading"
+             [class.fa-spin]="loading"></i>
+          {{ loading ? 'Loading...' : 'Apply' }}
         </button>
-        <button class="btn btnLight" (click)="clear()">
+
+        <button class="btn btnLight" (click)="clearFilters()" type="button">
           <i class="fa fa-eraser"></i> Clear
         </button>
       </div>
     </div>
 
+    <div class="errBanner" *ngIf="error">
+      <i class="fa fa-triangle-exclamation"></i> {{ error }}
+    </div>
+
     <div class="chips">
-      <span class="chip"><i class="fa fa-building"></i> Company: {{ selectedCompanyName }}</span>
-      <span class="chip"><i class="fa fa-arrows-left-right"></i> Range: {{ filters.from }} → {{ filters.to }}</span>
-      <span class="chip chip--ok"><i class="fa fa-link"></i> Clickable widgets</span>
+      <span class="chip">
+        <i class="fa fa-building"></i>
+        <span class="chipText" [title]="selectedCompanyName">
+          Company: {{ selectedCompanyName }}
+        </span>
+      </span>
+
+      <span class="chip">
+        <i class="fa fa-arrows-left-right"></i> Range: {{ filters.from }} to {{ filters.to }}
+      </span>
+
+      <span class="chip chip--ok">
+        <i class="fa fa-link"></i> Clickable widgets
+      </span>
     </div>
   </div>
 
-  <!-- Analytics layout -->
-  <div class="grid12">
+  <div class="loadOverlay" *ngIf="loading">
+    <i class="fa fa-spinner fa-spin fa-2x"></i>
+    <span>Loading dashboard...</span>
+  </div>
 
-    <!-- KPI strip -->
+  <div class="grid12" [class.dimmed]="loading">
+
     <div class="kpiRow">
       <button class="kpi"
               *ngFor="let k of kpisTop"
               type="button"
               (click)="open(k.route, k.filter)">
-        <div class="kpi__icon" [class]="k.iconClass">
-          <i class="fa" [class]="k.fa"></i>
+        <div [ngClass]="k.iconClass">
+          <i class="fa" [ngClass]="k.fa"></i>
         </div>
 
         <div class="kpi__body">
           <div class="kpi__t">{{ k.label }}</div>
           <div class="kpi__v">{{ k.value }}</div>
           <div class="kpi__s">
-            <span [class.ok]="k.delta>=0" [class.bad]="k.delta<0">
-              <i class="fa" [class.fa-arrow-up]="k.delta>=0" [class.fa-arrow-down]="k.delta<0"></i>
-              {{ k.deltaAbs }}%
+            <span [class.ok]="k.delta >= 0" [class.bad]="k.delta < 0">
+              <i class="fa"
+                 [class.fa-arrow-up]="k.delta >= 0"
+                 [class.fa-arrow-down]="k.delta < 0"></i>
+              Click view to Details
             </span>
-            <!-- <span class="muted">vs last week</span> -->
           </div>
-        </div>
-
-        <div class="kpi__right">
-          <svg class="spark" viewBox="0 0 120 36" preserveAspectRatio="none">
-            <polyline [attr.points]="k.spark" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
-          </svg>
         </div>
       </button>
     </div>
 
-    <!-- Sales Trend -->
     <div class="card span-7">
       <div class="card__hdr">
         <div>
           <div class="ct">Sales Trend</div>
           <div class="cs">Daily posted Sales Invoices (range)</div>
         </div>
-        <button class="iconBtn" (click)="open('/sales/invoices', { status: 'Posted' })" type="button">
+
+        <button class="iconBtn" (click)="open('/sales/invoices', { status:'Posted' })" type="button">
           <i class="fa fa-arrow-up-right-from-square"></i>
         </button>
       </div>
@@ -116,7 +162,7 @@
         </div>
         <div class="sumBox">
           <div class="sumK">Orders</div>
-          <div class="sumV">{{ money(salesSummary.avg) }}</div>
+          <div class="sumV">{{ money(salesSummary.ordersTotal) }}</div>
         </div>
         <div class="sumBox">
           <div class="sumK">Invoices</div>
@@ -124,24 +170,34 @@
         </div>
       </div>
 
-      <div class="chartBox">
+      <div class="chartBox" *ngIf="salesTrendRaw.length; else noTrend">
         <svg class="svgChart" viewBox="0 0 520 220" preserveAspectRatio="none">
           <g class="grid">
-            <line *ngFor="let y of [40,80,120,160,200]" x1="0" [attr.y1]="y" x2="520" [attr.y2]="y"></line>
+            <line *ngFor="let y of [40,80,120,160,200]"
+                  x1="0"
+                  [attr.y1]="y"
+                  x2="520"
+                  [attr.y2]="y">
+            </line>
           </g>
+
           <polyline class="line" [attr.points]="salesTrendPoints"></polyline>
           <polyline class="area" [attr.points]="salesTrendArea"></polyline>
         </svg>
       </div>
+
+      <ng-template #noTrend>
+        <div class="noData">No sales data in selected range</div>
+      </ng-template>
     </div>
 
-    <!-- Right – Sales Overview -->
     <div class="card span-5">
       <div class="card__hdr">
         <div>
           <div class="ct">Sales Overview</div>
-          <div class="cs">Orders • Deliveries • Invoices • Customers</div>
+          <div class="cs">Orders | Deliveries | Invoices | Customers</div>
         </div>
+
         <button class="iconBtn" (click)="open('/sales/orders', {})" type="button">
           <i class="fa fa-arrow-up-right-from-square"></i>
         </button>
@@ -166,6 +222,7 @@
           <div class="v">{{ quick.so }}</div>
           <div class="s">Open in range</div>
         </button>
+
         <button class="mini" (click)="open('/sales/delivery-orders', {})" type="button">
           <div class="t">Delivery Orders</div>
           <div class="v">{{ quick.do }}</div>
@@ -174,13 +231,13 @@
       </div>
     </div>
 
-    <!-- Purchase Flow -->
     <div class="card span-7">
       <div class="card__hdr">
         <div>
           <div class="ct">Purchase Flow</div>
-          <div class="cs">PR → PO → GRN → PIN</div>
+          <div class="cs">PR - PO - GRN - PIN</div>
         </div>
+
         <button class="iconBtn" (click)="open('/purchase/purchase-orders', {})" type="button">
           <i class="fa fa-arrow-up-right-from-square"></i>
         </button>
@@ -192,25 +249,27 @@
             <div class="barLbl">{{ b.label }}</div>
             <div class="barVal">{{ b.value }}</div>
           </div>
-          <div class="barTrack"><div class="barFill" [style.width.%]="b.pct"></div></div>
+          <div class="barTrack">
+            <div class="barFill" [style.width.%]="b.pct"></div>
+          </div>
           <div class="barHint">{{ b.hint }}</div>
         </div>
       </div>
 
       <div class="btnRow">
-        <button class="chipBtn" (click)="open('/purchase/requests', {})" type="button">Open PR</button>
-        <button class="chipBtn" (click)="open('/purchase/grn', {})" type="button">Open GRN</button>
-        <button class="chipBtn" (click)="open('/purchase/supplier-invoices', {})" type="button">Open PIN</button>
+        <button class="chipBtn" (click)="open('/purchase/list-PurchaseRequest', {})" type="button">Open PR</button>
+        <button class="chipBtn" (click)="open('/purchase/list-Purchasegoodreceipt', {})" type="button">Open GRN</button>
+        <button class="chipBtn" (click)="open('/purchase/list-SupplierInvoice', {})" type="button">Open PIN</button>
       </div>
     </div>
 
-    <!-- AR/AP -->
     <div class="card span-5">
       <div class="card__hdr">
         <div>
           <div class="ct">Accounts Receivable / Payable</div>
           <div class="cs">Gauges + Aging</div>
         </div>
+
         <button class="iconBtn" (click)="open('/finance/ar-aging', {})" type="button">
           <i class="fa fa-arrow-up-right-from-square"></i>
         </button>
@@ -222,8 +281,10 @@
           <div class="gauge">
             <svg viewBox="0 0 120 120">
               <circle class="gBg" cx="60" cy="60" r="48"></circle>
-              <circle class="gVal" cx="60" cy="60" r="48" [attr.stroke-dasharray]="arGaugeDash"></circle>
+              <circle class="gVal" cx="60" cy="60" r="48"
+                      [attr.stroke-dasharray]="arGaugeDash"></circle>
             </svg>
+
             <div class="gTxt">
               <div class="gPct">{{ arGaugePct }}%</div>
               <div class="gLbl">Collected</div>
@@ -236,8 +297,10 @@
           <div class="gauge">
             <svg viewBox="0 0 120 120">
               <circle class="gBg" cx="60" cy="60" r="48"></circle>
-              <circle class="gVal gVal--ap" cx="60" cy="60" r="48" [attr.stroke-dasharray]="apGaugeDash"></circle>
+              <circle class="gVal gVal--ap" cx="60" cy="60" r="48"
+                      [attr.stroke-dasharray]="apGaugeDash"></circle>
             </svg>
+
             <div class="gTxt">
               <div class="gPct">{{ apGaugePct }}%</div>
               <div class="gLbl">Paid</div>
@@ -265,35 +328,41 @@
       </div>
 
       <div class="btnRow">
-        <button class="chipBtn" (click)="open('/finance/ar-invoices', { status:'Open' })" type="button">Open AR Invoices</button>
-        <button class="chipBtn" (click)="open('/finance/ap-aging', {})" type="button">Open AP Aging</button>
+        <button class="chipBtn" (click)="open('/finance/ar-invoices', { status:'Open' })" type="button">
+          Open AR Invoices
+        </button>
+        <button class="chipBtn" (click)="open('/finance/ap-aging', {})" type="button">
+          Open AP Aging
+        </button>
       </div>
     </div>
 
-    <!-- Inventory -->
     <div class="card span-7">
       <div class="card__hdr">
         <div>
           <div class="ct">Inventory</div>
-          <div class="cs">Top items • SKU • Below Min</div>
+          <div class="cs">Top items | SKU | Below Min</div>
         </div>
-        <button class="iconBtn" (click)="open('/inventory/item-master', {})" type="button">
+
+        <button class="iconBtn" (click)="open('/Inventory/List-itemmaster', {})" type="button">
           <i class="fa fa-arrow-up-right-from-square"></i>
         </button>
       </div>
 
       <div class="mini3">
-        <button class="mini" (click)="open('/inventory/item-master', { createdInRange:true })" type="button">
+        <button class="mini" (click)="open('/Inventory/List-itemmaster', { createdInRange:true })" type="button">
           <div class="t">New items</div>
           <div class="v">{{ inv.newItems }}</div>
           <div class="s">Created in range</div>
         </button>
-        <button class="mini" (click)="open('/inventory/stock', {})" type="button">
+
+        <button class="mini" (click)="open('/Inventory/List-itemmaster', {})" type="button">
           <div class="t">Available SKU</div>
           <div class="v">{{ inv.skuCount }}</div>
           <div class="s">On-hand across WH</div>
         </button>
-        <button class="mini" (click)="open('/inventory/reorder', { belowMin:true })" type="button">
+
+        <button class="mini" (click)="open('/Inventory/List-itemmaster', { belowMin:true })" type="button">
           <div class="t">Below Min</div>
           <div class="v">{{ inv.belowMin }}</div>
           <div class="s">Reorder required</div>
@@ -304,8 +373,12 @@
 
       <div class="tbl">
         <div class="tbl__hdr">
-          <div>SKU</div><div>Item</div><div class="r">Qty</div><div></div>
+          <div>SKU</div>
+          <div>Item</div>
+          <div class="r">Qty</div>
+          <div></div>
         </div>
+
         <button class="tbl__row tbl__row--4"
                 *ngFor="let t of inv.topItems"
                 (click)="open('/inventory/stock', { sku: t.sku })"
@@ -315,16 +388,18 @@
           <div class="mono r">{{ t.qty }}</div>
           <div class="go"><i class="fa fa-chevron-right"></i></div>
         </button>
+
+        <div class="noData" *ngIf="!inv.topItems.length">No inventory data</div>
       </div>
     </div>
 
-    <!-- Production + Timeline -->
     <div class="card span-5">
       <div class="card__hdr">
         <div>
-          <div class="ct">Production & Activity</div>
+          <div class="ct">Production &amp; Activity</div>
           <div class="cs">Planning + Alerts + Timeline</div>
         </div>
+
         <button class="iconBtn" (click)="open('/production/planning', {})" type="button">
           <i class="fa fa-arrow-up-right-from-square"></i>
         </button>
@@ -334,8 +409,11 @@
         <button class="mini" (click)="open('/production/planning', { status:'Open' })" type="button">
           <div class="t">Planning Orders</div>
           <div class="v">{{ prod.openOrders }}</div>
-          <div class="s">Next: {{ prod.nextDate | date:'yyyy-MM-dd' }}</div>
+          <div class="s">
+            Next: {{ prod.nextDate ? (prod.nextDate | date:'yyyy-MM-dd') : '-' }}
+          </div>
         </button>
+
         <button class="mini" (click)="open('/production/recipe-cost', { alerts:true })" type="button">
           <div class="t">Recipe Cost Alerts</div>
           <div class="v">{{ prod.costAlerts }}</div>
@@ -347,23 +425,30 @@
 
       <div class="timeline">
         <div class="tRow" *ngFor="let t of timeline">
-          <div class="dot" [class.dot--warn]="t.type==='warn'" [class.dot--ok]="t.type==='ok'"></div>
+          <div class="dot"
+               [class.dot--warn]="t.type === 'warn'"
+               [class.dot--ok]="t.type === 'ok'">
+          </div>
+
           <div class="tBody">
             <div class="tTitle">{{ t.title }}</div>
             <div class="tSub">{{ t.sub }}</div>
           </div>
+
           <div class="tTime">{{ t.when }}</div>
         </div>
+
+        <div class="noData" *ngIf="!timeline.length">No recent activity</div>
       </div>
     </div>
 
-    <!-- Exceptions -->
     <div class="card span-12">
       <div class="card__hdr">
         <div>
           <div class="ct">Exceptions</div>
-          <div class="cs">GST missing • 3-way match • negative stock</div>
+          <div class="cs">GST missing | 3-way match | negative stock</div>
         </div>
+
         <button class="iconBtn" (click)="open('/finance/exceptions', {})" type="button">
           <i class="fa fa-arrow-up-right-from-square"></i>
         </button>
@@ -371,7 +456,11 @@
 
       <div class="tbl">
         <div class="tbl__hdr tbl__hdr--5">
-          <div>Type</div><div>Doc</div><div>Party</div><div class="r">Impact</div><div></div>
+          <div>Type</div>
+          <div>Doc</div>
+          <div>Party</div>
+          <div class="r">Impact</div>
+          <div></div>
         </div>
 
         <button class="tbl__row tbl__row--5"
@@ -379,21 +468,34 @@
                 (click)="open(e.route, e.filter)"
                 type="button">
           <div>
-            <span class="badge" [class.warn]="e.sev==='WARN'" [class.bad]="e.sev==='HIGH'">
+            <span class="badge"
+                  [class.warn]="e.sev === 'WARN'"
+                  [class.bad]="e.sev === 'HIGH'">
               {{ e.type }}
             </span>
           </div>
+
           <div class="mono">{{ e.doc }}</div>
           <div class="txt">{{ e.party }}</div>
           <div class="mono r">{{ e.impact }}</div>
           <div class="go"><i class="fa fa-chevron-right"></i></div>
         </button>
+
+        <div class="noData" *ngIf="!exceptions.length">
+          <i class="fa fa-circle-check"></i> No exceptions found
+        </div>
       </div>
 
       <div class="btnRow">
-        <button class="chipBtn" (click)="open('/finance/gst', { pending:true })" type="button">GST Pending</button>
-        <button class="chipBtn" (click)="open('/purchase/3way-match', { pending:true })" type="button">3-Way Pending</button>
-        <button class="chipBtn" (click)="open('/inventory/stock', { negative:true })" type="button">Negative Stock</button>
+        <button class="chipBtn" (click)="open('/finance/gst', { pending:true })" type="button">
+          GST Pending
+        </button>
+        <button class="chipBtn" (click)="open('/purchase/3way-match', { pending:true })" type="button">
+          3-Way Pending
+        </button>
+        <button class="chipBtn" (click)="open('/inventory/stock', { negative:true })" type="button">
+          Negative Stock
+        </button>
       </div>
     </div>
 

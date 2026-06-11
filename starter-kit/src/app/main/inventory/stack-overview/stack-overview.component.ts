@@ -543,7 +543,19 @@ private getLineBaseQty(l: any): number {
 
         const outletId = dto.outletId ?? dto.OutletId ?? null;
         this.destinationOutletId = outletId != null ? Number(outletId) : null;
-        this.destinationOutletName = this.getWarehouseNameById(this.destinationOutletId);
+
+this.destinationOutletName =
+  String(
+    dto.outletName ??
+    dto.OutletName ??
+    dto.destinationOutletName ??
+    dto.DestinationOutletName ??
+    dto.warehouseName ??
+    dto.WarehouseName ??
+    ''
+  ).trim()
+  || this.getWarehouseNameById(this.destinationOutletId)
+  || (this.destinationOutletId ? `Warehouse-${this.destinationOutletId}` : null);
 
         const bId = dto.binId ?? dto.BinId ?? null;
         this.destinationBinId = bId != null ? Number(bId) : null;
@@ -592,22 +604,23 @@ private getLineBaseQty(l: any): number {
     });
   }
 
-  onFromOutletChanged(fromId: any): void {
-    const idNum = fromId == null || fromId === '' ? null : Number(fromId);
+onFromOutletChanged(fromId: any): void {
+  const idNum = fromId == null || fromId === '' ? null : Number(fromId);
 
-    if (!idNum || Number.isNaN(idNum)) {
-      this.selectedFromOutletId = null;
-      this.selectedFromOutletName = null;
-    } else {
-      this.selectedFromOutletId = idNum;
-      this.selectedFromOutletName = this.getWarehouseNameById(idNum);
-    }
-
-    this.applyGrid();
-    this.rebuildFromOutletOptions();
-    this.recalcMrAvailability();
+  if (!idNum || Number.isNaN(idNum)) {
+    this.selectedFromOutletId = null;
+    this.selectedFromOutletName = null;
+  } else {
+    this.selectedFromOutletId = idNum;
+    this.selectedFromOutletName =
+      this.fromOutletOptions.find(x => Number(x.id) === idNum)?.name
+      || this.getWarehouseNameById(idNum);
   }
 
+  this.applyGrid();
+  this.rebuildFromOutletOptions();
+  this.recalcMrAvailability();
+}
   onTransferQtyChanged(line: MrLineVM): void {
     const v = Number(line.transferQty ?? 0);
     const safe = Number.isFinite(v) ? v : 0;
@@ -618,49 +631,57 @@ private getLineBaseQty(l: any): number {
 
   /* ===================== FROM OUTLET OPTIONS ===================== */
 
-  private rebuildFromOutletOptions(): void {
-    const reqTotal = Number(
-      (this.mrLines || []).reduce((sum, x) => {
-        return sum + Number(x.remainingQty ?? x.requestedQty ?? 0);
-      }, 0).toFixed(4)
-    );
+private rebuildFromOutletOptions(): void {
+  const reqTotal = Number(
+    (this.mrLines || []).reduce((sum, x) => {
+      return sum + Number(x.remainingQty ?? x.requestedQty ?? 0);
+    }, 0).toFixed(4)
+  );
 
-    const skuSet = this.getMrSkuSetLower();
-    const onHandByWhId = new Map<number, number>();
+  const skuSet = this.getMrSkuSetLower();
+  const destId = Number(this.destinationOutletId ?? -999);
 
-    if (skuSet.size) {
-      for (const r of this.rows) {
-        const sku = (r.sku ?? '').toLowerCase().trim();
-        if (!skuSet.has(sku)) continue;
+  const map = new Map<number, FromOutletOption>();
 
-        const wid = Number(r.warehouseId ?? 0);
-        if (!wid) continue;
+  for (const r of this.rows || []) {
+    const sku = (r.sku ?? '').toLowerCase().trim();
 
-        onHandByWhId.set(
-          wid,
-          Number(((onHandByWhId.get(wid) ?? 0) + Number(r.onHand ?? 0)).toFixed(4))
-        );
-      }
-    }
+    if (skuSet.size && !skuSet.has(sku)) continue;
 
-    const destId = Number(this.destinationOutletId ?? -999);
-    const base = this.warehouses.filter(w => Number(w.id) !== destId);
+    const whId = Number(r.warehouseId ?? 0);
+    if (!whId) continue;
 
-    this.fromOutletOptions = base.map(w => {
-      const whId = Number(w.id);
-      const onHand = Number(onHandByWhId.get(whId) ?? 0);
-      const name = w.name;
+    // destination warehouse avoid
+    if (whId === destId) continue;
 
-      return {
+    const old = map.get(whId);
+
+    const onHand = Number(r.onHand ?? 0);
+
+    if (old) {
+      old.onHand = Number((old.onHand + onHand).toFixed(4));
+      old.reqQty = reqTotal;
+      old.label = `${old.name} | Req Base Qty: ${reqTotal} | OnHand: ${old.onHand}`;
+    } else {
+      const name =
+        r.warehouse ||
+        this.getWarehouseNameById(whId) ||
+        `Warehouse-${whId}`;
+
+      map.set(whId, {
         id: whId,
         name,
         reqQty: reqTotal,
-        onHand,
-        label: `${name} | Req Base Qty: ${reqTotal} | OnHand: ${onHand}`
-      };
-    });
+        onHand: Number(onHand.toFixed(4)),
+        label: `${name} | Req Base Qty: ${reqTotal} | OnHand: ${Number(onHand.toFixed(4))}`
+      });
+    }
   }
 
+  this.fromOutletOptions = Array.from(map.values())
+    .filter(x => x.onHand > 0)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
   /* ===================== GRID FILTER ===================== */
 
   private applyGrid(): void {

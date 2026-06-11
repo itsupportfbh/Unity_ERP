@@ -261,14 +261,17 @@ export class CompanyService {
     );
   }
 
-  getCompanyList(approvalLevelName: string, orgGuid: string): Observable<CompanyRow[]> {
-    return this.http.get<CompanyRow[]>(`${this.baseUrl}/Company/list`, {
+getCompanyList(approvalLevelName: string, orgGuid: string): Observable<CompanyRow[]> {
+  return this.http.get<CompanyRow[]>(
+    this.baseUrl + '/Company/organization-company-list',
+    {
       params: {
         approvalLevelName: approvalLevelName || '',
         orgGuid: orgGuid || ''
       }
-    });
-  }
+    }
+  );
+}
 
   getOrganizationCompanyList(
     approvalLevelName: string,

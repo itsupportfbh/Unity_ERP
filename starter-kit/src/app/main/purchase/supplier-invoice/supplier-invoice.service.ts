@@ -3,6 +3,24 @@ import { Injectable } from '@angular/core';
 import { environment } from 'environments/environment';
 import { Observable } from 'rxjs';
 
+export interface OcrLine {
+  item: string;
+  qty: number;
+  unitPrice: number;
+  discountPct: number;
+}
+
+export interface OcrParsed {
+  invoiceNo?: string;
+  invoiceDate?: string;
+  total?: number;
+  taxPercent?: number;
+  taxAmount?: number;
+  supplierName?: string;
+  subTotal?: number;
+  discount?: number;
+  lines?: OcrLine[];  
+}
 @Injectable({ providedIn: 'root' })
 export class SupplierInvoiceService {
   private url = environment.apiUrl;

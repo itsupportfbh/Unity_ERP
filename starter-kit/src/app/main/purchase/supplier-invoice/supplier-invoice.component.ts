@@ -990,20 +990,70 @@ netPayableBase: number = 0; // ✅ SGD amount
 onOcrApplied(res: OcrResponse): void {
   if (this.isInvoiceBlocked()) return;
 
-  if (res?.parsed) {
-    const p = res.parsed;
-
-    this.form.patchValue({
-      invoiceNo:    p.invoiceNo    || this.form.value.invoiceNo,
-      invoiceDate:  p.invoiceDate  ? p.invoiceDate.substring(0, 10) : this.form.value.invoiceDate,
-      supplierName: p.supplierName || this.form.value.supplierName,
-      tax:          p.taxPercent   ?? this.form.value.tax,
-    }, { emitEvent: false });
-
-    this.recalcAllLines();
-    this.recalcHeaderFromLines();
+  if (!res?.parsed) {
+    this.ocrOpen = false;
+    return;
   }
 
+  const p = res.parsed;
+
+  // ✅ 1. Header fields patch
+  this.form.patchValue({
+    invoiceNo:    p.invoiceNo    || this.form.value.invoiceNo,
+    invoiceDate:  p.invoiceDate  ? p.invoiceDate.substring(0, 10) : this.form.value.invoiceDate,
+    supplierName: p.supplierName || this.form.value.supplierName,
+    tax:          p.taxPercent   ?? this.form.value.tax,
+  }, { emitEvent: false });
+
+  // ✅ 2. Detect tax mode
+  // Inclusive: subTotal == total (tax already inside)
+  // Zero: line-level no tax, header tax only (Coca-Cola style)
+  // Exclusive: normal
+  const subTotal = p.subTotal ?? 0;
+  const total    = p.total    ?? 0;
+  const taxPct   = p.taxPercent ?? 0;
+
+  let taxMode: 'EXCLUSIVE' | 'INCLUSIVE' | 'ZERO';
+
+  if (taxPct > 0 && subTotal > 0 && Math.abs(subTotal - total) < 1) {
+    // SubTotal == Total → GST Inclusive
+    taxMode = 'INCLUSIVE';
+  } else if (taxPct > 0 && subTotal > 0 && total > subTotal) {
+    // Total > SubTotal → GST Exclusive
+    taxMode = 'EXCLUSIVE';
+  } else {
+    // Total == SubTotal + Tax but lines have no tax → ZERO on lines
+    taxMode = 'ZERO';
+  }
+
+  // ✅ 3. Lines replace
+  if (p.lines && p.lines.length > 0) {
+    this.replaceLinesWith(p.lines.map((l: any) => ({
+      item:        l.item        || '',
+      qty:         Number(l.qty        || 1),
+      unitPrice:   Number(l.unitPrice  || 0),
+      discountPct: Number(l.discountPct || 0),
+      location:    '',
+      budgetLineId: null,
+      // ✅ ZERO — line-level no tax, header tax % handles total
+      taxMode:     'ZERO' as any
+    })));
+    this.recalcAllLines();
+  }
+
+  // ✅ 4. Totals — always use OCR values directly
+  this.subTotal       = p.subTotal  ?? 0;
+  this.discountTotal  = p.discount  ?? 0;
+  this.taxAmount      = p.taxAmount ?? 0;
+  this.grandTotal     = p.total     ?? 0;
+  this.netPayable     = this.grandTotal;
+  this.netPayableBase = +(this.netPayable * this.fxRate).toFixed(2);
+
+  this.form.patchValue(
+    { amount: this.grandTotal },
+    { emitEvent: false }
+  );
+
   this.ocrOpen = false;
-}
+} 
 }

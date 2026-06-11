@@ -21,6 +21,7 @@ import { DebitNoteListComponent } from './debit-note/debit-note-list/debit-note-
 import { DebitNoteCreateComponent } from './debit-note/debit-note-create/debit-note-create.component';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { OcruploadmodalComponent } from '../ocrmodule/ocruploadmodal/ocruploadmodal.component';
+import { OcrSharedModule } from '../ocrmodule/ocr-shared-module/ocr-shared-module.module';
 
 
 const routes = [
@@ -115,7 +116,7 @@ const routes = [
 ];
 
 @NgModule({
-  declarations: [CreatePurchaseRequestComponent,PurchaseRequestListComponent,PurchaseGoodreceiptComponent, PurchaseGoodreceiptlistComponent,PurchaseOrdeListComponent, PurchaseOrderCreateComponent, SupplierInvoiceComponent, SupplierInvoiceListComponent, MobileReceivingComponent, RfqComponent,DebitNoteListComponent, DebitNoteCreateComponent,OcruploadmodalComponent],
+  declarations: [CreatePurchaseRequestComponent,PurchaseRequestListComponent,PurchaseGoodreceiptComponent, PurchaseGoodreceiptlistComponent,PurchaseOrdeListComponent, PurchaseOrderCreateComponent, SupplierInvoiceComponent, SupplierInvoiceListComponent, MobileReceivingComponent, RfqComponent,DebitNoteListComponent, DebitNoteCreateComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
@@ -125,7 +126,8 @@ const routes = [
     ReactiveFormsModule,
     SweetAlert2Module.forRoot(),
      NgSelectModule,
-     NgbPopoverModule
+     NgbPopoverModule,
+     OcrSharedModule
   ]
 })
 export class PurchaseModule { }

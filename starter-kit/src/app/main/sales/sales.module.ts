@@ -31,6 +31,8 @@ import { CoreCommonModule } from '@core/common.module';
 import { CoreSidebarModule } from '@core/components';
  import { ReturnCreditnoteListComponent } from './return-creditcreate/return-creditnote-list/return-creditnote-list.component';
 import { DeliveryNoteReportComponent } from './reportscreate/delivery-Note-summary/delivery-note-report/delivery-note-report.component';
+import { OcruploadmodalComponent } from '../ocrmodule/ocruploadmodal/ocruploadmodal.component';
+import { OcrSharedModule } from '../ocrmodule/ocr-shared-module/ocr-shared-module.module';
 
 const routes = [
   {
@@ -178,7 +180,8 @@ const routes = [
     ReportsDeliveriesComponent,
     ReportsFiltersComponent,
      ReturnCreditnoteListComponent,
-     DeliveryNoteReportComponent,
+     DeliveryNoteReportComponent
+     
   ],
   imports: [
     CommonModule,
@@ -190,7 +193,8 @@ const routes = [
          SweetAlert2Module.forRoot(),
          NgSelectModule,
             CoreCommonModule,
-    CoreSidebarModule  
+    CoreSidebarModule ,
+    OcrSharedModule
   ]
 })
 export class SalesModule { }

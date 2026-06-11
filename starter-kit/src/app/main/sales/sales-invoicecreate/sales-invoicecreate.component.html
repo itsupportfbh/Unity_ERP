@@ -16,6 +16,11 @@
     </div>
 
     <div class="d-flex gap-2 prl-head-actions">
+       <button class="btn prl-btn-primary"
+    (click)="openOcr()"
+    [disabled]="isGstLocked || isGlPosted">
+    <i class="fas fa-file-upload"></i> OCR Upload
+  </button>
    <button class="btn prl-btn-primary"
         (click)="save()"
         [disabled]="isGstLocked || isGlPosted || !invoiceDate || ( !isEdit && (!sourceId || lines.length===0) )">
@@ -486,3 +491,10 @@
 
   </div>
 </div>
+<app-ocr-upload-modal
+  *ngIf="ocrOpen"
+  [open]="ocrOpen"
+  [createdBy]="userId"
+  (closed)="ocrOpen = false"
+  (applied)="onOcrApplied($event)">
+</app-ocr-upload-modal>

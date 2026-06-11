@@ -443,9 +443,8 @@
 </div>
 
 <app-ocr-upload-modal
+  *ngIf="ocrOpen"
   [open]="ocrOpen"
-  [createdBy]="userId?.toString()"
-  [currencyId]="form.value.currencyId || 1"
   (closed)="ocrOpen = false"
   (applied)="onOcrApplied($event)">
 </app-ocr-upload-modal>

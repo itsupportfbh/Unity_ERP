@@ -18,6 +18,7 @@ import { ItemsService } from 'app/main/master/items/items.service';
 import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
 import { ArInvoiceService } from 'app/main/financial/AR/Invoice/invoice-service';
 import { GstLockService } from 'app/main/financial/tax-gst/gst-lock.service';
+import { OcrResponse } from 'app/main/ocrmodule/ocrservice.service';
 /* ========== Local UI types ========== */
 interface SimpleItem {
   id: number;
@@ -106,6 +107,9 @@ currencyName:     string  = 'SGD';
 baseCurrencyId:   number  = 0;
 baseCurrencyName: string  = 'SGD';
 grandTotalBase:   number  = 0;
+
+ocrOpen = false;
+userId: number = Number(localStorage.getItem('id') || 0);
   constructor(
     private api: SalesInvoiceService,
     private taxCodeService: TaxCodeService,
@@ -1249,4 +1253,58 @@ if (this.isInvoiceBlocked()) return;
     }
     return path;
   }
+  openOcr(): void {
+    debugger
+  if (this.isInvoiceBlocked()) return;
+  this.ocrOpen = true;
+}
+
+onOcrApplied(res: OcrResponse): void {
+  if (this.isInvoiceBlocked()) return;
+
+  if (res?.parsed) {
+    const p = res.parsed;
+
+    // ✅ Invoice Date fill
+    if (p.invoiceDate) {
+      this.invoiceDate = p.invoiceDate.substring(0, 10);
+      this.checkGstLock();
+    }
+
+    
+    if (p.lines && p.lines.length > 0) {
+      const newLines = p.lines.map((l: any) => ({
+        sourceLineId: null,
+        itemId: 0,
+        itemName: l.item || '',
+        uom: null,
+        qty: l.qty || 1,
+        unitPrice: l.unitPrice || 0,
+        discountPct: l.discountPct || 0,
+        gstPct: p.taxPercent || 0,
+        tax: 'Standard-Rated' as any,
+        taxCodeId: null,
+        description: l.item || '',
+        lineAmount: 0,
+        taxAmount: 0,
+        budgetLineId: 0
+      }));
+
+      
+      this.lines = [...this.lines, ...newLines];
+      this.recalc();
+    }
+
+   
+    if (!p.lines || p.lines.length === 0) {
+      this.subtotal      = p.subTotal   ?? this.subtotal;
+      this.totalDiscount = p.discount   ?? this.totalDiscount;
+      this.totalTax      = p.taxAmount  ?? this.totalTax;
+      this.grandTotal    = p.total      ?? this.grandTotal;
+      this.updateNetTotal();
+    }
+  }
+
+  this.ocrOpen = false;
+}
 }

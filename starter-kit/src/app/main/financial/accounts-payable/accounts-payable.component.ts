@@ -28,7 +28,7 @@ interface SupplierAdvanceRow {
   id:             number;
   advanceNo:      string;
   supplierId:     number;
-  supplierName:   string;t
+  supplierName:   string;
   advanceDate:    string | Date;
   originalAmount: number;
   utilisedAmount: number;
@@ -617,13 +617,56 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     return this.expandedSupplierIds.has(id);
   }
 
+  // =====================================================
+  // FIX 1: getInvoiceStatusTextByAmounts
+  // Cross-currency aware status: convert payableAfterAdvance to payment currency
+  // before deciding Paid / Partial / Unpaid
+  // =====================================================
   getInvoiceStatusTextByAmounts(row: any): string {
     const paid = Number(row.paidAmount          || 0);
     const dn   = Number(row.debitNoteAmount     || 0);
     const adv  = Number(row.advanceAmount       || 0);
-    const os   = Number(row.payableAfterAdvance || 0);
-    if (os <= 0 && (paid > 0 || dn > 0 || adv > 0)) return 'Paid';
-    if ((paid > 0 || dn > 0 || adv > 0) && os > 0)  return 'Partial';
+    const payableInOrigCurr = Number(row.payableAfterAdvance || 0);
+
+    // No deductions at all → Unpaid
+    if (paid <= 0 && dn <= 0 && adv <= 0 && payableInOrigCurr > 0) return 'Unpaid';
+
+    // If payable is zero or near-zero in original currency → Paid
+    if (payableInOrigCurr <= 0.009) return 'Paid';
+
+    // Cross-currency check: convert payable to base SGD and see if it's negligible
+    // (handles rounding diff where 923.46 INR = 12.00 SGD exactly)
+    const fx = Number(row.fxRate || this.invoiceFxRate || 1);
+    if (fx > 0 && fx !== 1) {
+      // payable in SGD = payableInOrigCurr * fx  (if fxRate = SGD per foreign unit)
+      // OR payableInOrigCurr / fx                (if fxRate = foreign per SGD)
+      // Detect direction: grandTotal * fx should be close to amountBase
+      const grandTotal = Number(row.grandTotal || 0);
+      const amountBase = Number(row.amountBase || 0);
+      let payableInSGD: number;
+
+      if (amountBase > 0 && grandTotal > 0) {
+        // Determine fxRate direction from stored data
+        const fxDirect  = grandTotal * fx;  // if fx = SGD/INR (small number like 0.013)
+        const fxInverse = grandTotal / fx;  // if fx = INR/SGD (large number like 76.54)
+        // Whichever is closer to amountBase tells us direction
+        if (Math.abs(fxDirect - amountBase) <= Math.abs(fxInverse - amountBase)) {
+          payableInSGD = payableInOrigCurr * fx;
+        } else {
+          payableInSGD = payableInOrigCurr / fx;
+        }
+      } else {
+        // Fallback: assume fx = foreign-per-SGD (e.g. 76.54 INR per SGD)
+        payableInSGD = payableInOrigCurr / fx;
+      }
+
+      // If payable in SGD is < 0.01 (sub-cent), treat as fully paid
+      if (payableInSGD < 0.01) return 'Paid';
+    }
+
+    // Has some deductions but still has payable → Partial
+    if (paid > 0 || dn > 0 || adv > 0) return 'Partial';
+
     return 'Unpaid';
   }
 
@@ -775,6 +818,12 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     this.recalcSelectedAmount();
   }
 
+  // =====================================================
+  // FIX 2: recalcSelectedAmount
+  // Uses Math.ceil (2 decimals) so that 12.004 SGD → 12.01 SGD
+  // ensuring the payment covers the full INR payable amount
+  // without being rounded down to a short-pay.
+  // =====================================================
   recalcSelectedAmount(): void {
     if (this.amountEditedManually) return;
 
@@ -788,16 +837,46 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
       if (!x.isSelected) return;
       const payable = Number(x.payableAfterAdvance || 0);
       const fx      = Number(x.fxRate || this.invoiceFxRate || 1);
+
       if (isBaseCurr) {
-        totalSGD += payable * fx;
+        // Detect fxRate direction: if fx > 1 it's foreign-per-SGD (e.g. 76.54 INR/SGD)
+        // so divide; if fx < 1 it's SGD-per-foreign, so multiply.
+        // We cross-check against amountBase and grandTotal when available.
+        const grandTotal = Number(x.grandTotal  || 0);
+        const amountBase = Number(x.amountBase  || 0);
+
+        let sgdValue: number;
+        if (amountBase > 0 && grandTotal > 0) {
+          // Determine direction from stored data
+          const fxDirect  = grandTotal * fx;
+          const fxInverse = grandTotal / fx;
+          if (Math.abs(fxDirect - amountBase) <= Math.abs(fxInverse - amountBase)) {
+            sgdValue = payable * fx;   // fx = SGD per foreign unit (small, e.g. 0.013)
+          } else {
+            sgdValue = payable / fx;   // fx = foreign per SGD (large, e.g. 76.54)
+          }
+        } else if (fx > 1) {
+          // Large fx → foreign-per-SGD (e.g. 76.54 INR per SGD)
+          sgdValue = payable / fx;
+        } else {
+          // Small fx → SGD-per-foreign (e.g. 0.013 SGD per INR)
+          sgdValue = payable * fx;
+        }
+
+        // Use Math.ceil at 2 decimal places so we never short-pay due to rounding
+        // e.g. 12.0045 → 12.01 (ensures full INR amount is covered)
+        totalSGD += sgdValue;
       } else {
         totalINR += payable;
       }
     });
 
-    this.payAmount = isBaseCurr
-      ? Number(totalSGD.toFixed(2))
-      : Number(totalINR.toFixed(2));
+    if (isBaseCurr) {
+      // ceil to 2 decimal places: Math.ceil(value * 100) / 100
+      this.payAmount = Math.ceil(totalSGD * 100) / 100;
+    } else {
+      this.payAmount = Number(totalINR.toFixed(2));
+    }
 
     this.recalcBankBalanceAfterPayment();
     this.recalcPaymentBase();

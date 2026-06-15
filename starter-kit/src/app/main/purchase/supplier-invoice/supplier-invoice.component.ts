@@ -783,64 +783,74 @@ netPayableBase: number = 0; // ✅ SGD amount
   this.form.patchValue({ amount: this.grandTotal }, { emitEvent: false });
 }
 
-  save(action: 'HOLD' | 'POST' = 'POST'): void {
-    if (this.isInvoiceBlocked()) return;
+save(action: 'HOLD' | 'POST' = 'POST'): void {
+  if (this.isInvoiceBlocked()) return;
 
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    const v = this.form.value;
-    const grnIds = (v.grnIds || [])
-      .map((x: any) => Number(x))
-      .filter((n: number) => n > 0);
-
-    if (!grnIds.length) {
-      Swal.fire('Select GRN', 'At least one GRN must be selected.', 'warning');
-      return;
-    }
-
-    const payload = {
-      id: Number(v.id || 0),
-      invoiceNo: v.invoiceNo,
-      grnIds,
-      grnNos: v.grnNos,
-      invoiceDate: v.invoiceDate,
-      supplierId: v.supplierId ? Number(v.supplierId) : null,
-      currencyId: v.currencyId != null ? Number(v.currencyId) : null,
-      amount: Number(v.amount || 0),
-      tax: Number(this.taxAmount || 0),
-      fxRate: Number(this.fxRate || 1),
-      baseAmount: Number(this.netPayableBase || 0),
-      status: action === 'HOLD' ? 1 : 2,
-      linesJson: JSON.stringify(this.lines.value),
-      createdBy: this.userId,
-      updatedBy: this.userId,
-      isPartialInvoice: !!this.form.value.isPartialInvoice,
-      countryId: Number(localStorage.getItem('countryId') || 1)
-    };
-
-    if (payload.id <= 0) {
-      this.api.create(payload).subscribe({
-        next: () => {
-          Swal.fire('Saved successfully');
-          this.router.navigate(['/purchase/list-SupplierInvoice']);
-        },
-        error: (err) => Swal.fire('Save failed', err?.error?.message || err?.message, 'error')
-      });
-      return;
-    }
-
-    this.api.update(payload.id, payload).subscribe({
-      next: () => {
-        Swal.fire('Updated successfully');
-        this.router.navigate(['/purchase/list-SupplierInvoice']);
-      },
-      error: (err) => Swal.fire('Update failed', err?.error?.message || err?.message, 'error')
-    });
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    return;
   }
 
+  const v = this.form.value;
+
+  const grnIds = (v.grnIds || [])
+    .map((x: any) => Number(x))
+    .filter((n: number) => n > 0);
+
+  if (!grnIds.length) {
+    Swal.fire('Select GRN', 'At least one GRN must be selected.', 'warning');
+    return;
+  }
+
+  const invoiceAmount = Number(this.grandTotal || 0);
+  const advanceAppliedAmount = Math.min(Number(this.advanceAmount || 0), invoiceAmount);
+  const netPayableAmount = +(invoiceAmount - advanceAppliedAmount).toFixed(2);
+
+  const payload = {
+    id: Number(v.id || 0),
+    invoiceNo: v.invoiceNo,
+    grnIds,
+    grnNos: v.grnNos,
+    invoiceDate: v.invoiceDate,
+    supplierId: v.supplierId ? Number(v.supplierId) : null,
+    currencyId: v.currencyId != null ? Number(v.currencyId) : null,
+
+    amount: invoiceAmount,
+    advanceAppliedAmount: advanceAppliedAmount,
+    netPayableAmount: netPayableAmount,
+
+    tax: Number(this.taxAmount || 0),
+    fxRate: Number(this.fxRate || 1),
+    baseAmount: Number(this.netPayableBase || 0),
+    status: action === 'HOLD' ? 1 : 2,
+    linesJson: JSON.stringify(this.lines.value),
+    createdBy: this.userId,
+    updatedBy: this.userId,
+    isPartialInvoice: !!this.form.value.isPartialInvoice,
+    countryId: Number(localStorage.getItem('countryId') || 1)
+  };
+
+  if (payload.id <= 0) {
+    this.api.create(payload).subscribe({
+      next: () => {
+        Swal.fire('Saved successfully');
+        this.router.navigate(['/purchase/list-SupplierInvoice']);
+      },
+      error: (err) =>
+        Swal.fire('Save failed', err?.error?.message || err?.message, 'error')
+    });
+    return;
+  }
+
+  this.api.update(payload.id, payload).subscribe({
+    next: () => {
+      Swal.fire('Updated successfully');
+      this.router.navigate(['/purchase/list-SupplierInvoice']);
+    },
+    error: (err) =>
+      Swal.fire('Update failed', err?.error?.message || err?.message, 'error')
+  });
+}
   private loadInvoice(id: number): void {
     this.api.getById(id).subscribe({
       next: (res: any) => {

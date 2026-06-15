@@ -144,6 +144,7 @@ export interface CompanyItemDto {
   isDefault?: boolean;
   isOwner?: boolean;
   approvalLevelName?: string;
+  organizationId:number
 }
 
 export interface OrganizationCompanyGroupDto {

@@ -14,11 +14,12 @@ interface CoaFlat {
   debit: number;
   credit: number;
   balance: number;
-  debitBase: number;    // ✅
-  creditBase: number;   // ✅
-  balanceBase: number;  // ✅
+  debitBase: number;
+  creditBase: number;
+  balanceBase: number;
   isControl: boolean;
   isActive?: boolean;
+  baseCurrency: string;
 }
 
 interface CoaNode extends CoaFlat {
@@ -26,24 +27,31 @@ interface CoaNode extends CoaFlat {
   ownDebit: number;
   ownCredit: number;
   ownBalance: number;
-  ownDebitBase: number;   // ✅
-  ownCreditBase: number;  // ✅
+  ownDebitBase: number;
+  ownCreditBase: number;
 
   totalOpening: number;
   totalDebit: number;
   totalCredit: number;
   totalBalance: number;
-  totalDebitBase: number;   // ✅
-  totalCreditBase: number;  // ✅
-  totalBalanceBase: number; // ✅
+  totalDebitBase: number;
+  totalCreditBase: number;
+  totalBalanceBase: number;
 
+  // ✅ These are the DISPLAY values shown in the table
+  // They are set in rebuildDisplayRows() based on baseCurrency
   openingBalance: number;
   debit: number;
   credit: number;
   balance: number;
-  debitBase: number;    // ✅
-  creditBase: number;   // ✅
-  balanceBase: number;  // ✅
+  debitBase: number;
+  creditBase: number;
+  balanceBase: number;
+
+  // ✅ Final single-column display values (base currency resolved)
+  displayDebit: number;
+  displayCredit: number;
+  displayBalance: number;
 
   children: CoaNode[];
   hasChildren: boolean;
@@ -67,6 +75,22 @@ export class GeneralLdegerComponent implements OnInit {
   searchValue = '';
   isLoading = false;
 
+  // ✅ BaseCurrency resolved from API — drives column header + which value to show
+  baseCurrency: string = 'SGD';
+
+  // ✅ true = base currency differs from transaction currency (FxRate applied values used)
+  // false = same currency, use raw debit/credit/balance
+  get useBaseValues(): boolean {
+    // DebitBase/CreditBase/BalanceBase have FxRate applied.
+    // If BaseCurrency is SGD and transactions are in foreign currency → use Base columns.
+    // If BaseCurrency matches transaction currency (e.g., INR only) → use raw columns.
+    // Since we always compute both, we decide per baseCurrency:
+    //   SGD → use debitBase (FxRate-converted to SGD)
+    //   INR → use debit (raw, already in INR, FxRate=1 for domestic)
+    // Adjust this logic if your app has different rules.
+    return this.baseCurrency.toUpperCase() === 'SGD';
+  }
+
   roots: CoaNode[] = [];
   displayRows: CoaNode[] = [];
 
@@ -87,6 +111,15 @@ export class GeneralLdegerComponent implements OnInit {
       next: (res: any) => {
         const raw = res?.data ?? res ?? [];
 
+        // ✅ Pick baseCurrency from first row returned by SQL
+        if (raw?.length) {
+          const firstRow = raw[0];
+          this.baseCurrency =
+            firstRow.baseCurrency ??
+            firstRow.BaseCurrency ??
+            'SGD';
+        }
+
         const flat: CoaFlat[] = (raw || []).map((x: any) => {
           const headName = String(x.headName ?? '').trim();
           const isControl =
@@ -105,12 +138,12 @@ export class GeneralLdegerComponent implements OnInit {
             debit: Number(x.debit ?? 0),
             credit: Number(x.credit ?? 0),
             balance: Number(x.balance ?? 0),
-            // ✅ base fields
             debitBase:   Number(x.debitBase   ?? x.DebitBase   ?? 0),
             creditBase:  Number(x.creditBase  ?? x.CreditBase  ?? 0),
             balanceBase: Number(x.balanceBase ?? x.BalanceBase ?? 0),
             isControl,
-            isActive: x.isActive ?? true
+            isActive: x.isActive ?? true,
+            baseCurrency: String(x.baseCurrency ?? x.BaseCurrency ?? 'SGD')
           };
         });
 
@@ -118,7 +151,7 @@ export class GeneralLdegerComponent implements OnInit {
         const nodesById   = new Map<number, CoaNode>();
         const nodesByCode = new Map<number, CoaNode>();
 
-        // CREATE NODES
+        // ✅ CREATE NODES
         flatActive.forEach(f => {
           const node: CoaNode = {
             ...f,
@@ -126,24 +159,29 @@ export class GeneralLdegerComponent implements OnInit {
             ownDebit:     f.debit,
             ownCredit:    f.credit,
             ownBalance:   f.balance,
-            ownDebitBase:  f.debitBase,   // ✅
-            ownCreditBase: f.creditBase,  // ✅
+            ownDebitBase:  f.debitBase,
+            ownCreditBase: f.creditBase,
 
             totalOpening:    0,
             totalDebit:      0,
             totalCredit:     0,
             totalBalance:    0,
-            totalDebitBase:  0,  // ✅
-            totalCreditBase: 0,  // ✅
-            totalBalanceBase:0,  // ✅
+            totalDebitBase:  0,
+            totalCreditBase: 0,
+            totalBalanceBase:0,
 
             openingBalance: 0,
             debit:    0,
             credit:   0,
             balance:  0,
-            debitBase:   0,  // ✅
-            creditBase:  0,  // ✅
-            balanceBase: 0,  // ✅
+            debitBase:   0,
+            creditBase:  0,
+            balanceBase: 0,
+
+            // ✅ Single display values — computed in rebuildDisplayRows
+            displayDebit:   0,
+            displayCredit:  0,
+            displayBalance: 0,
 
             children: [],
             hasChildren: false,
@@ -156,7 +194,7 @@ export class GeneralLdegerComponent implements OnInit {
           nodesByCode.set(node.headCode, node);
         });
 
-        // BUILD TREE
+        // ✅ BUILD TREE
         const roots: CoaNode[] = [];
         nodesById.forEach(node => {
           const p = node.parentHead ?? 0;
@@ -173,7 +211,7 @@ export class GeneralLdegerComponent implements OnInit {
           }
         });
 
-        // SORT & SET LEVEL
+        // ✅ SORT & SET LEVEL
         const sortAndSetLevel = (list: CoaNode[], level: number) => {
           list.sort((a, b) => a.headCode - b.headCode);
           list.forEach(n => {
@@ -184,7 +222,7 @@ export class GeneralLdegerComponent implements OnInit {
         };
         sortAndSetLevel(roots, 0);
 
-        // COMPUTE TOTALS
+        // ✅ COMPUTE TOTALS
         roots.forEach(r => this.computeTotals(r));
 
         this.roots = roots;
@@ -204,7 +242,7 @@ export class GeneralLdegerComponent implements OnInit {
     });
   }
 
-  // ✅ RECURSIVE TOTALS — debitBase + creditBase include
+  // ✅ RECURSIVE TOTALS — accumulates both raw and base values
   private computeTotals(node: CoaNode): {
     opening: number;
     debit: number;
@@ -215,8 +253,8 @@ export class GeneralLdegerComponent implements OnInit {
     let opening    = node.ownOpening    ?? 0;
     let debit      = node.ownDebit      ?? 0;
     let credit     = node.ownCredit     ?? 0;
-    let debitBase  = node.ownDebitBase  ?? 0;  // ✅
-    let creditBase = node.ownCreditBase ?? 0;  // ✅
+    let debitBase  = node.ownDebitBase  ?? 0;
+    let creditBase = node.ownCreditBase ?? 0;
 
     if (node.children && node.children.length) {
       node.children.forEach(ch => {
@@ -224,23 +262,23 @@ export class GeneralLdegerComponent implements OnInit {
         opening    += t.opening;
         debit      += t.debit;
         credit     += t.credit;
-        debitBase  += t.debitBase;   // ✅
-        creditBase += t.creditBase;  // ✅
+        debitBase  += t.debitBase;
+        creditBase += t.creditBase;
       });
     }
 
-    node.totalOpening    = opening;
-    node.totalDebit      = debit;
-    node.totalCredit     = credit;
-    node.totalBalance    = Math.abs(this.calcBalance(opening, debit, credit));
-    node.totalDebitBase  = debitBase;                      // ✅
-    node.totalCreditBase = creditBase;                     // ✅
-    node.totalBalanceBase = Math.abs(debitBase - creditBase); // ✅
+    node.totalOpening     = opening;
+    node.totalDebit       = debit;
+    node.totalCredit      = credit;
+    node.totalBalance     = Math.abs(this.calcBalance(opening, debit, credit));
+    node.totalDebitBase   = debitBase;
+    node.totalCreditBase  = creditBase;
+    node.totalBalanceBase = Math.abs(debitBase - creditBase);
 
     return { opening, debit, credit, debitBase, creditBase };
   }
 
-  // ✅ FLATTEN TREE — debitBase + creditBase display
+  // ✅ FLATTEN TREE + resolve display values based on baseCurrency
   private rebuildDisplayRows(): void {
     const output: CoaNode[] = [];
 
@@ -259,8 +297,8 @@ export class GeneralLdegerComponent implements OnInit {
             o  = node.ownOpening    ?? 0;
             d  = node.ownDebit      ?? 0;
             c  = node.ownCredit     ?? 0;
-            db = node.ownDebitBase  ?? 0;  // ✅
-            cb = node.ownCreditBase ?? 0;  // ✅
+            db = node.ownDebitBase  ?? 0;
+            cb = node.ownCreditBase ?? 0;
           } else {
             o = 0; d = 0; c = 0; db = 0; cb = 0;
           }
@@ -269,25 +307,38 @@ export class GeneralLdegerComponent implements OnInit {
           o  = node.totalOpening    ?? 0;
           d  = node.totalDebit      ?? 0;
           c  = node.totalCredit     ?? 0;
-          db = node.totalDebitBase  ?? 0;  // ✅
-          cb = node.totalCreditBase ?? 0;  // ✅
+          db = node.totalDebitBase  ?? 0;
+          cb = node.totalCreditBase ?? 0;
         }
       } else {
         // LEAF
         o  = node.ownOpening    ?? 0;
         d  = node.ownDebit      ?? 0;
         c  = node.ownCredit     ?? 0;
-        db = node.ownDebitBase  ?? 0;  // ✅
-        cb = node.ownCreditBase ?? 0;  // ✅
+        db = node.ownDebitBase  ?? 0;
+        cb = node.ownCreditBase ?? 0;
       }
 
       node.openingBalance = o;
       node.debit          = d;
       node.credit         = c;
       node.balance        = Math.abs(this.calcBalance(o, d, c));
-      node.debitBase      = db;                   // ✅
-      node.creditBase     = cb;                   // ✅
-      node.balanceBase    = Math.abs(db - cb);    // ✅
+      node.debitBase      = db;
+      node.creditBase     = cb;
+      node.balanceBase    = Math.abs(db - cb);
+
+      // ✅ KEY LOGIC: Pick which column to show as the single display value
+      // If baseCurrency = 'SGD' (or any currency needing FxRate conversion) → use Base
+      // If baseCurrency = 'INR' (same as transaction currency, FxRate=1) → use raw
+      if (this.useBaseValues) {
+        node.displayDebit   = db;
+        node.displayCredit  = cb;
+        node.displayBalance = Math.abs(db - cb);
+      } else {
+        node.displayDebit   = d;
+        node.displayCredit  = c;
+        node.displayBalance = Math.abs(this.calcBalance(o, d, c));
+      }
 
       output.push(node);
 

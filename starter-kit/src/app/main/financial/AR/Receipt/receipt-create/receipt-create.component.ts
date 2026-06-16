@@ -365,6 +365,8 @@ loadInvoicesForCustomer(): void {
         invoiceNo:    i.invoiceNo,
         invoiceDate:  i.invoiceDate,
         amount:       Number(i.amount    || 0),
+        creditNoteAmount: Number(i.creditNoteAmount || 0),
+        advanceAmount: Number(i.advanceAmount || 0),
         paidBefore:   Number(i.paidAmount || 0),
         balance:      Number(i.balance   || 0),
         fxRate:       Number(i.fxRate    ?? i.FxRate    ?? 1),

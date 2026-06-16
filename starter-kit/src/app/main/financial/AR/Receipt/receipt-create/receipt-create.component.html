@@ -216,7 +216,7 @@
       </span>
     </td>
 <td class="text-end text-success">
-  {{ r.advanceAmount | number:'1.2-2' }}
+  {{ inv.advanceAmount || 0 | number:'1.2-2' }}
 </td>
     <!-- Paid -->
     <td class="text-end">

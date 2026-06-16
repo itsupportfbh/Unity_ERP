@@ -152,7 +152,6 @@
       <th class="text-end">Opening Credit</th>
       <th class="text-end">Closing Debit</th>
       <th class="text-end">Closing Credit</th>
-      <th class="text-end" style="color:#2E5F73;">Closing (SGD)</th>
       <th class="text-center" style="width:80px;">Action</th>
     </tr>
   </thead>
@@ -206,32 +205,7 @@
           {{ getClosingCreditDisplay(r) | number:'1.2-2' }}
         </td>
 
-        <!-- ✅ Closing SGD -->
-      <!-- ✅ Closing SGD — net value show பண்ணு -->
-<td class="text-end" style="color:#2E5F73;font-weight:600;">
-  <ng-container *ngIf="getClosingDebitBaseDisplay(r) > 0 && getClosingCreditBaseDisplay(r) === 0">
-    {{ getClosingDebitBaseDisplay(r) | number:'1.2-2' }}
-  </ng-container>
 
-  <ng-container *ngIf="getClosingCreditBaseDisplay(r) > 0 && getClosingDebitBaseDisplay(r) === 0">
-    ({{ getClosingCreditBaseDisplay(r) | number:'1.2-2' }})
-  </ng-container>
-
-  <!-- Both > 0 → net show -->
-  <ng-container *ngIf="getClosingDebitBaseDisplay(r) > 0 && getClosingCreditBaseDisplay(r) > 0">
-    <ng-container *ngIf="getClosingDebitBaseDisplay(r) >= getClosingCreditBaseDisplay(r)">
-      {{ (getClosingDebitBaseDisplay(r) - getClosingCreditBaseDisplay(r)) | number:'1.2-2' }}
-    </ng-container>
-    <ng-container *ngIf="getClosingDebitBaseDisplay(r) < getClosingCreditBaseDisplay(r)">
-      ({{ (getClosingCreditBaseDisplay(r) - getClosingDebitBaseDisplay(r)) | number:'1.2-2' }})
-    </ng-container>
-  </ng-container>
-
-  <!-- Both 0 -->
-  <ng-container *ngIf="getClosingDebitBaseDisplay(r) === 0 && getClosingCreditBaseDisplay(r) === 0">
-    -
-  </ng-container>
-</td>
 
         <!-- Action -->
         <td class="text-center">
@@ -257,7 +231,7 @@
 
       <!-- Detail Row -->
       <tr *ngIf="selectedHead && selectedHead.headId === r.headId">
-        <td colspan="7" style="background:#fafafa;">
+        <td colspan="6" style="background:#fafafa;">
           <h6 class="mb-1">
             Details: {{ selectedHead.headCode }} - {{ selectedHead.headName }}
           </h6>
@@ -301,9 +275,6 @@
       <td class="text-end">{{ totalOpeningCredit | number:'1.2-2' }}</td>
       <td class="text-end">{{ totalClosingDebit  | number:'1.2-2' }}</td>
       <td class="text-end">{{ totalClosingCredit | number:'1.2-2' }}</td>
-      <td class="text-end" style="color:#2E5F73;">
-        {{ totalClosingDebitBase | number:'1.2-2' }} SGD
-      </td>
       <td></td>
     </tr>
   </tfoot>

@@ -140,35 +140,57 @@
   </ng-template>
 </ngx-datatable-column>
 
-<!-- Status column -->
-<ngx-datatable-column name="Status" [width]="140" [sortable]="false">
-          <!-- Status -->
+          <ngx-datatable-column name="Received" [width]="110" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ (row.receivedQty || row.qtyReceived || 0) | number:'1.0-2' }}
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Pending" [width]="110" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              {{ (row.pendingQty || 0) | number:'1.0-2' }}
+            </ng-template>
+          </ngx-datatable-column>
+
           <ngx-datatable-column name="Status" [width]="140" [sortable]="false">
             <ng-template ngx-datatable-cell-template let-row="row">
-              <span class="badge" [ngClass]="statusClass(row)">
+              <span class="badge" [ngClass]="statusClass(row)" [title]="row.closeReason || ''">
                 {{ statusText(row) }}
               </span>
             </ng-template>
           </ngx-datatable-column>
-</ngx-datatable-column>
           <!-- Action -->
           <ngx-datatable-column
             name="Action"
-            [width]="120"
+            [width]="190"
             [sortable]="false"
             [canAutoResize]="false">
             <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="d-flex justify-content-center align-items-center h-100">
+              <div class="d-flex justify-content-center align-items-center h-100" style="gap:8px;">
                 <i class="fas fa-pen"
-                   [class.text-primary]="!row.isPostInventory && !isPeriodLocked"
-                   [class.icon-disabled]="row.isPostInventory || isPeriodLocked"
+                   [class.text-primary]="!row.isPostInventory && !row.isClosed && !isPeriodLocked"
+                   [class.icon-disabled]="row.isPostInventory || row.isClosed || isPeriodLocked"
                    [attr.title]="row.isPostInventory
                                   ? 'Posted to Inventory (cannot edit)'
-                                  : (isPeriodLocked ? 'Period locked' : 'Edit')"
+                                  : (row.isClosed ? 'Closed GRN (reopen first)' : (isPeriodLocked ? 'Period locked' : 'Edit'))"
                    style="cursor:pointer;"
                     *ngIf="canEdit()"
                    (click)="onEdit(row)">
                 </i>
+                <button
+                  *ngIf="canClose(row)"
+                  type="button"
+                  class="btn btn-sm btn-outline-warning"
+                  (click)="closeGrn(row)">
+                  Close
+                </button>
+                <button
+                  *ngIf="canReopen(row)"
+                  type="button"
+                  class="btn btn-sm btn-outline-success"
+                  (click)="reopenGrn(row)">
+                  Reopen
+                </button>
               </div>
             </ng-template>
           </ngx-datatable-column>

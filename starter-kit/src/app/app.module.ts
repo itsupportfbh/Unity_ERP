@@ -88,6 +88,30 @@ const appRoutes: Routes = [
       .then(m => m.DepartmentMenuAccessModule)
 },
   {
+    path: 'smart-search',
+    loadChildren: () => import('./main/smart-search/smart-search.module').then(m => m.SmartSearchModule)
+  },
+  {
+    path: 'whatsapp-timeline',
+    loadChildren: () => import('./main/whatsapp-timeline/whatsapp-timeline.module').then(m => m.WhatsAppTimelineModule)
+  },
+  {
+    path: 'template-admin',
+    loadChildren: () => import('./main/template-admin/template-admin.module').then(m => m.TemplateAdminModule)
+  },
+  {
+    path: 'language-admin',
+    loadChildren: () => import('./main/language-admin/language-admin.module').then(m => m.LanguageAdminModule)
+  },
+  {
+    path: 'logistics',
+    loadChildren: () => import('./main/logistics/logistics.module').then(m => m.LogisticsModule)
+  },
+  {
+    path: 'report-builder',
+    loadChildren: () => import('./main/report-builder/report-builder.module').then(m => m.ReportBuilderModule)
+  },
+  {
     path: '',
     redirectTo: 'pages/authentication/login-v2',
     pathMatch: 'full'

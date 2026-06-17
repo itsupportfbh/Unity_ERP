@@ -193,7 +193,6 @@ export class UserAccessWizardComponent {
       new Set([...moduleIds, ...functionIds])
     );
 
-    console.log('UPDATED MENU IDS =>', finalIds);
 
     localStorage.setItem('allowedMenuIds', JSON.stringify(finalIds));
     localStorage.setItem('menuIds', JSON.stringify(finalIds));
@@ -243,7 +242,6 @@ export class UserAccessWizardComponent {
       permissions: this.finalPermissionPayload || []
     };
 
-    console.log('FINAL SUBMIT PAYLOAD', payload);
 
     if (!orgGuid) {
       Swal.fire({

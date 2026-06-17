@@ -6,7 +6,7 @@
     <div class="d-flex align-items-center justify-content-between mb-2">
       <h2 class="h6 mb-0 text-dark fw-semibold">Stock Adjustment</h2>
       <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border"
-        [ngClass]="badgeToneClasses('green')"> Adjust → Approve (per threshold) → Post</span>
+        [ngClass]="badgeToneClasses('green')"> Adjust &amp; Post Stock</span>
     </div>
 
     <!-- Controls Row -->
@@ -32,10 +32,8 @@
       <!-- Spacer -->
       <div class="col d-none d-lg-block"></div>
 
-      <!-- Actions -->
       <div class="col-12 col-lg-4 d-flex gap-2 justify-content-lg-end">
-        <button type="button" class="btn btn-primary btn-sm sa-btn" (click)="saveDraft()">Save Draft</button>
-        <button type="button" class="btn btn-outline-primary btn-sm sa-btn" (click)="submitForApproval()">Submit for Approval</button>
+        <span class="text-muted small align-self-center">Select item, then use Adjust to post stock changes.</span>
       </div>
     </div>
 
@@ -186,8 +184,8 @@
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary btn-sm" (click)="cancelModal()">Cancel</button>
     <button type="button" class="btn btn-primary btn-sm"
-            (click)="submitAdjustment()" [disabled]="!!adjustError || !selectedRow?.type || !selectedRow?.faultyQty">
-      Submit
+            (click)="submitAdjustment()" [disabled]="savingAdjustment || !!adjustError || !selectedRow?.type || !selectedRow?.faultyQty">
+      {{ savingAdjustment ? 'Posting...' : 'Post Adjustment' }}
     </button>
   </div>
 </ng-template>

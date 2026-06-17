@@ -41,6 +41,8 @@ export class DebitNoteListComponent implements OnInit {
   // ✅ Modal currency
   modalCurrencyName = '';
   modalFxRate       = 1;
+  modalIsOverseas   = false;
+  modalIncotermsName = '';
 
   isPeriodLocked    = false;
   currentPeriodName = '';
@@ -183,7 +185,9 @@ export class DebitNoteListComponent implements OnInit {
           amount:       Number(x.amount        ?? x.Amount       ?? 0),
           fxRate:       Number(x.fxRate        ?? x.FxRate       ?? 1),
           amountBase:   Number(x.amountBase    ?? x.AmountBase   ?? 0),
-          currencyName: x.currencyName          ?? x.CurrencyName ?? ''
+          currencyName: x.currencyName          ?? x.CurrencyName ?? '',
+          isOverseas:   this.toBool(x.isOverseas ?? x.IsOverseas),
+          incotermsName: x.incotermsName         ?? x.IncotermsName ?? ''
         }));
 
         this.tempData = [...this.rows];
@@ -211,6 +215,8 @@ export class DebitNoteListComponent implements OnInit {
         (d.name          || '').toLowerCase().includes(val) ||
         (d.supplierName  || '').toLowerCase().includes(val) ||
         (d.reason        || '').toLowerCase().includes(val) ||
+        (d.incotermsName || '').toLowerCase().includes(val) ||
+        (d.isOverseas ? 'overseas import' : 'local').includes(val) ||
         poDate.includes(val);
     });
 
@@ -343,6 +349,8 @@ export class DebitNoteListComponent implements OnInit {
     // ✅ Currency from row
     this.modalCurrencyName = row.currencyName || '';
     this.modalFxRate       = Number(row.fxRate || 1);
+    this.modalIsOverseas   = this.toBool(row.isOverseas ?? row.IsOverseas);
+    this.modalIncotermsName = row.incotermsName ?? row.IncotermsName ?? '';
 
     this.showLinesModal = true;
   }
@@ -353,5 +361,12 @@ export class DebitNoteListComponent implements OnInit {
     this.modalTotal        = 0;
     this.modalCurrencyName = '';
     this.modalFxRate       = 1;
+    this.modalIsOverseas   = false;
+    this.modalIncotermsName = '';
+  }
+
+  private toBool(v: any): boolean {
+    if (v === true || v === 1 || v === '1') return true;
+    return String(v ?? '').toLowerCase() === 'true';
   }
 }

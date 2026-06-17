@@ -231,6 +231,52 @@
           </div>
         </div>
 
+        <div class="po-perf-wrap" *ngIf="tempData?.length">
+          <div class="po-perf-card">
+            <div class="po-perf-label">Suppliers</div>
+            <div class="po-perf-value">{{ totalSupplierCount }}</div>
+          </div>
+          <div class="po-perf-card">
+            <div class="po-perf-label">PO Value (Base)</div>
+            <div class="po-perf-value">{{ totalPoBaseValue | number:'1.2-2' }} SGD</div>
+          </div>
+          <div class="po-perf-card">
+            <div class="po-perf-label">Open POs</div>
+            <div class="po-perf-value">{{ openPoCount }}</div>
+          </div>
+          <div class="po-perf-card po-perf-card--wide">
+            <div class="po-perf-label">Top Supplier</div>
+            <div class="po-perf-value po-perf-value--name">
+              {{ supplierPerformanceTop[0]?.supplierName || '-' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="po-perf-table" *ngIf="supplierPerformanceTop?.length">
+          <div class="po-perf-table__head">
+            <span>Supplier Performance</span>
+            <small>Top suppliers by approved/pending PO value</small>
+          </div>
+          <div class="po-perf-table__body">
+            <div class="po-perf-row po-perf-row--header">
+              <div>Supplier</div>
+              <div>POs</div>
+              <div>Approved</div>
+              <div>Pending</div>
+              <div>Rejected</div>
+              <div class="text-right">Base Value</div>
+            </div>
+            <div class="po-perf-row" *ngFor="let s of supplierPerformanceTop">
+              <div class="po-perf-supplier" [title]="s.supplierName">{{ s.supplierName }}</div>
+              <div>{{ s.poCount }}</div>
+              <div>{{ s.approvedCount }}</div>
+              <div>{{ s.pendingCount }}</div>
+              <div>{{ s.rejectedCount }}</div>
+              <div class="text-right">{{ s.totalBase | number:'1.2-2' }}</div>
+            </div>
+          </div>
+        </div>
+
         <!-- ================== MAIN TABLE ================== -->
         <ngx-datatable
           class="bootstrap core-bootstrap"
@@ -271,6 +317,15 @@
 </ngx-datatable-column>
 
           <ngx-datatable-column name="Currency/FX" prop="currencyName" [width]="120"></ngx-datatable-column>
+          <ngx-datatable-column name="Type" [width]="110" [sortable]="false">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <span
+                class="po-type-badge"
+                [ngClass]="isOverseasPo(row) ? 'po-type-badge--overseas' : 'po-type-badge--local'">
+                {{ isOverseasPo(row) ? 'Overseas' : 'Local' }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
 <!-- இருக்கும் Currency/FX column-க்கு அடுத்து -->
 <ngx-datatable-column name="Net Total" prop="netTotal" [width]="140">
   <ng-template let-row="row" ngx-datatable-cell-template>
@@ -529,6 +584,7 @@
           <thead>
             <tr style="color:#6b7280; font-size:13px;">
               <th style="padding:8px 10px;">Supplier</th>
+              <th style="padding:8px 10px;">Type</th>
               <th style="padding:8px 10px;">Payment Terms</th>
               <th style="padding:8px 10px;">Delivery</th>
               <th style="padding:8px 10px;">Remarks</th>
@@ -538,6 +594,13 @@
           <tbody>
             <tr *ngFor="let d of drafts" style="background:#f9fafb;">
               <td style="padding:10px 12px;">{{ d.supplierName || '-' }}</td>
+              <td style="padding:10px 12px;">
+                <span
+                  class="po-type-badge"
+                  [ngClass]="isOverseasPo(d) ? 'po-type-badge--overseas' : 'po-type-badge--local'">
+                  {{ isOverseasPo(d) ? 'Overseas' : 'Local' }}
+                </span>
+              </td>
               <td style="padding:10px 12px;">{{ d.paymentTermName || '-' }}</td>
               <td style="padding:10px 12px;">{{ d.deliveryDate | date:'dd-MM-yyyy' }}</td>
               <td style="padding:10px 12px;">{{ d.remarks || '-' }}</td>
@@ -557,7 +620,7 @@
               </td>
             </tr>
             <tr *ngIf="!drafts?.length">
-              <td colspan="5" style="padding:14px 12px; text-align:center; color:#6b7280;">
+              <td colspan="6" style="padding:14px 12px; text-align:center; color:#6b7280;">
                 No drafts
               </td>
             </tr>
@@ -806,6 +869,8 @@
             <div><b>PO No:</b> {{ emailConfirmRow?.purchaseOrderNo || '-' }}</div>
             <div><b>Supplier:</b> {{ emailConfirmRow?.supplierName || '-' }}</div>
             <div><b>Currency:</b> {{ emailConfirmRow?.currencyName || '-' }}</div>
+            <div><b>Type:</b> {{ isOverseasPo(emailConfirmRow) ? 'Overseas Purchase' : 'Local Purchase' }}</div>
+            <div *ngIf="isOverseasPo(emailConfirmRow)"><b>Incoterms:</b> {{ emailConfirmRow?.incotermsName || '-' }}</div>
           </div>
 
           <div *ngIf="emailSending" style="margin-top:10px; color:#6b7280;">

@@ -80,7 +80,6 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
   // Load Items Master (FIXED)
   // =========================
   loadItemsMaster() {
-    debugger
     this.itemMasterService.getAllItemMaster().subscribe({
       next: (res: any) => {
         // your sample: { isSuccess, message, data: [...] }
@@ -92,7 +91,6 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
       );
 
         // debug
-        console.log('Items loaded:', this.itemsMaster.length);
       },
       error: () => {
         this.itemsMaster = [];

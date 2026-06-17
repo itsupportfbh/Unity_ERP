@@ -273,7 +273,6 @@ ngOnInit(): void {
   // INITIAL LOAD
   // =========================
   loadInitialData(): void {
-    debugger
     const idParam = this.route.snapshot.paramMap.get('id');
     const id = idParam ? +idParam : null;
     if (id) {
@@ -825,7 +824,6 @@ fetchExchangeRate(fromCurrencyId: number): void {
       updatedBy: this.userId
     };
 
-    console.log(payload);
 
     const request$ = payload.id && payload.id > 0
       ? this._SupplierService.updateSupplier(payload)

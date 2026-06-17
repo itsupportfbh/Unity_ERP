@@ -15,6 +15,8 @@ interface SupplierInvoiceOption {
   fxRate?: number;       // ✅
   currencyName?: string; // ✅
   currencyId?: number;   // ✅
+  isOverseas?: boolean;
+  incotermsName?: string;
 }
 
 type LineRow = {
@@ -71,6 +73,8 @@ export class DebitNoteCreateComponent implements OnInit {
   fxRate: number = 1;
   currencyName: string = '';
   invoiceCurrencyId: number = 0;
+  selectedIsOverseas = false;
+  selectedIncotermsName = '';
 
   constructor(
     private router: Router,
@@ -107,6 +111,10 @@ export class DebitNoteCreateComponent implements OnInit {
     });
   }
 
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
+  }
+
   checkGstLock(): void {
     if (!this.noteDate) {
       this.isGstLocked = false;
@@ -138,7 +146,11 @@ export class DebitNoteCreateComponent implements OnInit {
           if (invoice) this.applySelectedInvoice(invoice, true);
         }
       },
-      error: (err) => console.error('Error loading supplier invoices', err)
+      error: (err) => {
+        this.invoiceList = [];
+        this.invoiceFiltered = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Unable to load supplier invoices.'), 'error');
+      }
     });
   }
 
@@ -151,7 +163,9 @@ export class DebitNoteCreateComponent implements OnInit {
       supplierName:  x.supplierName          ?? x.SupplierName  ?? '',
       fxRate:        Number(x.fxRate         ?? x.FxRate        ?? 1),   // ✅
       currencyName:  x.currencyName          ?? x.CurrencyName  ?? '',   // ✅
-      currencyId:    Number(x.currencyId     ?? x.CurrencyId    ?? 0)    // ✅
+      currencyId:    Number(x.currencyId     ?? x.CurrencyId    ?? 0),   // ✅
+      isOverseas:    this.toBool(x.isOverseas ?? x.IsOverseas),
+      incotermsName: x.incotermsName          ?? x.IncotermsName ?? ''
     };
   }
 
@@ -167,7 +181,9 @@ export class DebitNoteCreateComponent implements OnInit {
     this.invoiceFiltered = (this.invoiceList || []).filter(inv =>
       (inv.invoiceNo    || '').toLowerCase().includes(q) ||
       (inv.grnInvoiceNos || '').toLowerCase().includes(q) ||
-      (inv.supplierName  || '').toLowerCase().includes(q)
+      (inv.supplierName  || '').toLowerCase().includes(q) ||
+      (inv.incotermsName || '').toLowerCase().includes(q) ||
+      (inv.isOverseas ? 'overseas import' : 'local').includes(q)
     );
     this.invoiceOpen = true;
   }
@@ -199,6 +215,8 @@ export class DebitNoteCreateComponent implements OnInit {
     this.fxRate            = Number(invoice.fxRate    || 1);
     this.currencyName      = invoice.currencyName     || '';
     this.invoiceCurrencyId = Number(invoice.currencyId || 0);
+    this.selectedIsOverseas = !!invoice.isOverseas;
+    this.selectedIncotermsName = invoice.incotermsName || '';
 
     if (!keepExistingLines) {
       this.loadFromPin(this.pinId);
@@ -218,6 +236,8 @@ export class DebitNoteCreateComponent implements OnInit {
     this.fxRate             = 1;
     this.currencyName       = '';
     this.invoiceCurrencyId  = 0;
+    this.selectedIsOverseas = false;
+    this.selectedIncotermsName = '';
   }
 
   @HostListener('document:click', ['$event'])
@@ -245,6 +265,8 @@ export class DebitNoteCreateComponent implements OnInit {
         this.fxRate            = Number(d.fxRate       ?? d.FxRate       ?? this.fxRate);
         this.currencyName      = d.currencyName         ?? d.CurrencyName  ?? this.currencyName;
         this.invoiceCurrencyId = Number(d.currencyId   ?? d.CurrencyId   ?? this.invoiceCurrencyId);
+        this.selectedIsOverseas = this.toBool(d.isOverseas ?? d.IsOverseas ?? this.selectedIsOverseas);
+        this.selectedIncotermsName = d.incotermsName ?? d.IncotermsName ?? this.selectedIncotermsName;
 
         const invoiceAmount = this.toNumber(d.amount ?? d.Amount ?? 0);
         const invoiceTax    = this.toNumber(d.tax    ?? d.Tax    ?? 0);
@@ -256,9 +278,8 @@ export class DebitNoteCreateComponent implements OnInit {
         this.applySourceLines(lines, headerTaxPct);
       },
       error: (err) => {
-        console.error('Error loading PIN source', err);
-        Swal.fire('Error', 'Unable to load invoice items.', 'error');
         this.retRows = [{}];
+        Swal.fire('Error', this.getErrorMessage(err, 'Unable to load invoice items.'), 'error');
       }
     });
   }
@@ -283,6 +304,8 @@ export class DebitNoteCreateComponent implements OnInit {
         this.fxRate            = Number(d.fxRate      ?? d.FxRate      ?? 1);
         this.currencyName      = d.currencyName        ?? d.CurrencyName ?? '';
         this.invoiceCurrencyId = Number(d.currencyId  ?? d.CurrencyId  ?? 0);
+        this.selectedIsOverseas = this.toBool(d.isOverseas ?? d.IsOverseas ?? false);
+        this.selectedIncotermsName = d.incotermsName ?? d.IncotermsName ?? '';
 
         const rawDate = d.noteDate ?? d.NoteDate ?? d.createdDate ?? d.CreatedDate;
         if (rawDate) {
@@ -323,8 +346,8 @@ export class DebitNoteCreateComponent implements OnInit {
         this.loadInvoices();
       },
       error: (err) => {
-        console.error('Error loading debit note for edit', err);
-        Swal.fire('Error', 'Unable to load debit note.', 'error');
+        this.retRows = [{}];
+        Swal.fire('Error', this.getErrorMessage(err, 'Unable to load debit note.'), 'error');
       }
     });
   }
@@ -421,7 +444,7 @@ export class DebitNoteCreateComponent implements OnInit {
       status:      post ? 2 : 0,
       createdBy:   this.userId,
       updatedBy:   this.userId,
-      countryId:   localStorage.getItem('countryId') || 1,
+      countryId:   localStorage.getItem('countryId') || 0,
       createdDate: new Date(),
      
       fxRate:       this.fxRate,
@@ -460,8 +483,7 @@ export class DebitNoteCreateComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Save debit note failed', err);
-        Swal.fire('Error', 'Failed to save debit note.', 'error');
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to save debit note.'), 'error');
       }
     });
   }
@@ -517,6 +539,11 @@ export class DebitNoteCreateComponent implements OnInit {
     if (v === null || v === undefined) return 0;
     const n = Number(String(v).replace(/[,]/g, '').trim());
     return isNaN(n) ? 0 : n;
+  }
+
+  private toBool(v: any): boolean {
+    if (v === true || v === 1 || v === '1') return true;
+    return String(v ?? '').toLowerCase() === 'true';
   }
 
   private safeJsonArray(raw: any): any[] {

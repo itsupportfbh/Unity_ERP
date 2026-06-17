@@ -70,7 +70,6 @@ export class OpeningBalanceComponent implements OnInit, AfterViewInit, AfterView
       }));
 
       // Debug if needed
-      console.log('parentHeadList', this.parentHeadList);
     });
   }
 

@@ -731,7 +731,6 @@ private toBool(value: any): boolean {
   /* ---------------- SO change ---------------- */
 
 onSoChanged(selectedSoOrId: any) {
-  debugger
   if (this.isEdit) return;
 
   this.soLines = [];
@@ -747,7 +746,6 @@ onSoChanged(selectedSoOrId: any) {
 
   const selectedSo: any = this.soList.find((x: any) => Number(x.id) === soId);
 
-  console.log('selectedSo:', selectedSo);
 
   if (!selectedSo) {
     this.selectedSoId = null;
@@ -892,7 +890,6 @@ if (this.isEdit && !this.canEdit()) {
             supplierId: l.supplierId ?? null
           }))
       };
-      console.log('DO payload =>', payload);
 
       this.doSrv.create(payload).subscribe({
         next: (res: any) => {

@@ -97,9 +97,7 @@ export class StatesComponent implements OnInit, AfterViewChecked, AfterViewInit 
           this.isDisplay = false;
         }
       },
-      error: (err) => {
-        console.error('Permission load error:', err);
-
+      error: () => {
         this.permission = this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
@@ -172,8 +170,13 @@ export class StatesComponent implements OnInit, AfterViewChecked, AfterViewInit 
         this.StateList = response?.data || [];
       },
       error: (err) => {
-        console.error('Load state error:', err);
         this.StateList = [];
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load states.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }
@@ -185,8 +188,14 @@ export class StatesComponent implements OnInit, AfterViewChecked, AfterViewInit 
         this.tempData = this.rows;
       },
       error: (err) => {
-        console.error('Load country error:', err);
         this.rows = [];
+        this.tempData = [];
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load countries.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }
@@ -204,9 +213,14 @@ export class StatesComponent implements OnInit, AfterViewChecked, AfterViewInit 
         this.selectedCountry = countryId;
       },
       error: (err) => {
-        console.error('Load country error:', err);
         this.rows = [];
         this.selectedCountry = countryId;
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load countries.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }

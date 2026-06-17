@@ -8,6 +8,7 @@ import {
   PeriodCloseService,
   PeriodStatusDto
 } from 'app/main/financial/period-close-fx/period-close-fx.service';
+import { ApprovalWorkflowService } from 'app/shared/approval-workflow.service';
 
 @Component({
   selector: 'app-supplier-invoice-list',
@@ -53,7 +54,8 @@ currentPeriodName = '';
     private router: Router,
     private permissionService: PermissionService,
     private gstLockService: GstLockService,
-    private periodService: PeriodCloseService
+    private periodService: PeriodCloseService,
+    private approvalWorkflow: ApprovalWorkflowService
   ) {
     this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -213,9 +215,11 @@ private showPeriodLockedSwal(action: string): void {
           linkedWithInvoiceNo: x.linkedWithInvoiceNo ?? x.LinkedWithInvoiceNo ?? '',
           canEdit: x.canEdit !== false,
           canApproveToAp: x.canApproveToAp === true || x.canApproveToAp === 1,
-          glPosted: x.glPosted === true || x.GlPosted === true || x.glPosted === 1 || x.GlPosted === 1,
+glPosted: x.glPosted === true || x.GlPosted === true || x.glPosted === 1 || x.GlPosted === 1,
 glPostedDate: x.glPostedDate ?? x.GlPostedDate ?? null,
 glJournalId: x.glJournalId ?? x.GlJournalId ?? null,
+          isOverseas: this.toBool(x.isOverseas ?? x.IsOverseas),
+          incotermsName: x.incotermsName ?? x.IncotermsName ?? '',
         }));
 
         this.temp = [...this.rows];
@@ -293,10 +297,21 @@ canShowDelete(row: any): boolean {
       (d.invoiceNo || '').toLowerCase().includes(val) ||
       (d.grnInvoiceNos || '').toLowerCase().includes(val) ||
       (d.grnNos || '').toLowerCase().includes(val) ||
+      (this.isOverseasPin(d) ? 'overseas import' : 'local').includes(val) ||
+      (d.incotermsName || '').toLowerCase().includes(val) ||
       (d.listStatusLabel || '').toLowerCase().includes(val)
     );
 
     this.checkRowsGstLock(this.rows, 'invoiceDate');
+  }
+
+  isOverseasPin(row: any): boolean {
+    return this.toBool(row?.isOverseas ?? row?.IsOverseas);
+  }
+
+  private toBool(v: any): boolean {
+    if (v === true || v === 1 || v === '1') return true;
+    return String(v || '').toLowerCase() === 'true';
   }
 
  goToCreate(): void {
@@ -349,7 +364,7 @@ if (row && this.isGlPosted(row)) {
   return;
 }
  if (this.isPeriodLocked) {
-    this.showPeriodLockedSwal('create Supplier Invoice');
+    this.showPeriodLockedSwal('edit Supplier Invoice');
     return;
   }
 
@@ -388,7 +403,7 @@ if (row && this.isGlPosted(row)) {
   return;
 }
  if (this.isPeriodLocked) {
-    this.showPeriodLockedSwal('create Supplier Invoice');
+    this.showPeriodLockedSwal('delete Supplier Invoice');
     return;
   }
 
@@ -471,7 +486,6 @@ if (row && this.isGlPosted(row)) {
   }
 
   openMatchModal(row: any): void {
-    debugger
     if (this.isRowLocked(row)) {
       Swal.fire({
         icon: 'warning',
@@ -489,7 +503,7 @@ if (this.isGlPosted(row)) {
   return;
 }
  if (this.isPeriodLocked) {
-    this.showPeriodLockedSwal('create Supplier Invoice');
+    this.showPeriodLockedSwal('view 3-way match');
     return;
   }
 
@@ -501,12 +515,12 @@ if (this.isGlPosted(row)) {
       next: (res: any) => {
         this.threeWay = res?.data ?? res ?? null;
       },
-      error: () => {
+      error: (err) => {
         this.threeWay = null;
         Swal.fire({
           icon: 'error',
           title: 'Failed',
-          text: 'Unable to load 3-way match.'
+          text: err?.error?.message || err?.message || 'Unable to load 3-way match.'
         });
       }
     });
@@ -541,26 +555,43 @@ if (this.isGlPosted(row)) {
       return;
     }
      if (this.isPeriodLocked) {
-    this.showPeriodLockedSwal('create Supplier Invoice');
+    this.showPeriodLockedSwal('post Supplier Invoice to A/P');
     return;
   }
 
 
     this.isPosting = true;
 
-    this.api.postToAp(this.currentRow.id).subscribe({
+    this.approvalWorkflow.approve({
+      documentType: 'PIN',
+      documentId: Number(this.currentRow.id),
+      amount: Number(this.currentRow.amount || 0),
+      remarks: 'PIN approved before posting to A/P'
+    }).subscribe({
       next: () => {
-        this.isPosting = false;
-        Swal.fire('Posted', 'Supplier invoice posted to A/P successfully.', 'success');
-        this.closeMatchModal();
-        this.loadList();
+        this.api.postToAp(this.currentRow.id).subscribe({
+          next: () => {
+            this.isPosting = false;
+            Swal.fire('Posted', 'Supplier invoice approved and posted to A/P successfully.', 'success');
+            this.closeMatchModal();
+            this.loadList();
+          },
+          error: (err) => {
+            this.isPosting = false;
+            Swal.fire({
+              icon: 'error',
+              title: 'Posting failed',
+              text: err?.error?.message || 'Unable to post supplier invoice to A/P.'
+            });
+          }
+        });
       },
       error: (err) => {
         this.isPosting = false;
         Swal.fire({
           icon: 'error',
-          title: 'Posting failed',
-          text: err?.error?.message || 'Unable to post supplier invoice to A/P.'
+          title: 'Approval failed',
+          text: err?.error?.message || 'Unable to approve supplier invoice.'
         });
       }
     });

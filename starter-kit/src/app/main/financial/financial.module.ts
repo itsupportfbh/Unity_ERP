@@ -39,8 +39,11 @@ import { OpeningBalanceComponent } from './opening-balance/opening-balance/openi
 import { ArAdvanceComponent } from './AR/ar-advance/ar-advance.component';
 import { ApAdvanceComponent } from './accounts-payable/ap-advance/ap-advance.component';
 import { YearEndCloseComponent } from './year-end-close/year-end-close.component';
+import { BankReconciliationComponent } from './bank-reconciliation/bank-reconciliation.component';
+import { ErpDashboardComponent } from './dashboard/erp-dashboard.component';
 
 const routes: Routes = [
+  { path: 'dashboard', component: ErpDashboardComponent },
   { path: 'ChartOfAccount', component: ChartofaccountComponent },
   { path: 'journal', component: JournalComponent },
   { path: 'create-journal', component: CreateJournalComponent },
@@ -68,6 +71,7 @@ const routes: Routes = [
 { path: 'ap-advance', component: ApAdvanceComponent },
 { path: 'ar-advance', component: ArAdvanceComponent },
 { path: 'year-close', component: YearEndCloseComponent },
+{ path: 'bank-reconciliation', component: BankReconciliationComponent },
 ];
 
 @NgModule({
@@ -102,7 +106,9 @@ const routes: Routes = [
     AccountsPayableComponent,
    ArAdvanceComponent,
    ApAdvanceComponent,
-   YearEndCloseComponent
+   YearEndCloseComponent,
+   BankReconciliationComponent,
+   ErpDashboardComponent
   ],
   imports: [
     CommonModule,

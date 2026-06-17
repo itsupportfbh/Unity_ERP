@@ -229,12 +229,10 @@ export class FinanceTaxcodesComponent implements OnInit {
         });
       },
       error: err => {
-        console.error(err);
-
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Failed to save tax code.',
+          text: err?.error?.message || err?.message || 'Failed to save tax code.',
           confirmButtonColor: '#2E5F73'
         });
       }

@@ -6,6 +6,7 @@ import {
   GstDetailRow,
   GstReturnsService
 } from '../../tax-gst/finance-gstreturns/gst-returns.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-gst-report',
@@ -116,10 +117,10 @@ export class GstReportComponent implements OnInit {
           this.isLoading = false;
         },
         error: (err) => {
-          console.error('Error loading GST details', err);
           this.rows = [];
           this.page = 1;
           this.isLoading = false;
+          Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load GST details.', 'error');
         }
       });
   }

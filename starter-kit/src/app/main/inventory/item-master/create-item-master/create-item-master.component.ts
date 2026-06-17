@@ -335,6 +335,10 @@ export class CreateItemMasterComponent implements OnInit {
     });
   }
 
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
+  }
+
   /* Derived totals */
   get totals() {
     const t = { onHand: 0, reserved: 0, available: 0 };
@@ -397,7 +401,6 @@ export class CreateItemMasterComponent implements OnInit {
           const stockArr: any[] = Array.isArray(stocks)
             ? stocks
             : (stocks && 'data' in stocks ? (stocks as any).data : []) || [];
-debugger
           this.itemStocks = stockArr.map((r: any) => ({
             warehouseId: r.warehouseId,
             binId: r.binId,
@@ -483,7 +486,6 @@ debugger
     // ✅ map to old backend fields (so existing API continues)
     this.item.sku = this.item.itemCode?.trim();
     this.item.name = this.item.itemName?.trim();
-debugger
     const stocksPayload = this.itemStocks.map(r => ({
       warehouseId: r.warehouseId,
       binId: r.binId,
@@ -507,14 +509,16 @@ debugger
       companyId: localStorage.getItem('companyId')
     }));
 
-    const bomPayload = (this.bomRows || []).map(r => ({
-      supplierId: 1,
-      supplierName: 'test',
-      existingCost: 100,
-      unitCost: 100,
-      percentage: 5,
-  sellingPrice: 105
-    }));
+    const bomPayload = (this.bomRows || [])
+      .filter(r => r.supplierId != null && Number(r.unitCost ?? r.existingCost ?? 0) > 0)
+      .map(r => ({
+        supplierId: Number(r.supplierId),
+        supplierName: r.supplierName || '',
+        existingCost: Number(r.existingCost || 0),
+        unitCost: Number(r.unitCost ?? r.existingCost ?? 0),
+        percentage: Number(r.percentage || 0),
+        sellingPrice: Number(r.sellingPrice || 0)
+      }));
 
     const pricesPayload = (this.prices ?? [])
       .filter(p => p.price != null && p.SupplierId != null)
@@ -570,8 +574,13 @@ debugger
       }
     };
 
-    const onApiError = (_: any) =>
-      Swal.fire({ icon: 'error', title: 'Error', text: creating ? 'Create failed' : 'Update failed', confirmButtonColor: '#0e3a4c' });
+    const onApiError = (err: any) =>
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: this.getErrorMessage(err, creating ? 'Create failed' : 'Update failed'),
+        confirmButtonColor: '#0e3a4c'
+      });
 
     if (creating) this.itemsSvc.createItemMaster(payload).subscribe({ next: onApiSuccess, error: onApiError });
     else this.itemsSvc.updateItemMaster(payload.id, payload).subscribe({ next: onApiSuccess, error: onApiError });
@@ -608,7 +617,6 @@ debugger
   }
 
   editLine(i: number): void {
-    debugger
     const r = this.itemStocks[i];
     if (!r) return;
     this.isEditMode = true;
@@ -796,7 +804,10 @@ debugger
           name: w.name || w.warehouseName || `WH-${w.id}`
         }));
       },
-      error: (err: any) => console.error('Error loading warehouses', err)
+      error: (err: any) => {
+        this.warehouseList = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load warehouses'), 'error');
+      }
     });
   }
 

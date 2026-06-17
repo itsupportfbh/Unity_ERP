@@ -3,6 +3,8 @@ import { ItemMasterService } from '../item-master/item-master.service';
 import { NgSelectComponent } from '@ng-select/ng-select';
 import { StockIssueService } from 'app/main/master/stock-issue/stock-issue.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import Swal from 'sweetalert2';
+import { StackOverviewService } from '../stack-overview/stack-overview.service';
 
 type AdjType = 'Increase' | 'Decrease';
 type ReasonCode = 'Damage' | 'Shrinkage' | 'Correction';
@@ -72,6 +74,7 @@ export class StockAdjustmentComponent implements OnInit {
 
   adjLines: AdjustmentLine[] = [];
   gridLoading = false;
+  savingAdjustment = false;
   stockIssueOptions: { id: number; name: string }[] = [];
 
   // Modal state
@@ -84,6 +87,7 @@ export class StockAdjustmentComponent implements OnInit {
   constructor(
     private itemMasterService: ItemMasterService,
     private stockIssueService: StockIssueService,
+    private stackOverviewService: StackOverviewService,
     private modalService: NgbModal
   ) {}
 
@@ -96,6 +100,10 @@ export class StockAdjustmentComponent implements OnInit {
   private toNum(v: any): number {
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
+  }
+
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
   }
 
   // ---------- Item dropdown ----------
@@ -121,7 +129,10 @@ export class StockAdjustmentComponent implements OnInit {
           } as ItemOption;
         });
       },
-      error: (err) => console.error('Error loading items', err),
+      error: (err) => {
+        this.itemOptions = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load items'), 'error');
+      },
       complete: () => (this.itemsLoading = false)
     });
   }
@@ -187,7 +198,10 @@ export class StockAdjustmentComponent implements OnInit {
           }];
         }
       },
-      error: (err) => console.error('GetItemDetailsByItemId error', err),
+      error: (err) => {
+        this.adjLines = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load item stock details'), 'error');
+      },
       complete: () => (this.gridLoading = false)
     });
   }
@@ -253,85 +267,80 @@ onTypeChange() {
   submitAdjustment() {
     this.validateAdjustment();
     if (this.adjustError || !this.selectedRow) return;
-
-    // push modal values back to the grid row (by itemId + location tuple)
-    const keyMatch = (l: AdjustmentLine) =>
-      l.itemId === this.selectedRow!.itemId &&
-      (l.warehouseId ?? null) === (this.selectedRow!.warehouseId ?? null) &&
-      (l.binId ?? null) === (this.selectedRow!.binId ?? null) &&
-      (l.supplierId ?? null) === (this.selectedRow!.supplierId ?? null);
-
-    const idx = this.adjLines.findIndex(keyMatch);
-    if (idx > -1) {
-      // persist user-specified fields
-      this.adjLines[idx] = {
-        ...this.adjLines[idx],
-        type: this.selectedRow.type,
-        faultyQty: this.selectedRow.faultyQty,
-        reason: this.selectedRow.reason,
-        remarks: this.selectedRow.remarks
-      };
-
-      // Optionally show the preview result in the grid qty (comment out if not desired)
-      if (this.newQtyPreview !== null) {
-        this.adjLines[idx].qty = this.newQtyPreview;
-      }
-    }
-
-    console.log('Adjusted row:', this.selectedRow);
-    this.modalService.dismissAll();
-  }
-
-  // ---------- Header actions ----------
-  saveDraft(): void {
-    const dto = this.buildDto();
-    console.log('Saving draft (DTO):', dto);
-    alert('Draft saved (dummy). Check console for payload.');
-  }
-
-  submitForApproval(): void {
-    if (this.adjLines.length === 0) {
-      alert('Please select an item to load rows.');
+    if (!this.selectedRow.itemId || !this.selectedRow.warehouseId) {
+      this.adjustError = 'Item and warehouse are required.';
       return;
     }
-    const dto = this.buildDto();
-    console.log('Submitting (DTO):', dto);
-    alert('Submitted (dummy). Check console for payload.');
-  }
 
-  private buildDto() {
-    return {
-      header: {
-        type: this.adjHdr.type,
-        reason: this.adjHdr.reason,
-        threshold: Number(this.adjHdr.threshold ?? 0)
-      },
-      lines: this.adjLines.map(l => ({
-        itemId: Number(l.itemId),
-        sku: l.sku ?? null,
-        qty: Number(l.qty ?? 0),             // current qty after any preview
-        reason: l.reason ?? null,            // id or code
-        remarks: l.remarks ?? '',
-        supplierId: l.supplierId ?? null,
-        warehouseId: l.warehouseId ?? null,
-        binId: l.binId ?? null,
-        price: l.price ?? null,
-        type: l.type ?? null,
-        faultyQty: l.faultyQty ?? null
-      }))
+    const currentQty = this.toNum(this.selectedRow.qty);
+    const faultQty = this.toNum(this.selectedRow.faultyQty);
+    const finalOnHand = this.toNum(this.newQtyPreview);
+    const signedFaultQty = this.selectedRow.type === 'Increase' ? -faultQty : faultQty;
+    const userId = Number(localStorage.getItem('id') || 0);
+
+    const payload = {
+      itemId: Number(this.selectedRow.itemId),
+      warehouseId: Number(this.selectedRow.warehouseId),
+      binId: this.selectedRow.binId ?? null,
+      supplierId: this.selectedRow.supplierId ?? null,
+      faultQty: signedFaultQty,
+      finalOnHand,
+      stockIssueId: this.selectedRow.reason ?? null,
+      approvedBy: userId || null,
+      updatedBy: userId || 0
     };
+
+    this.savingAdjustment = true;
+    this.stackOverviewService.AdjustOnHand(payload).subscribe({
+      next: () => {
+        const keyMatch = (l: AdjustmentLine) =>
+          l.itemId === this.selectedRow!.itemId &&
+          (l.warehouseId ?? null) === (this.selectedRow!.warehouseId ?? null) &&
+          (l.binId ?? null) === (this.selectedRow!.binId ?? null) &&
+          (l.supplierId ?? null) === (this.selectedRow!.supplierId ?? null);
+
+        const idx = this.adjLines.findIndex(keyMatch);
+        if (idx > -1) {
+          this.adjLines[idx] = {
+            ...this.adjLines[idx],
+            qty: finalOnHand,
+            available: finalOnHand,
+            type: this.selectedRow!.type,
+            faultyQty: faultQty,
+            reason: this.selectedRow!.reason,
+            remarks: this.selectedRow!.remarks
+          };
+        }
+
+        this.modalService.dismissAll();
+        Swal.fire('Adjusted', 'Stock adjustment posted successfully.', 'success');
+        if (this.selectedItemId) this.loadGridData(this.selectedItemId);
+      },
+      error: (err) => {
+        this.adjustError = err?.error?.message || err?.message || 'Stock adjustment failed.';
+      },
+      complete: () => {
+        this.savingAdjustment = false;
+      }
+    });
   }
 
   // ---------- Lookups ----------
   loadStockissue() {
-    this.stockIssueService.getAllStockissue().subscribe(res => {
-      const raw = Array.isArray(res?.data) ? res.data : [];
-      this.stockIssueOptions = raw
-        .filter((item: any) => item.isActive)
-        .map((item: any) => ({
-          id: Number(item.id),
-          name: String(item.stockIssuesNames ?? item.name ?? '')
-        }));
+    this.stockIssueService.getAllStockissue().subscribe({
+      next: (res) => {
+        const raw = Array.isArray(res?.data) ? res.data : [];
+        this.stockIssueOptions = raw
+          .filter((item: any) => item.isActive)
+          .map((item: any) => ({
+            id: Number(item.id),
+            name: String(item.stockIssuesNames ?? item.name ?? '')
+          }));
+      },
+      error: (err) => {
+        this.stockIssueOptions = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load stock issue reasons'), 'error');
+      }
     });
   }
 

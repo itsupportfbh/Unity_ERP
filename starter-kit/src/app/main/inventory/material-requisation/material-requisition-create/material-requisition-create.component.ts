@@ -106,6 +106,10 @@ ngOnInit(): void {
   this.loadOutlets();
 }
 
+private getErrorMessage(err: any, fallback: string): string {
+  return err?.error?.message || err?.message || fallback;
+}
+
 loadItem(done?: () => void): void {
   this.itemMasterService.getAllItemMaster().subscribe({
     next: (res: any) => {
@@ -129,8 +133,8 @@ loadItem(done?: () => void): void {
       done?.();
     },
     error: (err) => {
-      console.error('Item load error:', err);
       this.items = [];
+      Swal.fire('Error', this.getErrorMessage(err, 'Failed to load items'), 'error');
       done?.();
     }
   });
@@ -152,7 +156,6 @@ loadOutlets(): void {
         return;
       }
 
-      console.log('LocationId from localStorage:', locationId);
 
       // Find warehouse mapped to location
       const warehouse = this.OutletList.find(
@@ -168,8 +171,11 @@ loadOutlets(): void {
       }
     },
     error: (err) => {
-      console.error('Warehouse load error:', err);
       this.OutletList = [];
+      this.header.OutletId = null;
+      this.header.BinId = null;
+      this.binList = [];
+      Swal.fire('Error', this.getErrorMessage(err, 'Failed to load warehouses'), 'error');
     }
   });
 }
@@ -218,8 +224,9 @@ if (!this.isEdit) {
 }
     },
     error: (err) => {
-      console.error('Bin load error:', err);
       this.binList = [];
+      this.header.BinId = null;
+      Swal.fire('Error', this.getErrorMessage(err, 'Failed to load bins'), 'error');
     }
   });
 }
@@ -303,8 +310,7 @@ if (!this.isEdit) {
       },
       error: (err) => {
         Swal.close();
-        console.error('GetById error:', err);
-        Swal.fire('Error', err?.error?.message ?? 'Failed to load MRQ', 'error');
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load MRQ'), 'error');
         this.router.navigate(['/Inventory/list-material-requisition']);
       }
     });
@@ -511,11 +517,10 @@ receivedQty: 0
       },
       error: (err) => {
         this.isSaving = false;
-        console.error('MRQ save/update error:', err);
 
         Swal.fire(
           'Server Error',
-          err?.error?.message ?? 'Server error while saving',
+          this.getErrorMessage(err, 'Server error while saving'),
           'error'
         );
       }

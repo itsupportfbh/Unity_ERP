@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CoreSidebarService } from '@core/components/core-sidebar/core-sidebar.service';
 import { FilterApplyPayload } from '../reports-filters/reports-filters.component';
+import { ReportsService } from '../reports.service';
 type DeliveryStatus = 'PLANNED' | 'IN TRANSIT' | 'DELIVERED' | 'DELAYED' | 'CANCELLED';
 
 interface DeliveryRow {
@@ -28,16 +29,25 @@ rows: DeliveryRow[] = [];
 allRows: DeliveryRow[] = []
   selectedOption = 10;
   searchValue = '';
-  lastFilters: FilterApplyPayload;
+  lastFilters: FilterApplyPayload | null = null;
+  loading = false;
+  errorMsg: string | null = null;
    customers: Array<{ id: string; name: string }> = [];
   branches:  Array<{ id: string; name: string }> = [];
  statuses:  Array<{ value: string; label: string }> = [
-    { value: 'ON_TIME', label: 'On-Time' },
-    { value: 'LATE',    label: 'Late' }
+    { value: 'PLANNED', label: 'Planned' },
+    { value: 'IN TRANSIT', label: 'In Transit' },
+    { value: 'DELIVERED', label: 'Delivered' },
+    { value: 'DELAYED', label: 'Delayed' },
+    { value: 'CANCELLED', label: 'Cancelled' }
   ];
-  constructor(private _coreSidebarService : CoreSidebarService) { }
+  constructor(
+    private _coreSidebarService : CoreSidebarService,
+    private reportsService: ReportsService
+  ) { }
 
   ngOnInit(): void {
+    this.loadDeliveryReport();
   }
 delayDays(row: DeliveryRow): number {
   const planned = new Date(row.plannedDate);
@@ -58,7 +68,32 @@ deliveredPct(row: DeliveryRow): number {
     this.searchValue = event?.target?.value ?? this.searchValue ?? '';
     this.applyFilters();
   }
-  applyFilters(){};
+  applyFilters() {
+    const search = (this.searchValue || '').trim().toLowerCase();
+    const f = this.lastFilters;
+    const start = f?.startDate ? this.startOfDay(f.startDate).getTime() : null;
+    const end = f?.endDate ? this.startOfDay(f.endDate).getTime() : null;
+
+    this.rows = this.allRows.filter(r => {
+      const hitSearch = !search || [
+        r.doNo,
+        r.customerName,
+        r.branch,
+        r.driver,
+        r.vehicle,
+        r.status,
+        r.remarks || ''
+      ].some(v => String(v || '').toLowerCase().includes(search));
+
+      const plannedTime = this.startOfDay(r.plannedDate).getTime();
+      const hitDate = (start == null || plannedTime >= start) && (end == null || plannedTime <= end);
+      const hitCustomer = !f?.customerId || r.customerName === f.customerId;
+      const hitBranch = !f?.branchId || r.branch === f.branchId;
+      const hitStatus = !f?.status || r.status === f.status;
+
+      return hitSearch && hitDate && hitCustomer && hitBranch && hitStatus;
+    });
+  };
 // Optional: status → CSS class
 statusClass(st: DeliveryStatus): string {
   switch (st) {
@@ -72,8 +107,7 @@ statusClass(st: DeliveryStatus): string {
 }
  onFiltersApplied(payload: FilterApplyPayload) {
     this.lastFilters = payload;
-    // TODO: apply filters when your DO report API is ready
-    // for now just close the sidebar
+    this.applyFilters();
     this.toggleSidebar('reports-filters-sidebar');
   }
 
@@ -81,81 +115,73 @@ statusClass(st: DeliveryStatus): string {
     this.toggleSidebar('reports-filters-sidebar');
   }
 
-// Update your global search (applyFilters or filterUpdate) to search across these fields
-// Example inside applyFilters():
-// const hit = [r.doNo, r.customerName, r.branch, r.driver, r.vehicle, r.status, r.remarks ?? '']
-//   .some(v => String(v).toLowerCase().includes(search));
+private loadDeliveryReport() {
+  this.loading = true;
+  this.errorMsg = null;
 
-// Replace your loadMockData() with this:
-private loadMockData() {
-  this.allRows = [
-    {
-      doNo: 'DO-2025-01021',
-      customerName: 'AB Builders Pvt Ltd',
-      branch: 'Chennai',
-      plannedDate: new Date('2025-11-10'),
-      actualDate: new Date('2025-11-11'),
-      status: 'DELIVERED',
-      orderedQty: 120,
-      deliveryQty: 120,
-      driver: 'Ravi Kumar',
-      vehicle: 'TN-09-AB-1234',
-      remarks: 'Delivered to site gate'
+  this.reportsService.GetDeliveryNoteReport().subscribe({
+    next: (res: any) => {
+      const data = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      this.allRows = data.map((d: any) => this.toDeliveryRow(d));
+      this.buildFilterLookups();
+      this.applyFilters();
+      this.loading = false;
     },
-    {
-      doNo: 'DO-2025-01022',
-      customerName: 'South Cement Traders',
-      branch: 'Madurai',
-      plannedDate: new Date('2025-11-11'),
-      actualDate: null, // not yet delivered
-      status: 'IN TRANSIT',
-      orderedQty: 300,
-      deliveryQty: 180,
-      driver: 'Selvi',
-      vehicle: 'TN-58-CC-7788',
-      remarks: 'Partial shipment; rest tomorrow'
-    },
-    {
-      doNo: 'DO-2025-01023',
-      customerName: 'Orbit Constructions',
-      branch: 'Coimbatore',
-      plannedDate: new Date('2025-11-09'),
-      actualDate: null,
-      status: 'DELAYED',
-      orderedQty: 75,
-      deliveryQty: 0,
-      driver: 'Anand',
-      vehicle: 'TN-66-XY-9921',
-      remarks: 'Truck maintenance delay'
-    },
-    {
-      doNo: 'DO-2025-01024',
-      customerName: 'Metro Infra',
-      branch: 'Chennai',
-      plannedDate: new Date('2025-11-12'),
-      actualDate: null,
-      status: 'PLANNED',
-      orderedQty: 45,
-      deliveryQty: 0,
-      driver: 'Devi',
-      vehicle: 'TN-10-ZZ-1010',
-      remarks: ''
-    },
-    {
-      doNo: 'DO-2025-01025',
-      customerName: 'Prime Estates',
-      branch: 'Madurai',
-      plannedDate: new Date('2025-11-08'),
-      actualDate: new Date('2025-11-10'),
-      status: 'DELIVERED',
-      orderedQty: 60,
-      deliveryQty: 60,
-      driver: 'Murali',
-      vehicle: 'TN-59-AA-4312',
-      remarks: 'Received by Mr. Karthik'
+    error: () => {
+      this.rows = [];
+      this.allRows = [];
+      this.loading = false;
+      this.errorMsg = 'Failed to load delivery report.';
     }
-  ];
-  this.rows = [...this.allRows];
+  });
+}
+
+private toDeliveryRow(d: any): DeliveryRow {
+  const plannedDate = d.deliveryDate ?? d.DeliveryDate ?? d.plannedDate ?? d.PlannedDate ?? null;
+  const posted = Number(d.isPosted ?? d.IsPosted ?? 0) === 1 || d.isPosted === true || d.IsPosted === true;
+  const orderedQty = Number(d.totalQty ?? d.TotalQty ?? d.orderedQty ?? d.OrderedQty ?? d.qty ?? d.Qty ?? 0);
+  const status = this.resolveStatus(d, plannedDate, posted);
+
+  return {
+    doNo: String(d.doNumber ?? d.DoNumber ?? d.doNo ?? d.DoNo ?? ''),
+    customerName: String(d.customerName ?? d.CustomerName ?? '-'),
+    branch: String(d.branch ?? d.Branch ?? d.routeName ?? d.RouteName ?? '-'),
+    plannedDate: plannedDate || new Date(),
+    actualDate: posted ? (d.actualDate ?? d.ActualDate ?? plannedDate) : null,
+    status,
+    orderedQty,
+    deliveryQty: posted ? orderedQty : Number(d.deliveryQty ?? d.DeliveryQty ?? 0),
+    driver: String(d.driverName ?? d.DriverName ?? d.driver ?? d.Driver ?? d.driverMobileNo ?? d.DriverMobileNo ?? '-'),
+    vehicle: String(d.vehicleNo ?? d.VehicleNo ?? d.vehicle ?? d.Vehicle ?? d.vehicleId ?? d.VehicleId ?? '-'),
+    remarks: String(d.remarks ?? d.Remarks ?? d.receivedPersonName ?? d.ReceivedPersonName ?? '')
+  };
+}
+
+private resolveStatus(d: any, plannedDate: any, posted: boolean): DeliveryStatus {
+  const raw = String(d.status ?? d.Status ?? '').toUpperCase();
+  if (['PLANNED', 'IN TRANSIT', 'DELIVERED', 'DELAYED', 'CANCELLED'].includes(raw)) {
+    return raw as DeliveryStatus;
+  }
+  if (posted) {
+    return 'DELIVERED';
+  }
+  const planned = this.startOfDay(plannedDate).getTime();
+  const today = this.startOfDay(new Date()).getTime();
+  return planned < today ? 'DELAYED' : 'PLANNED';
+}
+
+private buildFilterLookups(): void {
+  const customers = Array.from(new Set(this.allRows.map(r => r.customerName).filter(Boolean))).sort();
+  const branches = Array.from(new Set(this.allRows.map(r => r.branch).filter(Boolean))).sort();
+
+  this.customers = customers.map(name => ({ id: name, name }));
+  this.branches = branches.map(name => ({ id: name, name }));
+}
+
+private startOfDay(value: Date | string | null | undefined): Date {
+  const d = value ? new Date(value) : new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
  toggleSidebar(name): void {

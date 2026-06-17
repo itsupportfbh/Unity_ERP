@@ -17,6 +17,7 @@ import { POTempService } from '../purchase-order-temp.service';
 import { PurchaseService } from '../../purchase.service';
 import { forkJoin } from 'rxjs';
 import { PeriodCloseService } from 'app/main/financial/period-close-fx/period-close-fx.service';
+import { ApprovalWorkflowService } from 'app/shared/approval-workflow.service';
 export interface PeriodStatusDto {
   isLocked: boolean;
   periodName?: string;
@@ -44,6 +45,8 @@ type PurchaseOrderPrintDTO = {
   deliveryDate: any;
   currency: string;
   terms?: string;
+  isOverseas?: boolean;
+  incoterms?: string;
 
   orderTo?: string;
   billTo?: string;
@@ -61,6 +64,15 @@ type PurchaseOrderPrintDTO = {
   taxPct: number;
   taxPctAmt: number;
   netTotal: number;
+};
+
+type SupplierPerformanceRow = {
+  supplierName: string;
+  poCount: number;
+  approvedCount: number;
+  pendingCount: number;
+  rejectedCount: number;
+  totalBase: number;
 };
 
 
@@ -89,6 +101,7 @@ export class PurchaseOrdeListComponent
 
   rows: any[] = [];
   tempData: any[] = [];
+  supplierPerformance: SupplierPerformanceRow[] = [];
 
   public searchValue = '';
   public ColumnMode = ColumnMode;
@@ -179,6 +192,7 @@ companyCurrencyName = 'SGD';
     private periodService: PeriodCloseService,
      private sanitizer: DomSanitizer,
      private permissionService: PermissionService,
+     private approvalWorkflow: ApprovalWorkflowService,
   ) {}
 
   // ================== Lifecycle ==================
@@ -215,16 +229,21 @@ getNetTotalBase(row: any): number {
       this.canApprovePo = this.permissionService.hasApprove(permission);
       this.canRejectPo = this.permissionService.hasReject(permission);
         this.canCreatePO=this.permissionService.hasCreate(permission);
-        this.canEditPO = this.permissionService.hasCreate(permission);
-          this.canDeletePO = this.permissionService.hasCreate(permission);
+        this.canEditPO = this.permissionService.hasEdit(permission);
+          this.canDeletePO = this.permissionService.hasDelete(permission);
           this.canExportPO = this.permissionService.hasExport(permission);
           this.canPrintPO = this.permissionService.hasPrint(permission)
       
     },
     error: () => {
-      this.poPermission = this.permissionService.getEmptyPermission('pr-list');
+      this.poPermission = this.permissionService.getEmptyPermission('po-list');
       this.canApprovePo = false;
       this.canRejectPo = false;
+      this.canCreatePO = false;
+      this.canEditPO = false;
+      this.canDeletePO = false;
+      this.canExportPO = false;
+      this.canPrintPO = false;
     }
   });
 }
@@ -279,7 +298,18 @@ approveRejectPO(row: any, status: number): void {
   }).then((result) => {
     if (!result.isConfirmed) return;
 
-    this.poService.updatePOApprovalStatus(row.id, status).subscribe({
+    const request = {
+      documentType: 'PO' as const,
+      documentId: Number(row.id),
+      amount: Number(row.netTotal || 0),
+      remarks: status === 2 ? 'PO approved from approval modal' : 'PO rejected from approval modal'
+    };
+
+    const action$ = status === 2
+      ? this.approvalWorkflow.approve(request)
+      : this.approvalWorkflow.reject(request);
+
+    action$.subscribe({
       next: () => {
         Swal.fire(
           'Success',
@@ -343,10 +373,66 @@ approveRejectPO(row: any, status: number): void {
         const data = res?.data || [];
         this.rows = data.map((req: any) => ({ ...req }));
         this.tempData = [...this.rows];
+        this.buildSupplierPerformance();
         if (this.table) this.table.offset = 0;
       },
-      error: (err: any) => console.error('Error loading list', err)
+      error: (err: any) => {
+        this.rows = [];
+        this.tempData = [];
+        this.supplierPerformance = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load purchase orders.', 'error');
+      }
     });
+  }
+
+  private buildSupplierPerformance(): void {
+    const map = new Map<string, SupplierPerformanceRow>();
+
+    for (const row of this.tempData || []) {
+      const supplierName = (row?.supplierName || row?.SupplierName || 'Unknown Supplier').toString().trim();
+      const key = supplierName.toLowerCase();
+      const status = Number(row?.approvalStatus ?? row?.ApprovalStatus ?? 0);
+      const totalBase = this.getNetTotalBase(row);
+
+      if (!map.has(key)) {
+        map.set(key, {
+          supplierName,
+          poCount: 0,
+          approvedCount: 0,
+          pendingCount: 0,
+          rejectedCount: 0,
+          totalBase: 0
+        });
+      }
+
+      const item = map.get(key)!;
+      item.poCount += 1;
+      item.totalBase += totalBase;
+
+      if (status === 2) item.approvedCount += 1;
+      else if (status === 1) item.pendingCount += 1;
+      else if (status === 3) item.rejectedCount += 1;
+    }
+
+    this.supplierPerformance = Array.from(map.values())
+      .map(x => ({ ...x, totalBase: +x.totalBase.toFixed(2) }))
+      .sort((a, b) => b.totalBase - a.totalBase);
+  }
+
+  get supplierPerformanceTop(): SupplierPerformanceRow[] {
+    return (this.supplierPerformance || []).slice(0, 5);
+  }
+
+  get totalSupplierCount(): number {
+    return this.supplierPerformance.length;
+  }
+
+  get totalPoBaseValue(): number {
+    return +(this.supplierPerformance || []).reduce((sum, x) => sum + Number(x.totalBase || 0), 0).toFixed(2);
+  }
+
+  get openPoCount(): number {
+    return (this.tempData || []).filter((x: any) => Number(x?.approvalStatus ?? x?.ApprovalStatus ?? 0) !== 2).length;
   }
 
   filterUpdate(event: any): void {
@@ -363,6 +449,7 @@ approveRejectPO(row: any, status: number): void {
       const supplierName = (d.supplierName || '').toString().toLowerCase();
       const currencyName = (d.currencyName || '').toString().toLowerCase();
       const approvalStatusStr = (d.approvalStatus || '').toString().toLowerCase();
+      const poType = this.isOverseasPo(d) ? 'overseas import' : 'local';
       const poDate = this.datePipe.transform(d.poDate, 'dd-MM-yyyy')?.toLowerCase() || '';
       const deliveryDate = this.datePipe.transform(d.deliveryDate, 'dd-MM-yyyy')?.toLowerCase() || '';
 
@@ -371,6 +458,7 @@ approveRejectPO(row: any, status: number): void {
         supplierName.includes(val) ||
         currencyName.includes(val) ||
         approvalStatusStr.includes(val) ||
+        poType.includes(val) ||
         poDate.includes(val) ||
         deliveryDate.includes(val)
       );
@@ -378,6 +466,13 @@ approveRejectPO(row: any, status: number): void {
 
     this.rows = temp;
     if (this.table) this.table.offset = 0;
+  }
+
+  isOverseasPo(row: any): boolean {
+    const flag = row?.isOverseas ?? row?.IsOverseas;
+    if (flag === true || flag === 1 || flag === '1') return true;
+    if (typeof flag === 'string') return flag.toLowerCase() === 'true';
+    return false;
   }
 
   // ================== Navigation / Actions ==================
@@ -418,7 +513,7 @@ approveRejectPO(row: any, status: number): void {
             this.loadRequests();
             Swal.fire('Deleted!', 'PO has been deleted.', 'success');
           },
-          error: (err) => console.error('Error deleting request', err)
+          error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Failed to delete PO.', 'error')
         });
       }
     });
@@ -525,7 +620,10 @@ private showPeriodLockedSwal(action: string): void {
       next: (res: any) => {
         this.drafts = res?.data || [];
       },
-      error: (err) => console.error('Error loading PO drafts', err)
+      error: (err) => {
+        this.drafts = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load PO drafts.', 'error');
+      }
     });
   }
 
@@ -552,7 +650,7 @@ private showPeriodLockedSwal(action: string): void {
             this.loadDrafts();
             Swal.fire('Deleted', 'Draft removed', 'success');
           },
-          error: (err) => console.error('Error deleting draft', err)
+          error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Failed to delete draft.', 'error')
         });
       }
     });
@@ -623,7 +721,11 @@ private showPeriodLockedSwal(action: string): void {
         this.reorderRows = [...this.reorderAll];
         this.filterReorders();
       },
-      error: (err) => console.error('Error loading reorder PRs/POs', err)
+      error: (err) => {
+        this.reorderAll = [];
+        this.reorderRows = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load reorder purchase requests.', 'error');
+      }
     });
   }
 
@@ -676,7 +778,9 @@ private showPeriodLockedSwal(action: string): void {
         // 4) set badge count
         this.reorderCount = available.length;
       },
-      error: (err) => console.error('Error computing reorder count', err)
+      error: () => {
+        this.reorderCount = 0;
+      }
     });
   }
 
@@ -887,9 +991,13 @@ loadPendingPrAlerts() {
     pdfFontsMod?.default?.pdfMake?.vfs ||
     pdfFontsMod?.vfs ||
     pdfFontsMod?.default?.vfs ||
-    pdfFontsMod?.pdfMake?.vfs;
+    pdfFontsMod?.pdfMake?.vfs ||
+    pdfFontsMod?.default ||
+    pdfFontsMod;
 
-  if (!vfs) throw new Error('pdfMake vfs not found. Ensure pdfmake & vfs_fonts installed.');
+  if (!vfs) {
+    throw new Error('PDF font assets are not available.');
+  }
 
   pdfMake.vfs = vfs;
   this._pdfMake = pdfMake;
@@ -1104,6 +1212,7 @@ const taxPct =
    const supplierName = (row?.supplierName || 'Supplier').toString().trim();
 
   const deliverTo = (row?.deliveryTo || row?.location || row?.deliveryAddress || '').toString().trim(); 
+  const isOverseas = this.isOverseasPo(row);
 
   return {
     purchaseOrderNo: String(row?.purchaseOrderNo || ''),
@@ -1111,6 +1220,8 @@ const taxPct =
     deliveryDate: row?.deliveryDate,
     currency: String(row?.currencyName || row?.currency || 'INR'),
     terms: String(row?.terms || row?.paymentTermName || ''),
+    isOverseas,
+    incoterms: String(row?.incotermsName || row?.incoterms || row?.IncotermsName || ''),
 
     orderTo: supplierName,
     billTo: `${this.companyInfo.name}\n${this.companyInfo.address1}\n${this.companyInfo.address2}\n${this.companyInfo.phone}`,
@@ -1243,6 +1354,8 @@ private async generatePoPdfBlob(dto: PurchaseOrderPrintDTO): Promise<Blob> {
                 { text: `PO Date : ${this.formatDate(dto.poDate)}`, style: 'meta', alignment: 'right' },
                 { text: `Delivery : ${this.formatDate(dto.deliveryDate)}`, style: 'meta', alignment: 'right' },
                 { text: `Currency : ${dto.currency || '-'}`, style: 'meta', alignment: 'right' },
+                { text: `Type : ${dto.isOverseas ? 'Overseas Purchase' : 'Local Purchase'}`, style: 'meta', alignment: 'right' },
+                ...(dto.isOverseas && dto.incoterms ? [{ text: `Incoterms : ${dto.incoterms}`, style: 'meta', alignment: 'right' }] : []),
 
                 // ✅ ALWAYS show tax line (even 0.00%)
                 { text: `Tax % : ${this.n(dto.taxPct ?? 0, 2)}%`, style: 'meta', alignment: 'right' },

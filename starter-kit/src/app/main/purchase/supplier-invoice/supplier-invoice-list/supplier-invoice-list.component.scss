@@ -305,6 +305,30 @@
   vertical-align: middle;
 }
 
+.pin-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pin-type-badge--local {
+  color: #2E5F73;
+  background: #eef6f9;
+  border: 1px solid #cfe3ea;
+}
+
+.pin-type-badge--overseas {
+  color: #92400e;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
 .pin-status-pill {
   display: inline-flex;
   align-items: center;

@@ -137,8 +137,11 @@ export class PeriodCloseFxComponent implements OnInit {
         this.onPeriodChange(this.selectedPeriodId);
       },
       error: err => {
-        console.error('Error loading periods', err);
-        Swal.fire('Error', 'Failed to load periods.', 'error');
+        this.periods = [];
+        this.selectedPeriodId = null;
+        this.status = null;
+        this.fxRevalDate = '';
+        Swal.fire('Error', err?.error?.message || err?.message || 'Failed to load periods.', 'error');
       }
     });
   }
@@ -165,8 +168,8 @@ export class PeriodCloseFxComponent implements OnInit {
         }
       },
       error: err => {
-        console.error('Error loading period status', err);
-        Swal.fire('Error', 'Failed to load period status.', 'error');
+        this.status = null;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Failed to load period status.', 'error');
       }
     });
   }
@@ -220,7 +223,6 @@ export class PeriodCloseFxComponent implements OnInit {
           });
         },
         error: err => {
-          console.error('Error changing lock', err);
           this.isLocking = false;
 
           const msg = err?.error?.message || 'Failed to change period lock status.';

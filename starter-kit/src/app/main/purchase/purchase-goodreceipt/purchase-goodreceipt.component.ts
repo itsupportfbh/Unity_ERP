@@ -216,7 +216,7 @@ currentPoFxRate = 1;
 
       forkJoin([this.loadWarehouses$(), this.loadStrategy$()]).subscribe({
         next: () => this.loadForEdit(id),
-        error: (err) => console.error('Master load failed', err)
+        error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load GRN masters.', 'error')
       });
     });
 
@@ -495,20 +495,16 @@ error: (err: any) => {
                 );
               },
               error: (err) => {
-                console.error('SalesOrder/PurchaseAlert update failed', err);
-                Swal.fire('Partial', 'Inventory updated but PurchaseAlert update failed.', 'warning');
+                Swal.fire('Partial', err?.error?.message || err?.message || 'Inventory updated but PurchaseAlert update failed.', 'warning');
               }
             });
           },
           error: (err) => {
-            console.error('Price/warehouse upsert failed', err);
-            Swal.fire('Partial', 'Stock updated but price/warehouse upsert failed. Retry from this screen.', 'warning');
+            Swal.fire('Partial', err?.error?.message || err?.message || 'Stock updated but price/warehouse upsert failed. Retry from this screen.', 'warning');
           }
         });
       },
       error: (err) => {
-        console.error('Apply GRN to inventory failed', err);
-
         const msg =
           err?.error?.message ||
           err?.error ||
@@ -529,7 +525,10 @@ error: (err: any) => {
   loadFlagIssues() {
     this.flagIssuesService.getAllFlagIssue().subscribe({
       next: (res: any) => { this.flagIssuesList = res?.data || []; },
-      error: (err) => console.error('Flag issues load failed', err)
+      error: (err) => {
+        this.flagIssuesList = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load flag issues.', 'error');
+      }
     });
   }
 
@@ -631,30 +630,7 @@ private redirectIfAllDone() {
       invoiceNo: inv
     };
 
-    const anySvc: any = this.purchaseGoodReceiptService as any;
-
-    const call$ =
-      typeof anySvc.UpdateFlagIssues === 'function'
-        ? anySvc.UpdateFlagIssues(body)
-        : typeof anySvc.updateGRN === 'function'
-          ? anySvc.updateGRN({
-            ...body,
-            grnNo: body.GrnNo,
-            grnJson: body.GRNJSON,
-            receptionDate: body.ReceptionDate,
-            InvoiceNo: body.InvoiceNo,
-            invoiceNo: body.invoiceNo
-          })
-          : null;
-
-    if (!call$) {
-      this.generatedGRN = { ...this.generatedGRN!, grnJson: prevRows };
-      console.error('No UpdateFlagIssues/updateGRN method found in service');
-      Swal.fire('Error', 'Update API method missing in service.', 'error');
-      return;
-    }
-
-    call$.subscribe({
+    this.purchaseGoodReceiptService.UpdateFlagIssues(body).subscribe({
       next: () => {
         this.postedCount = (this.generatedGRN?.grnJson || []).filter((x: any) => !!x.isPostInventory).length;
 
@@ -667,7 +643,6 @@ private redirectIfAllDone() {
       },
       error: (err) => {
         this.generatedGRN = { ...this.generatedGRN!, grnJson: prevRows };
-        console.error('Update failed', err);
         Swal.fire('Update failed', err?.error?.message || err?.message || 'Bad Request', 'error');
       }
     });
@@ -685,20 +660,7 @@ private redirectIfAllDone() {
 
   /* ================= Purchase Orders ================= */
   loadPOs() {
-    const anySvc: any = this.purchaseorderService as any;
-    const obs$ =
-      typeof this.purchaseorderService.getPODetailswithGRN === 'function'
-        ? this.purchaseorderService.getPODetailswithGRN()
-        : typeof anySvc.getAllPurchaseOrder === 'function'
-          ? anySvc.getAllPurchaseOrder()
-          : null;
-
-    if (!obs$) {
-      console.error('PurchaseOrderService missing getPODetailswithGRN()/getAllPurchaseOrder()');
-      return;
-    }
-
-    obs$.subscribe({
+    this.purchaseorderService.getPODetailswithGRN().subscribe({
       next: (res: any) => {
         const list = Array.isArray(res?.data) ? res.data : res;
         this.purchaseOrder = (list || []).map((p: any) => ({
@@ -714,7 +676,10 @@ private redirectIfAllDone() {
           sourceRefId: this.toNum(p.sourceRefId ?? p.SourceRefId)
         }));
       },
-      error: (err) => console.error('Error loading POs', err)
+      error: (err) => {
+        this.purchaseOrder = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load purchase orders.', 'error');
+      }
     });
   }
 
@@ -935,8 +900,9 @@ private buildRowsFromPo(
         this.applyDefaultWarehouseToRows();
       }),
       map(() => void 0),
-      catchError(err => {
-        console.error('Warehouses load failed', err);
+      catchError(() => {
+        this.warehouses = [];
+        this.defaultWarehouseId = null;
         return of(void 0);
       })
     );
@@ -952,8 +918,8 @@ private buildRowsFromPo(
         })).filter((x: any) => !!x.id && !!x.name);
       }),
       map(() => void 0),
-      catchError(err => {
-        console.error('Strategy load failed', err);
+      catchError(() => {
+        this.strategies = [];
         return of(void 0);
       })
     );
@@ -972,8 +938,8 @@ private buildRowsFromPo(
         this.binsByWarehouse[warehouseId] = list;
       }),
       map(() => void 0),
-      catchError(err => {
-        console.error('Error loading bins for warehouse', warehouseId, err);
+      catchError(() => {
+        this.binsByWarehouse[warehouseId] = [];
         return of(void 0);
       })
     );
@@ -1138,7 +1104,7 @@ private buildRowsFromPo(
 
         this.cdRef.detectChanges();
       },
-      error: (err) => console.error('Create Summary load failed', err)
+      error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load GRN summary.', 'error')
     });
   }
 
@@ -1216,8 +1182,7 @@ private buildRowsFromPo(
             };
             this.cdRef.detectChanges();
           },
-          error: err => {
-            console.error('Bins load failed', err);
+          error: () => {
             this.generatedGRN = {
               id: data?.id,
               grnNo: data?.grnNo,
@@ -1230,7 +1195,7 @@ private buildRowsFromPo(
           }
         });
       },
-      error: (err) => console.error('Edit load failed', err)
+      error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load GRN details.', 'error')
     });
 }
 

@@ -75,7 +75,6 @@ resetToCreateMode() {
   getAllCountries() {
     this._countriesService.getCountry().subscribe((response: any) => {
       this.countries = response?.data ?? [];
-      console.log("Countries", this.countries)
     });
   }
 
@@ -122,14 +121,12 @@ async loadStatesAndCities(countryId: number, stateId: number, cityId: number) {
 
 
   getAllState(countryId: number) {
-    debugger
     this._cityService.GetStateWithCountryId(countryId).subscribe((res: any) => {
       const data = res?.data;
       this.StateList = Array.isArray(data) ? data : (data ? [data] : []);
     });
   }
   onCountryChange(selectedCountry: any) {
-    debugger;
     const countryId = +selectedCountry; // Convert to number
 
     if (countryId) {
@@ -141,7 +138,6 @@ async loadStatesAndCities(countryId: number, stateId: number, cityId: number) {
   }
 
   onStateChange(stateId: string) {
-    debugger
     const parsedStateId = +stateId;
     if (parsedStateId) {
       this.getAllCities(parsedStateId);
@@ -173,7 +169,6 @@ this.locationForm.reset({
   });
 }
   getAllCities(stateId: number) {
-    debugger
     this._cityService.GetCityWithStateId(stateId).subscribe((res: any) => {
       const data = res?.data;
       this.CityList = Array.isArray(data) ? data : (data ? [data] : []);

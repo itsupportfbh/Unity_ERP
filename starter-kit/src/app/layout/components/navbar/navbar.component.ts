@@ -92,17 +92,17 @@ public approvalRoleText: string = '';
         title: 'English',
         flag: 'us'
       },
-      fr: {
-        title: 'French',
-        flag: 'fr'
+      zh: {
+        title: 'Chinese',
+        flag: 'cn'
       },
-      de: {
-        title: 'German',
-        flag: 'de'
+      ms: {
+        title: 'Malay',
+        flag: 'my'
       },
-      pt: {
-        title: 'Portuguese',
-        flag: 'pt'
+      ta: {
+        title: 'Tamil',
+        flag: 'in'
       }
     };
 
@@ -223,9 +223,7 @@ public approvalRoleText: string = '';
     }
 
     // Set the selected language from default languageOptions
-    this.selectedLanguage = _.find(this.languageOptions, {
-      id: this._translateService.currentLang
-    });
+    this.selectedLanguage = this._translateService.currentLang || 'en';
   }
 
   /**

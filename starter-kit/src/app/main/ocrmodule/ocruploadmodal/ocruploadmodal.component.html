@@ -33,6 +33,14 @@
               <span>Google Vision</span>
               <small>Scanned Invoice</small>
             </button>
+            <button type="button"
+              class="ocr-engine-btn"
+              [class.active]="engine === 'groq'"
+              (click)="engine = 'groq'">
+              <i class="fas fa-brain"></i>
+              <span>Groq AI</span>
+              <small>Smart Review</small>
+            </button>
           </div>
         </div>
 
@@ -119,7 +127,14 @@
           <!-- ✅ Engine badge -->
           <span class="ocr-engine-badge"
             [class.vision]="engine === 'vision'">
-            {{ engine === 'vision' ? '🔍 Google Vision' : '⚙️ Tesseract' }}
+            {{ engine === 'groq' ? 'Groq AI' : (engine === 'vision' ? 'Google Vision' : 'Tesseract') }}
+          </span>
+          <span class="ocr-engine-badge"
+            [ngClass]="{
+              'vision': confidenceLevel === 'high',
+              'low-confidence': confidenceLevel === 'low'
+            }">
+            {{ confidenceLevel | titlecase }} confidence
           </span>
           <button type="button" class="btn-ocr tiny ghost" (click)="copy()">Copy</button>
         </div>
@@ -153,8 +168,41 @@
     <span>Grand Total</span>
     <input type="number" class="ocr-field-input" [(ngModel)]="activeResult.parsed.total" [ngModelOptions]="{standalone:true}" />
   </div>
-          <div class="ocr-field" *ngIf="activeResult.parsed?.lines?.length">
-            <span>Line Items</span><b>{{ activeResult.parsed?.lines?.length }} items</b>
+          <div class="ocr-field">
+            <span>Line Items</span>
+            <button type="button" class="btn-ocr tiny ghost" (click)="addLine()">Add Line</button>
+          </div>
+          <div class="ocr-line-review" *ngIf="activeResult.parsed?.lines?.length">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th style="width:90px;">Qty</th>
+                  <th style="width:110px;">Unit Price</th>
+                  <th style="width:90px;">Disc %</th>
+                  <th style="width:90px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let line of activeResult.parsed.lines; let i = index">
+                  <td>
+                    <input class="ocr-field-input" [(ngModel)]="line.item" [ngModelOptions]="{standalone:true}" />
+                  </td>
+                  <td>
+                    <input type="number" class="ocr-field-input" [(ngModel)]="line.qty" [ngModelOptions]="{standalone:true}" (ngModelChange)="recalcTotals()" />
+                  </td>
+                  <td>
+                    <input type="number" class="ocr-field-input" [(ngModel)]="line.unitPrice" [ngModelOptions]="{standalone:true}" (ngModelChange)="recalcTotals()" />
+                  </td>
+                  <td>
+                    <input type="number" class="ocr-field-input" [(ngModel)]="line.discountPct" [ngModelOptions]="{standalone:true}" />
+                  </td>
+                  <td class="text-right">
+                    <button type="button" class="btn-ocr tiny ghost" (click)="removeLine(i)">Remove</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 

@@ -155,7 +155,16 @@
               {{ row.baseAmount | number:'1.2-2' }}
             </ng-template>
           </ngx-datatable-column>
-
+  <ngx-datatable-column name="Type" [width]="130" [sortable]="false">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <span
+                class="pin-type-badge"
+                [ngClass]="isOverseasPin(row) ? 'pin-type-badge--overseas' : 'pin-type-badge--local'"
+                [title]="isOverseasPin(row) && row.incotermsName ? 'Incoterms: ' + row.incotermsName : ''">
+                {{ isOverseasPin(row) ? 'Overseas' : 'Local' }}
+              </span>
+            </ng-template>
+          </ngx-datatable-column>
           
 
           <!-- ✅ STATUS (Always visible, never blank) -->
@@ -308,6 +317,17 @@
       <div class="match-body" *ngIf="threeWay; else loadingMatch">
         <div class="match-card match-card-po">
           <h4>PO</h4>
+            <p>
+            Type:
+            <span
+              class="pin-type-badge"
+              [ngClass]="isOverseasPin(threeWay) ? 'pin-type-badge--overseas' : 'pin-type-badge--local'">
+              {{ isOverseasPin(threeWay) ? 'Overseas' : 'Local' }}
+            </span>
+          </p>
+          <p *ngIf="isOverseasPin(threeWay) && threeWay.incotermsName">
+            Incoterms: {{ threeWay.incotermsName }}
+          </p>
           <p>Qty: {{ threeWay.poQty || 0 }}</p>
           <p>Price: {{ (threeWay.poPrice || 0) | number:'1.2-2' }}</p>
           <p>Total: {{ (threeWay.poTotal || 0) | number:'1.2-2' }}</p>

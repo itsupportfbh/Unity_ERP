@@ -1,0 +1,144 @@
+.logistics {
+  padding: 1.25rem;
+}
+
+.page-header,
+.form-row,
+.filters,
+.list-title,
+.board-title,
+.route-card,
+.stop-row,
+.delivery-row {
+  display: flex;
+}
+
+.page-header,
+.list-title,
+.board-title,
+.route-card,
+.stop-row {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.page-header h2,
+.planner h4,
+.board-title h4,
+.pod h4 {
+  margin: 0;
+}
+
+.page-header p,
+.route-card small,
+.stop-main small,
+.delivery-row small,
+.list-title span {
+  color: #6e6b7b;
+}
+
+.logistics-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 340px 1fr 320px;
+}
+
+.planner,
+.board,
+.pod {
+  background: #fff;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.form-row,
+.filters {
+  gap: 0.75rem;
+}
+
+.form-row .form-group,
+.filters .form-control {
+  flex: 1;
+}
+
+.delivery-list,
+.route-list,
+.task-board {
+  margin-top: 1rem;
+}
+
+.delivery-row {
+  align-items: flex-start;
+  border: 1px solid #ebe9f1;
+  border-radius: 8px;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+  padding: 0.7rem;
+}
+
+.delivery-row small,
+.route-card small,
+.stop-main small,
+.stop-main span {
+  display: block;
+}
+
+.route-card {
+  background: #fff;
+  border: 1px solid #ebe9f1;
+  border-radius: 8px;
+  color: #2f2b3d;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.route-card.active,
+.route-card:hover {
+  border-color: #7367f0;
+}
+
+.stop-row {
+  border: 1px solid #ebe9f1;
+  border-radius: 8px;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+}
+
+.stop-row.delivered {
+  background: #eefaf4;
+}
+
+.stop-number {
+  align-items: center;
+  background: #f3f2ff;
+  border-radius: 50%;
+  color: #5e50ee;
+  display: flex;
+  font-weight: 700;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.stop-main {
+  flex: 1;
+}
+
+.empty-state {
+  color: #6e6b7b;
+  padding: 1rem 0;
+}
+
+@media (max-width: 1200px) {
+  .logistics-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -3,6 +3,12 @@ import { CoreMenu } from '@core/types';
 
 export const ALL_MENU: CoreMenu[] = [
   { id: 'home', title: 'Dashboard', type: 'item', icon: 'home', url: '/home' },
+  { id: 'smart-search', title: 'Smart Search', type: 'item', icon: 'search', url: '/smart-search' },
+  { id: 'whatsapp-timeline', title: 'WhatsApp Timeline', type: 'item', icon: 'message-circle', url: '/whatsapp-timeline' },
+  { id: 'template-admin', title: 'Template Admin', type: 'item', icon: 'file-text', url: '/template-admin' },
+  { id: 'language-admin', title: 'Language Admin', type: 'item', icon: 'globe', url: '/language-admin' },
+  { id: 'logistics', title: 'Logistics', type: 'item', icon: 'truck', url: '/logistics' },
+  { id: 'report-builder', title: 'Report Builder', type: 'item', icon: 'bar-chart-2', url: '/report-builder' },
 
   // ================= MASTER =================
   {
@@ -60,13 +66,13 @@ export const ALL_MENU: CoreMenu[] = [
         url: '/Businesspartners/customermaster',
         activeUrls: [
           '/Businesspartners/customermaster',
-          '/Businesspartners/Create-customer-master',
-          '/Businesspartners/Create-customer-master/' // safe
+          '/Businesspartners/customermaster/create',
+          '/Businesspartners/customermaster/edit'
         ]
       },
       { id: 'bp-supplier', title: 'Supplier', type: 'item', icon: 'circle', url: '/Businesspartners/supplier' },
 
-      { id: 'bp-customer-create', title: 'Customer Create', type: 'item', icon: 'circle', url: '/Businesspartners/Create-customer-master', hidden: true },
+      { id: 'bp-customer-create', title: 'Customer Create', type: 'item', icon: 'circle', url: '/Businesspartners/customermaster/create', hidden: true },
 
       { id: 'users', title: 'Users', type: 'item', icon: 'circle', url: '/admin/users' }
     ]
@@ -214,6 +220,7 @@ export const ALL_MENU: CoreMenu[] = [
       { id: 'dn-edit', title: 'Debit Note Edit', type: 'item', icon: 'circle', url: '/purchase/edit-debitnote', hidden: true },
 
       { id: 'rfq', title: 'RFQ', type: 'item', icon: 'circle', url: '/purchase/rfq' },
+      { id: 'supplier-scorecard', title: 'Supplier Scorecard', type: 'item', icon: 'circle', url: '/purchase/supplier-scorecard' },
       { id: 'mobilereceiving', title: 'Mobile Receiving', type: 'item', icon: 'circle', url: '/purchase/mobilereceiving' }
     ]
   },
@@ -236,6 +243,36 @@ export const ALL_MENU: CoreMenu[] = [
       },
       { id: 'im-create', title: 'Item Master Create', type: 'item', icon: 'circle', url: '/Inventory/Create-itemmaster', hidden: true },
       { id: 'im-edit', title: 'Item Master Edit', type: 'item', icon: 'circle', url: '/Inventory/Edit-itemmaster', hidden: true },
+
+      {
+        id: 'stock-overview',
+        title: 'Stock Overview',
+        type: 'item',
+        icon: 'circle',
+        url: '/Inventory/list-stackoverview',
+        activeUrls: ['/Inventory/list-stackoverview', '/Inventory/create-stackoverview']
+      },
+      { id: 'stock-overview-create', title: 'Stock Overview Create', type: 'item', icon: 'circle', url: '/Inventory/create-stackoverview', hidden: true },
+
+      {
+        id: 'stock-transfer',
+        title: 'Stock Transfer',
+        type: 'item',
+        icon: 'circle',
+        url: '/Inventory/list-stocktransfer',
+        activeUrls: ['/Inventory/list-stocktransfer', '/Inventory/create-stocktransfer', '/Inventory/edit-stocktransfer']
+      },
+      { id: 'stock-transfer-create', title: 'Stock Transfer Create', type: 'item', icon: 'circle', url: '/Inventory/create-stocktransfer', hidden: true },
+      { id: 'stock-transfer-edit', title: 'Stock Transfer Edit', type: 'item', icon: 'circle', url: '/Inventory/edit-stocktransfer', hidden: true },
+
+      {
+        id: 'stock-adjustment',
+        title: 'Stock Adjustment',
+        type: 'item',
+        icon: 'circle',
+        url: '/Inventory/list-stockadjustment',
+        activeUrls: ['/Inventory/list-stockadjustment']
+      },
 
       {
         id: 'inv-internal',
@@ -267,13 +304,9 @@ export const ALL_MENU: CoreMenu[] = [
   url: '/Inventory/list-stock-transfer-receipt',
   classes: 'inv-sub3',
   activeUrls: [
-    '/Inventory/list-stock-transfer-receipt',
-    '/Inventory/create-stock-transfer-request',
-    '/Inventory/edit-stock-transfer-request'
+    '/Inventory/list-stock-transfer-receipt'
   ]
 },
-          { id: 'strq-create', title: 'Stock Transfer Request Create', type: 'item', icon: 'circle', url: '/Inventory/create-stock-transfer-request', hidden: true },
-          { id: 'strq-edit', title: 'Stock Transfer Request Edit', type: 'item', icon: 'circle', url: '/Inventory/edit-stock-transfer-request', hidden: true }
         ]
       },
 
@@ -317,6 +350,7 @@ export const ALL_MENU: CoreMenu[] = [
     icon: 'dollar-sign',
     // approvalRoles: ['Super Admin'],
     children: [
+      { id: 'finance-dashboard', title: 'Dashboard', type: 'item', icon: 'circle', url: '/financial/dashboard' },
       { id: 'ledger', title: 'General Ledger', type: 'item', icon: 'circle', url: '/financial/ledger' },
       { id: 'coa', title: 'Chart of Account', type: 'item', icon: 'circle', url: '/financial/ChartOfAccount' },
 

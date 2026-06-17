@@ -202,7 +202,6 @@ export class PickingPackingcreateComponent implements OnInit {
   }
   // ------- UI events -------
   onSoChanged(soId: number | null) {
-    debugger
     this.rows = [];
     this.totalDeliverQty = 0;
     this.soHdr = null;
@@ -296,7 +295,6 @@ export class PickingPackingcreateComponent implements OnInit {
   }
   // Save / Generate DO
   saveDo() {
-    debugger
     if (!this.selectedSoId || !this.hasAnyDeliverQty()) return;
 
     if (!this.validateBeforeSave()) return;

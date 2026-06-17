@@ -74,6 +74,11 @@ export class StockReorderPlanningListComponent implements OnInit, AfterViewInit,
     const n = Number(v);
     return Number.isFinite(n) ? n : d;
   }
+
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
+  }
+
   loadPermission(): void {
       if (!this.userId || this.userId <= 0) {
         this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -95,8 +100,6 @@ export class StockReorderPlanningListComponent implements OnInit, AfterViewInit,
           this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
-          console.log('Permission:', this.permission);
-          console.log('Can Export:', this.canExport());
 
           if (this.canView()) {
               this.loadRequests();
@@ -106,7 +109,6 @@ export class StockReorderPlanningListComponent implements OnInit, AfterViewInit,
           }
         },
         error: (err) => {
-          console.error('Permission load error:', err);
           this.permission = this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
@@ -114,7 +116,7 @@ export class StockReorderPlanningListComponent implements OnInit, AfterViewInit,
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Unable to load permission.',
+            text: this.getErrorMessage(err, 'Unable to load permission.'),
             confirmButtonColor: '#d33'
           });
         }
@@ -151,7 +153,11 @@ export class StockReorderPlanningListComponent implements OnInit, AfterViewInit,
         }));
         this.tempData = [...this.rows];
       },
-      error: (err: any) => console.error('Error loading list', err),
+      error: (err: any) => {
+        this.rows = [];
+        this.tempData = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load reorder planning list'), 'error');
+      },
     });
   }
 
@@ -202,7 +208,11 @@ export class StockReorderPlanningListComponent implements OnInit, AfterViewInit,
       this.modalLines = list;          // <-- two rows will show
       this.showLinesModal = true;
     },
-    error: (err) => console.error('Preview load failed', err)
+    error: (err) => {
+      this.modalLines = [];
+      this.showLinesModal = false;
+      Swal.fire('Error', this.getErrorMessage(err, 'Failed to load reorder preview'), 'error');
+    }
   });
 }
 

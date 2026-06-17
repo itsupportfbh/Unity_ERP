@@ -113,8 +113,7 @@ export class ChartofaccountComponent implements OnInit {
               // this.isDisplay = false;
             }
           },
-          error: (err) => {
-            console.error('Permission load error:', err);
+          error: () => {
             this.permission = this.permissionService.getEmptyPermission(this.functionId);
             this.isPermissionLoaded = true;
             this.isPageLoading = false;

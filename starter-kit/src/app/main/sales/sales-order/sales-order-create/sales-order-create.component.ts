@@ -264,40 +264,53 @@ grandTotalBase:   number  = 0;
       this.soHdr.requestedDate = this.toInputDate(new Date());
     }
 
-    this.countriesSvc.getCountry().subscribe((res: any) => {
-      this.countries = (res?.data ?? []).map((c: any) => ({
-        id: Number(c.id ?? c.Id),
-        countryName: String(c.countryName ?? c.CountryName ?? '').trim(),
-        gstPercentage: Number(c.gstPercentage ?? c.GSTPercentage ?? 0)
-      }));
+    this.countriesSvc.getCountry().subscribe({
+      next: (res: any) => {
+        this.countries = (res?.data ?? []).map((c: any) => ({
+          id: Number(c.id ?? c.Id),
+          countryName: String(c.countryName ?? c.CountryName ?? '').trim(),
+          gstPercentage: Number(c.gstPercentage ?? c.GSTPercentage ?? 0)
+        }));
+      },
+      error: () => {
+        this.countries = [];
+      }
     });
-    this.loadSOPermission();
 
     forkJoin({
       quotations: this.quotationSvc.getAllQuotation(),
       customers: this.customerSvc.GetAllCustomerDetails(),
       salesOrders: this.salesOrderService.getSO()
-    }).subscribe((res: any) => {
-      const allQuotations = res.quotations?.data ?? [];
-      const allCustomers = res.customers?.data ?? [];
-      const allSalesOrders = res.salesOrders?.data ?? [];
+    }).subscribe({
+      next: (res: any) => {
+        const allQuotations = res.quotations?.data ?? [];
+        const allCustomers = res.customers?.data ?? [];
+        const allSalesOrders = res.salesOrders?.data ?? [];
 
-      const usedQuotationNos = allSalesOrders
-        .map((so: any) => so.quotationNo)
-        .filter((no: any) => no);
+        const usedQuotationNos = allSalesOrders
+          .map((so: any) => so.quotationNo)
+          .filter((no: any) => no);
 
-      this.quotationList = allQuotations.filter(
-        (q: any) => !usedQuotationNos.includes(q.id) && !usedQuotationNos.includes(q.number)
-      );
+        this.quotationList = allQuotations.filter(
+          (q: any) => !usedQuotationNos.includes(q.id) && !usedQuotationNos.includes(q.number)
+        );
 
-      this.customers = allCustomers;
+        this.customers = allCustomers;
 
-      this.filteredLists.quotationNo = [...this.quotationList];
-      this.filteredLists.customer = [...this.customers];
-      this.filteredLists.warehouse = [...this.warehousesMaster];
+        this.filteredLists.quotationNo = [...this.quotationList];
+        this.filteredLists.customer = [...this.customers];
+        this.filteredLists.warehouse = [...this.warehousesMaster];
 
-      if (this.editMode && this.routeId) {
-        this.loadSOForEdit(this.routeId);
+        if (this.editMode && this.routeId) {
+          this.loadSOForEdit(this.routeId);
+        }
+      },
+      error: (err) => {
+        this.quotationList = [];
+        this.customers = [];
+        this.filteredLists.quotationNo = [];
+        this.filteredLists.customer = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load Sales Order master data.', 'error');
       }
     });
   }
@@ -467,7 +480,10 @@ grandTotalBase:   number  = 0;
         // ✅ after flags/supply are stable -> refresh availability
         this.refreshAvailabilityForAllLines();
       },
-      error: (err: any) => console.error('getItemFlagsBulk failed', err)
+      error: () => {
+        this.computeTotals();
+        this.refreshAvailabilityForAllLines();
+      }
     });
   }
 
@@ -509,7 +525,6 @@ this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
         : 0;
   },
   error: (err: any) => {
-    console.error('getAvailability failed', err);
     ln.availability = undefined;
     ln.shortageQty = 0;
   }
@@ -706,8 +721,11 @@ this.salesOrderService.getAvailability(locId, itemId, sm).subscribe({
         this.refreshAvailabilityForAllLines();
       },
       error: (err) => {
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load Sales Order.' });
-        console.error(err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Failed to load Sales Order.'
+        });
       }
     });
   }
@@ -1163,7 +1181,6 @@ isForeignCurrency(): boolean {
   });
 }
 async post(): Promise<void> {
-  debugger
   if (!this.canSaveSO()) {
     Swal.fire({
       icon: 'warning',
@@ -1296,7 +1313,6 @@ async post(): Promise<void> {
   }
 
 private getDirectDoShortageLines() {
-  debugger
   return (this.soLines || []).filter(l => {
     const req = Number(l.qty || 0);
     const avl = Number(l.availability ?? 0);

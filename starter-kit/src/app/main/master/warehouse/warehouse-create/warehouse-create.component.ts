@@ -72,7 +72,7 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
     private cityService: CitiesService,
     private warehouseService: WarehouseService,
     private binService: BinService,
-    private _locationService : LocationService,
+    private _locationService: LocationService
   ) {}
 
   // React when parent changes passData
@@ -83,7 +83,7 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
   ngOnInit(): void {
     this.getAllData();
     this.loadBin();
-    this.loadLocation()
+    this.loadLocation();
   }
 
   // ===== Loaders =====
@@ -99,7 +99,18 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
         this.cityList    = result.cities?.data ?? [];
         this.loadData();
       },
-      error: (err) => console.error('Error fetching data', err)
+      error: (err) => {
+        this.countryList = [];
+        this.stateList = [];
+        this.cityList = [];
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load country, state, and city masters.',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
@@ -123,7 +134,8 @@ export class WarehouseCreateComponent implements OnInit, OnChanges {
 }
 
 private loadBin(): void {
-  this.binService.getAllBin().subscribe((res: any) => {
+  this.binService.getAllBin().subscribe({
+    next: (res: any) => {
     const raw = Array.isArray(res?.data) ? res.data : [];
     const mustInclude = new Set((this.selectedBinIds ?? []).map(n => Number(n))); // selected IDs
 
@@ -147,13 +159,35 @@ private loadBin(): void {
 
     // ✅ now force selection refresh (ng-select re-check)
     this.selectedBinIds = [...(this.selectedBinIds ?? [])];
+    },
+    error: (err) => {
+      this.binList = [];
+      this.selectedBinIds = [];
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err?.error?.message || err?.message || 'Unable to load bins.',
+        confirmButtonColor: '#d33'
+      });
+    }
   });
 }
-   private loadLocation(): void {
-    this._locationService.getLocationDetails().subscribe((res: any) => {
-      const raw = Array.isArray(res?.data) ? res.data : [];
-      this.locationList = raw
-       
+  private loadLocation(): void {
+    this._locationService.getLocationDetails().subscribe({
+      next: (res: any) => {
+        this.locationList = Array.isArray(res?.data) ? res.data : [];
+      },
+      error: (err) => {
+        this.locationList = [];
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load locations.',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
@@ -291,11 +325,10 @@ private loadData(): void {
         });
       },
       error: (err) => {
-        console.error('Warehouse save error', err);
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: `Failed to ${this.isEdit ? 'update' : 'create'} Warehouse`,
+          text: err?.error?.message || err?.message || `Failed to ${this.isEdit ? 'update' : 'create'} Warehouse.`,
           confirmButtonText: 'OK',
           confirmButtonColor: '#d33'
         });

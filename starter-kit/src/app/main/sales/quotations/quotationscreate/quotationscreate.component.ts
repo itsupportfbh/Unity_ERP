@@ -1539,7 +1539,6 @@ const uomId = item?.baseUomId ?? item?.uomId ?? this.resolveUomIdFromItemSetRow(
   }
 
   selectModalItem(row: SimpleItem) {
-    debugger
     this.modal.itemId = row.id;
     this.modal.itemSearch = row.itemName;
    this.modal.uomId = row.baseUomId ?? row.uomId ?? null;

@@ -136,6 +136,10 @@ export class StockTransferCreateComponent implements OnInit {
     return (v ?? '').toString();
   }
 
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.error || err?.error?.message || err?.message || fallback;
+  }
+
   private extractItemId(row: any): number {
     return this.toNum(
       row?.itemId ??
@@ -224,38 +228,17 @@ export class StockTransferCreateComponent implements OnInit {
         this.loading = false;
       },
       error: (err: any) => {
-        console.error(err);
         this.loading = false;
-        Swal.fire('Error', 'Failed to load transfer by stockId.', 'error');
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load transfer by stockId.'), 'error');
       }
     });
   }
 
   /* ===================== CREATE load ===================== */
-  private getMaterialTransferList$() {
-    const svc: any = this.stockService as any;
-
-    if (typeof svc.getMaterialTransferList === 'function') return svc.getMaterialTransferList();
-    if (typeof svc.GetMaterialTransferList === 'function') return svc.GetMaterialTransferList();
-    if (typeof svc.getMaterialTransferedList === 'function') return svc.getMaterialTransferedList();
-    if (typeof svc.GetMaterialTransferedList === 'function') return svc.GetMaterialTransferedList();
-
-    throw new Error('Material transfer list method not found in StackOverviewService.');
-  }
-
   private loadFromMaterialTransferList(): void {
     this.loading = true;
 
-    let obs$;
-    try {
-      obs$ = this.getMaterialTransferList$();
-    } catch (e: any) {
-      this.loading = false;
-      Swal.fire('Service Missing', e?.message || 'Transfer list method not found', 'error');
-      return;
-    }
-
-    obs$.subscribe({
+    this.stockService.GetMaterialTransferList().subscribe({
       next: (res: any) => {
         const list: any[] =
           (res?.isSuccess && Array.isArray(res.data)) ? res.data :
@@ -272,17 +255,12 @@ export class StockTransferCreateComponent implements OnInit {
         // ✅ IMPORTANT: pick correct row for CREATE mode (NOT list[0])
         const picked = this.pickCreateRow(list) ?? list[0];
 
-        // Debug if you want
-        // console.log('CREATE LIST:', list);
-        // console.log('PICKED:', picked);
-
         this.bindFromApiRow(picked, 'create');
         this.loading = false;
       },
       error: (err: any) => {
-        console.error(err);
         this.loading = false;
-        Swal.fire('Error', 'Failed to load transfer list.', 'error');
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load transfer list.'), 'error');
       }
     });
   }
@@ -397,9 +375,9 @@ export class StockTransferCreateComponent implements OnInit {
         this.toBinLoading = false;
       },
       error: (err: any) => {
-        console.error(err);
         this.toBinLoading = false;
         this.toBinList = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load bins'), 'error');
       }
     });
   }
@@ -497,10 +475,9 @@ submitTransferFinal(): void {
     },
     error: (e: any) => {
       this.loading = false;
-      console.error(e);
       Swal.fire(
         'Failed',
-        e?.error?.error || e?.error?.message || e?.message || 'Something went wrong',
+        this.getErrorMessage(e, 'Something went wrong'),
         'error'
       );
     }

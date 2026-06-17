@@ -1,0 +1,123 @@
+<section class="erp-dashboard">
+  <div class="page-head">
+    <div>
+      <h2>ERP Dashboard</h2>
+      <p>Sales, purchase, finance, approval and OCR pending summary.</p>
+    </div>
+    <div class="filters">
+      <label>
+        From
+        <input type="date" [(ngModel)]="fromDate" class="form-control" />
+      </label>
+      <label>
+        To
+        <input type="date" [(ngModel)]="toDate" class="form-control" />
+      </label>
+      <button class="btn btn-primary" type="button" (click)="load()" [disabled]="loading">
+        {{ loading ? 'Loading...' : 'Refresh' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div *ngIf="kpis" class="kpi-grid">
+    <article class="kpi-card">
+      <span>Sales</span>
+      <strong>{{ money(kpis.salesAmount) }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Purchase</span>
+      <strong>{{ money(kpis.purchaseAmount) }}</strong>
+      <small>Local {{ money(kpis.localPurchaseAmount || 0) }} / Overseas {{ money(kpis.overseasPurchaseAmount || 0) }}</small>
+    </article>
+    <article class="kpi-card">
+      <span>AR Outstanding</span>
+      <strong>{{ money(kpis.arOutstanding) }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>AP Outstanding</span>
+      <strong>{{ money(kpis.apOutstanding) }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Pending Approval</span>
+      <strong>{{ kpis.pendingApprovals }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Open PR / PO</span>
+      <strong>{{ kpis.openPr }} / {{ kpis.openPo }}</strong>
+      <small>PO: Local {{ kpis.localPoCount || 0 }} / Overseas {{ kpis.overseasPoCount || 0 }} / Open overseas {{ kpis.openOverseasPo || 0 }}</small>
+    </article>
+    <article class="kpi-card">
+      <span>GRN Pending PIN</span>
+      <strong>{{ kpis.openGrnForInvoice }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>OCR Review</span>
+      <strong>{{ kpis.ocrReview }}</strong>
+    </article>
+  </div>
+
+  <div class="content-grid">
+    <section class="panel">
+      <div class="panel-title">
+        <h3>Monthly Trend</h3>
+        <span>Sales vs Purchase</span>
+      </div>
+      <div *ngIf="!trends.length && !loading" class="empty">No trend data available.</div>
+      <div class="trend-list" *ngIf="trends.length">
+        <div class="trend-row" *ngFor="let row of trends">
+          <div class="period">{{ row.period }}</div>
+          <div class="bars">
+            <div class="bar sales" [style.width]="barWidth(row.sales)">
+              <span>{{ money(row.sales) }}</span>
+            </div>
+            <div class="bar purchase" [style.width]="barWidth(row.purchases)">
+              <span>{{ money(row.purchases) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h3>Action Queue</h3>
+        <span>Click to open module</span>
+      </div>
+      <button
+        type="button"
+        class="action-row"
+        *ngFor="let action of actions"
+        [ngClass]="action.severity"
+        (click)="go(action)">
+        <span>
+          <b>{{ action.module }}</b>
+          <small>{{ action.title }}</small>
+        </span>
+        <strong>{{ action.countLabel }}</strong>
+      </button>
+    </section>
+  </div>
+
+  <section class="panel module-panel">
+    <div class="panel-title">
+      <h3>Module Status</h3>
+      <span>Current operational snapshot</span>
+    </div>
+    <div class="status-table">
+      <div class="status-head">
+        <span>Module</span>
+        <span>Open</span>
+        <span>Completed</span>
+        <span>Amount</span>
+      </div>
+      <div class="status-row" *ngFor="let row of moduleStatus">
+        <span>{{ row.module }}</span>
+        <span>{{ row.openCount }}</span>
+        <span>{{ row.completedCount }}</span>
+        <span>{{ money(row.amount) }}</span>
+      </div>
+    </div>
+  </section>
+</section>

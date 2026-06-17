@@ -101,12 +101,16 @@
               placeholder="Select To Bin"
               [(ngModel)]="toBinId"
               [loading]="toBinLoading"
-              [disabled]='true'>
+              [disabled]="toBinLoading || !toBinList.length">
             </ng-select>
           </div>
 
-          <div class="tw-help" *ngIf="header?.toWarehouseId">
+          <div class="tw-help" *ngIf="header?.toWarehouseId && toBinList.length">
             Warehouse bins loaded based on selected Warehouse.
+          </div>
+
+          <div class="tw-help" *ngIf="header?.toWarehouseId && !toBinLoading && !toBinList.length">
+            No bins found for selected Warehouse.
           </div>
         </div>
 

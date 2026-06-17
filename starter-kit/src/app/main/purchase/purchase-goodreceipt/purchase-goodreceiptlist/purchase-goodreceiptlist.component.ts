@@ -43,6 +43,13 @@ interface GrnRow {
   isPostInventory: boolean;
 
   qtyReceived?: number | null;
+  orderedQty?: number | null;
+  receivedQty?: number | null;
+  pendingQty?: number | null;
+  grnStatus?: string | null;
+  isClosed?: boolean;
+  closedDate?: string | Date | null;
+  closeReason?: string | null;
   qualityCheck?: string | null;
   batchSerial?: string | null;
 
@@ -189,7 +196,6 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
                 }
               },
               error: (err) => {
-                console.error('Permission load error:', err);
                 this.permission = this.permissionService.getEmptyPermission(this.functionId);
                 this.isPermissionLoaded = true;
                 this.isPageLoading = false;
@@ -197,7 +203,7 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
                 Swal.fire({
                   icon: 'error',
                   title: 'Error',
-                  text: 'Unable to load permission.',
+                  text: err?.error?.message || err?.message || 'Unable to load permission.',
                   confirmButtonColor: '#d33'
                 });
               }
@@ -251,6 +257,13 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
           isPostInventory: this.truthy(g.isPostInventory ?? g.IsPostInventory ?? false),
 
           qtyReceived: g.qtyReceived ?? g.QtyReceived ?? null,
+          orderedQty: Number(g.orderedQty ?? g.OrderedQty ?? 0),
+          receivedQty: Number(g.receivedQty ?? g.ReceivedQty ?? g.qtyReceived ?? g.QtyReceived ?? 0),
+          pendingQty: Number(g.pendingQty ?? g.PendingQty ?? 0),
+          grnStatus: g.grnStatus ?? g.GrnStatus ?? null,
+          isClosed: this.truthy(g.isClosed ?? g.IsClosed ?? false),
+          closedDate: g.closedDate ?? g.ClosedDate ?? null,
+          closeReason: g.closeReason ?? g.CloseReason ?? null,
           qualityCheck: g.qualityCheck ?? g.QualityCheck ?? null,
           batchSerial: g.batchSerial ?? g.BatchSerial ?? null,
 
@@ -260,9 +273,10 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
           warehouseName: g.warehouseName ?? g.WarehouseName ?? null,
           binName: g.binName ?? g.BinName ?? null,
           strategyName: g.strategyName ?? g.StrategyName ?? null,
-          grnJson: g.grnJson ?? g.GRNJson ?? g.GrnJson ?? null, 
-   fxRate: Number(g.fxRate ?? g.FxRate ?? 1),        // ✅ add
-  unitPrice: Number(g.unitPrice ?? g.UnitPrice ?? 0)  
+          grnJson: g.grnJson ?? g.GRNJson ?? g.GrnJson ?? null,
+          fxRate: Number(g.fxRate ?? g.FxRate ?? 1),
+          currencyName: g.currencyName ?? g.CurrencyName ?? null,
+          unitPrice: Number(g.unitPrice ?? g.UnitPrice ?? 0)
         }));
 
         this.allRows = normalized;
@@ -277,12 +291,12 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
     });
   }
 
-  /** collapse multiple detail lines into one row per GRN+status */
+  /** collapse multiple detail lines into one row per GRN */
   private collapseByGrn(rows: GrnRow[]): GrnRow[] {
     const map = new Map<string, { base: GrnRow; items: Set<string> }>();
 
     for (const r of rows) {
-      const key = `${r.grnNo}__${this.truthy(r.isFlagIssue)}__${this.truthy(r.isPostInventory)}`;
+      const key = `${r.grnNo || r.id}`;
       if (!map.has(key)) {
         map.set(key, {
           base: { ...r },
@@ -642,6 +656,11 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
       return;
     }
 
+    if (row.isClosed) {
+      Swal.fire('Closed', 'Closed GRN cannot be edited. Reopen first.', 'info');
+      return;
+    }
+
     if (this.isPeriodLocked) {
       Swal.fire(
         'Period Locked',
@@ -674,19 +693,82 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
     return s === '1' || s === 'true' || s === 'yes';
   }
 
-  statusText(row: any): 'Posted' | 'Flagged' | 'Pending' {
+  statusText(row: any): string {
+    if (row?.grnStatus) return row.grnStatus;
+    if (this.truthy(row?.isClosed)) return 'Closed';
     const isPost = this.truthy(row?.isPostInventory);
     const isFlag = this.truthy(row?.isFlagIssue);
-    if (isPost) return 'Posted';
     if (isFlag) return 'Flagged';
-    return 'Pending';
+    if (isPost) return 'Full';
+    return 'Open';
   }
 
   statusClass(row: any): string {
     const t = this.statusText(row);
-    if (t === 'Posted') return 'badge-success';
-    if (t === 'Flagged') return 'badge-warning';
-    return 'badge-danger';
+    if (t === 'Closed') return 'badge-dark';
+    if (t === 'Full') return 'badge-success';
+    if (t === 'Partial') return 'badge-warning';
+    if (t === 'Flagged') return 'badge-danger';
+    return 'badge-info';
+  }
+
+  canClose(row: GrnRow): boolean {
+    return this.canEdit() && !this.isPeriodLocked && !this.truthy(row?.isClosed);
+  }
+
+  canReopen(row: GrnRow): boolean {
+    return this.canEdit() && !this.isPeriodLocked && this.truthy(row?.isClosed);
+  }
+
+  closeGrn(row: GrnRow): void {
+    if (!this.canClose(row)) return;
+
+    Swal.fire({
+      title: 'Close GRN',
+      text: `Close ${row.grnNo || 'this GRN'}?`,
+      input: 'textarea',
+      inputPlaceholder: 'Reason',
+      showCancelButton: true,
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#2E5F73'
+    }).then(result => {
+      if (!result.isConfirmed) return;
+
+      this.grnService.closeGrn(row.id, result.value || 'Manual close').subscribe({
+        next: () => {
+          Swal.fire('Closed', 'GRN closed successfully.', 'success');
+          this.loadGrns();
+        },
+        error: err => {
+          Swal.fire('Error', err?.error?.message || 'Unable to close GRN.', 'error');
+        }
+      });
+    });
+  }
+
+  reopenGrn(row: GrnRow): void {
+    if (!this.canReopen(row)) return;
+
+    Swal.fire({
+      title: 'Reopen GRN',
+      text: `Reopen ${row.grnNo || 'this GRN'}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Reopen',
+      confirmButtonColor: '#2E5F73'
+    }).then(result => {
+      if (!result.isConfirmed) return;
+
+      this.grnService.reopenGrn(row.id).subscribe({
+        next: () => {
+          Swal.fire('Reopened', 'GRN reopened successfully.', 'success');
+          this.loadGrns();
+        },
+        error: err => {
+          Swal.fire('Error', err?.error?.message || 'Unable to reopen GRN.', 'error');
+        }
+      });
+    });
   }
 
   private coerceTimeText(v: any): string | null {

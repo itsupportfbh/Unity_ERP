@@ -81,6 +81,10 @@ companyId: number = 0;
     this.checkPeriodLockForToday();
   }
 
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
+  }
+
 
     loadPermission(): void {
       if (!this.userId || this.userId <= 0) {
@@ -112,7 +116,6 @@ companyId: number = 0;
           }
         },
         error: (err) => {
-          console.error('Permission load error:', err);
           this.permission = this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
@@ -120,7 +123,7 @@ companyId: number = 0;
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Unable to load permission.',
+            text: this.getErrorMessage(err, 'Unable to load permission.'),
             confirmButtonColor: '#d33'
           });
         }
@@ -265,8 +268,11 @@ getStatusClass(status?: number | null): string {
         this.loading = false;
       },
       error: (err) => {
-        this.errorMsg = err?.message ?? 'Failed to load Material Requisition list';
+        this.rows = [];
+        this.filteredRows = [];
+        this.errorMsg = this.getErrorMessage(err, 'Failed to load Material Requisition list');
         this.loading = false;
+        Swal.fire('Error', this.errorMsg, 'error');
       }
     });
   }

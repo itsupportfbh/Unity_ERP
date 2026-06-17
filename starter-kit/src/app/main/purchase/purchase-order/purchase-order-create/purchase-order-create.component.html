@@ -141,22 +141,22 @@
         <div class="field dd dropdown-scope" (click)="$event.stopPropagation()">
           <label>Incoterms <span class="muted">(Overseas Only)</span></label>
 
-          <div class="ig" [ngClass]="isSGDCurrency() ? 'ig--disabled' : ''">
+          <div class="ig" [ngClass]="!poHdr.isOverseas ? 'ig--disabled' : ''">
             <input
               type="text"
               [(ngModel)]="searchTexts['incoterms']"
               (input)="filter('incoterms')"
               (focus)="toggleDropdown('incoterms', true, $event)"
               placeholder="Search incoterms..."
-              [disabled]="isSGDCurrency()"
+              [disabled]="!poHdr.isOverseas"
             />
             <button *ngIf="searchTexts['incoterms']" type="button" class="ig__btn"
               (click)="onClearSearch('incoterms'); $event.stopPropagation()"
-              [disabled]="isSGDCurrency()" title="Clear">✕</button>
+              [disabled]="!poHdr.isOverseas" title="Clear">✕</button>
 
             <button type="button" class="ig__btn ig__btn--caret"
               (click)="toggleDropdown('incoterms', undefined, $event)"
-              [disabled]="isSGDCurrency()" title="Open">▼</button>
+              [disabled]="!poHdr.isOverseas" title="Open">▼</button>
           </div>
 
           <ul *ngIf="dropdownOpen['incoterms']" class="menu" (click)="$event.stopPropagation()">
@@ -209,6 +209,20 @@
           </div>
         </div>
 
+      </div>
+
+      <div class="mt12">
+        <label class="overseas-toggle">
+          <input
+            type="checkbox"
+            [(ngModel)]="poHdr.isOverseas"
+            (ngModelChange)="onOverseasChange()"
+          />
+          <span>
+            Overseas Purchase
+            <small>Use for import PO. Incoterms and shipping/freight become active.</small>
+          </span>
+        </label>
       </div>
 
       <!-- ROW 3 -->

@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'environments/environment';
 
@@ -9,16 +9,26 @@ export class MobileReceivingApi {
 
   constructor(private http: HttpClient) {}
 
+  private headers(poNo?: string): { headers: HttpHeaders } {
+    const token = sessionStorage.getItem('mrToken') || '';
+    return {
+      headers: token
+        ? new HttpHeaders({ 'X-MR-TOKEN': token, 'X-MR-PO': poNo || '' })
+        : new HttpHeaders()
+    };
+  }
+
   // Validate barcode against PO
-  validateScan(poNo: string, barcode: string) {
+  validateScan(poNo: string, barcode: string, qty = 1) {
     return this.http.post(
       this.url + '/mobile-receiving/scan',
       {
         purchaseOrderNo: poNo,
         itemKey: barcode,
-        qty: 1,
-        createdBy: 'mobile'
-      }
+        qty,
+        createdBy: Number(localStorage.getItem('id') || 0)
+      },
+      this.headers(poNo)
     );
   }
 
@@ -26,7 +36,8 @@ export class MobileReceivingApi {
  sync(body: { purchaseOrderNo: string; lines: any[] }) {
   return this.http.post(
     this.url + '/mobile-receiving/sync',
-    body
+    body,
+    this.headers(body.purchaseOrderNo)
   );
 }
 
@@ -35,7 +46,7 @@ export class MobileReceivingApi {
   getPo(poNo: string) {
     return this.http.get(
       this.url + '/mobile-receiving/po',
-      { params: { poNo } }
+      { params: { poNo }, ...this.headers(poNo) }
     );
   }
 }

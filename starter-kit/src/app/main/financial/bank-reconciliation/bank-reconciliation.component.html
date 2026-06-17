@@ -1,0 +1,82 @@
+<div class="content-wrapper container-xxl p-0">
+  <div class="content-body">
+    <div class="bank-recon">
+      <div class="bank-recon__header">
+        <div>
+          <h2>Bank Reconciliation</h2>
+          <p>Import bank statement lines and match them with AR receipts or AP payments.</p>
+        </div>
+      </div>
+
+      <div class="bank-recon__toolbar">
+        <select class="form-control" [(ngModel)]="selectedBankId" (change)="loadLines()">
+          <option [ngValue]="null">-- Select Bank --</option>
+          <option *ngFor="let bank of bankAccounts" [ngValue]="bank.id || bank.bankId || bank.BankId">
+            {{ bank.headName || bank.bankName || bank.BankName }}
+          </option>
+        </select>
+
+        <select class="form-control" [(ngModel)]="matchedFilter" (change)="loadLines()">
+          <option [ngValue]="undefined">All</option>
+          <option [ngValue]="false">Unmatched</option>
+          <option [ngValue]="true">Matched</option>
+        </select>
+
+        <button class="btn btn-primary" [disabled]="!selectedBankId || isLoading" (click)="loadLines()">Refresh</button>
+      </div>
+
+      <div class="bank-recon__summary" *ngIf="summary">
+        <div><span>Total</span><strong>{{ summary.totalLines || 0 }}</strong></div>
+        <div><span>Matched</span><strong>{{ summary.matchedLines || 0 }}</strong></div>
+        <div><span>Unmatched</span><strong>{{ summary.unmatchedLines || 0 }}</strong></div>
+        <div><span>Net</span><strong>{{ summary.statementNet || 0 | number:'1.2-2' }}</strong></div>
+      </div>
+
+      <div class="bank-recon__import">
+        <label>Import CSV</label>
+        <textarea class="form-control" rows="4" [(ngModel)]="importText"
+          placeholder="2026-06-12,Customer payment,RCPT-001,0,150.00"></textarea>
+        <button class="btn btn-outline-primary mt-1" [disabled]="!selectedBankId" (click)="importStatement()">Import Statement</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Reference</th>
+              <th class="text-right">Debit</th>
+              <th class="text-right">Credit</th>
+              <th>Status</th>
+              <th>Matched Doc</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of lines">
+              <td>{{ row.transactionDate | date:'dd-MMM-yyyy' }}</td>
+              <td>{{ row.description || '-' }}</td>
+              <td>{{ row.referenceNo || '-' }}</td>
+              <td class="text-right">{{ row.debit | number:'1.2-2' }}</td>
+              <td class="text-right">{{ row.credit | number:'1.2-2' }}</td>
+              <td>
+                <span class="badge" [ngClass]="row.isMatched ? 'badge-success' : 'badge-warning'">
+                  {{ row.isMatched ? 'Matched' : 'Unmatched' }}
+                </span>
+              </td>
+              <td>{{ row.matchedDocumentNo || row.matchedDocumentType || '-' }}</td>
+              <td class="text-right">
+                <button *ngIf="!row.isMatched" class="btn btn-sm btn-primary" (click)="reconcile(row)">Reconcile</button>
+                <button *ngIf="row.isMatched" class="btn btn-sm btn-outline-danger" (click)="unreconcile(row)">Undo</button>
+              </td>
+            </tr>
+            <tr *ngIf="!lines.length">
+              <td colspan="8" class="text-center text-muted">No statement lines.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -81,9 +81,7 @@ export class WarehouseListComponent implements OnInit {
           this.tempData = [];
         }
       },
-      error: (err) => {
-        console.error('Permission load error:', err);
-
+      error: () => {
         this.permission = this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
@@ -152,9 +150,15 @@ export class WarehouseListComponent implements OnInit {
         this.tempData = [...this.rows];
       },
       error: (err: any) => {
-        console.error('Error loading warehouse list', err);
         this.rows = [];
         this.tempData = [];
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load warehouse list.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }
@@ -208,8 +212,6 @@ export class WarehouseListComponent implements OnInit {
             });
           },
           error: (err) => {
-            console.error('Error deleting warehouse', err);
-
             Swal.fire({
               icon: 'error',
               title: 'Error!',

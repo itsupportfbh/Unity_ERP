@@ -21,6 +21,7 @@ import {
   PeriodStatusDto
 } from 'app/main/financial/period-close-fx/period-close-fx.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import { ApprovalWorkflowService } from 'app/shared/approval-workflow.service';
 
 type PurchaseAlert = {
   id: number;
@@ -86,7 +87,8 @@ export class PurchaseRequestListComponent
     private alertSvc: PurchaseAlertService,
     // 🔒 NEW
     private periodService: PeriodCloseService,
-     private permissionService: PermissionService
+     private permissionService: PermissionService,
+     private approvalWorkflow: ApprovalWorkflowService
   ) {
     // this.userId = localStorage.getItem('id') || '';
      this.userId = Number(localStorage.getItem('id') || 0);
@@ -145,9 +147,7 @@ export class PurchaseRequestListComponent
             this.isDisplay = false;
           }
         },
-        error: (err) => {
-          console.error('Permission load error:', err);
-  
+        error: () => {
           this.permission = this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
@@ -176,6 +176,14 @@ export class PurchaseRequestListComponent
   
     canDelete(): boolean {
       return this.permissionService.hasDelete(this.permission);
+    }
+
+    canApprove(): boolean {
+      return this.permissionService.hasApprove(this.permission);
+    }
+
+    canReject(): boolean {
+      return this.permissionService.hasReject(this.permission);
     }
   // ============== Period Lock (NEW) ==============
 
@@ -218,7 +226,11 @@ export class PurchaseRequestListComponent
         this.tempData = [...list];
         if (this.table) this.table.offset = 0;
       },
-      error: (err) => console.error('Error loading PRs', err),
+      error: (err) => {
+        this.rows = [];
+        this.tempData = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load purchase requests.', 'error');
+      },
     });
   }
 
@@ -289,9 +301,59 @@ export class PurchaseRequestListComponent
             this.loadRequests();
             Swal.fire('Deleted!', 'Purchase request has been deleted.', 'success');
           },
-          error: (err) => console.error('Error deleting request', err),
+          error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Failed to delete purchase request.', 'error'),
         });
       }
+    });
+  }
+
+  approveRejectRequest(row: any, status: number): void {
+    if (this.isPeriodLocked) {
+      this.showPeriodLockedSwal(status === 2 ? 'approve Purchase Requests' : 'reject Purchase Requests');
+      return;
+    }
+
+    if (status === 2 && !this.canApprove()) {
+      Swal.fire('Access Denied', 'You do not have approve permission.', 'warning');
+      return;
+    }
+
+    if (status === 3 && !this.canReject()) {
+      Swal.fire('Access Denied', 'You do not have reject permission.', 'warning');
+      return;
+    }
+
+    const actionText = status === 2 ? 'approve' : 'reject';
+
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you want to ${actionText} this PR?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: status === 2 ? 'Approve' : 'Reject',
+      confirmButtonColor: status === 2 ? '#28a745' : '#dc3545'
+    }).then(result => {
+      if (!result.isConfirmed) return;
+
+      const request = {
+        documentType: 'PR' as const,
+        documentId: Number(row.id ?? row.ID),
+        remarks: status === 2 ? 'PR approved from list' : 'PR rejected from list'
+      };
+
+      const action$ = status === 2
+        ? this.approvalWorkflow.approve(request)
+        : this.approvalWorkflow.reject(request);
+
+      action$.subscribe({
+        next: () => {
+          Swal.fire('Success', `PR ${status === 2 ? 'approved' : 'rejected'} successfully`, 'success');
+          this.loadRequests();
+        },
+        error: (err) => {
+          Swal.fire('Error', err?.error?.message || `Failed to ${actionText} PR.`, 'error');
+        }
+      });
     });
   }
 
@@ -329,7 +391,10 @@ export class PurchaseRequestListComponent
         const list = res?.data ?? [];
         this.drafts = list.filter((x: any) => +x.status === 0 || x.status == null);
       },
-      error: (err) => console.error('Error loading drafts', err),
+      error: (err) => {
+        this.drafts = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load drafts.', 'error');
+      },
     });
   }
 
@@ -362,7 +427,6 @@ export class PurchaseRequestListComponent
         this.alertCount = list.length;
       },
       error: (err) => {
-        console.error('Error loading alerts', err);
         this.alerts = [];
         this.alertCount = 0;
       }

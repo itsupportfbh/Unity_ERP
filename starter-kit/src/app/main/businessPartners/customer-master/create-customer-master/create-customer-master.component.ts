@@ -510,8 +510,8 @@ nextFromPersonalInfo(form: NgForm) {
     formData.append('BudgetLineId', (this.budgetLine ?? '').toString());
     formData.append('PaymentTermId', (this.selectedTermId ?? '').toString());
     formData.append('CreditAmount', (this.TDCreditAmountVar ?? 0).toString());
-    formData.append('CreatedBy', (this.userId)); // TODO: current user
-    formData.append('UpdatedBy', (this.userId));
+    formData.append('CreatedBy', String(this.userId || 0));
+    formData.append('UpdatedBy', String(this.userId || 0));
   formData.append('CompanyId', (localStorage.getItem('companyId') || '0').toString());
 
     // Approval state:

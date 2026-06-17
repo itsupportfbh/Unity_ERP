@@ -55,6 +55,16 @@
                      background:#e8f4fd;padding:1px 5px;border-radius:3px;">
               {{ invoice.currencyName }}
             </span>
+            <span *ngIf="invoice.isOverseas"
+              style="font-size:0.75rem;color:#8a4b08;margin-left:6px;
+                     background:#fff4e5;padding:1px 5px;border-radius:3px;">
+              Overseas
+            </span>
+            <span *ngIf="invoice.isOverseas && invoice.incotermsName"
+              style="font-size:0.75rem;color:#334155;margin-left:6px;
+                     background:#eef2f7;padding:1px 5px;border-radius:3px;">
+              {{ invoice.incotermsName }}
+            </span>
             <span class="xRight" *ngIf="isInvoiceSelected(invoice.id)">
               <i class="fas fa-check"></i>
             </span>
@@ -123,6 +133,23 @@
         <small style="color:#6b7280;font-size:0.75rem;margin-top:3px;display:block;">
           1 {{ currencyName }} = {{ fxRate | number:'1.4-4' }} SGD
         </small>
+      </div>
+
+      <div class="dnField" *ngIf="selectedInvoiceNo">
+        <label class="dnLabel">Purchase Type</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-height:38px;">
+          <span
+            [style.background]="selectedIsOverseas ? '#fff4e5' : '#ecfdf5'"
+            [style.color]="selectedIsOverseas ? '#8a4b08' : '#047857'"
+            style="font-size:0.85rem;font-weight:700;padding:6px 10px;border-radius:999px;">
+            {{ selectedIsOverseas ? 'Overseas Purchase' : 'Local Purchase' }}
+          </span>
+          <span *ngIf="selectedIsOverseas && selectedIncotermsName"
+            style="font-size:0.85rem;color:#334155;background:#eef2f7;
+                   padding:6px 10px;border-radius:999px;">
+            Incoterms: {{ selectedIncotermsName }}
+          </span>
+        </div>
       </div>
 
     </div>

@@ -47,9 +47,7 @@ export class CitiesComponent implements OnInit, AfterViewChecked, AfterViewInit 
   }
 
   ngOnInit(): void {
-    // this.getAllCities();
     this.loadPermission();
-    this.getAllCountries();
   }
 
 
@@ -83,8 +81,7 @@ export class CitiesComponent implements OnInit, AfterViewChecked, AfterViewInit 
                 this.isDisplay = false;
               }
             },
-            error: (err) => {
-              console.error('Permission load error:', err);
+            error: () => {
               this.permission = this.permissionService.getEmptyPermission(this.functionId);
               this.isPermissionLoaded = true;
               this.isPageLoading = false;
@@ -120,6 +117,16 @@ export class CitiesComponent implements OnInit, AfterViewChecked, AfterViewInit 
   // ===== CRUD Actions =====
 
   createcity() {
+    if (!this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     this.isDisplay = true;
     this.cityHeader = 'Add City';
     this.reset();
@@ -154,32 +161,85 @@ export class CitiesComponent implements OnInit, AfterViewChecked, AfterViewInit 
   }
 
   getAllState(countryId: number, preselectStateId?: number) {
-    this._cityService.GetStateWithCountryId(countryId).subscribe((res: any) => {
-      const data = res?.data;
-      this.StateList = Array.isArray(data) ? data : (data ? [data] : []);
+    this._cityService.GetStateWithCountryId(countryId).subscribe({
+      next: (res: any) => {
+        const data = res?.data;
+        this.StateList = Array.isArray(data) ? data : (data ? [data] : []);
 
-      // Preselect state if provided (edit scenario)
-      if (preselectStateId != null) {
-        this.selectedState = preselectStateId;
+        if (preselectStateId != null) {
+          this.selectedState = preselectStateId;
+        }
+      },
+      error: (err) => {
+        this.StateList = [];
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load states.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }
 
   getAllCountries() {
-    this._countriesService.getCountry().subscribe((response: any) => {
-      this.rows = response.data ?? [];
+    this._countriesService.getCountry().subscribe({
+      next: (response: any) => {
+        this.rows = response.data ?? [];
+      },
+      error: (err) => {
+        this.rows = [];
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load countries.',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
   getAllCities() {
-    this._cityService.getCities().subscribe((response: any) => {
-      this.CityList = response.data ?? [];
+    this._cityService.getCities().subscribe({
+      next: (response: any) => {
+        this.CityList = response.data ?? [];
+        this.getAllCountries();
+      },
+      error: (err) => {
+        this.CityList = [];
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load cities.',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
   // ===== Create / Update =====
 
   CreateCity() {
+    if (this.id > 0 && !this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
+    if (this.id === 0 && !this.canCreate()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have create permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     const obj = {
       id: this.id,
       cityName: this.cityName,
@@ -196,15 +256,24 @@ export class CitiesComponent implements OnInit, AfterViewChecked, AfterViewInit 
       ? this._cityService.insertCities(obj)
       : this._cityService.updateCities(obj);
 
-    req$.subscribe((res: any) => {
-      if (res.isSuccess) {
-        Swal.fire({ title: 'Success', text: res.message, icon: 'success', allowOutsideClick: false });
-        this.getAllCities();
-        this.isDisplay = false;
-        this.isEditMode = false;
-      }
-      else{
-        Swal.fire({ title: 'Error', text: res.message, icon: 'error', allowOutsideClick: false });
+    req$.subscribe({
+      next: (res: any) => {
+        if (res.isSuccess) {
+          Swal.fire({ title: 'Success', text: res.message, icon: 'success', allowOutsideClick: false });
+          this.getAllCities();
+          this.isDisplay = false;
+          this.isEditMode = false;
+        } else {
+          Swal.fire({ title: 'Error', text: res.message || 'Operation failed', icon: 'error', allowOutsideClick: false });
+        }
+      },
+      error: (err) => {
+        Swal.fire({
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Operation failed',
+          icon: 'error',
+          allowOutsideClick: false
+        });
       }
     });
   }
@@ -212,28 +281,56 @@ export class CitiesComponent implements OnInit, AfterViewChecked, AfterViewInit 
   // ===== Edit =====
 
   getCityDetails(id: number) {
-    this._cityService.getCitiesById(id).subscribe((arg: any) => {
-      const s = arg.data;
+    if (!this.canEdit()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have edit permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
-      this.id = s.id;
-      this.cityName = s.cityName;
+    this._cityService.getCitiesById(id).subscribe({
+      next: (arg: any) => {
+        const s = arg.data;
 
-      this.isDisplay = true;
-      this.resetButton = false;
-      this.cityHeader = 'Edit City';
-      this.isEditMode = true;
+        this.id = s.id;
+        this.cityName = s.cityName;
 
-      // 1. Set country
-      this.selectedCountry = s.countryId;
+        this.isDisplay = true;
+        this.resetButton = false;
+        this.cityHeader = 'Edit City';
+        this.isEditMode = true;
 
-      // 2. Load states for that country, preselect the correct one
-      this.getAllState(s.countryId, s.stateId);
+        this.selectedCountry = s.countryId;
+
+        this.getAllState(s.countryId, s.stateId);
+      },
+      error: (err) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load city details.',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
   // ===== Delete =====
 
   deleteCity(id: number) {
+    if (!this.canDelete()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'You do not have delete permission.',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
+
     Swal.fire({
       title: 'Are you sure?',
       text: "You won't be able to revert this!",
@@ -249,14 +346,24 @@ export class CitiesComponent implements OnInit, AfterViewChecked, AfterViewInit 
       allowOutsideClick: false,
     }).then((result) => {
       if (result.value) {
-        this._cityService.deleteCities(id).subscribe((response: any) => {
-          Swal.fire({
-            icon: response.isSuccess ? 'success' : 'error',
-            title: response.isSuccess ? 'Deleted!' : 'Error!',
-            text: response.message,
-            allowOutsideClick: false,
-          });
-          this.getAllCities();
+        this._cityService.deleteCities(id).subscribe({
+          next: (response: any) => {
+            Swal.fire({
+              icon: response.isSuccess ? 'success' : 'error',
+              title: response.isSuccess ? 'Deleted!' : 'Error!',
+              text: response.message,
+              allowOutsideClick: false,
+            });
+            this.getAllCities();
+          },
+          error: (err) => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error!',
+              text: err?.error?.message || err?.message || 'Failed to delete city.',
+              allowOutsideClick: false,
+            });
+          }
         });
       }
     });

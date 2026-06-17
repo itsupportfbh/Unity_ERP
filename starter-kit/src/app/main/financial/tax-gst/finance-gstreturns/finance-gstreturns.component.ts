@@ -185,13 +185,13 @@ get canShowApplyLock(): boolean {
         this.loadPeriodsForYear(this.selectedYear);
       },
       error: (err) => {
-        console.error('Error loading GST financial years', err);
         this.years = [];
         this.selectedYear = null;
         this.periods = [];
         this.selectedPeriodId = null;
         this.model = null;
         this.isLoading = false;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load GST financial years.', 'error');
       }
     });
   }
@@ -239,11 +239,11 @@ get canShowApplyLock(): boolean {
         this.checkPeriodLock(this.selectedPeriodId);
       },
       error: (err) => {
-        console.error('Error loading GST periods for year', err);
         this.periods = [];
         this.selectedPeriodId = null;
         this.model = null;
         this.isLoading = false;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load GST periods.', 'error');
       }
     });
   }
@@ -275,9 +275,9 @@ get canShowApplyLock(): boolean {
         this.isLoading = false;
       },
       error: (err) => {
-        console.error('Error loading GST return for period', err);
         this.model = null;
         this.isLoading = false;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load GST return.', 'error');
       }
     });
   }
@@ -325,8 +325,8 @@ get canShowApplyLock(): boolean {
   this.isSaving = false;
 },
       error: (err) => {
-        console.error('Error applying & locking GST return', err);
         this.isSaving = false;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to apply and lock GST return.', 'error');
       }
     });
   }
@@ -353,8 +353,8 @@ get canShowApplyLock(): boolean {
   this.isSaving = false;
 },
       error: (err) => {
-        console.error('Error reopening GST return', err);
         this.isSaving = false;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to reopen GST return.', 'error');
       }
     });
   }
@@ -379,8 +379,8 @@ get canShowApplyLock(): boolean {
     this.gstService.getAdjustments(this.selectedPeriodId).subscribe({
       next: (list) => this.adjustments = list || [],
       error: (err) => {
-        console.error('Error loading GST adjustments', err);
         this.adjustments = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load GST adjustments.', 'error');
       }
     });
   }
@@ -395,9 +395,9 @@ get canShowApplyLock(): boolean {
         this.supplierDocs = rows.filter(d => d.docType === 'PIN');
       },
       error: (err) => {
-        console.error('Error loading GST docs for period', err);
         this.salesDocs = [];
         this.supplierDocs = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load GST documents.', 'error');
       }
     });
   }
@@ -473,7 +473,7 @@ get canShowApplyLock(): boolean {
         this.loadPeriodReturn(this.selectedPeriodId!);
         this.checkPeriodLock(this.selectedPeriodId!); 
       },
-      error: (err) => console.error('Error saving GST adjustment', err)
+      error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Unable to save GST adjustment.', 'error')
     });
   }
 
@@ -497,7 +497,7 @@ get canShowApplyLock(): boolean {
         this.loadPeriodReturn(this.selectedPeriodId!);
         this.checkPeriodLock(this.selectedPeriodId!);
       },
-      error: (err) => console.error('Error deleting GST adjustment', err)
+      error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Unable to delete GST adjustment.', 'error')
     });
   }
 
@@ -533,7 +533,7 @@ get canShowApplyLock(): boolean {
 
         window.URL.revokeObjectURL(url);
       },
-      error: (err) => console.error('Error exporting GST Excel', err)
+      error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Unable to export GST Excel.', 'error')
     });
   }
 

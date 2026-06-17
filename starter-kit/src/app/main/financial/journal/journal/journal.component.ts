@@ -115,8 +115,7 @@ export class JournalComponent implements OnInit,AfterViewInit {
                 // this.isDisplay = false;
               }
             },
-            error: (err) => {
-              console.error('Permission load error:', err);
+            error: () => {
               this.permission = this.permissionService.getEmptyPermission(this.functionId);
               this.isPermissionLoaded = true;
               this.isPageLoading = false;
@@ -200,13 +199,13 @@ export class JournalComponent implements OnInit,AfterViewInit {
          setTimeout(() => feather.replace(), 0);
       },
       error: err => {
-        console.error(err);
         this.isLoading = false;
         this.journalList = [];
         this.entryTypeLabel = '-';
         this.recurringFrequencyLabel = '-';
         this.totalDebit = 0;
         this.totalCredit = 0;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load journals.', 'error');
       }
     });
   }
@@ -265,6 +264,11 @@ export class JournalComponent implements OnInit,AfterViewInit {
 
   submit(): void {
     // Post batch to GL
+    if (!this.canPost()) {
+      Swal.fire('Permission Denied', 'You do not have post permission.', 'warning');
+      return;
+    }
+
     if (this.isPeriodLocked) {
       this.showPeriodLockedSwal('post journals');
       return;
@@ -292,7 +296,7 @@ export class JournalComponent implements OnInit,AfterViewInit {
       },
       error: err => {
         this.isLoading = false;
-        console.error('Error posting journals', err);
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to post journals.', 'error');
       }
     });
   }

@@ -1,0 +1,83 @@
+<section class="wa-page">
+  <div class="page-head">
+    <div>
+      <h2>WhatsApp Timeline</h2>
+      <p>Outbound document message status, provider response and sandbox/live tracking.</p>
+    </div>
+  </div>
+
+  <div class="filter-panel">
+    <label>
+      Document Type
+      <select class="form-control" [(ngModel)]="documentType">
+        <option *ngFor="let type of documentTypes" [value]="type">{{ type || 'All' }}</option>
+      </select>
+    </label>
+    <label>
+      Document Id
+      <input class="form-control" type="number" [(ngModel)]="documentId" />
+    </label>
+    <label>
+      Phone
+      <input class="form-control" type="search" [(ngModel)]="phone" placeholder="Search phone" />
+    </label>
+    <label>
+      From
+      <input class="form-control" type="date" [(ngModel)]="fromDate" />
+    </label>
+    <label>
+      To
+      <input class="form-control" type="date" [(ngModel)]="toDate" />
+    </label>
+    <button class="btn btn-primary" type="button" (click)="load()" [disabled]="loading">
+      {{ loading ? 'Loading...' : 'Refresh' }}
+    </button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div class="timeline-layout">
+    <div class="log-list">
+      <button
+        type="button"
+        class="log-row"
+        *ngFor="let row of rows"
+        [class.active]="selected?.id === row.id"
+        [ngClass]="statusClass(row)"
+        (click)="select(row)">
+        <span class="topline">
+          <b>{{ row.documentType || 'Document' }}</b>
+          <small>{{ dateTime(row.createdAt) }}</small>
+        </span>
+        <span class="doc">{{ row.documentNo || ('#' + row.documentId) || '-' }}</span>
+        <span class="party">{{ row.partyName || row.phone || '-' }}</span>
+        <span class="badges">
+          <em>{{ row.status }}</em>
+          <em *ngIf="row.sandboxMode">Sandbox</em>
+        </span>
+      </button>
+
+      <div *ngIf="!loading && !rows.length" class="empty">No WhatsApp logs found.</div>
+    </div>
+
+    <aside class="details" *ngIf="selected">
+      <h3>{{ selected.documentType }} {{ selected.documentNo || selected.documentId || '' }}</h3>
+      <dl>
+        <dt>Status</dt>
+        <dd>{{ selected.status }}</dd>
+        <dt>Phone</dt>
+        <dd>{{ selected.phone || '-' }}</dd>
+        <dt>Party</dt>
+        <dd>{{ selected.partyName || '-' }}</dd>
+        <dt>Template</dt>
+        <dd>{{ selected.templateName || '-' }}</dd>
+        <dt>Provider Message Id</dt>
+        <dd>{{ selected.providerMessageId || '-' }}</dd>
+        <dt>Message</dt>
+        <dd>{{ selected.message || '-' }}</dd>
+      </dl>
+      <h4>Provider Response</h4>
+      <pre>{{ prettyResponse(selected.providerResponse) }}</pre>
+    </aside>
+  </div>
+</section>

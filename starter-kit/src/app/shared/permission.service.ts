@@ -20,6 +20,19 @@ export interface FunctionPermission {
   post: boolean;
 }
 
+export type PermissionAction =
+  | 'view'
+  | 'create'
+  | 'edit'
+  | 'delete'
+  | 'submit'
+  | 'approve'
+  | 'reject'
+  | 'cancel'
+  | 'print'
+  | 'export'
+  | 'post';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -47,7 +60,7 @@ export class PermissionService {
             cancel: !!(p.cancel ?? p.Cancel),
             print: !!(p.print ?? p.Print),
             export: !!(p.export ?? p.Export),
-             post: !!(p.post ?? p.post),
+            post: !!(p.post ?? p.Post),
           } as FunctionPermission;
         })
       );
@@ -86,25 +99,35 @@ export class PermissionService {
     return !!permission?.delete;
   }
 
-  hasApprove(permission: FunctionPermission | null | undefined): boolean {
-  return !!permission?.approve;
-}
+  hasSubmit(permission: FunctionPermission | null | undefined): boolean {
+    return !!permission?.submit;
+  }
 
-hasReject(permission: FunctionPermission | null | undefined): boolean {
-  return !!permission?.reject;
-}
+  hasApprove(permission: FunctionPermission | null | undefined): boolean {
+    return !!permission?.approve;
+  }
+
+  hasReject(permission: FunctionPermission | null | undefined): boolean {
+    return !!permission?.reject;
+  }
+
+  hasCancel(permission: FunctionPermission | null | undefined): boolean {
+    return !!permission?.cancel;
+  }
 
   hasExport(permission: FunctionPermission | null | undefined): boolean {
     return !!permission?.export;
   }
 
-    hasPrint(permission: FunctionPermission | null | undefined): boolean {
+  hasPrint(permission: FunctionPermission | null | undefined): boolean {
     return !!permission?.print;
   }
 
-  
-    hasPost(permission: FunctionPermission | null | undefined): boolean {
+  hasPost(permission: FunctionPermission | null | undefined): boolean {
     return !!permission?.post;
   }
 
+  has(permission: FunctionPermission | null | undefined, action: PermissionAction): boolean {
+    return !!permission?.[action];
+  }
 }

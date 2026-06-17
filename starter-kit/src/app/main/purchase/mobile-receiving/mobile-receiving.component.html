@@ -1,15 +1,49 @@
-<div class="space-y-5 ui-compact">
+<div class="space-y-5 ui-compact mr-page">
 
-  <!-- Mobile Receiving -->
   <div class="bg-white rounded-2xl shadow p-3 border border-gray-100">
-    <h2 class="text-lg font-semibold text-gray-800 mb-3">
-      Mobile Receiving (PO → Scan → Qty → Save)
-    </h2>
+    <div class="mr-head">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-800 mb-1">
+          Mobile Receiving (PO -> Scan -> Qty -> Save)
+        </h2>
+        <div class="mr-sub" *ngIf="poLines?.length">
+          Ordered {{ totalOrderedQty | number:'1.0-2' }} -
+          Received {{ totalReceivedQty | number:'1.0-2' }} -
+          Queued {{ queueTotalQty | number:'1.0-2' }} -
+          Remaining {{ totalRemainingAfterQueue | number:'1.0-2' }}
+        </div>
+        <div class="mr-po-meta" *ngIf="poLines?.length">
+          <span class="mr-type" [class.overseas]="poIsOverseas">{{ poIsOverseas ? 'Overseas' : 'Local' }}</span>
+          <span *ngIf="poIsOverseas && poIncotermsName">Incoterms: {{ poIncotermsName }}</span>
+        </div>
+      </div>
 
-    <!-- PO + Scan Controls -->
+      <div class="mr-mode">
+        <button type="button" class="mr-mode-btn" [class.active]="mrScanMode === 'manual'" (click)="stopCamera()">Manual</button>
+        <button type="button" class="mr-mode-btn" [class.active]="mrScanMode === 'camera'" (click)="startCamera()">Camera</button>
+      </div>
+    </div>
+
+    <div class="mr-progress" *ngIf="poLines?.length">
+      <div class="mr-progress__bar" [style.width.%]="receiveProgressPct"></div>
+    </div>
+
+    <div class="mr-message" *ngIf="mrScanMessage">{{ mrScanMessage }}</div>
+
+    <div class="mr-camera" *ngIf="isCameraOpen">
+      <video #cameraVideo playsinline muted></video>
+      <div class="mr-camera-actions">
+        <button type="button" class="mr-camera-close" (click)="stopCamera()">Stop Camera</button>
+        <label class="mr-auto">
+          <input type="checkbox" [(ngModel)]="mrAutoAdd" />
+          Auto add detected barcode
+        </label>
+      </div>
+    </div>
+
+    <div class="mr-error" *ngIf="cameraError">{{ cameraError }}</div>
+
     <div [ngClass]="gridColsClass(4)">
-
-      <!-- PO Number -->
       <div>
         <label class="text-xs font-medium text-gray-600">PO Number</label>
         <input
@@ -20,19 +54,31 @@
         />
       </div>
 
-      <!-- Barcode -->
       <div>
         <label class="text-xs font-medium text-gray-600">Scan Barcode</label>
         <input
+          #barcodeInput
           class="w-full rounded-xl border px-3 py-2 text-sm"
           [(ngModel)]="mrBarcode"
           (keydown.enter)="addScan()"
-          placeholder="Scan here…"
+          placeholder="Scan here..."
           autofocus
         />
       </div>
 
-      <!-- Buttons -->
+      <div>
+        <label class="text-xs font-medium text-gray-600">Received Qty</label>
+        <input
+          type="number"
+          min="0.0001"
+          step="0.0001"
+          class="w-full rounded-xl border px-3 py-2 text-sm text-right"
+          [(ngModel)]="mrQty"
+          (keydown.enter)="addScan()"
+          placeholder="1"
+        />
+      </div>
+
       <div class="flex items-end gap-2">
         <button
           type="button"
@@ -45,95 +91,85 @@
         <button
           type="button"
           class="px-3 py-2 rounded-xl text-sm font-medium border border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-          (click)="syncMobile()">
-          Sync
+          (click)="syncMobile()"
+          [disabled]="isSyncing || !mrRows.length">
+          {{ isSyncing ? 'Syncing...' : 'Sync' }}
+        </button>
+
+        <button
+          type="button"
+          class="px-3 py-2 rounded-xl text-sm font-medium border border-red-500 text-red-600 hover:bg-red-50"
+          (click)="clearQueue()"
+          [disabled]="!mrRows.length">
+          Clear
         </button>
 
         <div class="flex items-center gap-2 ml-2">
-          <input
-            type="checkbox"
-            [checked]="mrOffline"
-            (change)="toggleOffline()" />
-          <label class="text-xs font-medium text-gray-600">
-            Offline Save
-          </label>
+          <input type="checkbox" [checked]="mrOffline" (change)="toggleOffline()" />
+          <label class="text-xs font-medium text-gray-600">Offline Save</label>
         </div>
       </div>
-
-      <div></div>
     </div>
 
-    <!-- Scan Result Table -->
     <div class="overflow-auto border rounded-xl mt-4">
-
       <table class="min-w-full text-sm border-separate border-spacing-0">
         <thead class="bg-[#2E5F73] text-white">
           <tr>
-            <th class="px-3 py-2 text-left font-medium first:rounded-tl-xl border-r border-white/20">
-              Time
-            </th>
-            <th class="px-3 py-2 text-left font-medium border-r border-white/20">
-              Barcode
-            </th>
-            <th class="px-3 py-2 text-right font-medium last:rounded-tr-xl">
-              Qty
-            </th>
+            <th class="px-3 py-2 text-left font-medium first:rounded-tl-xl border-r border-white/20">Time</th>
+            <th class="px-3 py-2 text-left font-medium border-r border-white/20">Item / Barcode</th>
+            <th class="px-3 py-2 text-right font-medium border-r border-white/20">Qty</th>
+            <th class="px-3 py-2 text-center font-medium last:rounded-tr-xl">Action</th>
           </tr>
         </thead>
 
         <tbody class="bg-white">
-
-          <!-- Empty State -->
           <tr *ngIf="mrRows.length === 0">
-            <td colspan="3" class="px-3 py-6 text-center text-gray-400">
-              No scans yet.
-            </td>
+            <td colspan="4" class="px-3 py-6 text-center text-gray-400">No scans yet.</td>
           </tr>
 
-          <!-- Scan Rows -->
-          <tr
-            *ngFor="let r of mrRows; let i = index; trackBy: trackByIndex"
-            class="border-t">
-
-            <td class="px-3 py-2 whitespace-nowrap">
-              {{ r.ts | date:'mediumTime' }}
-            </td>
-
+          <tr *ngFor="let r of mrRows; let i = index; trackBy: trackByIndex" class="border-t">
+            <td class="px-3 py-2 whitespace-nowrap">{{ r.ts | date:'mediumTime' }}</td>
             <td class="px-3 py-2">
-              {{ r.barcode }}
+              <div class="font-medium">{{ r.itemName || r.itemCode || r.barcode }}</div>
+              <div class="text-xs text-gray-500">{{ r.barcode }}</div>
             </td>
-
-            <td class="px-3 py-2 text-right font-medium">
-              {{ r.qty }}
+            <td class="px-3 py-2 text-right font-medium">{{ r.qty }}</td>
+            <td class="px-3 py-2 text-center">
+              <button type="button" class="mr-link danger" (click)="removeScan(i)">Remove</button>
             </td>
-
           </tr>
-
         </tbody>
       </table>
-
     </div>
-    
+
     <div class="mt-4 border rounded-xl overflow-auto" *ngIf="poLines?.length">
-  <table class="min-w-full text-sm">
-    <thead class="bg-gray-100">
-      <tr>
-        <th class="px-3 py-2 text-left">Item</th>
-        <th class="px-3 py-2 text-right">Ordered</th>
-        <th class="px-3 py-2 text-right">Received</th>
-        <th class="px-3 py-2 text-right">Balance</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let l of poLines" class="border-t">
-        <td class="px-3 py-2">{{ l.item }}</td>
-        <td class="px-3 py-2 text-right">{{ l.qty }}</td>
-        <td class="px-3 py-2 text-right">{{ l.receivedQty }}</td>
-        <td class="px-3 py-2 text-right">{{ l.balanceQty }}</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+      <table class="min-w-full text-sm">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-3 py-2 text-left">Item</th>
+            <th class="px-3 py-2 text-right">Ordered</th>
+            <th class="px-3 py-2 text-right">Received</th>
+            <th class="px-3 py-2 text-right">Balance</th>
+            <th class="px-3 py-2 text-right">Queued</th>
+            <th class="px-3 py-2 text-right">After Queue</th>
+            <th class="px-3 py-2 text-center">Scan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of poLines" class="border-t" [class.mr-complete]="lineRemainingAfterQueue(l) <= 0">
+            <td class="px-3 py-2">{{ l.item }}</td>
+            <td class="px-3 py-2 text-right">{{ l.qty }}</td>
+            <td class="px-3 py-2 text-right">{{ l.receivedQty }}</td>
+            <td class="px-3 py-2 text-right">{{ l.balanceQty }}</td>
+            <td class="px-3 py-2 text-right">{{ lineQueuedQty(l) }}</td>
+            <td class="px-3 py-2 text-right font-medium">{{ lineRemainingAfterQueue(l) }}</td>
+            <td class="px-3 py-2 text-center">
+              <button type="button" class="mr-link" (click)="useLine(l)" [disabled]="lineRemainingAfterQueue(l) <= 0">Use</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
   </div>
 

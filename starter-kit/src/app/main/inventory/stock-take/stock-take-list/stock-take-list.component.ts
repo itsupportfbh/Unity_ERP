@@ -63,6 +63,11 @@ export class StockTakeListComponent implements OnInit {
     this.loadPermission();
     this.checkPeriodLockForToday();
   }
+
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
+  }
+
   loadPermission(): void {
     if (!this.userId || this.userId <= 0) {
       this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -84,27 +89,16 @@ export class StockTakeListComponent implements OnInit {
         this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
-        console.log('Permission:', this.permission);
-        console.log('Can Export:', this.canExport());
 
         if (this.canView()) {
             this.loadRequests();
-            this.itemMasterService.getAllItemMaster().subscribe((res: any) => {
-              this.itemList = res.data;
-            })
-            this.BinService.getAllBin().subscribe((res: any) => {
-              this.binList = res.data;
-            })
-            this.StockissueService.getAllStockissue().subscribe((res: any) => {
-              this.reasonList = res.data;
-            })
+            this.loadLookups();
         } else {
           this.rows = [];
           // this.isDisplay = false;
         }
       },
       error: (err) => {
-        console.error('Permission load error:', err);
         this.permission = this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
@@ -112,9 +106,33 @@ export class StockTakeListComponent implements OnInit {
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Unable to load permission.',
+          text: this.getErrorMessage(err, 'Unable to load permission.'),
           confirmButtonColor: '#d33'
         });
+      }
+    });
+  }
+
+  private loadLookups(): void {
+    this.itemMasterService.getAllItemMaster().subscribe({
+      next: (res: any) => this.itemList = res?.data || res || [],
+      error: (err) => {
+        this.itemList = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load items'), 'error');
+      }
+    });
+    this.BinService.getAllBin().subscribe({
+      next: (res: any) => this.binList = res?.data || res || [],
+      error: (err) => {
+        this.binList = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load bins'), 'error');
+      }
+    });
+    this.StockissueService.getAllStockissue().subscribe({
+      next: (res: any) => this.reasonList = res?.data || res || [],
+      error: (err) => {
+        this.reasonList = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load stock take reasons'), 'error');
       }
     });
   }
@@ -172,7 +190,11 @@ export class StockTakeListComponent implements OnInit {
         });
         this.tempData = this.rows
       },
-      error: (err: any) => console.error('Error loading list', err)
+      error: (err: any) => {
+        this.rows = [];
+        this.tempData = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load stock takes'), 'error');
+      }
     });
   }
 
@@ -197,7 +219,9 @@ export class StockTakeListComponent implements OnInit {
             this.loadRequests();
             Swal.fire('Deleted!', 'Stock Take has been deleted.', 'success');
           },
-          error: (err) => console.error('Error deleting request', err)
+          error: (err) => {
+            Swal.fire('Error', this.getErrorMessage(err, 'Failed to delete stock take'), 'error');
+          }
         });
       }
     });
@@ -209,13 +233,11 @@ export class StockTakeListComponent implements OnInit {
 
   }
   openLinesModal(row: any) {
-    debugger
     // 1) get array safely
     const raw = Array.isArray(row?.lineItems) ? row.lineItems : JSON.parse(row?.lineItems || '[]');
 
     // 2) normalize to numbers + safe strings
     const N = (v: any) => Number.isFinite(Number(v)) ? Number(v) : 0;
-debugger
     const lines = raw.map((l: any) => ({
       barcode: (l?.barcode ?? '-') as string,
       binId: (l?.binId),
@@ -238,14 +260,14 @@ debugger
     this.modalTotal = {
       available: lines.reduce((s, x) => s + x.onHand, 0),
       counted: lines.reduce((s, x) => s + x.countedQty, 0),
-      variance: lines.reduce((s, x) => s + x.varianceQty, 0)
+      variance: lines.reduce((s, x) => s + x.variance, 0)
     };
 
     this.modalLines = lines;
     this.showLinesModal = true;
   }
   getBinName(id: number | string | null) {
-    const x = this.binList.find(i => i.id === id);
+    const x = this.binList?.find(i => i.id === id);
     return x?.binName ?? String(id ?? '');
   }
 
@@ -275,7 +297,6 @@ debugger
   }
 
   post(row: any) {
-    debugger
     // Only allow when Approved (2). API also guards this.
     if (row.status !== 2) {
       Swal.fire({ icon: 'info', title: 'Not allowed', text: 'Only Approved stock takes can be posted.' });
@@ -329,7 +350,7 @@ debugger
     });
   }
    getReason(id: number | string | null) {
-    const x = this.reasonList.find(i => i.id === id);
+    const x = this.reasonList?.find(i => i.id === id);
     return x?.stockIssuesNames ?? String(id ?? '');
   }
       private checkPeriodLockForToday(): void {

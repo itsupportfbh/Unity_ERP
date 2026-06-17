@@ -93,9 +93,7 @@ export class CountriesComponent implements OnInit, AfterViewInit, AfterViewCheck
           this.isDisplay = false;
         }
       },
-      error: (err) => {
-        console.error('Permission load error:', err);
-
+      error: () => {
         this.permission = this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
@@ -164,8 +162,15 @@ export class CountriesComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.tempData = this.rows;
       },
       error: (err) => {
-        console.error('Load country error:', err);
         this.rows = [];
+        this.tempData = [];
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load countries.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }

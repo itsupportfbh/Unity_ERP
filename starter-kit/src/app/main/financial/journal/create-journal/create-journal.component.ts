@@ -121,12 +121,18 @@ export class CreateJournalComponent implements OnInit {
   // ---------- Loaders ----------
 
   loadAccountHeads(): void {
-    this._chart.getAllChartOfAccount().subscribe((res: any) => {
-      const data = (res?.data || []).filter((x: any) => x.isActive === true);
-      this.parentHeadList = data.map((head: any) => ({
-        value: Number(head.id),
-        label: this.buildFullPath(head, data)
-      }));
+    this._chart.getAllChartOfAccount().subscribe({
+      next: (res: any) => {
+        const data = (res?.data || []).filter((x: any) => x.isActive === true);
+        this.parentHeadList = data.map((head: any) => ({
+          value: Number(head.id),
+          label: this.buildFullPath(head, data)
+        }));
+      },
+      error: (err) => {
+        this.parentHeadList = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load chart of accounts.', 'error');
+      }
     });
   }
 
@@ -204,7 +210,7 @@ export class CreateJournalComponent implements OnInit {
       recurringCount: this.recurringEndType === 'EndByCount' ? this.recurringCount : null,
 
       timezone: this.timezone,
-      createdBy: this.userId,   // TODO: from logged-in user
+      createdBy: Number(this.userId || 0),
 
       lines: linePayloads
     };
@@ -219,7 +225,6 @@ export class CreateJournalComponent implements OnInit {
       },
       error: (err) => {
         this.isSaving = false;
-        console.error('Journal create error', err);
         if (err.error && err.error.message) {
           Swal.fire('Error', err.error.message, 'error');
         } else {

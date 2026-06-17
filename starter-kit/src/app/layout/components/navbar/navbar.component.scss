@@ -21,6 +21,20 @@ app-navbar-bookmark {
   display: flex;
 }
 
+.compact-language {
+  align-items: center;
+  display: flex;
+  margin-right: 0.75rem;
+
+  select {
+    border-radius: 6px;
+    font-size: 0.85rem;
+    height: 32px;
+    min-width: 110px;
+    padding: 0.25rem 1.5rem 0.25rem 0.5rem;
+  }
+}
+
 // Apply style on window scroll for navbar static type
 .navbar-static-style-on-scroll {
   background-color: #2E5F73;

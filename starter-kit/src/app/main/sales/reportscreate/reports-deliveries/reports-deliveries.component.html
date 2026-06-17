@@ -41,12 +41,13 @@
               </label>
 
               <button
-               
+                type="button"
+                (click)="toggleSidebar('reports-filters-sidebar')"
                 class="btn m-1 d-inline-flex align-items-center"
                 style="background-color:#2E5F73;color:white;gap:6px;"
               >
-                <i data-feather="plus-circle" class="w-4 h-4"></i>
-                <span>Add</span>
+                <i data-feather="filter" class="w-4 h-4"></i>
+                <span>Filters</span>
               </button>
 
               <!-- <button
@@ -66,8 +67,12 @@
           </div>
         </div>
 
+        <div *ngIf="loading" class="px-2 pb-1 text-muted small">Loading delivery report...</div>
+        <div *ngIf="errorMsg" class="alert alert-danger mx-2">{{ errorMsg }}</div>
+
         <!-- Main datatable -->
 <ngx-datatable
+  *ngIf="!loading && !errorMsg"
   class="bootstrap core-bootstrap"
   [rows]="rows"
   [rowHeight]="50"
@@ -138,6 +143,10 @@
   </ngx-datatable-column>
 
 </ngx-datatable>
+
+<div *ngIf="!loading && !errorMsg && rows.length === 0" class="text-center text-muted py-3">
+  No delivery records found.
+</div>
 
       </div>
        <core-sidebar

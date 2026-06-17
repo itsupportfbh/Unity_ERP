@@ -1,0 +1,146 @@
+<div class="content-wrapper p-0 supplier-scorecard-page">
+  <div class="content-body">
+    <section class="scorecard-wrapper">
+      <div class="scorecard-header">
+        <div>
+          <h4>Supplier Scorecard</h4>
+          <p>PO, GRN, invoice and payment performance</p>
+        </div>
+        <div class="scorecard-actions">
+          <button class="btn btn-outline-secondary" type="button" (click)="resetFilters()">Reset</button>
+          <button class="btn btn-primary" type="button" (click)="loadReport()" [disabled]="isLoading">Apply</button>
+          <button class="btn btn-outline-primary" type="button" (click)="exportCsv()" [disabled]="!rows.length">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="scorecard-filters">
+        <label>
+          From
+          <input class="form-control" type="date" [(ngModel)]="fromDate" />
+        </label>
+        <label>
+          To
+          <input class="form-control" type="date" [(ngModel)]="toDate" />
+        </label>
+        <label>
+          Supplier
+          <select class="form-control" [(ngModel)]="supplierId">
+            <option [ngValue]="null">All Suppliers</option>
+            <option *ngFor="let s of suppliers" [ngValue]="s.id || s.Id">
+              {{ s.name || s.Name }}
+            </option>
+          </select>
+        </label>
+        <label>
+          Search
+          <input class="form-control" type="search" [(ngModel)]="searchValue" (keyup)="filterUpdate($event)" placeholder="Supplier / code / rating" />
+        </label>
+      </div>
+
+      <div class="scorecard-kpis">
+        <div class="kpi">
+          <span>Suppliers</span>
+          <strong>{{ totalSuppliers }}</strong>
+        </div>
+        <div class="kpi">
+          <span>Avg Score</span>
+          <strong>{{ avgScore | number:'1.2-2' }}</strong>
+        </div>
+        <div class="kpi">
+          <span>PO Value Base</span>
+          <strong>{{ totalPoValue | number:'1.2-2' }}</strong>
+        </div>
+        <div class="kpi">
+          <span>Outstanding Base</span>
+          <strong>{{ totalOutstanding | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <div class="table-shell">
+        <div class="table-toolbar">
+          <label class="d-flex align-items-center mb-0">
+            Show
+            <select class="form-control mx-1" [(ngModel)]="selectedOption">
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+              <option [ngValue]="100">100</option>
+            </select>
+            entries
+          </label>
+          <span *ngIf="isLoading">Loading...</span>
+        </div>
+
+        <ngx-datatable
+          class="bootstrap core-bootstrap"
+          [rows]="rows"
+          [rowHeight]="58"
+          [headerHeight]="50"
+          [footerHeight]="50"
+          [limit]="selectedOption"
+          [columnMode]="ColumnMode.force"
+          [scrollbarH]="true">
+
+          <ngx-datatable-column name="Supplier" [width]="230">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <div class="supplier-name" [title]="row.supplierName">{{ row.supplierName || '-' }}</div>
+              <small>{{ row.supplierCode || '-' }}</small>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Type" [width]="150" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span class="type-pill" [class.overseas]="row.overseasPoCount > 0">{{ row.purchaseType || 'Local' }}</span>
+              <small *ngIf="row.incotermsName">{{ row.incotermsName }}</small>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Rating" [width]="110" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <span class="rating-pill" [ngClass]="scoreClass(row)">{{ row.rating }}</span>
+              <span class="score-text">{{ row.overallScore | number:'1.2-2' }}</span>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="PO" [width]="170" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <div>{{ row.poCount }} PO / {{ row.approvedPoCount }} approved</div>
+              <small>L {{ row.localPoCount }} / O {{ row.overseasPoCount }} / {{ row.poValueBase | number:'1.2-2' }} base</small>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="GRN" [width]="190" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <div>{{ row.grnCount }} GRN / {{ row.fulfillmentPct | number:'1.0-2' }}%</div>
+              <small>Full {{ row.fullGrnCount }} · Partial {{ row.partialGrnCount }} · Closed {{ row.closedGrnCount }}</small>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Qty" [width]="210" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <div>Ordered {{ row.orderedQty | number:'1.0-2' }}</div>
+              <small>Received {{ row.receivedQty | number:'1.0-2' }} / Pending {{ row.pendingQty | number:'1.0-2' }}</small>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Invoice / Payment" [width]="220" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <div>{{ row.invoiceCount }} invoice / {{ row.paymentPct | number:'1.0-2' }}% paid</div>
+              <small>Out {{ row.outstandingValueBase | number:'1.2-2' }}</small>
+            </ng-template>
+          </ngx-datatable-column>
+
+          <ngx-datatable-column name="Scores" [width]="230" [sortable]="false">
+            <ng-template ngx-datatable-cell-template let-row="row">
+              <div class="mini-scores">
+                <span>Approval {{ row.approvalScore | number:'1.0-0' }}</span>
+                <span>Fulfill {{ row.fulfillmentScore | number:'1.0-0' }}</span>
+                <span>Pay {{ row.paymentScore | number:'1.0-0' }}</span>
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+        </ngx-datatable>
+      </div>
+    </section>
+  </div>
+</div>

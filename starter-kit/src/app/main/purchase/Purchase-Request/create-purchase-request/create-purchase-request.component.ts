@@ -157,7 +157,6 @@ currentPeriodName = '';
     private _countriesService: CountriesService,
     private periodService: PeriodCloseService,
   ) {
-    debugger
     this.userId = localStorage.getItem('id') || 'System';
   }
 
@@ -737,7 +736,10 @@ loadDepartments() {
           prLines: req.prLines ? JSON.parse(req.prLines) : []
         }));
       },
-      error: (err: any) => console.error('Error loading list', err)
+      error: (err: any) => {
+        this.purchaseRequests = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load purchase requests.', 'error');
+      }
     });
   }
 
@@ -987,9 +989,8 @@ selectModalItem(item: any) {
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'Failed to verify item existence.',
+        text: err?.error?.message || err?.message || 'Failed to verify item existence.',
       });
-      console.error(err);
     }
   });
 }
@@ -1155,7 +1156,6 @@ selectModalItem(item: any) {
 
   /** Create item, then refresh list and apply the canonical item by ID */
   submitNewItem(): void {
-    debugger
     const { itemName, itemCode, uomId, budgetLineId } = this.newItem || {};
 
     if (!itemName?.trim() || !itemCode?.trim() || uomId == null || budgetLineId == null) {
@@ -1295,7 +1295,9 @@ const payload: any = {
           this.updateBaseline();
           this.router.navigate(['/purchase/list-PurchaseRequest']);
         },
-        error: (err: any) => console.error(err)
+        error: (err: any) => {
+          Swal.fire('Error', err?.error?.message || err?.message || 'Failed to update purchase request.', 'error');
+        }
       });
     } else {
       this.purchaseService.create(payload).subscribe({
@@ -1307,7 +1309,9 @@ const payload: any = {
           this.updateBaseline();
           this.router.navigate(['/purchase/list-PurchaseRequest']);
         },
-        error: (err: any) => console.error(err)
+        error: (err: any) => {
+          Swal.fire('Error', err?.error?.message || err?.message || 'Failed to create purchase request.', 'error');
+        }
       });
     }
   }

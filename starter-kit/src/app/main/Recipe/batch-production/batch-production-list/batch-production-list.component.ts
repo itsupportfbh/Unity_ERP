@@ -62,8 +62,6 @@ export class BatchProductionListComponent implements OnInit {
         this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
-        console.log('Permission:', this.permission);
-console.log('Can Export:', this.canExport());
 
         if (this.canView()) {
             this.loadList();

@@ -224,7 +224,6 @@ canModify(row: any): boolean {
   }
 
   loadList(): void {
-    debugger
     this.loading = true;
 
     this.si.list().subscribe({
@@ -732,10 +731,12 @@ goToCreate(): void {
       pdfFontsMod?.default?.pdfMake?.vfs ||
       pdfFontsMod?.vfs ||
       pdfFontsMod?.default?.vfs ||
-      pdfFontsMod?.pdfMake?.vfs;
+      pdfFontsMod?.pdfMake?.vfs ||
+      pdfFontsMod?.default ||
+      pdfFontsMod;
 
     if (!vfs) {
-      throw new Error('pdfMake vfs not found.');
+      throw new Error('PDF font assets are not available.');
     }
 
     pdfMake.vfs = vfs;

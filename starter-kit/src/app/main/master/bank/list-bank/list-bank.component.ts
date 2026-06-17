@@ -51,9 +51,26 @@ export class ListBankComponent implements OnInit {
 
   // ---------- LOAD DATA ----------
   loadBank(): void {
-    this._bankService.getAllBank().subscribe((res: any) => {
-      this.bankList = res?.data || [];
-      this.bankListFiltered = [...this.bankList];
+    this.isPageLoading = true;
+
+    this._bankService.getAllBank().subscribe({
+      next: (res: any) => {
+        this.bankList = res?.data || [];
+        this.bankListFiltered = [...this.bankList];
+        this.isPageLoading = false;
+      },
+      error: (err) => {
+        this.bankList = [];
+        this.bankListFiltered = [];
+        this.isPageLoading = false;
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load bank list.',
+          confirmButtonColor: '#d33'
+        });
+      }
     });
   }
 
@@ -86,8 +103,7 @@ export class ListBankComponent implements OnInit {
             // this.isDisplay = false;
           }
         },
-        error: (err) => {
-          console.error('Permission load error:', err);
+        error: () => {
           this.permission = this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
@@ -180,14 +196,13 @@ export class ListBankComponent implements OnInit {
           text: res?.message || 'Bank deleted successfully',
           confirmButtonColor: '#3085d6'
         });
-        this.loadBank();   // refresh list
+        this.loadBank();
       },
       error: (err) => {
-        console.error('Error deleting bank', err);
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Failed to delete bank',
+          text: err?.error?.message || err?.message || 'Failed to delete bank.',
           confirmButtonColor: '#d33'
         });
       }

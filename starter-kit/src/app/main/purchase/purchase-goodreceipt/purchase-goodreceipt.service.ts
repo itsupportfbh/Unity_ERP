@@ -70,7 +70,6 @@ applyGrnAndUpdateSalesOrder(req: any): Observable<any> {
     return this.http.get<ApiResponse<any>>(`${this.url}/PurchaseGoodReceipt/getReceivedAggByPO`, { params });
   }
    getAvailableForPinCreate(): Observable<ApiResponse<GrnForPinDto[]>> {
-    debugger
     return this.http.get<ApiResponse<GrnForPinDto[]>>(this.url + GRNApiUrls.GetAvailableForPinCreate);
   }
 
@@ -92,5 +91,13 @@ validateRecipeShortageBin(payload: any): Observable<any> {
     `${this.url}/PurchaseGoodReceipt/validate-recipe-shortage-bin`,
     payload
   );
+}
+
+closeGrn(id: number, reason: string = ''): Observable<any> {
+  return this.http.post(`${this.url}/PurchaseGoodReceipt/Close/${id}`, { reason });
+}
+
+reopenGrn(id: number): Observable<any> {
+  return this.http.post(`${this.url}/PurchaseGoodReceipt/Reopen/${id}`, {});
 }
 }

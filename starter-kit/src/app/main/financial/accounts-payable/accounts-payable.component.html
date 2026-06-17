@@ -141,6 +141,7 @@
                             <thead>
                               <tr>
                                 <th style="background-color:#2E5F73;color:#fff;">Invoice No</th>
+                                <th style="background-color:#2E5F73;color:#fff;">Type</th>
                                 <th style="background-color:#2E5F73;color:#fff;">Invoice Date</th>
                                 <th style="background-color:#2E5F73;color:#fff;">Due Date</th>
                                 <th style="background-color:#2E5F73;color:#fff;" class="text-right">Amount</th>
@@ -155,6 +156,18 @@
                               <ng-container *ngFor="let inv of g.invoices">
                                 <tr>
                                   <td>{{ inv.invoiceNo }}</td>
+                                  <td>
+                                    <span
+                                      [style.background]="inv.isOverseas ? '#fff4e5' : '#ecfdf5'"
+                                      [style.color]="inv.isOverseas ? '#8a4b08' : '#047857'"
+                                      style="font-size:0.76rem;font-weight:700;padding:3px 8px;border-radius:999px;">
+                                      {{ inv.isOverseas ? 'Overseas' : 'Local' }}
+                                    </span>
+                                    <div *ngIf="inv.isOverseas && inv.incotermsName"
+                                      style="font-size:0.72rem;color:#64748b;margin-top:2px;">
+                                      {{ inv.incotermsName }}
+                                    </div>
+                                  </td>
                                   <td>{{ inv.invoiceDate | date:'dd-MMM-yyyy' }}</td>
                                   <td>{{ inv.dueDate | date:'dd-MMM-yyyy' }}</td>
                                   <td class="text-right">
@@ -184,6 +197,7 @@
                                 </tr>
                                 <tr *ngIf="inv.debitNoteAmount > 0" class="ap-dn-row">
                                   <td>{{ inv.debitNoteNo }}</td>
+                                  <td></td>
                                   <td>{{ inv.debitNoteDate | date:'dd-MMM-yyyy' }}</td>
                                   <td></td>
                                   <td class="text-right text-danger">
@@ -259,6 +273,7 @@
                       <th style="background-color:#2E5F73;color:#fff;">Payment No</th>
                       <th style="background-color:#2E5F73;color:#fff;">Supplier</th>
                       <th style="background-color:#2E5F73;color:#fff;">Invoice</th>
+                      <th style="background-color:#2E5F73;color:#fff;">Type</th>
                       <th style="background-color:#2E5F73;color:#fff;">Date</th>
                       <th style="background-color:#2E5F73;color:#fff;">Method</th>
                       <th style="background-color:#2E5F73;color:#fff;" class="text-right">Amount</th>
@@ -273,6 +288,18 @@
                       <td>{{ p.paymentNo }}</td>
                       <td>{{ p.supplierName }}</td>
                       <td>{{ p.invoiceNo }}</td>
+                      <td>
+                        <span
+                          [style.background]="p.isOverseas ? '#fff4e5' : '#ecfdf5'"
+                          [style.color]="p.isOverseas ? '#8a4b08' : '#047857'"
+                          style="font-size:0.76rem;font-weight:700;padding:3px 8px;border-radius:999px;">
+                          {{ p.isOverseas ? 'Overseas' : 'Local' }}
+                        </span>
+                        <div *ngIf="p.isOverseas && p.incotermsName"
+                          style="font-size:0.72rem;color:#64748b;margin-top:2px;">
+                          {{ p.incotermsName }}
+                        </div>
+                      </td>
                       <td>{{ p.paymentDate | date:'dd-MMM-yyyy' }}</td>
                       <td>{{ p.paymentMethodName || getPaymentMethodName(p.paymentMethodId) }}</td>
                       <!-- ✅ Amount + currency -->
@@ -302,7 +329,7 @@
                       <td>{{ p.notes }}</td>
                     </tr>
                     <tr *ngIf="payments.length===0">
-                      <td colspan="10" class="text-center text-muted py-2">
+                      <td colspan="11" class="text-center text-muted py-2">
                         No payments posted yet.
                       </td>
                     </tr>
@@ -581,6 +608,7 @@
                             (ngModelChange)="onSelectAllInvoicesChange($event)" />
                         </th>
                         <th style="background-color:#2E5F73;color:#fff;">Invoice No</th>
+                        <th style="background-color:#2E5F73;color:#fff;">Type</th>
                         <th style="background-color:#2E5F73;color:#fff;">Invoice Date</th>
                         <th style="background-color:#2E5F73;color:#fff;">Due Date</th>
                         <th style="background-color:#2E5F73;color:#fff;" class="text-right">
@@ -611,6 +639,18 @@
                               (ngModelChange)="onInvoiceCheckboxChange(si, $event)" />
                           </td>
                           <td>{{ si.invoiceNo }}</td>
+                          <td>
+                            <span
+                              [style.background]="si.isOverseas ? '#fff4e5' : '#ecfdf5'"
+                              [style.color]="si.isOverseas ? '#8a4b08' : '#047857'"
+                              style="font-size:0.76rem;font-weight:700;padding:3px 8px;border-radius:999px;">
+                              {{ si.isOverseas ? 'Overseas' : 'Local' }}
+                            </span>
+                            <div *ngIf="si.isOverseas && si.incotermsName"
+                              style="font-size:0.72rem;color:#64748b;margin-top:2px;">
+                              {{ si.incotermsName }}
+                            </div>
+                          </td>
                           <td>{{ si.invoiceDate | date:'dd-MMM-yyyy' }}</td>
                           <td>{{ si.dueDate | date:'dd-MMM-yyyy' }}</td>
                           <td class="text-right">
@@ -648,6 +688,7 @@
                         <tr *ngIf="si.debitNoteAmount > 0" class="ap-dn-row">
                           <td></td>
                           <td>{{ si.debitNoteNo }}</td>
+                          <td></td>
                           <td>{{ si.debitNoteDate | date:'dd-MMM-yyyy' }}</td>
                           <td></td>
                           <td class="text-right text-danger">
@@ -662,7 +703,7 @@
                         </tr>
                       </ng-container>
                       <tr *ngIf="!supplierInvoicesAll.length">
-                        <td colspan="10" class="text-center text-muted py-2">
+                        <td colspan="11" class="text-center text-muted py-2">
                           No invoices for this supplier.
                         </td>
                       </tr>

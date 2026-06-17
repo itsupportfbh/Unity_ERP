@@ -106,6 +106,10 @@ export class StackOverviewListComponent implements OnInit {
       this.checkPeriodLockForToday();
   }
 
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
+  }
+
   loadPermission(): void {
       if (!this.userId || this.userId <= 0) {
         this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -136,7 +140,6 @@ export class StackOverviewListComponent implements OnInit {
           }
         },
         error: (err) => {
-          console.error('Permission load error:', err);
           this.permission = this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
@@ -144,7 +147,7 @@ export class StackOverviewListComponent implements OnInit {
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Unable to load permission.',
+            text: this.getErrorMessage(err, 'Unable to load permission.'),
             confirmButtonColor: '#d33'
           });
         }
@@ -262,8 +265,10 @@ loadMasterItem(): void {
     },
     error: (err) => {
       this.loading = false;
-      this.errorMsg = 'Failed to load stock list.';
-      console.error('Stock list load error', err);
+      this.rows = [];
+      this.filteredRows = [];
+      this.errorMsg = this.getErrorMessage(err, 'Failed to load stock list.');
+      Swal.fire('Error', this.errorMsg, 'error');
     }
   });
 }

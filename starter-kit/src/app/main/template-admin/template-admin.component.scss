@@ -1,0 +1,157 @@
+.template-admin {
+  padding: 1.25rem;
+}
+
+.page-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.page-header h2,
+.list-title h4,
+.preview h4 {
+  margin: 0;
+}
+
+.page-header p {
+  color: #6e6b7b;
+  margin: 0.25rem 0 0;
+}
+
+.filters,
+.form-row,
+.state-row,
+.actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.filters {
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.filters .form-control {
+  max-width: 220px;
+}
+
+.check-row,
+.state-row label {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.template-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+}
+
+.template-list,
+.editor {
+  background: #fff;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.list-title {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.list-title span,
+.template-row small {
+  color: #6e6b7b;
+}
+
+.template-row {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #ebe9f1;
+  border-radius: 8px;
+  color: #2f2b3d;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.template-row.active,
+.template-row:hover {
+  border-color: #7367f0;
+}
+
+.template-row small {
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group label {
+  font-weight: 600;
+}
+
+.token-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.token-bar span {
+  color: #6e6b7b;
+  font-weight: 600;
+}
+
+.token-bar button {
+  background: #f3f2ff;
+  border: 1px solid #d8d6ff;
+  border-radius: 999px;
+  color: #5e50ee;
+  padding: 0.25rem 0.65rem;
+}
+
+.body-box {
+  min-height: 180px;
+}
+
+.preview {
+  background: #f8f8fb;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  margin-top: 1rem;
+  padding: 1rem;
+  white-space: pre-wrap;
+}
+
+.empty-state {
+  color: #6e6b7b;
+  padding: 1rem 0;
+}
+
+@media (max-width: 992px) {
+  .template-grid,
+  .form-row,
+  .filters {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters .form-control {
+    max-width: none;
+  }
+}

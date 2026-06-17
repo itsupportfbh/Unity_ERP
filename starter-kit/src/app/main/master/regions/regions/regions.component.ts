@@ -59,7 +59,6 @@ export class RegionsComponent implements OnInit {
   }
 
   saveRegion() {
-    debugger
 
     const obj = {
       id: this.id,
@@ -128,7 +127,6 @@ export class RegionsComponent implements OnInit {
 
 
   getRegionDetails(id: any) {
-    debugger
     this._regionsService.getRegionById(id).subscribe((arg: any) => {
       this.regionValue = arg.data;
       this.id = this.regionValue.id;

@@ -128,6 +128,16 @@
                     {{ g.currencyName }}
                   </span>
 
+                  <span *ngIf="g.isOverseas"
+                    style="font-size:0.7rem; color:#92400e; background:#fff7ed; border:1px solid #fed7aa; border-radius:999px; padding:2px 6px; margin-left:4px;">
+                    Overseas
+                  </span>
+
+                  <span *ngIf="g.isOverseas && g.incotermsName"
+                    style="font-size:0.7rem; color:#6b7280; margin-left:4px;">
+                    {{ g.incotermsName }}
+                  </span>
+
                   <span class="ml-auto" *ngIf="isGrnBlocked(g)">
                     <i class="fas fa-exclamation-triangle text-warning"></i>
                   </span>
@@ -146,6 +156,21 @@
                 <span class="pinX__grnBadge" *ngFor="let n of selectedGrnNos">
                   {{ n }}
                   <i class="fas fa-times" (click)="removeGrnByNo(n)"></i>
+                </span>
+              </div>
+
+              <div class="mt-50" *ngIf="selectedGrnNos?.length"
+                style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span
+                  style="font-size:0.75rem; font-weight:700; border-radius:999px; padding:4px 8px;"
+                  [style.color]="selectedIsOverseas ? '#92400e' : '#2E5F73'"
+                  [style.background]="selectedIsOverseas ? '#fff7ed' : '#eef6f9'"
+                  [style.border]="selectedIsOverseas ? '1px solid #fed7aa' : '1px solid #cfe3ea'">
+                  {{ selectedIsOverseas ? 'Overseas Purchase' : 'Local Purchase' }}
+                </span>
+                <span *ngIf="selectedIsOverseas && selectedIncotermsName"
+                  style="font-size:0.75rem; color:#6b7280;">
+                  Incoterms: {{ selectedIncotermsName }}
                 </span>
               </div>
             </div>

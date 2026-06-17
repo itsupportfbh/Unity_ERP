@@ -36,7 +36,6 @@ export class InvoiceEmailService {
   // email.service.ts
 // invoice-email.service.ts
 sendEmail(docType: 'SI' | 'PIN', invoiceId: number, payload: any) {
-  debugger
   const endpoint = docType === 'SI' ? 'sales' : 'pin';   // 👈 choose API path
 
   return this.http.post<any>(

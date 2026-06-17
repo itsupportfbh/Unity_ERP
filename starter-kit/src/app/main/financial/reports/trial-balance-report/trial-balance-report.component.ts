@@ -33,7 +33,7 @@ export class TrialBalanceReportComponent implements OnInit {
 
   fromDate: string | null = null;
   toDate: string | null = null;
-  companyId: number | null = 1;
+  companyId: number | null = Number(localStorage.getItem('companyId') || 0);
 
   // for Show entries + Search
   selectedOption = 25;          // default page size
@@ -102,8 +102,6 @@ totalClosingCreditBase = 0;
         this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
-        console.log('Permission:', this.permission);
-        console.log('Can Export:', this.canExport());
 
         if (this.canView()) {
            
@@ -112,8 +110,7 @@ totalClosingCreditBase = 0;
           // this.isDisplay = false;
         }
       },
-      error: (err) => {
-        console.error('Permission load error:', err);
+      error: () => {
         this.permission = this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
@@ -150,6 +147,8 @@ canExport(): boolean {
   // ================== RUN TB ==================
 // ================== RUN TB — FIXED ==================
 runTB(): void {
+  this.companyId = Number(localStorage.getItem('companyId') || 0);
+
   const body = {
     fromDate: this.fromDate,
     toDate: this.toDate,
@@ -374,6 +373,7 @@ private recalcTotalsRecursive(node: TbNode): void {
 
   private loadDetail(row: TbNode): void {
     this.detailLoading = true;
+    this.companyId = Number(localStorage.getItem('companyId') || 0);
 
     const body = {
       headId: row.headId,
@@ -425,6 +425,7 @@ private recalcTotalsRecursive(node: TbNode): void {
       event.stopPropagation();
     }
     this.userName = localStorage.getItem('username') || '';
+    this.companyId = Number(localStorage.getItem('companyId') || 0);
 
     const body = {
       headId: node.headId,

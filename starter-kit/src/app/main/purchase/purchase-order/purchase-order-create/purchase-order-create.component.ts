@@ -51,6 +51,7 @@ export class PurchaseOrderCreateComponent implements OnInit {
     subTotal: 0,
     netTotal: 0,
     approvalStatus: '',
+    isOverseas: false,
     StockReorderId: 0
   };
 
@@ -187,7 +188,8 @@ companyCurrencyId = Number(localStorage.getItem('companyCurrencyId') || 0);
           delivery: this.locationService.getLocation(),
           country: this._countriesService.getCountry(),
           poHdr: this.poService.getPOById(this.purchaseOrderId)
-        }).subscribe((results: any) => {
+        }).subscribe({
+          next: (results: any) => {
           this.suppliers = results.suppliers.data;
           this.paymentTerms = results.paymentTerms.data;
           this.currencies = results.currency.data;
@@ -208,6 +210,7 @@ companyCurrencyId = Number(localStorage.getItem('companyCurrencyId') || 0);
 
           this.poHdr = {
             ...results.poHdr.data,
+            isOverseas: !!(results.poHdr.data.isOverseas ?? results.poHdr.data.IsOverseas),
             poDate: this.toISODate(new Date(results.poHdr.data.poDate)),
             deliveryDate: this.toISODate(new Date(results.poHdr.data.deliveryDate))
           };
@@ -239,7 +242,8 @@ companyCurrencyId = Number(localStorage.getItem('companyCurrencyId') || 0);
           const selectedCurrency = this.currencies?.find((d: any) => d.id === this.poHdr.currencyId);
           if (selectedCurrency) {
             this.searchTexts['currency'] = selectedCurrency.currencyName;
-            this.showShipping = selectedCurrency.currencyName?.trim().toUpperCase() !== 'SGD';
+            this.poHdr.isOverseas = this.poHdr.isOverseas || selectedCurrency.currencyName?.trim().toUpperCase() !== 'SGD';
+            this.showShipping = !!this.poHdr.isOverseas;
             if (this.poHdr.fxRate === 0) {
     this.fetchExchangeRate(selectedCurrency.id, selectedCurrency.currencyName);
   }
@@ -260,6 +264,8 @@ companyCurrencyId = Number(localStorage.getItem('companyCurrencyId') || 0);
           this.calculateFxTotal();
           this.mastersLoaded = true;
           this.markClean();
+          },
+          error: (err) => this.handleInitialLoadError(err)
         });
       } else {
         forkJoin({
@@ -274,7 +280,8 @@ companyCurrencyId = Number(localStorage.getItem('companyCurrencyId') || 0);
           taxcode: this.taxCodeService.getTaxCode(),
           delivery: this.locationService.getLocation(),
           country: this._countriesService.getCountry()
-        }).subscribe((results: any) => {
+        }).subscribe({
+          next: (results: any) => {
           this.suppliers = results.suppliers.data;
           this.paymentTerms = results.paymentTerms.data;
           this.currencies = results.currency.data;
@@ -369,8 +376,14 @@ companyCurrencyId = Number(localStorage.getItem('companyCurrencyId') || 0);
             this.allPrNos = list.filter(p => !isYes(p.isReorder));
           }
 
+          if (!this.draftId && !this.fromReorderPrId && !this.fromAlertPrId) {
+            this.applyRfqDraftToPo(this.getRfqPoDraft());
+          }
+
           this.mastersLoaded = true;
           this.markClean();
+          },
+          error: (err) => this.handleInitialLoadError(err)
         });
       }
     });
@@ -378,7 +391,6 @@ companyCurrencyId = Number(localStorage.getItem('companyCurrencyId') || 0);
     setTimeout(() => this.markClean());
   }
 fetchExchangeRate(currencyId: number, currencyName?: string): void {
-  debugger
   const fromCurrencyId = Number(currencyId || 0); // Supplier currency: SGD
   const toCurrencyId = Number(this.companyCurrencyId || 0); // Company currency: INR
 
@@ -564,6 +576,127 @@ isBaseCurrency(): boolean {
     this.recalculateTotals();
   }
 
+  private getRfqPoDraft(): any | null {
+    const navState = this.router.getCurrentNavigation()?.extras?.state || window.history.state || {};
+    const fromState = (navState as any)?.rfqPoDraft;
+
+    if (fromState?.source === 'RFQ') {
+      return fromState;
+    }
+
+    try {
+      const raw = sessionStorage.getItem('rfqPoDraft');
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+      return parsed?.source === 'RFQ' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private applyRfqDraftToPo(draft: any | null): void {
+    if (!draft || !Array.isArray(draft.lines) || !draft.lines.length) return;
+
+    const supplierName = (draft.supplierName || '').toString().trim();
+    const supplier = (this.suppliers || []).find((s: any) =>
+      this.normalizeText(s?.name) === this.normalizeText(supplierName)
+    );
+
+    if (supplier) {
+      this.select('supplier', supplier);
+      this.applySupplierDefaults(supplier);
+    } else if (supplierName) {
+      this.searchTexts['supplier'] = supplierName;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Supplier Not Found',
+        text: `${supplierName} is not available in supplier master. Please create/select supplier before saving PO.`,
+        confirmButtonColor: '#0e3a4c'
+      });
+    }
+
+    if (!this.poHdr.deliveryDate && draft.validUntil) {
+      this.poHdr.deliveryDate = draft.validUntil;
+    }
+
+    const rfqNote = `Created from RFQ winner: ${supplierName || 'selected supplier'}`;
+    this.poHdr.remarks = this.poHdr.remarks
+      ? `${this.poHdr.remarks}\n${rfqNote}`
+      : rfqNote;
+
+    this.poLines = draft.lines.map((line: any) => this.mapRfqLineToPOLine(line));
+    this.poLines.forEach(x => this.calculateLineTotal(x));
+    this.recalculateTotals();
+    this.updateHeaderLockState();
+
+    sessionStorage.removeItem('rfqPoDraft');
+
+    Swal.fire({
+      icon: 'success',
+      title: 'RFQ Draft Loaded',
+      text: 'Winner supplier and quote lines are loaded into this purchase order.',
+      confirmButtonColor: '#0e3a4c'
+    });
+  }
+
+  private applySupplierDefaults(supplier: any): void {
+    const paymentTermId = Number(
+      supplier?.paymentTermId || supplier?.paymentTermsId || supplier?.paymentTermsID || 0
+    );
+
+    if (paymentTermId && !Number(this.poHdr.paymentTermId || 0)) {
+      const term = (this.paymentTerms || []).find((x: any) => Number(x?.id) === paymentTermId);
+      if (term) this.select('paymentTerms', term);
+    }
+
+    const incotermId = Number(supplier?.incotermsId || supplier?.incotermId || 0);
+    if (incotermId && !Number(this.poHdr.incotermsId || 0)) {
+      const incoterm = (this.incoterms || []).find((x: any) => Number(x?.id) === incotermId);
+      if (incoterm) this.select('incoterms', incoterm);
+    }
+  }
+
+  private mapRfqLineToPOLine(line: any): any {
+    const po = this.makeEmptyPOLine();
+    const itemName = (line?.itemName || line?.item || '').toString().trim();
+    const item = this.findRfqItem(itemName);
+
+    po.__fromRFQ = true;
+    po.prNo = 'RFQ';
+    po.item = item ? this.formatItemText(item) : itemName;
+    po.description = item?.description || itemName;
+    po.qty = Number(line?.qty || 0);
+    po.price = Number(line?.price || 0);
+    po.taxCode = this.getDefaultTaxName();
+
+    return po;
+  }
+
+  private findRfqItem(itemName: string): any | null {
+    const target = this.normalizeText(itemName);
+    if (!target) return null;
+
+    return (this.allItems || []).find((x: any) => {
+      const code = this.normalizeText(x?.itemCode || x?.sku);
+      const name = this.normalizeText(x?.itemName || x?.name);
+      const combined = this.normalizeText(this.formatItemText(x));
+
+      return target === code || target === name || target === combined;
+    }) || null;
+  }
+
+  private formatItemText(item: any): string {
+    const code = (item?.itemCode || item?.sku || '').toString().trim();
+    const name = (item?.itemName || item?.name || '').toString().trim();
+
+    return code && name ? `${code} - ${name}` : (code || name);
+  }
+
+  private normalizeText(value: any): string {
+    return (value || '').toString().trim().toLowerCase();
+  }
+
   private computeHash(): string {
     const data = {
       poHdr: this.poHdr,
@@ -602,6 +735,7 @@ isBaseCurrency(): boolean {
           fxRate: Number(raw.fxRate ?? raw.FxRate ?? 0),
           tax: Number(raw.tax ?? raw.Tax ?? 0),
           shipping: Number(raw.shipping ?? raw.Shipping ?? 0),
+          isOverseas: !!(raw.isOverseas ?? raw.IsOverseas),
           discount: Number(raw.discount ?? raw.Discount ?? 0),
           subTotal: Number(raw.subTotal ?? raw.SubTotal ?? 0),
           netTotal: Number(raw.netTotal ?? raw.NetTotal ?? 0),
@@ -625,6 +759,7 @@ isBaseCurrency(): boolean {
           fxRate: d.fxRate,
           tax: d.tax,
           shipping: d.shipping,
+          isOverseas: d.isOverseas,
           discount: d.discount,
           approvalStatus: d.approvalStatus
         };
@@ -644,6 +779,8 @@ isBaseCurrency(): boolean {
         this.searchTexts['deliveryLoc'] = d.location || '';
 
         this.poHdr.currencyName = currency?.currencyName ?? '';
+        this.poHdr.isOverseas = this.poHdr.isOverseas || (this.poHdr.currencyName || '').toUpperCase() !== 'SGD';
+        this.showShipping = !!this.poHdr.isOverseas;
         this.poHdr.fxRate = (this.poHdr.currencyName || '').toUpperCase() === 'SGD'
           ? (this.poHdr.fxRate || 1)
           : (this.poHdr.fxRate || 0);
@@ -657,7 +794,30 @@ isBaseCurrency(): boolean {
         this.calculateFxTotal();
         this.markClean();
       },
-      error: (err) => console.error('Failed to load PO draft', err)
+      error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Failed to load PO draft.', 'error')
+    });
+  }
+
+  private handleInitialLoadError(err: any): void {
+    this.mastersLoaded = false;
+    this.suppliers = [];
+    this.paymentTerms = [];
+    this.currencies = [];
+    this.incoterms = [];
+    this.allPrNos = [];
+    this.allItems = [];
+    this.accounthead = [];
+    this.allBudgets = [];
+    this.allRecurring = [];
+    this.allTaxCodes = [];
+    this.deliveries = [];
+    this.countries = [];
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: err?.error?.message || err?.message || 'Unable to load Purchase Order master data.',
+      confirmButtonColor: '#d33'
     });
   }
 
@@ -787,7 +947,6 @@ isBaseCurrency(): boolean {
   }
 
   select(field: string, item: any) {
-    debugger
     this.searchTexts[field] = item.name || item.paymentTermsName || item.currencyName || item.incotermsName || '';
 
     switch (field) {
@@ -803,13 +962,14 @@ isBaseCurrency(): boolean {
   if (Number(item.currencyId) === Number(this.companyCurrencyId)) {
     this.poHdr.fxRate   = 1;
     this.exchangeRate   = 1;
-    this.showShipping   = false;
+    this.showShipping   = !!this.poHdr.isOverseas;
     const foundGst = this.countries?.find((x: any) => x.id === item.countryId);
     this.poHdr.tax  = foundGst?.gstPercentage || 0;
     this.calculateFxTotal();
   } else {
     this.poHdr.fxRate  = 0;
     this.poHdr.tax     = 0;
+    this.poHdr.isOverseas = true;
     this.showShipping  = true;
     // ✅ item.currencyId pass பண்ணு
     this.fetchExchangeRate(item.currencyId, this.poHdr.currencyName);
@@ -1088,9 +1248,10 @@ isBaseCurrency(): boolean {
     return po;
   }
 
-  private makeEmptyPOLine() {
+  private makeEmptyPOLine(): any {
     return {
       __fromPR: false,
+      __fromRFQ: false,
       prNo: '',
       item: '',
       description: '',
@@ -1302,7 +1463,7 @@ calculateFxTotal() {
 }
 
   notify(msg: string) {
-    alert(msg);
+    Swal.fire('Purchase Order', msg, 'info');
   }
 
   deliveryChange() {
@@ -1381,7 +1542,23 @@ calculateFxTotal() {
       base.push('deliveryLoc');
     }
 
+    if (this.poHdr.isOverseas) {
+      base.push('incoterms');
+    }
+
     return base;
+  }
+
+  onOverseasChange(): void {
+    this.showShipping = !!this.poHdr.isOverseas;
+
+    if (!this.poHdr.isOverseas) {
+      this.poHdr.incotermsId = 0;
+      this.searchTexts['incoterms'] = '';
+      this.poHdr.shipping = 0;
+    }
+
+    this.recalculateTotals();
   }
 
   saveRequest() {
@@ -1485,6 +1662,7 @@ calculateFxTotal() {
       remarks: this.poHdr.remarks || '',
       tax: Number(this.poHdr.tax || 0),
       shipping: Number(this.poHdr.shipping || 0),
+      isOverseas: !!this.poHdr.isOverseas,
       discount: Number(this.poHdr.discount || 0),
       subTotal: Number((totals.subTotal || 0).toFixed(2)),
       netTotal: Number((totals.netTotal || 0).toFixed(2)),
@@ -1691,6 +1869,7 @@ calculateFxTotal() {
       remarks: this.poHdr.remarks || '',
       tax: this.poHdr.tax || 0,
       shipping: this.poHdr.shipping || 0,
+      isOverseas: !!this.poHdr.isOverseas,
       discount: this.poHdr.discount || 0,
       subTotal: Number(this.poTotals.subTotal.toFixed(2)),
       netTotal: Number(this.poTotals.netTotal.toFixed(2)),

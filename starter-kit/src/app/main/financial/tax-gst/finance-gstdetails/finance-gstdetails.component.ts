@@ -4,6 +4,7 @@ import { FunctionPermission, PermissionService } from 'app/shared/permission.ser
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-finance-gstdetails',
@@ -109,10 +110,10 @@ export class FinanceGstdetailsComponent implements OnInit {
         this.isLoading = false;
       },
       error: (err) => {
-        console.error('Error loading GST details', err);
         this.rows = [];
         this.page = 1;
         this.isLoading = false;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load GST details.', 'error');
       }
     });
   }

@@ -60,8 +60,6 @@ export class ReceiptComponent implements OnInit {
           this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
-          console.log('Permission:', this.permission);
-          console.log('Can Export:', this.canExport());
   
         if (this.canView()) {
            this.loadReceipts();
@@ -71,8 +69,7 @@ export class ReceiptComponent implements OnInit {
             // this.isDisplay = false;
           }
         },
-        error: (err) => {
-          console.error('Permission load error:', err);
+        error: () => {
           this.permission = this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
@@ -125,7 +122,6 @@ export class ReceiptComponent implements OnInit {
 loadReceipts(): void {
   this.receiptService.getReceipt().subscribe({
     next: (res: any) => {
-      console.log('Receipt API:', res); // debug
       const data = Array.isArray(res)
         ? res
         : (res?.data?.items ?? res?.data ?? res ?? []);
@@ -133,9 +129,9 @@ loadReceipts(): void {
       this.filtered = [...this.receipts];
     },
     error: (err) => {
-      console.error('Receipt load error:', err);
       this.receipts = [];
       this.filtered = [];
+      Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load receipts.', 'error');
     }
   });
 }
@@ -197,11 +193,11 @@ loadReceipts(): void {
           });
           this.loadReceipts();
         },
-        error: _ => {
+        error: err => {
           Swal.fire({
             icon: 'error',
             title: 'Delete failed',
-            text: 'Something went wrong while deleting the receipt.'
+            text: err?.error?.message || err?.message || 'Something went wrong while deleting the receipt.'
           });
         }
       });

@@ -130,6 +130,23 @@
           </ngx-datatable-column>
 
           <!-- Reason -->
+          <ngx-datatable-column name="Type" [width]="150">
+            <ng-template let-row="row" ngx-datatable-cell-template>
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <span
+                  [style.background]="row.isOverseas ? '#fff4e5' : '#ecfdf5'"
+                  [style.color]="row.isOverseas ? '#8a4b08' : '#047857'"
+                  style="font-size:0.78rem;font-weight:700;padding:3px 8px;border-radius:999px;width:max-content;">
+                  {{ row.isOverseas ? 'Overseas' : 'Local' }}
+                </span>
+                <span *ngIf="row.isOverseas && row.incotermsName"
+                  style="font-size:0.72rem;color:#64748b;">
+                  {{ row.incotermsName }}
+                </span>
+              </div>
+            </ng-template>
+          </ngx-datatable-column>
+
           <ngx-datatable-column name="Reason" prop="reason" [width]="150">
             <ng-template let-row="row" ngx-datatable-cell-template>
               {{ row.reason || '-' }}
@@ -190,6 +207,19 @@
           <div *ngIf="modalCurrencyName && modalCurrencyName !== 'SGD'"
             style="font-size:0.82rem;color:#2E5F73;margin-top:3px;">
             {{ modalCurrencyName }} • FX Rate: {{ modalFxRate | number:'1.4-4' }}
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:5px;">
+            <span
+              [style.background]="modalIsOverseas ? '#fff4e5' : '#ecfdf5'"
+              [style.color]="modalIsOverseas ? '#8a4b08' : '#047857'"
+              style="font-size:0.78rem;font-weight:700;padding:3px 8px;border-radius:999px;">
+              {{ modalIsOverseas ? 'Overseas Purchase' : 'Local Purchase' }}
+            </span>
+            <span *ngIf="modalIsOverseas && modalIncotermsName"
+              style="font-size:0.78rem;color:#334155;background:#eef2f7;
+                     padding:3px 8px;border-radius:999px;">
+              Incoterms: {{ modalIncotermsName }}
+            </span>
           </div>
         </div>
         <button type="button" class="dn-modal-close" (click)="closeLinesModal()">

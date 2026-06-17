@@ -139,10 +139,18 @@ export class StockReorderPlanningCreateComponent implements OnInit {
       warehouse: this.warehouseService.getWarehouse(),
       supplier: this.supplierService.GetAllSupplier(),
       items: this.itemsService.getAllItem()
-    }).subscribe((res: any) => {
-      this.warehouses = res?.warehouse?.data || [];
-      this.suppliers = res?.supplier?.data || [];
-      this.itemlist = res?.items?.data || [];
+    }).subscribe({
+      next: (res: any) => {
+        this.warehouses = res?.warehouse?.data || [];
+        this.suppliers = res?.supplier?.data || [];
+        this.itemlist = res?.items?.data || [];
+      },
+      error: (err) => {
+        this.warehouses = [];
+        this.suppliers = [];
+        this.itemlist = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load reorder master data'), 'error');
+      }
     });
 
     this.route.paramMap.subscribe(pm => {
@@ -150,7 +158,8 @@ export class StockReorderPlanningCreateComponent implements OnInit {
       this.stockReorderId = id;
       if (!id) { this.resetRows(); return; }
 
-      this.reorderPlanningService.getStockReorderById(id).subscribe((r: any) => {
+      this.reorderPlanningService.getStockReorderById(id).subscribe({
+        next: (r: any) => {
         const h = r?.data || {};
         this.warehouseTypeId = h.warehouseTypeId ?? null;
         this.methodId = h.methodId ?? METHOD.MinMax;
@@ -193,12 +202,28 @@ export class StockReorderPlanningCreateComponent implements OnInit {
 
         this.selectedIds = new Set(this.allRows.filter(x => x.selected).map(x => x.itemId));
         this.rows = [...this.allRows];
+      },
+      error: (err) => {
+        this.resetRows();
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load reorder planning'), 'error')
+          .then(() => this.router.navigateByUrl('/Inventory/list-stockreorderplanning'));
+      }
       });
     });
 
-    this.locationService.getLocation().subscribe((res: any) => {
-      this.locationList = res?.data ?? [];
+    this.locationService.getLocation().subscribe({
+      next: (res: any) => {
+        this.locationList = res?.data ?? [];
+      },
+      error: (err) => {
+        this.locationList = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load locations'), 'error');
+      }
     });
+  }
+
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
   }
 
   // Lookups
@@ -275,6 +300,11 @@ export class StockReorderPlanningCreateComponent implements OnInit {
           onHand: n(this.pick(x, ['onHand', 'qtyOnHand', 'quantityOnHand']), 0),
           warehouseId: n(this.pick(x, ['warehouseId', 'WarehouseId', 'warehouseTypeId']), wh)
         }));
+      },
+      error: (err) => {
+        this.warehouseItems = [];
+        this.availableItems = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load item master fallback'), 'error');
       }
     });
   }
@@ -521,7 +551,7 @@ export class StockReorderPlanningCreateComponent implements OnInit {
       note: 'Suggest Reorder',
       userId: this.userId ?? 0,
       userName: this.userName ?? null,
-      departmentId: 1,
+      departmentId: Number(localStorage.getItem('departmentId') || localStorage.getItem('DepartmentId') || 0),
       deliveryDate: headerDeliveryDate ?? null
     };
     if (this.stockReorderId && this.stockReorderId > 0) {

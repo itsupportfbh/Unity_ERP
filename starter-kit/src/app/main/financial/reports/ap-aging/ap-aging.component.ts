@@ -372,7 +372,9 @@ export class APAgingComponent implements OnInit, AfterViewInit {
       paidAmount: Number(paidAmount.toFixed(2)),
       debitNoteAmount: Number(debitNoteAmount.toFixed(2)),
       advanceAmount: Number(advanceAmount.toFixed(2)),
-      outstandingAmount: Number(outstanding.toFixed(2))
+      outstandingAmount: Number(outstanding.toFixed(2)),
+      isOverseas: this.toBool(x.isOverseas ?? x.IsOverseas),
+      incotermsName: x.incotermsName ?? x.IncotermsName ?? ''
     } as ApAgingInvoice;
   }
 
@@ -487,5 +489,10 @@ export class APAgingComponent implements OnInit, AfterViewInit {
     });
 
     doc.save(`AP-Aging-${this.fromDate}-to-${this.toDate}.pdf`);
+  }
+
+  private toBool(v: any): boolean {
+    if (v === true || v === 1 || v === '1') return true;
+    return String(v ?? '').toLowerCase() === 'true';
   }
 }

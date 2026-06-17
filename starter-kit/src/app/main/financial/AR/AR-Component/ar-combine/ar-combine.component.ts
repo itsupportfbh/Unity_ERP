@@ -119,8 +119,6 @@ export class ARCombineComponent implements OnInit {
           this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
-          console.log('Permission:', this.permission);
-          console.log('Can Export:', this.canExport());
   
         if (this.canView()) {
             // Default load if initial tab is 'advance'
@@ -132,8 +130,7 @@ export class ARCombineComponent implements OnInit {
             // this.isDisplay = false;
           }
         },
-        error: (err) => {
-          console.error('Permission load error:', err);
+        error: () => {
           this.permission = this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
@@ -193,11 +190,6 @@ export class ARCombineComponent implements OnInit {
 const first = raw[0];
       
       
-      console.log('amountBase:', first?.amountBase, first?.AmountBase);
-      console.log('fxRate:', first?.fxRate, first?.FxRate);
-      console.log('currencyName:', first?.currencyName, first?.CurrencyName);
-      console.log('currencyId:', first?.currencyId, first?.CurrencyId);
-      console.log('ALL KEYS:', Object.keys(first || {}));
       this.arAdvances = (raw as any[]).map(x => ({
         id:            x.id,
         customerId:    x.customerId,
@@ -236,12 +228,12 @@ const first = raw[0];
       this.recalcArAdvPaging();
     },
     error: err => {
-      console.error('Failed to load customer advances', err);
       this.arAdvances        = [];
       this.pagedArAdvances   = [];
       this.arTotalAdvanceAmount   = 0;
       this.arTotalAdvanceBalance  = 0;
       this.arTotalAdvanceUtilised = 0;
+      Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load customer advances.', 'error');
     }
   });
 }

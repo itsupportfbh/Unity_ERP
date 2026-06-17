@@ -1,0 +1,100 @@
+<section class="language-admin">
+  <div class="page-header">
+    <div>
+      <h2>Language Admin</h2>
+      <p>English, Chinese, Malay and Tamil translation keys maintain pannalam.</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="newEntry()">New Key</button>
+  </div>
+
+  <div class="filters">
+    <select class="form-control" [(ngModel)]="filters.languageCode" (change)="selected.languageCode = filters.languageCode; loadTranslations()">
+      <option *ngFor="let language of languages" [value]="language.code">{{ language.name }}</option>
+    </select>
+
+    <select class="form-control" [(ngModel)]="filters.module" (change)="loadTranslations()">
+      <option value="">All Modules</option>
+      <option *ngFor="let module of modules" [value]="module">{{ module }}</option>
+    </select>
+
+    <label class="check-row">
+      <input type="checkbox" [(ngModel)]="filters.includeInactive" (change)="loadTranslations()" />
+      Include inactive
+    </label>
+
+    <button type="button" class="btn btn-outline-primary" (click)="applyLanguage()">Apply Language</button>
+  </div>
+
+  <div *ngIf="message" class="alert alert-success">{{ message }}</div>
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div class="language-grid">
+    <div class="translation-list">
+      <div class="list-title">
+        <h4>Translation Keys</h4>
+        <span>{{ translations.length }} item(s)</span>
+      </div>
+
+      <div *ngIf="loading" class="empty-state">Loading translations...</div>
+      <div *ngIf="!loading && translations.length === 0" class="empty-state">No translations found.</div>
+
+      <div class="translation-row" *ngFor="let row of translations; trackBy: trackById" [class.inactive]="!row.isActive">
+        <button type="button" (click)="edit(row)">
+          <strong>{{ row.translationKey }}</strong>
+          <small>{{ row.module || 'Common' }} / {{ row.languageCode }}</small>
+          <span>{{ row.translationValue }}</span>
+        </button>
+        <button type="button" class="link-danger" [disabled]="!row.isActive || saving" (click)="deactivate(row)">Inactive</button>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Language</label>
+          <select class="form-control" [(ngModel)]="selected.languageCode">
+            <option *ngFor="let language of languages" [value]="language.code">{{ language.name }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Module</label>
+          <select class="form-control" [(ngModel)]="selected.module">
+            <option *ngFor="let module of modules" [value]="module">{{ module }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="quick-keys">
+        <span>Common keys</span>
+        <button type="button" *ngFor="let key of commonKeys" (click)="useKey(key)">{{ key }}</button>
+      </div>
+
+      <div class="form-group">
+        <label>Translation Key</label>
+        <input class="form-control" [(ngModel)]="selected.translationKey" placeholder="Example: MENU.PURCHASE.TITLE" />
+      </div>
+
+      <div class="form-group">
+        <label>Translation Value</label>
+        <textarea class="form-control" rows="5" [(ngModel)]="selected.translationValue" placeholder="Display text"></textarea>
+      </div>
+
+      <label class="check-row mb-1">
+        <input type="checkbox" [(ngModel)]="selected.isActive" />
+        Active
+      </label>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" [disabled]="saving" (click)="save()">
+          {{ saving ? 'Saving...' : 'Save Translation' }}
+        </button>
+      </div>
+
+      <div class="preview">
+        <h4>Preview</h4>
+        <strong>{{ selected.translationKey || 'KEY' }}</strong>
+        <p>{{ selected.translationValue || 'Translated text will appear here.' }}</p>
+      </div>
+    </div>
+  </div>
+</section>

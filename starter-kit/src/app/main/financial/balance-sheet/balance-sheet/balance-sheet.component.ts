@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterViewInit, ViewEncapsulation } from '@angular/core';
 import { BalanceSheetService } from '../balance-sheet-service/balance-sheet.service';
 import feather from 'feather-icons';
+import Swal from 'sweetalert2';
 
 interface BsRow {
   headId: number;
@@ -170,7 +171,6 @@ export class BalanceSheetComponent implements OnInit, AfterViewInit {
         setTimeout(() => feather.replace(), 0);
       },
       error: err => {
-        console.error('Error loading balance sheet', err);
         this.allRows = [];
         this.liabilityAccounts = [];
         this.assetAccounts = [];
@@ -178,6 +178,7 @@ export class BalanceSheetComponent implements OnInit, AfterViewInit {
         this.assetsTotal = 0;
         this.displayLiabilitiesTotal = 0;
         this.displayAssetsTotal = 0;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load Balance Sheet.', 'error');
       }
     });
   }
@@ -231,7 +232,6 @@ private computeSubtreeTotals(childrenMap: Map<number, BsRow[]>): Map<number, num
 
     // cycle detected – stop here and just use own balance
     if (visiting.has(id)) {
-      console.warn('Cycle detected in Balance Sheet tree at headId', id, row);
       const valCycle = row.balanceNum ?? 0;
       memo.set(id, valCycle);
       return valCycle;

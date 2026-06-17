@@ -173,6 +173,10 @@ userId: number = 0;
     this.loadPermission();
   }
 
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
+  }
+
 
    loadPermission(): void {
       if (!this.userId || this.userId <= 0) {
@@ -204,7 +208,6 @@ userId: number = 0;
           }
         },
         error: (err) => {
-          console.error('Permission load error:', err);
           this.permission = this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
@@ -212,7 +215,7 @@ userId: number = 0;
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Unable to load permission.',
+            text: this.getErrorMessage(err, 'Unable to load permission.'),
             confirmButtonColor: '#d33'
           });
         }
@@ -307,10 +310,11 @@ userId: number = 0;
         }
         this.onToOutletChange();
       },
-      error: () => {
+      error: (err) => {
         this.toOutletOptions = [{ id: 0, name: 'All Outlets' }];
         this.selectedToOutletId = 0;
         this.onToOutletChange();
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load outlets'), 'error');
       }
     });
   }
@@ -400,10 +404,11 @@ userId: number = 0;
         this.applyFilter();
         this.isLoading = false;
       },
-      error: () => {
+      error: (err) => {
         this.rows = [];
         this.applyFilter();
         this.isLoading = false;
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load transfer receipts'), 'error');
       }
     });
   }
@@ -556,7 +561,7 @@ userId: number = 0;
       transferNo: f.transferNo,
 
       remarks: String(f.remarks || ''),
-      userId: 1
+      userId: this.userId
     };
 
     this.isLoading = true;
@@ -569,7 +574,7 @@ userId: number = 0;
       },
       error: (err) => {
         this.isLoading = false;
-        Swal.fire({ icon: 'error', title: 'Failed', text: err?.error?.message || 'Receive confirm failed.' });
+        Swal.fire({ icon: 'error', title: 'Failed', text: this.getErrorMessage(err, 'Receive confirm failed.') });
       }
     });
   }

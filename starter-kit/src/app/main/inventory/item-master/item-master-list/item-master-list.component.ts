@@ -14,7 +14,13 @@ export interface ItemMaster {
   wareHouse?: string; // matches your payload key
   // add other keys if your API returns them (e.g., bin, brand, etc.)
 }
-interface ListRow { id: number; sku: string; name: string;}
+interface ListRow {
+  id: number;
+  sku?: string;
+  itemCode?: string;
+  name?: string;
+  itemName?: string;
+}
 @Component({
   selector: 'app-item-master-list',
   templateUrl: './item-master-list.component.html',
@@ -60,6 +66,10 @@ export class ItemMasterListComponent implements OnInit {
     this.loadPermission();
   }
 
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
+  }
+
 
   loadMasterItem(): void {
     this.loading = true;
@@ -75,8 +85,10 @@ export class ItemMasterListComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.errorMsg = 'Failed to load Item Master list.';
-        console.error('Item Master load error', err);
+        this.rows = [];
+        this.filteredRows = [];
+        this.errorMsg = this.getErrorMessage(err, 'Failed to load Item Master list.');
+        Swal.fire('Error', this.errorMsg, 'error');
       }
     });
   }
@@ -111,7 +123,6 @@ export class ItemMasterListComponent implements OnInit {
           }
         },
         error: (err) => {
-          console.error('Permission load error:', err);
           this.permission = this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
@@ -119,7 +130,7 @@ export class ItemMasterListComponent implements OnInit {
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Unable to load permission.',
+            text: this.getErrorMessage(err, 'Unable to load permission.'),
             confirmButtonColor: '#d33'
           });
         }
@@ -170,9 +181,7 @@ export class ItemMasterListComponent implements OnInit {
 
   /** Eye action */
   openView(row: ItemMaster): void {
-    // TODO: open a modal or navigate to a detail page
-    // this.router.navigate(['/inventory/item-master/view', row.id]);
-    console.log('view', row);
+    this.openLinesModal(row as any);
   }
 
   /** Edit action */
@@ -185,7 +194,11 @@ export class ItemMasterListComponent implements OnInit {
     this.router.navigate(['/Inventory/Create-itemmaster']);
   }
     openLinesModal(row: ListRow) {
-    this.currentItem = { id: Number(row.id), sku: row.sku, name: row.name };
+    this.currentItem = {
+      id: Number(row.id),
+      sku: row.sku || row.itemCode || '',
+      name: row.name || row.itemName || ''
+    };
     this.activeTab = 'warehouse';
     this.modalRef = this.modal.open(this.itemViewModalTemplate, { size: 'xl',
       centered: true,
@@ -209,25 +222,46 @@ export class ItemMasterListComponent implements OnInit {
   }
    loadWarehouse() {
     if (!this.currentItem) return;
-    this.itemMasterService.getWarehouseStock(this.currentItem.id).subscribe((rows:any) => {
-      // Optionally compute Available if your DB column is null
-      this.warehouseRows = rows.data.map((r: any) => ({
-        ...r,
-        available: r.available ?? (Number(r.onHand || 0) - Number(r.reserved || 0))
-      }));
+    this.itemMasterService.getWarehouseStock(this.currentItem.id).subscribe({
+      next: (rows:any) => {
+        const data = Array.isArray(rows?.data) ? rows.data : (Array.isArray(rows) ? rows : []);
+        this.warehouseRows = data.map((r: any) => ({
+          ...r,
+          available: r.available ?? (Number(r.onHand || 0) - Number(r.reserved || 0))
+        }));
+      },
+      error: (err) => {
+        this.warehouseRows = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load warehouse stock'), 'error');
+      }
     });
   }
 
    loadSupplier() {
     if (!this.currentItem) return;
-    this.itemMasterService.getSupplierPrices(this.currentItem.id).subscribe((rows:any) => this.supplierRows = rows.data);
+    this.itemMasterService.getSupplierPrices(this.currentItem.id).subscribe({
+      next: (rows:any) => {
+        this.supplierRows = Array.isArray(rows?.data) ? rows.data : (Array.isArray(rows) ? rows : []);
+      },
+      error: (err) => {
+        this.supplierRows = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load supplier prices'), 'error');
+      }
+    });
   }
 
    loadAudit() {
     if (!this.currentItem) return;
-    this.itemMasterService.getAudit(this.currentItem.id).subscribe((rows:any) => {
-      this.auditRows = rows.data;
-      this.selectedAudit = null;
+    this.itemMasterService.getAudit(this.currentItem.id).subscribe({
+      next: (rows:any) => {
+        this.auditRows = Array.isArray(rows?.data) ? rows.data : (Array.isArray(rows) ? rows : []);
+        this.selectedAudit = null;
+      },
+      error: (err) => {
+        this.auditRows = [];
+        this.selectedAudit = null;
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load item audit'), 'error');
+      }
     });
   }
 
@@ -304,7 +338,7 @@ deleteItem(id: number) {
       },
       error: (err) => {
         Swal.close();
-        let msg = 'Failed to delete the item.';
+        let msg = this.getErrorMessage(err, 'Failed to delete the item.');
         if (err?.status === 409) msg = 'Cannot delete: item is referenced by other records.';
         else if (err?.status === 404) msg = 'Item not found (maybe already deleted).';
 

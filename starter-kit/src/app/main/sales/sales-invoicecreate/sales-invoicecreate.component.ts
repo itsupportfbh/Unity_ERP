@@ -1254,7 +1254,6 @@ if (this.isInvoiceBlocked()) return;
     return path;
   }
   openOcr(): void {
-    debugger
   if (this.isInvoiceBlocked()) return;
   this.ocrOpen = true;
 }

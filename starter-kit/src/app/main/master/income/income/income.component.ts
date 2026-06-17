@@ -62,7 +62,6 @@ export class IncomeComponent implements OnInit {
   }
 
   saveIncome() {
-    debugger
 
     const obj = {
       id: this.id,
@@ -132,7 +131,6 @@ export class IncomeComponent implements OnInit {
 
 
   getIncomeDetails(id: any) {
-    debugger
     this._incomeService.getIncomeById(id).subscribe((arg: any) => {
       this.incomeValue = arg.data;
       this.id = this.incomeValue.id;

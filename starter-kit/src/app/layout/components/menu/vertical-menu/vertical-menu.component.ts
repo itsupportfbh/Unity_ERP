@@ -81,11 +81,6 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
     const filtered = this.filterMenu(ALL_MENU);
     const marked = this.markActiveMenu(filtered, currentUrl);
 
-    console.log('menuIds =>', this.getAllowedMenuIds());
-    console.log('approvalRoles =>', this.getApprovalRoles());
-    console.log('filtered =>', filtered);
-    console.log('marked =>', marked);
-
     this.menu = marked;
 
     try {
@@ -161,7 +156,9 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
         const hasVisibleChildren =
           Array.isArray(children) && children.length > 0;
 
-        const selfAllowed = allowedSet.has(itemId);
+        const selfAllowed =
+          allowedSet.has(itemId) ||
+          this.isNewPurchaseMenuAllowedByParent(itemId, allowedSet);
 
         const hasTeamRules =
           Array.isArray(item.teams) && item.teams.length > 0;
@@ -199,6 +196,15 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
         if (item.type !== 'collapsible') return true;
         return Array.isArray(item.children) && item.children.length > 0;
       });
+  }
+
+  private isNewPurchaseMenuAllowedByParent(itemId: string, allowedSet: Set<string>): boolean {
+    const parentPurchaseAllowed = allowedSet.has('purchase');
+    const newPurchaseMenuIds = new Set([
+      'supplier-scorecard'
+    ]);
+
+    return parentPurchaseAllowed && newPurchaseMenuIds.has(itemId);
   }
 
   private markActiveMenu(items: any[], currentUrl: string): any[] {

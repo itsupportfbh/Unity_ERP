@@ -1,0 +1,75 @@
+.bank-recon {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.bank-recon__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+
+  h2 {
+    margin: 0;
+    color: #2e5f73;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+  }
+}
+
+.bank-recon__toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 160px auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bank-recon__summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+
+  div {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px;
+    background: #f9fafb;
+  }
+
+  span {
+    display: block;
+    color: #6b7280;
+    font-size: 12px;
+  }
+
+  strong {
+    color: #111827;
+    font-size: 18px;
+  }
+}
+
+.bank-recon__import {
+  margin-bottom: 14px;
+
+  label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #374151;
+  }
+}
+
+@media (max-width: 768px) {
+  .bank-recon__toolbar,
+  .bank-recon__summary {
+    grid-template-columns: 1fr;
+  }
+}

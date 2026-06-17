@@ -100,8 +100,7 @@ export class BankComponent implements OnInit {
           this.loadInitialData();
         }
       },
-      error: (err) => {
-        console.error('Permission load error:', err);
+      error: () => {
         this.permission = this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
 
@@ -157,8 +156,13 @@ export class BankComponent implements OnInit {
         this.currencies = res?.data || [];
       },
       error: (err) => {
-        console.error('Currency load error:', err);
         this.currencies = [];
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load currencies.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }
@@ -169,8 +173,13 @@ export class BankComponent implements OnInit {
         this.countries = res?.data || [];
       },
       error: (err) => {
-        console.error('Country load error:', err);
         this.countries = [];
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load countries.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }
@@ -185,8 +194,13 @@ export class BankComponent implements OnInit {
         }));
       },
       error: (err) => {
-        console.error('Chart of account load error:', err);
         this.parentHeadList = [];
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err?.error?.message || err?.message || 'Unable to load chart of accounts.',
+          confirmButtonColor: '#d33'
+        });
       }
     });
   }
@@ -232,11 +246,10 @@ export class BankComponent implements OnInit {
         };
       },
       error: (err) => {
-        console.error('Load bank error:', err);
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Unable to load bank details.',
+          text: err?.error?.message || err?.message || 'Unable to load bank details.',
           confirmButtonColor: '#d33'
         });
       }
@@ -353,7 +366,6 @@ export class BankComponent implements OnInit {
         },
         error: (err) => {
           this.isSaving = false;
-          console.error('Error updating bank', err);
 
           Swal.fire({
             icon: 'error',
@@ -380,7 +392,6 @@ export class BankComponent implements OnInit {
         },
         error: (err) => {
           this.isSaving = false;
-          console.error('Error creating bank', err);
 
           Swal.fire({
             icon: 'error',

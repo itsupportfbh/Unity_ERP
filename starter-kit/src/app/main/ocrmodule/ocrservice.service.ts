@@ -32,7 +32,7 @@ export interface OcrResponse {
   pageRange?: string;
   parsed: OcrParsed;
   // ✅ NEW — which engine used
-  engine?: 'tesseract' | 'vision';
+  engine?: 'tesseract' | 'vision' | 'groq';
 }
 
 @Injectable({ providedIn: 'root' })

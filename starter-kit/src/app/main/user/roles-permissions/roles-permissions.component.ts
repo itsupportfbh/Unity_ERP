@@ -74,7 +74,6 @@ private loadDepartmentMenus(): void {
 
   this.userSvc.getDepartmentMenuAccess(this.departmentId).subscribe({
     next: (res: any) => {
-      console.log('Department menu access response:', res);
 
       const menuIds = res?.menuIds || res?.data?.menuIds || [];
 
@@ -84,7 +83,6 @@ private loadDepartmentMenus(): void {
             .map((x: any) => String(x).trim().toLowerCase())
         : [];
 
-      console.log('allowedMenuIds:', this.allowedMenuIds);
 
       this.rebuildScreen();
       this.loadingMenus = false;

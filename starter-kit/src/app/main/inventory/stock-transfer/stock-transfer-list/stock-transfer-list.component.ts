@@ -118,7 +118,6 @@ export class StockTransferListComponent implements OnInit, AfterViewInit, AfterV
           }
         },
         error: (err) => {
-          console.error('Permission load error:', err);
           this.permission = this.permissionService.getEmptyPermission(this.functionId);
           this.isPermissionLoaded = true;
           this.isPageLoading = false;
@@ -126,7 +125,7 @@ export class StockTransferListComponent implements OnInit, AfterViewInit, AfterV
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Unable to load permission.',
+            text: this.getErrorMessage(err, 'Unable to load permission.'),
             confirmButtonColor: '#d33'
           });
         }
@@ -162,6 +161,10 @@ export class StockTransferListComponent implements OnInit, AfterViewInit, AfterV
     if (v === null || v === undefined || v === '') return null;
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
+  }
+
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
   }
 
   private statusLabel(n: number): string {
@@ -210,9 +213,9 @@ export class StockTransferListComponent implements OnInit, AfterViewInit, AfterV
         this.tempData = [...this.rows];
       },
       error: (err: any) => {
-        console.error('Load list failed', err);
         this.rows = [];
         this.tempData = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load stock transfers'), 'error');
       }
     });
   }

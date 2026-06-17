@@ -3,6 +3,121 @@
 @import '@core/scss/angular/libs/select.component.scss';
 @import '@core/scss/angular/libs/sweet-alerts.component.scss';
 
+.po-perf-wrap{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap:10px;
+  padding:0 14px 12px;
+}
+
+.po-perf-card{
+  border:1px solid #e7edf2;
+  border-radius:8px;
+  padding:10px 12px;
+  background:#fff;
+}
+
+.po-perf-label{
+  color:#6b7280;
+  font-size:12px;
+  font-weight:700;
+}
+
+.po-perf-value{
+  margin-top:4px;
+  color:#2E5F73;
+  font-size:18px;
+  font-weight:800;
+}
+
+.po-perf-value--name{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:15px;
+}
+
+.po-perf-table{
+  margin:0 14px 14px;
+  border:1px solid #e7edf2;
+  border-radius:8px;
+  overflow:hidden;
+}
+
+.po-perf-table__head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 12px;
+  background:#f8fafc;
+  color:#2E5F73;
+  font-weight:800;
+}
+
+.po-perf-table__head small{
+  color:#6b7280;
+  font-weight:600;
+}
+
+.po-perf-row{
+  display:grid;
+  grid-template-columns: minmax(180px, 1.6fr) repeat(4, minmax(70px, .5fr)) minmax(120px, .8fr);
+  gap:10px;
+  align-items:center;
+  padding:9px 12px;
+  border-top:1px solid #eef2f7;
+  font-size:13px;
+}
+
+.po-perf-row--header{
+  border-top:0;
+  color:#6b7280;
+  font-weight:800;
+}
+
+.po-perf-supplier{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:700;
+}
+
+.po-type-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:72px;
+  padding:4px 9px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  line-height:1;
+}
+
+.po-type-badge--local{
+  color:#2E5F73;
+  background:#eef6f9;
+  border:1px solid #cfe3ea;
+}
+
+.po-type-badge--overseas{
+  color:#92400e;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+}
+
+@media (max-width: 900px){
+  .po-perf-wrap{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .po-perf-table__head{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:2px;
+  }
+}
+
 
 
 .truncate-20 {

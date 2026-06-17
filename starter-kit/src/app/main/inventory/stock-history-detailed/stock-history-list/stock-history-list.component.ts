@@ -7,6 +7,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { InventoryService } from '../../inventory.service';
+import Swal from 'sweetalert2';
 
 export interface StockOverviewItem {
   itemId      : number;
@@ -128,7 +129,7 @@ export class StockHistoryListComponent implements OnInit, OnDestroy {
           this.loading = false;
           this.refreshFeather();
         },
-        error: () => {
+        error: (err) => {
           this.allItems    = [];
           this.pagedItems  = [];
           this.totalItems  = 0;
@@ -138,6 +139,7 @@ export class StockHistoryListComponent implements OnInit, OnDestroy {
           this.updatePageMeta();
           this.buildVisiblePages();
           this.loading = false;
+          Swal.fire('Error', err?.error?.message || err?.message || 'Failed to load stock history', 'error');
         }
       });
   }
@@ -274,7 +276,10 @@ export class StockHistoryListComponent implements OnInit, OnDestroy {
 
   // ── Export Modal ───────────────────────────────────────────────
   openExportModal(): void {
-    if (!this.allItems?.length) { alert('No data available to export'); return; }
+    if (!this.allItems?.length) {
+      Swal.fire('No Data', 'No data available to export', 'warning');
+      return;
+    }
     this.showExportModal = true;
     this.refreshFeather();
   }
@@ -301,7 +306,10 @@ export class StockHistoryListComponent implements OnInit, OnDestroy {
 
   exportToExcel(): void {
     const rows = this.getExportRows();
-    if (!rows.length) { alert('No data available to export'); return; }
+    if (!rows.length) {
+      Swal.fire('No Data', 'No data available to export', 'warning');
+      return;
+    }
 
     const ws = XLSX.utils.json_to_sheet(rows);
     ws['!cols'] = [8, 18, 38, 22, 16, 14, 14, 12, 12, 14, 14].map(wch => ({ wch }));
@@ -314,7 +322,10 @@ export class StockHistoryListComponent implements OnInit, OnDestroy {
 
   exportToPdf(): void {
     const rows = this.getExportRows();
-    if (!rows.length) { alert('No data available to export'); return; }
+    if (!rows.length) {
+      Swal.fire('No Data', 'No data available to export', 'warning');
+      return;
+    }
 
     const today     = this.formatDate(new Date().toISOString());
     const tableRows = rows.map(x => `
@@ -373,7 +384,10 @@ tbody tr:nth-child(even) { background:#f9fafb }
 </body></html>`;
 
     const w = window.open('', '_blank', 'width=1200,height=800');
-    if (!w) { alert('Popup blocked. Please allow popup for PDF export.'); return; }
+    if (!w) {
+      Swal.fire('Popup Blocked', 'Please allow popup for PDF export.', 'warning');
+      return;
+    }
     w.document.open(); w.document.write(html); w.document.close();
     this.closeExportModal();
   }

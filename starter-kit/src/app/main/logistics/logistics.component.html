@@ -1,0 +1,123 @@
+<section class="logistics">
+  <div class="page-header">
+    <div>
+      <h2>Logistics</h2>
+      <p>Route planner, driver task board and POD update.</p>
+    </div>
+    <button type="button" class="btn btn-outline-primary" (click)="loadRoutes(); loadAvailableDeliveries()">Refresh</button>
+  </div>
+
+  <div *ngIf="message" class="alert alert-success">{{ message }}</div>
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div class="logistics-grid">
+    <div class="planner">
+      <h4>Create Route</h4>
+      <div class="form-group">
+        <label>Route Name</label>
+        <input class="form-control" [(ngModel)]="routeForm.routeName" placeholder="Central route / East route" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Route Date</label>
+          <input class="form-control" type="date" [(ngModel)]="routeForm.routeDate" (change)="loadAvailableDeliveries()" />
+        </div>
+        <div class="form-group">
+          <label>Driver</label>
+          <select class="form-control" [(ngModel)]="routeForm.driverId">
+            <option [ngValue]="null">Select driver</option>
+            <option *ngFor="let driver of drivers" [ngValue]="driver.id">{{ driver.driverName }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Vehicle</label>
+        <select class="form-control" [(ngModel)]="routeForm.vehicleId">
+          <option [ngValue]="null">Select vehicle</option>
+          <option *ngFor="let vehicle of vehicles" [ngValue]="vehicle.id">{{ vehicle.vehicleNo }}</option>
+        </select>
+      </div>
+
+      <div class="delivery-list">
+        <div class="list-title">
+          <h5>Available Delivery Orders</h5>
+          <span>{{ selectedDeliveryIds.length }} selected</span>
+        </div>
+        <label class="delivery-row" *ngFor="let row of availableDeliveries; trackBy: trackById">
+          <input type="checkbox" [checked]="selectedDeliveryIds.includes(row.id)" (change)="toggleDelivery(row.id, $event.target.checked)" />
+          <span>
+            <strong>{{ row.deliveryOrderNo || ('DO #' + row.id) }}</strong>
+            <small>{{ row.customerName || '-' }} / {{ row.doDate | date:'dd-MMM-yyyy' }}</small>
+          </span>
+        </label>
+        <div *ngIf="availableDeliveries.length === 0" class="empty-state">No delivery orders available.</div>
+      </div>
+
+      <button type="button" class="btn btn-primary btn-block" [disabled]="saving" (click)="createRoute()">
+        {{ saving ? 'Saving...' : 'Create Route' }}
+      </button>
+    </div>
+
+    <div class="board">
+      <div class="filters">
+        <input class="form-control" type="date" [(ngModel)]="filters.routeDate" (change)="loadRoutes()" />
+        <select class="form-control" [(ngModel)]="filters.status" (change)="loadRoutes()">
+          <option value="">All Status</option>
+          <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+
+      <div class="route-list">
+        <button type="button" class="route-card" *ngFor="let route of routes; trackBy: trackById" [class.active]="selectedRoute?.id === route.id" (click)="openRoute(route)">
+          <div>
+            <strong>{{ route.routeNo }} - {{ route.routeName }}</strong>
+            <small>{{ route.driverName || 'No driver' }} / {{ route.vehicleNo || 'No vehicle' }}</small>
+          </div>
+          <span>{{ route.deliveredCount }}/{{ route.stopCount }} {{ route.status }}</span>
+        </button>
+        <div *ngIf="!loading && routes.length === 0" class="empty-state">No routes found.</div>
+      </div>
+
+      <div class="task-board" *ngIf="selectedRoute">
+        <div class="board-title">
+          <h4>Driver Tasks: {{ selectedRoute.routeName }}</h4>
+          <button type="button" class="btn btn-outline-primary btn-sm" (click)="startRoute(selectedRoute)">Start Route</button>
+        </div>
+
+        <div class="stop-row" *ngFor="let stop of stops; trackBy: trackById" [class.delivered]="stop.status === 'Delivered'">
+          <div class="stop-number">{{ stop.stopSequence }}</div>
+          <div class="stop-main">
+            <strong>{{ stop.deliveryOrderNo || ('DO #' + stop.deliveryOrderId) }}</strong>
+            <small>{{ stop.customerName || '-' }}</small>
+            <span>{{ stop.status }} <ng-container *ngIf="stop.deliveredAt">/ {{ stop.deliveredAt | date:'dd-MMM HH:mm' }}</ng-container></span>
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" (click)="openPod(stop)">POD</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pod" *ngIf="selectedStop">
+      <h4>POD Update</h4>
+      <p>{{ selectedStop.deliveryOrderNo }} / {{ selectedStop.customerName }}</p>
+      <div class="form-group">
+        <label>Status</label>
+        <select class="form-control" [(ngModel)]="podForm.status">
+          <option *ngFor="let status of podStatuses" [value]="status">{{ status }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Receiver Name</label>
+        <input class="form-control" [(ngModel)]="podForm.receiverName" />
+      </div>
+      <div class="form-group">
+        <label>Receiver Mobile</label>
+        <input class="form-control" [(ngModel)]="podForm.receiverMobile" />
+      </div>
+      <div class="form-group">
+        <label>Remarks</label>
+        <textarea class="form-control" rows="4" [(ngModel)]="podForm.remarks"></textarea>
+      </div>
+      <button type="button" class="btn btn-primary btn-block" [disabled]="saving" (click)="savePod()">Save POD</button>
+    </div>
+  </div>
+</section>

@@ -5,7 +5,11 @@ import { ProductionPlanLineDto, ProductionPlanPrintDto, ProductionPlanService } 
 import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
-const vfs = (pdfFonts as any)?.pdfMake?.vfs || (pdfFonts as any)?.vfs;
+const vfs =
+  (pdfFonts as any)?.pdfMake?.vfs ||
+  (pdfFonts as any)?.vfs ||
+  (pdfFonts as any)?.default ||
+  (pdfFonts as any);
 if (!vfs) {
   console.error('pdfmake vfs not found. Check vfs_fonts import', pdfFonts);
 }
@@ -73,8 +77,6 @@ isPageLoading = false;
         this.permission = res || this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
-        console.log('Permission:', this.permission);
-console.log('Can Export:', this.canExport());
 
         if (this.canView()) {
             this.load();
@@ -547,7 +549,6 @@ markPlanAsPending(planId: number): void {
   });
 }
 selectPlan(planId: any) {
-  debugger
   const id = Number(planId || 0);
   this.selectedPlanId = id > 0 ? id : null;
 }

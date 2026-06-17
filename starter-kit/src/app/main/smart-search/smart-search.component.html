@@ -1,0 +1,61 @@
+<section class="smart-search">
+  <div class="page-head">
+    <div>
+      <h2>Smart Search</h2>
+      <p>Documents, parties and item master records across ERP modules.</p>
+    </div>
+  </div>
+
+  <div class="search-panel">
+    <div class="search-row">
+      <label class="query-box">
+        Search
+        <input
+          class="form-control"
+          type="search"
+          [(ngModel)]="query"
+          (keyup.enter)="search()"
+          placeholder="PR, PO, GRN, invoice, supplier, customer, item..." />
+      </label>
+
+      <label>
+        Module
+        <select class="form-control" [(ngModel)]="module">
+          <option *ngFor="let m of modules" [value]="m">{{ m }}</option>
+        </select>
+      </label>
+
+      <button class="btn btn-primary" type="button" (click)="search()" [disabled]="loading">
+        {{ loading ? 'Searching...' : 'Search' }}
+      </button>
+    </div>
+    <div class="hint">Search supports document number, party name, phone, email, item SKU and item name.</div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div class="result-summary" *ngIf="response.query">
+    <strong>{{ response.totalCount }}</strong> results for <span>{{ response.query }}</span>
+  </div>
+
+  <div *ngIf="!loading && response.query && !response.results.length" class="empty">
+    No matching records found.
+  </div>
+
+  <div class="results" *ngIf="response.results.length">
+    <button
+      type="button"
+      class="result-card"
+      *ngFor="let row of response.results; trackBy: trackByResult"
+      (click)="open(row)">
+      <span class="module">{{ row.module }} / {{ row.documentType }}</span>
+      <span class="title">{{ row.title || row.documentNo }}</span>
+      <span class="subtitle">{{ row.subtitle || '-' }}</span>
+      <span class="meta">
+        <b>{{ row.status || 'Open' }}</b>
+        <small>{{ date(row.documentDate) }}</small>
+        <small>{{ money(row.amount) }}</small>
+      </span>
+    </button>
+  </div>
+</section>

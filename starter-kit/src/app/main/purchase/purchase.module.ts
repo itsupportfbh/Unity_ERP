@@ -19,6 +19,7 @@ import { MobileReceivingComponent } from './mobile-receiving/mobile-receiving.co
 import { RfqComponent } from './rfq/rfq.component';
 import { DebitNoteListComponent } from './debit-note/debit-note-list/debit-note-list.component';
 import { DebitNoteCreateComponent } from './debit-note/debit-note-create/debit-note-create.component';
+import { SupplierScorecardComponent } from './supplier-scorecard/supplier-scorecard.component';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { OcruploadmodalComponent } from '../ocrmodule/ocruploadmodal/ocruploadmodal.component';
 import { OcrSharedModule } from '../ocrmodule/ocr-shared-module/ocr-shared-module.module';
@@ -97,6 +98,11 @@ const routes = [
     component: RfqComponent,
     data: { animation: 'rfq' }
   },
+  {
+    path: 'supplier-scorecard',
+    component: SupplierScorecardComponent,
+    data: { animation: 'supplierScorecard' }
+  },
     {
     path: 'list-debitnote',
     component: DebitNoteListComponent,
@@ -116,7 +122,7 @@ const routes = [
 ];
 
 @NgModule({
-  declarations: [CreatePurchaseRequestComponent,PurchaseRequestListComponent,PurchaseGoodreceiptComponent, PurchaseGoodreceiptlistComponent,PurchaseOrdeListComponent, PurchaseOrderCreateComponent, SupplierInvoiceComponent, SupplierInvoiceListComponent, MobileReceivingComponent, RfqComponent,DebitNoteListComponent, DebitNoteCreateComponent],
+  declarations: [CreatePurchaseRequestComponent,PurchaseRequestListComponent,PurchaseGoodreceiptComponent, PurchaseGoodreceiptlistComponent,PurchaseOrdeListComponent, PurchaseOrderCreateComponent, SupplierInvoiceComponent, SupplierInvoiceListComponent, MobileReceivingComponent, RfqComponent,DebitNoteListComponent, DebitNoteCreateComponent, SupplierScorecardComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),

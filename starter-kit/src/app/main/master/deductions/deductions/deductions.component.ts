@@ -61,7 +61,6 @@ export class DeductionsComponent implements OnInit {
   }
 
   saveDeduction() {
-    debugger
 
     const obj = {
       id: this.id,
@@ -131,7 +130,6 @@ export class DeductionsComponent implements OnInit {
 
 
   getDeductionDetails(id: any) {
-    debugger
     this._deductionService.getDeductionById(id).subscribe((arg: any) => {
       this.deductionValue = arg.data;
       this.id = this.deductionValue.id;

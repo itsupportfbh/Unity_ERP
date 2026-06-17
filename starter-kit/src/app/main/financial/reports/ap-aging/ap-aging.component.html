@@ -220,6 +220,7 @@
         <thead>
           <tr>
             <th style="background-color:#2E5F73; color:#ffffff;">Invoice No</th>
+            <th style="background-color:#2E5F73; color:#ffffff;">Type</th>
             <th style="background-color:#2E5F73; color:#ffffff;">Invoice Date</th>
             <th style="background-color:#2E5F73; color:#ffffff;">Due Date</th>
             <th style="background-color:#2E5F73; color:#ffffff;" class="text-right">Amount</th>
@@ -232,6 +233,18 @@
         <tbody>
           <tr *ngFor="let d of detailRows">
             <td>{{ d.invoiceNo }}</td>
+            <td>
+              <span
+                [style.background]="d.isOverseas ? '#fff4e5' : '#ecfdf5'"
+                [style.color]="d.isOverseas ? '#8a4b08' : '#047857'"
+                style="font-size:0.76rem;font-weight:700;padding:3px 8px;border-radius:999px;">
+                {{ d.isOverseas ? 'Overseas' : 'Local' }}
+              </span>
+              <div *ngIf="d.isOverseas && d.incotermsName"
+                style="font-size:0.72rem;color:#64748b;margin-top:2px;">
+                {{ d.incotermsName }}
+              </div>
+            </td>
             <td>{{ d.invoiceDate | date:'dd-MMM-yyyy' }}</td>
             <td>{{ d.dueDate | date:'dd-MMM-yyyy' }}</td>
             <td class="text-right">{{ d.originalAmount | number:'1.2-2' }}</td>
@@ -254,7 +267,7 @@
           </tr>
 
           <tr *ngIf="!detailRows.length">
-            <td colspan="8" class="text-center text-muted py-2">
+            <td colspan="9" class="text-center text-muted py-2">
               No invoices in this range.
             </td>
           </tr>

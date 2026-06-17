@@ -167,8 +167,14 @@ export class ArAdvanceComponent implements OnInit {
   }
 
   loadCustomers(): void {
-    this.customerService.getAllCustomerMaster().subscribe((res: any) => {
-      this.customers = res?.data || [];
+    this.customerService.getAllCustomerMaster().subscribe({
+      next: (res: any) => {
+        this.customers = res?.data || [];
+      },
+      error: (err) => {
+        this.customers = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Failed to load customers', 'error');
+      }
     });
   }
 
@@ -177,7 +183,10 @@ export class ArAdvanceComponent implements OnInit {
       next: (res: any) => {
         this.bankAccounts = res?.data || res || [];
       },
-      error: () => Swal.fire('Error', 'Failed to load bank accounts', 'error')
+      error: (err) => {
+        this.bankAccounts = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Failed to load bank accounts', 'error');
+      }
     });
   }
 
@@ -227,6 +236,7 @@ export class ArAdvanceComponent implements OnInit {
       error: () => {
         this.orders        = [];
         this.loadingOrders = false;
+        Swal.fire('Error', 'Failed to load sales orders', 'error');
       }
     });
   }
@@ -240,13 +250,15 @@ export class ArAdvanceComponent implements OnInit {
       this.isOrderSpecific ? this.model.salesOrderId : null
     ).subscribe({
       next: res  => this.openAdvances = res || [],
-      error: _   => this.openAdvances = []
+      error: err => {
+        this.openAdvances = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Failed to load open advances', 'error');
+      }
     });
   }
 
   onBankChange(): void {
     const bank = this.bankAccounts.find(b => b.id === this.model.bankAccountId);
-    if (bank) console.log('Bank:', bank.headName);
   }
 
   onPaymentModeChange(): void {
@@ -314,9 +326,9 @@ export class ArAdvanceComponent implements OnInit {
         this.loadOpenAdvances();
         this.router.navigate(['/financial/AR']);
       },
-      error: () => {
+      error: (err) => {
         this.saving = false;
-        Swal.fire('Error', 'Failed to save advance', 'error');
+        Swal.fire('Error', err?.error?.message || err?.message || 'Failed to save advance', 'error');
       }
     });
   }

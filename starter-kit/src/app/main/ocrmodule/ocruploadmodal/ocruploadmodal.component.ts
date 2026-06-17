@@ -39,6 +39,13 @@ engine: 'tesseract' | 'vision' | 'groq' = 'groq';
     return this.results[this.selectedIdx];
   }
 
+  get confidenceLevel(): 'low' | 'medium' | 'high' {
+    const confidence = Number(this.activeResult?.meanConfidence || 0);
+    if (confidence >= 0.80) return 'high';
+    if (confidence >= 0.55) return 'medium';
+    return 'low';
+  }
+
   close() {
     this.open = false;
     this.reset();
@@ -115,8 +122,49 @@ run() {
 
   apply() {
     if (!this.activeResult) return;
+    this.recalcTotals();
     this.applied.emit(this.activeResult);
     this.close();
+  }
+
+  addLine(): void {
+    const result = this.activeResult;
+    if (!result) return;
+
+    result.parsed.lines = result.parsed.lines || [];
+    result.parsed.lines.push({ item: '', qty: 1, unitPrice: 0, discountPct: 0 });
+    this.recalcTotals();
+  }
+
+  removeLine(index: number): void {
+    const lines = this.activeResult?.parsed?.lines;
+    if (!lines) return;
+
+    lines.splice(index, 1);
+    this.recalcTotals();
+  }
+
+  recalcTotals(): void {
+    const parsed = this.activeResult?.parsed;
+    if (!parsed) return;
+
+    const lines = parsed.lines || [];
+    const lineTotal = lines.reduce((sum: number, line: any) => {
+      const qty = Number(line.qty || 0);
+      const unitPrice = Number(line.unitPrice || 0);
+      return sum + qty * unitPrice;
+    }, 0);
+
+    if (lineTotal > 0) {
+      parsed.subTotal = Number(lineTotal.toFixed(2));
+    }
+
+    const taxPercent = Number(parsed.taxPercent || 0);
+    if (taxPercent > 0 && Number(parsed.subTotal || 0) > 0) {
+      parsed.taxAmount = Number((Number(parsed.subTotal || 0) * taxPercent / 100).toFixed(2));
+    }
+
+    parsed.total = Number((Number(parsed.subTotal || 0) + Number(parsed.taxAmount || 0)).toFixed(2));
   }
 
   reset() {

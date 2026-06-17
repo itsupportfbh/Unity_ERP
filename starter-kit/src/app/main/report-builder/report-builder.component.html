@@ -1,0 +1,99 @@
+<section class="report-builder">
+  <div class="page-header">
+    <div>
+      <h2>Report Builder</h2>
+      <p>Saved reports, filters and scheduled export setup.</p>
+    </div>
+    <button type="button" class="btn btn-outline-primary" (click)="exportCsv()" [disabled]="!rows.length">Export CSV</button>
+  </div>
+
+  <div *ngIf="message" class="alert alert-success">{{ message }}</div>
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div class="builder-grid">
+    <div class="panel">
+      <h4>Build Report</h4>
+      <div class="form-group">
+        <label>Report Name</label>
+        <input class="form-control" [(ngModel)]="model.reportName" placeholder="Monthly sales report" />
+      </div>
+
+      <div class="form-group">
+        <label>Source</label>
+        <select class="form-control" [(ngModel)]="model.sourceKey" (change)="sourceChanged()">
+          <option *ngFor="let source of sources" [value]="source.key">{{ source.name }}</option>
+        </select>
+      </div>
+
+      <div class="column-box">
+        <label>Columns</label>
+        <label class="check-row" *ngFor="let column of selectedSource?.columns || []">
+          <input type="checkbox" [checked]="model.columns.includes(column)" (change)="toggleColumn(column, $event.target.checked)" />
+          {{ column }}
+        </label>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>From Date</label>
+          <input class="form-control" type="date" [(ngModel)]="model.fromDate" />
+        </div>
+        <div class="form-group">
+          <label>To Date</label>
+          <input class="form-control" type="date" [(ngModel)]="model.toDate" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Search</label>
+        <input class="form-control" [(ngModel)]="model.search" placeholder="Document no / party" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Schedule</label>
+          <select class="form-control" [(ngModel)]="model.scheduleFrequency">
+            <option *ngFor="let schedule of schedules" [value]="schedule">{{ schedule || 'No schedule' }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Email To</label>
+          <input class="form-control" [(ngModel)]="model.emailTo" placeholder="finance@example.com" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" (click)="run()" [disabled]="loading">{{ loading ? 'Running...' : 'Run' }}</button>
+        <button type="button" class="btn btn-outline-primary" (click)="save()" [disabled]="saving">{{ saving ? 'Saving...' : 'Save Report' }}</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h4>Saved Reports</h4>
+      <button type="button" class="saved-row" *ngFor="let report of savedReports; trackBy: trackById" (click)="openSaved(report)">
+        <strong>{{ report.reportName }}</strong>
+        <small>{{ report.sourceKey }} / {{ report.scheduleFrequency || 'Manual' }}</small>
+      </button>
+      <div class="empty-state" *ngIf="savedReports.length === 0">No saved reports.</div>
+    </div>
+
+    <div class="panel results">
+      <h4>Results</h4>
+      <div class="table-wrap" *ngIf="rows.length">
+        <table>
+          <thead>
+            <tr>
+              <th *ngFor="let column of columns">{{ column }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of rows">
+              <td *ngFor="let column of columns">{{ row[column] }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" *ngIf="!rows.length">Run a report to see results.</div>
+    </div>
+  </div>
+</section>

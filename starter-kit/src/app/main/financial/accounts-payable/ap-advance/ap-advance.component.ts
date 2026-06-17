@@ -94,6 +94,10 @@ exchangeRateLoading = false;
     this.loadGrns();
   }
 
+  private getErrorMessage(err: any, fallback: string): string {
+    return err?.error?.message || err?.message || fallback;
+  }
+
   // =================== lookups ===================
   loadSuppliers(): void {
     this.supplierSvc.GetAllSupplier().subscribe({
@@ -104,8 +108,9 @@ exchangeRateLoading = false;
           name: s.name || s.supplierName || s.SupplierName
         }));
       },
-      error: () => {
-        Swal.fire('Error', 'Failed to load suppliers', 'error');
+      error: (err) => {
+        this.suppliers = [];
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load suppliers'), 'error');
       }
     });
   }
@@ -115,9 +120,12 @@ exchangeRateLoading = false;
       next: (res: any) => {
         this.bankAccounts = res?.data || res || [];
       },
-      error: () => {
-        // non-blocking
+      error: (err) => {
         this.bankAccounts = [];
+        this.bankHeadId = null;
+        this.bankAvailableBalance = null;
+        this.bankBalanceAfterAdvance = null;
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load bank accounts'), 'error');
       }
     });
   }
@@ -144,7 +152,14 @@ exchangeRateLoading = false;
         // by default show all (or filter by supplier later)
         this.applyGrnSupplierFilter();
       },
-      error: (err: any) => console.error('Error loading GRN list', err)
+      error: (err) => {
+        this.grnList = [];
+        this.grnFiltered = [];
+        this.grnId = null;
+        this.grnNo = '';
+        this.grnSearch = '';
+        Swal.fire('Error', this.getErrorMessage(err, 'Failed to load GRNs'), 'error');
+      }
     });
   }
 
@@ -261,9 +276,6 @@ calculateAmountBase(): void {
   }
 
 selectGrn(g: GRNHeader): void {
-   console.log('Selected GRN:', g);  
-  console.log('currencyName:', g.currencyName);
-  console.log('fxRate:', g.fxRate);
   this.grnId = g.id;
   this.grnNo = g.grnNo;
   this.grnSearch = g.grnNo;

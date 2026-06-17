@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Swal from 'sweetalert2';
 
 // For display label
 type DaybookType =
@@ -164,8 +165,10 @@ export class DaybookReportComponent implements OnInit, AfterViewInit {
         setTimeout(() => feather.replace());
       },
       error: (err) => {
-        console.error('Daybook load error', err);
         this.loading = false;
+        this.vouchers = [];
+        this.summaryRows = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load Daybook report.', 'error');
       }
     });
   }

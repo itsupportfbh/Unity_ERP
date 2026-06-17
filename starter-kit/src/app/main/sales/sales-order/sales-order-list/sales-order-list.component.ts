@@ -179,8 +179,7 @@ activeRow: SoHeader | null = null;
           this.tempData = [];
         }
       },
-      error: (err) => {
-        console.error('Permission load error:', err);
+      error: () => {
         this.permission        = this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading     = false;
@@ -270,7 +269,11 @@ loadRequests(): void {
       this.filterUpdate({ target: { value: this.searchValue } });
       this.refreshGrnAlerts();
     },
-    error: (err) => console.error('Error loading SO list', err)
+    error: (err) => {
+      this.rows = [];
+      this.tempData = [];
+      Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load Sales Orders.', 'error');
+    }
   });
 }
 
@@ -350,7 +353,7 @@ loadRequests(): void {
       if (!res.isConfirmed) return;
       this.salesOrderService.deleteSO(id, this.userId || 1).subscribe({
         next: () => { this.loadRequests(); this.prefetchDraftsCount(); Swal.fire('Deleted!', 'Sales Order has been deleted.', 'success'); },
-        error: (err) => { console.error(err); Swal.fire('Error', 'Delete failed.', 'error'); }
+        error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Delete failed.', 'error')
       });
     });
   }
@@ -374,7 +377,7 @@ loadRequests(): void {
           Swal.fire('Approved', 'Sales Order approved successfully.', 'success');
           this.prefetchDraftsCount();
         },
-        error: (err) => { console.error(err); Swal.fire('Error', 'Failed to approve Sales Order.', 'error'); }
+        error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Failed to approve Sales Order.', 'error')
       });
     });
   }
@@ -391,7 +394,7 @@ loadRequests(): void {
           Swal.fire('Rejected', 'Sales Order rejected and lines unlocked.', 'success');
           this.prefetchDraftsCount();
         },
-        error: (err) => { console.error(err); Swal.fire('Error', 'Failed to reject Sales Order.', 'error'); }
+        error: (err) => Swal.fire('Error', err?.error?.message || err?.message || 'Failed to reject Sales Order.', 'error')
       });
     });
   }
@@ -418,7 +421,7 @@ loadRequests(): void {
   prefetchDraftsCount(): void {
     this.salesOrderService.getDrafts().subscribe({
       next: (res) => { this.draftRows = (res?.data ?? []); this.rebuildBlockedSoIds(); },
-      error: (err) => console.error('draft count error', err)
+      error: () => { this.draftRows = []; this.rebuildBlockedSoIds(); }
     });
   }
 
@@ -436,7 +439,11 @@ loadRequests(): void {
         this.draftLoading    = false;
         this.showDraftsModal = true;
       },
-      error: (err) => { this.draftLoading = false; console.error(err); }
+      error: (err) => {
+        this.draftRows = [];
+        this.draftLoading = false;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load Sales Order drafts.', 'error');
+      }
     });
   }
 

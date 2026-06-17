@@ -35,7 +35,6 @@ export class CurrencyComponent implements OnInit {
   }
   // Load data from API
   loadCurrency() {
-    debugger
     this.CurrencyService.getAllCurrency().subscribe((res: any) => {
      this.CurrencyList = res.data.filter((item: any) => item.isActive === true);
       setTimeout(() => feather.replace(), 0);

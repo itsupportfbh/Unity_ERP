@@ -1,5 +1,3 @@
-// src/app/main/financial/reports/ap-aging/ap-aging-model.ts
-
 export interface ApAgingSummary {
   supplierId: number;
   supplierName: string;
@@ -16,8 +14,8 @@ export interface ApAgingSummary {
 export interface ApAgingInvoice {
   invoiceId: number;
   invoiceNo: string;
-  invoiceDate: string;   // or Date
-  dueDate: string;       // or Date
+  invoiceDate: string;
+  dueDate: string;
 
   ageDays: number;
   bucketName: string;
@@ -30,6 +28,7 @@ export interface ApAgingInvoice {
   creditAmount: number;
   balance: number;
 
-  // 🔹 for auto-email
+  isOverseas?: boolean;
+  incotermsName?: string;
   supplierEmail?: string;
 }

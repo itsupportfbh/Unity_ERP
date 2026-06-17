@@ -303,7 +303,32 @@ export class StockHistoryDetailsComponent implements OnInit, OnDestroy {
 
   // ── Navigation ─────────────────────────────────────────────────
   goBack()    : void { this.router.navigate(['/Inventory/list-stock-history']); }
-  exportExcel(): void { console.log('Export stock history detail', this.allTransactions); }
+  exportExcel(): void {
+    const rows = this.allTransactions || [];
+    if (!rows.length) return;
+
+    const headers = ['Date', 'Source', 'Reference', 'Warehouse', 'Bin', 'In', 'Out', 'Adjustment', 'Qty After'];
+    const csvRows = rows.map((r: any) => [
+      r.txnDate ?? '',
+      r.sourceType ?? '',
+      r.sourceNo ?? '',
+      r.warehouseName ?? '',
+      r.binName ?? '',
+      r.qtyIn ?? 0,
+      r.qtyOut ?? 0,
+      r.adjustment ?? 0,
+      r.qtyAfter ?? 0
+    ]);
+    const escape = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = [headers, ...csvRows].map(row => row.map(escape).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'stock-history-detail.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
   printPage() : void { window.print(); }
 
   private refreshFeather(): void {

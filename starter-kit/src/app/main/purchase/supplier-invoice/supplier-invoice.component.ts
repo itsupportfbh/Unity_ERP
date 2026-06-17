@@ -33,6 +33,8 @@ interface GRNHeader {
   previousPinPending?: boolean;
   previousPinNo?: string;
   previousGrnNo?: string;
+  isOverseas?: boolean;
+  incotermsName?: string;
 }
 
 type TaxMode = 'EXCLUSIVE' | 'INCLUSIVE' | 'ZERO';
@@ -90,6 +92,8 @@ export class SupplierInvoiceComponent implements OnInit, OnDestroy {
   // existing properties-க்கு கீழே add பண்ணுங்க
 fxRate: number = 1;
 currencyName: string = '';
+selectedIsOverseas = false;
+selectedIncotermsName = '';
 netPayableBase: number = 0; // ✅ SGD amount
   constructor(
     private fb: FormBuilder,
@@ -196,9 +200,12 @@ netPayableBase: number = 0; // ✅ SGD amount
         this.grnList = raw.map((x: any) => this.mapGrn(x));
         this.grnFiltered = [...this.grnList];
 
-        console.log('GRN LIST FOR PIN', this.grnList);
       },
-      error: (err) => console.error('Error loading GRNs', err)
+      error: (err) => {
+        this.grnList = [];
+        this.grnFiltered = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load available GRNs.', 'error');
+      }
     });
   }
 
@@ -208,8 +215,13 @@ netPayableBase: number = 0; // ✅ SGD amount
         const raw = res?.data ?? res ?? [];
         this.grnList = raw.map((x: any) => this.mapGrn(x));
         this.grnFiltered = [...this.grnList];
+        this.syncSelectedOverseasMeta();
       },
-      error: (err) => console.error('Error loading GRNs', err)
+      error: (err) => {
+        this.grnList = [];
+        this.grnFiltered = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load available GRNs.', 'error');
+      }
     });
   }
 
@@ -235,6 +247,8 @@ netPayableBase: number = 0; // ✅ SGD amount
       currencyId: x.currencyId ?? x.CurrencyId,
        fxRate: Number(x.fxRate ?? x.FxRate ?? 1),        // ✅ add
     currencyName: x.currencyName ?? x.CurrencyName ?? '',
+      isOverseas: this.toBool(x.isOverseas ?? x.IsOverseas),
+      incotermsName: x.incotermsName ?? x.IncotermsName ?? '',
 
       previousPinPending:
         previousPinPendingValue === true ||
@@ -300,6 +314,9 @@ netPayableBase: number = 0; // ✅ SGD amount
         });
       },
       error: () => {
+        this.advanceAmount = 0;
+        this.balancePayableAfterAdvance = Number(this.grandTotal || 0);
+        this.advanceRows = [];
         Swal.fire('Error', 'Failed to check supplier advance.', 'error');
       }
     });
@@ -335,7 +352,9 @@ netPayableBase: number = 0; // ✅ SGD amount
     this.grnFiltered = this.grnList.filter(g =>
       (g.grnNo || '').toLowerCase().includes(q) ||
       (g.poNo || '').toString().toLowerCase().includes(q) ||
-      (g.supplierName || '').toLowerCase().includes(q)
+      (g.supplierName || '').toLowerCase().includes(q) ||
+      (g.isOverseas ? 'overseas import' : 'local').includes(q) ||
+      (g.incotermsName || '').toLowerCase().includes(q)
     );
 
     this.grnOpen = true;
@@ -362,6 +381,13 @@ netPayableBase: number = 0; // ✅ SGD amount
     const poLines = this.safeJsonArray(g.poLines);
     const taxCode = poLines?.[0]?.taxCode;
     return this.normalizeTaxMode(taxCode || 'Exclusive');
+  }
+
+  private syncSelectedOverseasMeta(): void {
+    const ids: number[] = (this.form.value.grnIds || []).map((x: any) => Number(x));
+    const selected = this.grnList.filter(x => ids.includes(Number(x.id)));
+    this.selectedIsOverseas = selected.some(x => !!x.isOverseas);
+    this.selectedIncotermsName = selected.find(x => !!x.incotermsName)?.incotermsName || '';
   }
 
   toggleGrn(g: GRNHeader): void {
@@ -450,6 +476,8 @@ netPayableBase: number = 0; // ✅ SGD amount
     this.fxRate = 1;
     this.currencyName = '';
     this.netPayableBase = 0;
+    this.selectedIsOverseas = false;
+    this.selectedIncotermsName = '';
 
     this.form.patchValue({
       grnIds: [],
@@ -486,6 +514,8 @@ netPayableBase: number = 0; // ✅ SGD amount
   // ✅ FxRate + CurrencyName set
   this.fxRate = Number(selected[0]?.fxRate || 1);
   this.currencyName = selected[0]?.currencyName || '';
+  this.selectedIsOverseas = selected.some(x => !!x.isOverseas);
+  this.selectedIncotermsName = selected.find(x => !!x.incotermsName)?.incotermsName || '';
 
   this.form.patchValue({
     grnIds: ids,
@@ -680,14 +710,15 @@ netPayableBase: number = 0; // ✅ SGD amount
     const price = this.toNumber(fg.get('unitPrice')?.value);
     const disc = this.toNumber(fg.get('discountPct')?.value);
     const mode = (fg.get('taxMode')?.value || 'EXCLUSIVE') as TaxMode;
-
     const base = this.calcLineBase(qty, price, disc);
     const taxCalc = this.calcTaxForLine(base, mode);
 
     fg.patchValue({
       lineTotal: base,
       taxAmt: taxCalc.taxAmt,
-      lineGrandTotal: taxCalc.lineGrand
+      lineGrandTotal: taxCalc.lineGrand,
+      matchStatus: 'OK',
+      mismatchFields: ''
     }, { emitEvent: false });
   }
 
@@ -783,74 +814,64 @@ netPayableBase: number = 0; // ✅ SGD amount
   this.form.patchValue({ amount: this.grandTotal }, { emitEvent: false });
 }
 
-save(action: 'HOLD' | 'POST' = 'POST'): void {
-  if (this.isInvoiceBlocked()) return;
+  save(action: 'HOLD' | 'POST' = 'POST'): void {
+    if (this.isInvoiceBlocked()) return;
 
-  if (this.form.invalid) {
-    this.form.markAllAsTouched();
-    return;
-  }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
-  const v = this.form.value;
+    const v = this.form.value;
+    const grnIds = (v.grnIds || [])
+      .map((x: any) => Number(x))
+      .filter((n: number) => n > 0);
 
-  const grnIds = (v.grnIds || [])
-    .map((x: any) => Number(x))
-    .filter((n: number) => n > 0);
+    if (!grnIds.length) {
+      Swal.fire('Select GRN', 'At least one GRN must be selected.', 'warning');
+      return;
+    }
 
-  if (!grnIds.length) {
-    Swal.fire('Select GRN', 'At least one GRN must be selected.', 'warning');
-    return;
-  }
+    const payload = {
+      id: Number(v.id || 0),
+      invoiceNo: v.invoiceNo,
+      grnIds,
+      grnNos: v.grnNos,
+      invoiceDate: v.invoiceDate,
+      supplierId: v.supplierId ? Number(v.supplierId) : null,
+      currencyId: v.currencyId != null ? Number(v.currencyId) : null,
+      amount: Number(v.amount || 0),
+      tax: Number(this.taxAmount || 0),
+      fxRate: Number(this.fxRate || 1),
+      baseAmount: Number(this.netPayableBase || 0),
+      status: action === 'HOLD' ? 1 : 2,
+      linesJson: JSON.stringify(this.lines.value),
+      createdBy: this.userId,
+      updatedBy: this.userId,
+      isPartialInvoice: !!this.form.value.isPartialInvoice,
+      countryId: Number(localStorage.getItem('countryId') || 0)
+    };
 
-  const invoiceAmount = Number(this.grandTotal || 0);
-  const advanceAppliedAmount = Math.min(Number(this.advanceAmount || 0), invoiceAmount);
-  const netPayableAmount = +(invoiceAmount - advanceAppliedAmount).toFixed(2);
+    if (payload.id <= 0) {
+      this.api.create(payload).subscribe({
+        next: () => {
+          Swal.fire('Saved successfully');
+          this.router.navigate(['/purchase/list-SupplierInvoice']);
+        },
+        error: (err) => Swal.fire('Save failed', err?.error?.message || err?.message, 'error')
+      });
+      return;
+    }
 
-  const payload = {
-    id: Number(v.id || 0),
-    invoiceNo: v.invoiceNo,
-    grnIds,
-    grnNos: v.grnNos,
-    invoiceDate: v.invoiceDate,
-    supplierId: v.supplierId ? Number(v.supplierId) : null,
-    currencyId: v.currencyId != null ? Number(v.currencyId) : null,
-
-    amount: invoiceAmount,
-    advanceAppliedAmount: advanceAppliedAmount,
-    netPayableAmount: netPayableAmount,
-
-    tax: Number(this.taxAmount || 0),
-    fxRate: Number(this.fxRate || 1),
-    baseAmount: Number(this.netPayableBase || 0),
-    status: action === 'HOLD' ? 1 : 2,
-    linesJson: JSON.stringify(this.lines.value),
-    createdBy: this.userId,
-    updatedBy: this.userId,
-    isPartialInvoice: !!this.form.value.isPartialInvoice,
-    countryId: Number(localStorage.getItem('countryId') || 1)
-  };
-
-  if (payload.id <= 0) {
-    this.api.create(payload).subscribe({
+    this.api.update(payload.id, payload).subscribe({
       next: () => {
-        Swal.fire('Saved successfully');
+        Swal.fire('Updated successfully');
         this.router.navigate(['/purchase/list-SupplierInvoice']);
       },
-      error: (err) =>
-        Swal.fire('Save failed', err?.error?.message || err?.message, 'error')
+      error: (err) => Swal.fire('Update failed', err?.error?.message || err?.message, 'error')
     });
-    return;
   }
 
-  this.api.update(payload.id, payload).subscribe({
-    next: () => {
-      Swal.fire('Updated successfully');
-      this.router.navigate(['/purchase/list-SupplierInvoice']);
-    },
-    error: (err) =>
-      Swal.fire('Update failed', err?.error?.message || err?.message, 'error')
-  });
-}
   private loadInvoice(id: number): void {
     this.api.getById(id).subscribe({
       next: (res: any) => {
@@ -922,6 +943,10 @@ save(action: 'HOLD' | 'POST' = 'POST'): void {
         this.recalcAllLines();
         this.recalcHeaderFromLines();
         this.loadGrnsForEdit(id);
+      },
+      error: (err) => {
+        this.isGlPosted = false;
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load supplier invoice.', 'error');
       }
     });
   }
@@ -938,12 +963,18 @@ save(action: 'HOLD' | 'POST' = 'POST'): void {
   }
 
   loadAccountHeads(): void {
-    this.coaService.getAllChartOfAccount().subscribe((res: any) => {
-      const data = (res?.data || []).filter((x: any) => x.isActive === true);
-      this.parentHeadList = data.map((head: any) => ({
-        value: Number(head.id),
-        label: head.headName
-      }));
+    this.coaService.getAllChartOfAccount().subscribe({
+      next: (res: any) => {
+        const data = (res?.data || []).filter((x: any) => x.isActive === true);
+        this.parentHeadList = data.map((head: any) => ({
+          value: Number(head.id),
+          label: head.headName
+        }));
+      },
+      error: (err) => {
+        this.parentHeadList = [];
+        Swal.fire('Error', err?.error?.message || err?.message || 'Unable to load chart of accounts.', 'error');
+      }
     });
   }
 
@@ -963,6 +994,11 @@ save(action: 'HOLD' | 'POST' = 'POST'): void {
 
     const n = Number(s);
     return isNaN(n) ? 0 : n;
+  }
+
+  private toBool(v: any): boolean {
+    if (v === true || v === 1 || v === '1') return true;
+    return String(v || '').toLowerCase() === 'true';
   }
 
   private safeJsonArray(raw: any): any[] {

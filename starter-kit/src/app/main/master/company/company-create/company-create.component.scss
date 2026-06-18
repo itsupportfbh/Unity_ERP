@@ -132,8 +132,9 @@
     color: #2E5F73;
     font-weight: 800;
     border-bottom-color: #2E5F73;
-    background: transparent;
+    background: rgba(46, 95, 115, 0.08);
     box-shadow: none;
+    border-radius: 6px 6px 0 0;
 
     i { opacity: 1; }
   }

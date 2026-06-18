@@ -168,11 +168,13 @@
 }
 
 .forecast-table thead tr th {
+  background-color: #2E5F73;
+  color: #ffffff;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: #6b7280;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: none;
+  white-space: nowrap;
 }
 
 .forecast-table tbody tr td {

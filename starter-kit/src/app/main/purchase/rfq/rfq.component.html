@@ -1,244 +1,286 @@
-<div class="space-y-5 ui-compact">
-  <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <div>
-        <h2 class="text-lg font-semibold text-gray-800">Request for Quote</h2>
-        <p class="text-xs text-gray-500 mb-0">Invite suppliers, capture quote prices, compare winners, and prepare PO draft.</p>
+<div class="content-wrapper p-0">
+  <div class="content-body">
+
+    <!-- RFQ Config Card -->
+    <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);margin-bottom:16px;">
+      <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
+          <div class="d-flex align-items-center" style="gap:10px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+              <i class="fas fa-file-alt" style="font-size:0.9rem;color:#2E5F73;"></i>
+            </div>
+            <div>
+              <h4 class="card-text" style="margin:0;">Request for Quote</h4>
+              <p style="margin:0;font-size:0.75rem;color:#6b7280;">Invite suppliers, capture quote prices, compare winners, and prepare PO draft.</p>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap" style="gap:8px;font-size:0.78rem;">
+            <span style="padding:3px 12px;border-radius:999px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">
+              Suppliers: {{ rfqSuppliers.length }}
+            </span>
+            <span style="padding:3px 12px;border-radius:999px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;">
+              Invited: {{ invitedCount }}
+            </span>
+            <span style="padding:3px 12px;border-radius:999px;background:#fffbeb;color:#92400e;border:1px solid #fcd34d;">
+              Quoted: {{ quotedSupplierCount }}
+            </span>
+          </div>
+        </div>
       </div>
-      <div class="flex flex-wrap gap-2 text-xs">
-        <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">Suppliers: {{ rfqSuppliers.length }}</span>
-        <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Invited: {{ invitedCount }}</span>
-        <span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">Quoted: {{ quotedSupplierCount }}</span>
+
+      <div style="padding:16px 20px;">
+        <div class="row" style="gap:0;">
+          <div class="col-md-4 col-12 mb-2">
+            <label style="font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px;display:block;">RFQ Valid Until</label>
+            <input type="date" class="form-control" style="height:36px;font-size:0.83rem;" [(ngModel)]="validUntil" />
+          </div>
+          <div class="col-md-4 col-12 mb-2">
+            <label style="font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px;display:block;">Send Via</label>
+            <select class="form-control" style="height:36px;font-size:0.83rem;" [(ngModel)]="sendVia">
+              <option>Email</option>
+              <option>WhatsApp</option>
+              <option>Both</option>
+            </select>
+          </div>
+          <div class="col-md-4 col-12 mb-2 d-flex align-items-end">
+            <div class="d-flex" style="gap:8px;width:100%;">
+              <button type="button" (click)="saveDraft()"
+                class="btn btn-outline-secondary flex-fill" style="height:36px;font-size:0.83rem;border-color:#2E5F73;color:#2E5F73;">
+                Save Draft
+              </button>
+              <button type="button" (click)="sendRfq()"
+                class="btn flex-fill" style="height:36px;font-size:0.83rem;background:#2E5F73;color:#fff;border:none;">
+                Send RFQ
+              </button>
+              <button type="button" (click)="clearCurrent()"
+                class="btn btn-outline-secondary" style="height:36px;font-size:0.83rem;">
+                New
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Suppliers Tags Input -->
+        <div class="mt-2">
+          <label style="font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px;display:block;">Suppliers</label>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;background:#fff;">
+            <span *ngFor="let s of rfqSuppliers; let i = index; trackBy: trackByIndex"
+              style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;"
+              [style.background]="s.invited ? '#ecfdf5' : '#f3f4f6'"
+              [style.color]="s.invited ? '#065f46' : '#374151'"
+              [style.border]="s.invited ? '1px solid #a7f3d0' : '1px solid #d1d5db'">
+              {{ s.name }}
+              <span *ngIf="s.email" style="opacity:0.7;">| {{ s.email }}</span>
+              <span *ngIf="s.phone" style="opacity:0.7;">| {{ s.phone }}</span>
+              <span *ngIf="s.invited" style="font-size:0.72rem;">(sent)</span>
+              <button type="button" (click)="removeRfqSupplier(i)"
+                style="border:none;background:none;cursor:pointer;color:#9ca3af;font-size:14px;padding:0 2px;line-height:1;">&times;</button>
+            </span>
+            <input class="flex-fill" [(ngModel)]="rfqSupplierText"
+              (keydown.enter)="$event.preventDefault(); addRfqSupplier()"
+              placeholder="Supplier name" style="border:none;outline:none;font-size:0.83rem;min-width:130px;" />
+            <input class="flex-fill" [(ngModel)]="rfqSupplierEmail"
+              (keydown.enter)="$event.preventDefault(); addRfqSupplier()"
+              placeholder="Email" style="border:none;outline:none;font-size:0.83rem;min-width:160px;" />
+            <input class="flex-fill" [(ngModel)]="rfqSupplierPhone"
+              (keydown.enter)="$event.preventDefault(); addRfqSupplier()"
+              placeholder="WhatsApp phone" style="border:none;outline:none;font-size:0.83rem;min-width:130px;" />
+            <button type="button" (click)="addRfqSupplier()"
+              class="btn" style="height:30px;padding:0 12px;border:1px solid #059669;color:#059669;border-radius:6px;font-size:0.78rem;font-weight:600;background:#fff;">
+              Add
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div>
-        <label class="text-xs font-medium text-gray-600">RFQ Valid Until</label>
-        <input type="date" class="w-full rounded-lg border px-3 py-2 text-sm" [(ngModel)]="validUntil" />
+    <!-- RFQ History -->
+    <div class="card" *ngIf="rfqHistory.length" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);margin-bottom:16px;">
+      <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;">
+        <div class="d-flex align-items-center justify-content-between">
+          <h5 style="margin:0;font-size:0.95rem;font-weight:700;color:#111827;">RFQ History</h5>
+          <span style="font-size:0.78rem;color:#6b7280;">Saved RFQs: {{ rfqHistory.length }}</span>
+        </div>
       </div>
-      <div>
-        <label class="text-xs font-medium text-gray-600">Send Via</label>
-        <select class="w-full rounded-lg border px-3 py-2 text-sm bg-white" [(ngModel)]="sendVia">
-          <option>Email</option>
-          <option>WhatsApp</option>
-          <option>Both</option>
-        </select>
+      <div class="table-responsive">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th>RFQ No</th>
+              <th>Date</th>
+              <th>Suppliers</th>
+              <th>Items</th>
+              <th>Status</th>
+              <th class="text-right">Total</th>
+              <th style="width:100px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of rfqHistory; trackBy: trackByIndex">
+              <td><strong style="color:#2E5F73;">{{ r.rfqNo || r.id }}</strong></td>
+              <td>{{ r.createdAt | date:'dd-MM-yyyy HH:mm' }}</td>
+              <td>{{ r.suppliers.length }}</td>
+              <td>{{ r.items.length }}</td>
+              <td>{{ r.status }}</td>
+              <td class="text-right">{{ r.total | number:'1.2-2' }}</td>
+              <td>
+                <button type="button" (click)="restoreRfq(r)" class="erp-btn-icon btn-edit" title="Open">
+                  <i class="fas fa-folder-open"></i>
+                </button>
+                <button type="button" (click)="deleteRfq(r)" class="erp-btn-icon btn-delete" title="Delete">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div class="flex items-end">
-        <div class="flex gap-2 w-full">
-          <button class="px-4 py-2 rounded-lg text-sm font-medium border border-[#2E5F73] text-[#2E5F73] flex-1"
-                  (click)="saveDraft()"
-                  type="button">
-            Save Draft
+    </div>
+
+    <!-- RFQ Items -->
+    <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);margin-bottom:16px;">
+      <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;">
+        <div class="d-flex align-items-center justify-content-between">
+          <h5 style="margin:0;font-size:0.95rem;font-weight:700;color:#111827;">RFQ Items</h5>
+          <button type="button" (click)="addItem()"
+            class="btn" style="height:32px;padding:0 14px;border:1px solid #2E5F73;color:#2E5F73;border-radius:7px;font-size:0.8rem;font-weight:600;background:#fff;">
+            <i class="fas fa-plus-circle" style="margin-right:5px;"></i>Add Item
           </button>
-          <button class="px-4 py-2 rounded-lg text-sm font-medium text-white flex-1"
-                  style="background-color:#0e3a4c"
-                  (click)="sendRfq()"
-                  type="button">
-            Send RFQ
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th>Item / Description</th>
+              <th style="width:100px;">Qty</th>
+              <th style="width:100px;">UOM</th>
+              <th>Remarks</th>
+              <th style="width:80px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let it of rfqItems; let idx = index; trackBy: trackByIndex">
+              <td>
+                <input class="form-control form-control-sm" [(ngModel)]="it.item" placeholder="Item name or description" style="height:30px;font-size:0.82rem;" />
+              </td>
+              <td>
+                <input type="number" min="0" class="form-control form-control-sm" [(ngModel)]="it.qty" style="height:30px;font-size:0.82rem;" />
+              </td>
+              <td>
+                <input class="form-control form-control-sm" [(ngModel)]="it.uom" style="height:30px;font-size:0.82rem;" />
+              </td>
+              <td>
+                <input class="form-control form-control-sm" [(ngModel)]="it.remarks" placeholder="Optional" style="height:30px;font-size:0.82rem;" />
+              </td>
+              <td>
+                <button type="button" (click)="removeItem(idx)" class="erp-btn-icon btn-delete" title="Remove">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="!rfqItems?.length">
+              <td colspan="5" class="erp-empty-cell">No items added. Click "Add Item" to begin.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Compare Quotes -->
+    <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);margin-bottom:16px;">
+      <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;">
+        <div class="d-flex align-items-center justify-content-between">
+          <h5 style="margin:0;font-size:0.95rem;font-weight:700;color:#111827;">Compare Quotes</h5>
+          <button type="button" (click)="calculateWinners()"
+            class="btn" style="height:32px;padding:0 14px;background:#2E5F73;color:#fff;border:none;border-radius:7px;font-size:0.8rem;font-weight:600;">
+            Calculate Winners
           </button>
-          <button class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-700"
-                  (click)="clearCurrent()"
-                  type="button">
-            New
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th *ngFor="let s of rfqSuppliers">{{ s.name }}</th>
+              <th>Best</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let it of rfqItems; let idx = index; trackBy: trackByIndex">
+              <td>{{ it.item || '—' }}</td>
+              <td>{{ it.qty || 0 }} {{ it.uom }}</td>
+              <td *ngFor="let s of rfqSuppliers">
+                <input type="number" min="0"
+                  class="form-control form-control-sm"
+                  style="height:30px;font-size:0.82rem;"
+                  [style.border-color]="isBestPrice(s.name, idx) ? '#059669' : null"
+                  [style.background]="isBestPrice(s.name, idx) ? '#ecfdf5' : null"
+                  placeholder="Price"
+                  [ngModel]="quotePrices[s.name]?.[idx] || null"
+                  (input)="setQuotePrice(s.name, idx, $any($event.target).value)" />
+              </td>
+              <td>
+                <div style="font-weight:700;color:#111827;font-size:0.83rem;">{{ getBestSupplier(idx) }}</div>
+                <div *ngIf="getBestPrice(idx) as best" style="font-size:0.76rem;color:#6b7280;">
+                  Price: {{ best | number:'1.2-2' }}
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="!rfqItems?.length">
+              <td [attr.colspan]="2 + rfqSuppliers.length + 1" class="erp-empty-cell">Add items and suppliers to compare quotes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Winner Summary -->
+    <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);margin-bottom:16px;">
+      <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;">
+        <div class="d-flex align-items-center justify-content-between">
+          <h5 style="margin:0;font-size:0.95rem;font-weight:700;color:#111827;">Winner Summary</h5>
+          <span style="font-size:0.88rem;font-weight:700;color:#2E5F73;">Total: {{ winnerTotal | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="!winnerLines.length" style="padding:24px;text-align:center;font-size:0.83rem;color:#6b7280;border:1px dashed #d1d5db;margin:16px 20px;border-radius:8px;">
+        Enter quote prices and click "Calculate Winners" to see results.
+      </div>
+
+      <div *ngIf="winnerLines.length">
+        <div class="table-responsive">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th class="text-right">Qty</th>
+                <th>Winning Supplier</th>
+                <th class="text-right">Price</th>
+                <th class="text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let line of winnerLines; trackBy: trackByIndex">
+                <td>{{ line.item }}</td>
+                <td class="text-right">{{ line.qty }}</td>
+                <td>{{ line.supplier }}</td>
+                <td class="text-right">{{ line.price | number:'1.2-2' }}</td>
+                <td class="text-right">{{ line.amount | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:12px 20px;display:flex;justify-content:flex-end;">
+          <button type="button" (click)="createPoDraft()"
+            class="btn" style="background:#2E5F73;color:#fff;border:none;border-radius:8px;height:36px;padding:0 20px;font-size:0.85rem;font-weight:600;">
+            Pick Winner &rarr; Create PO Draft
           </button>
         </div>
       </div>
     </div>
 
-    <div class="mt-4">
-      <label class="text-xs font-medium text-gray-600">Suppliers</label>
-      <div class="flex flex-wrap items-center gap-2 rounded-lg border border-gray-300 px-2 py-2">
-        <span *ngFor="let s of rfqSuppliers; let i = index; trackBy: trackByIndex"
-              class="px-2 py-1 rounded-full text-xs border"
-              [ngClass]="s.invited ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-gray-100 text-gray-700 border-gray-200'">
-          {{ s.name }}
-          <span class="text-gray-400" *ngIf="s.email">| {{ s.email }}</span>
-          <span class="text-gray-400" *ngIf="s.phone">| {{ s.phone }}</span>
-          <span *ngIf="s.invited">sent</span>
-          <button class="ml-2 text-gray-500 hover:text-red-600" (click)="removeRfqSupplier(i)" type="button">x</button>
-        </span>
-        <input class="flex-1 min-w-[150px] outline-none text-sm" [(ngModel)]="rfqSupplierText"
-               (keydown.enter)="$event.preventDefault(); addRfqSupplier()"
-               placeholder="Supplier name" />
-        <input class="flex-1 min-w-[170px] outline-none text-sm" [(ngModel)]="rfqSupplierEmail"
-               (keydown.enter)="$event.preventDefault(); addRfqSupplier()"
-               placeholder="Email" />
-        <input class="flex-1 min-w-[150px] outline-none text-sm" [(ngModel)]="rfqSupplierPhone"
-               (keydown.enter)="$event.preventDefault(); addRfqSupplier()"
-               placeholder="WhatsApp phone" />
-        <button class="px-3 py-2 rounded-lg text-sm font-medium border border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                (click)="addRfqSupplier()" type="button">Add</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100" *ngIf="rfqHistory.length">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-      <h2 class="text-lg font-semibold text-gray-800 mb-0">RFQ History</h2>
-      <span class="text-xs text-gray-500">Saved RFQs: {{ rfqHistory.length }}</span>
-    </div>
-
-    <div class="overflow-auto rounded-lg border">
-      <table class="min-w-full text-sm">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-3 py-2 text-left">RFQ No</th>
-            <th class="px-3 py-2 text-left">Date</th>
-            <th class="px-3 py-2 text-left">Suppliers</th>
-            <th class="px-3 py-2 text-left">Items</th>
-            <th class="px-3 py-2 text-left">Status</th>
-            <th class="px-3 py-2 text-right">Total</th>
-            <th class="px-3 py-2 text-center">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let r of rfqHistory; trackBy: trackByIndex" class="border-t">
-            <td class="px-3 py-2 font-medium text-[#2E5F73]">{{ r.rfqNo || r.id }}</td>
-            <td class="px-3 py-2">{{ r.createdAt | date:'dd-MM-yyyy HH:mm' }}</td>
-            <td class="px-3 py-2">{{ r.suppliers.length }}</td>
-            <td class="px-3 py-2">{{ r.items.length }}</td>
-            <td class="px-3 py-2">{{ r.status }}</td>
-            <td class="px-3 py-2 text-right">{{ r.total | number:'1.2-2' }}</td>
-            <td class="px-3 py-2 text-center">
-              <button class="text-[#2E5F73] font-medium mr-3" type="button" (click)="restoreRfq(r)">Open</button>
-              <button class="text-red-600 font-medium" type="button" (click)="deleteRfq(r)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-      <h2 class="text-lg font-semibold text-gray-800 mb-0">RFQ Items</h2>
-      <button class="px-3 py-2 rounded-lg text-sm font-medium border border-[#2E5F73] text-[#2E5F73]"
-              (click)="addItem()" type="button">Add Item</button>
-    </div>
-
-    <div class="overflow-hidden rounded-lg border">
-      <table class="min-w-full text-sm">
-        <thead class="bg-[#2E5F73] text-white">
-          <tr>
-            <th class="px-3 py-2 text-left">Item / Description</th>
-            <th class="px-3 py-2 text-left w-28">Qty</th>
-            <th class="px-3 py-2 text-left w-28">UOM</th>
-            <th class="px-3 py-2 text-left">Remarks</th>
-            <th class="px-3 py-2 text-center w-16">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let it of rfqItems; let idx = index; trackBy: trackByIndex" class="border-b last:border-b-0">
-            <td class="px-3 py-2">
-              <input class="w-full rounded-lg border px-3 py-2" [(ngModel)]="it.item" placeholder="Item name or description" />
-            </td>
-            <td class="px-3 py-2">
-              <input type="number" min="0" class="w-full rounded-lg border px-3 py-2" [(ngModel)]="it.qty" />
-            </td>
-            <td class="px-3 py-2">
-              <input class="w-full rounded-lg border px-3 py-2" [(ngModel)]="it.uom" />
-            </td>
-            <td class="px-3 py-2">
-              <input class="w-full rounded-lg border px-3 py-2" [(ngModel)]="it.remarks" placeholder="Optional" />
-            </td>
-            <td class="px-3 py-2 text-center">
-              <button class="text-red-600 hover:underline" type="button" (click)="removeItem(idx)">Remove</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-      <h2 class="text-lg font-semibold text-gray-800 mb-0">Compare Quotes</h2>
-      <button class="px-4 py-2 rounded-lg text-sm font-medium text-white"
-              style="background-color:#0e3a4c"
-              (click)="calculateWinners()"
-              type="button">Calculate Winners</button>
-    </div>
-
-    <div class="overflow-auto rounded-lg border">
-      <table class="min-w-full text-sm border-separate border-spacing-0">
-        <thead class="bg-[#2E5F73] text-white">
-          <tr>
-            <th class="px-3 py-2 text-left font-semibold">Item</th>
-            <th class="px-3 py-2 text-left font-semibold">Qty</th>
-            <th *ngFor="let s of rfqSuppliers" class="px-3 py-2 text-left font-semibold">
-              {{ s.name }}
-            </th>
-            <th class="px-3 py-2 text-left font-semibold">Best</th>
-          </tr>
-        </thead>
-
-        <tbody class="bg-white">
-          <tr *ngFor="let it of rfqItems; let idx = index; trackBy: trackByIndex" class="border-b last:border-b-0">
-            <td class="px-3 py-3 text-gray-700">{{ it.item || '-' }}</td>
-            <td class="px-3 py-3 text-gray-700">{{ it.qty || 0 }} {{ it.uom }}</td>
-            <td *ngFor="let s of rfqSuppliers" class="px-3 py-2">
-              <input
-                type="number"
-                min="0"
-                class="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E5F73]/30"
-                [ngClass]="isBestPrice(s.name, idx) ? 'border-emerald-500 bg-emerald-50' : ''"
-                placeholder="Price"
-                [ngModel]="quotePrices[s.name]?.[idx] || null"
-                (input)="setQuotePrice(s.name, idx, $any($event.target).value)"
-              />
-            </td>
-            <td class="px-3 py-3">
-              <div class="font-medium text-gray-800">{{ getBestSupplier(idx) }}</div>
-              <div class="text-xs text-gray-500" *ngIf="getBestPrice(idx) as best">Price: {{ best | number:'1.2-2' }}</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-      <h2 class="text-lg font-semibold text-gray-800 mb-0">Winner Summary</h2>
-      <div class="text-sm font-semibold text-[#2E5F73]">Total: {{ winnerTotal | number:'1.2-2' }}</div>
-    </div>
-
-    <div *ngIf="!winnerLines.length" class="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-      Enter quote prices and calculate winners.
-    </div>
-
-    <div *ngIf="winnerLines.length" class="overflow-hidden rounded-lg border">
-      <table class="min-w-full text-sm">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-3 py-2 text-left">Item</th>
-            <th class="px-3 py-2 text-right">Qty</th>
-            <th class="px-3 py-2 text-left">Winning Supplier</th>
-            <th class="px-3 py-2 text-right">Price</th>
-            <th class="px-3 py-2 text-right">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let line of winnerLines; trackBy: trackByIndex" class="border-t">
-            <td class="px-3 py-2">{{ line.item }}</td>
-            <td class="px-3 py-2 text-right">{{ line.qty }}</td>
-            <td class="px-3 py-2">{{ line.supplier }}</td>
-            <td class="px-3 py-2 text-right">{{ line.price | number:'1.2-2' }}</td>
-            <td class="px-3 py-2 text-right">{{ line.amount | number:'1.2-2' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="flex justify-end mt-3">
-      <button class="px-5 py-2 rounded-full text-sm font-medium text-white"
-              style="background-color:#0e3a4c"
-              (click)="createPoDraft()"
-              type="button">
-        Pick Winner -> Create PO Draft
-      </button>
-    </div>
   </div>
 </div>

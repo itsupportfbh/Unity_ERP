@@ -28,6 +28,25 @@ export class ReportsAvarageMarginComponent implements OnInit, AfterViewInit {
 
   selectedOption = 10;
   searchValue = '';
+  currentPage = 1;
+
+  get totalPages(): number {
+    return Math.ceil(this.rows.length / this.selectedOption) || 1;
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const cur = this.currentPage;
+    const pages: number[] = [];
+    for (let i = Math.max(1, cur - 2); i <= Math.min(total, cur + 2); i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) { this.currentPage = page; }
+  }
 
   // dropdown data (id==name used for filter component)
   customers: Array<{ id: string; name: string }> = [];
@@ -60,6 +79,7 @@ export class ReportsAvarageMarginComponent implements OnInit, AfterViewInit {
   filterUpdate(event: any) {
     const val = (event.target.value || '').toLowerCase();
     this.searchValue = val;
+    this.currentPage = 1;
     this.applyFiltersSortSearch();
   }
 

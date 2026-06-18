@@ -1,209 +1,165 @@
 <div class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper purchase-list-shell">
-      <div class="card purchase-list-card">
+    <section class="users-list-wrapper">
+      <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
 
-        <div class="row">
-          <div class="col-md-6 col-12">
-            <h4 class="card-text"
-              style="margin-left:0.85rem;margin-top:0.75rem;font-size:1.25rem;font-weight:600;color:#2E5F73;">
-              Debit Note List
-            </h4>
-
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center">
-                Show
-                <select class="form-control mx-25" [(ngModel)]="selectedOption">
-                  <option [ngValue]="10">10</option>
-                  <option [ngValue]="25">25</option>
-                  <option [ngValue]="50">50</option>
-                  <option [ngValue]="100">100</option>
-                </select>
-                entries
-              </label>
+        <!-- Header -->
+        <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+          <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
+            <div class="d-flex align-items-center" style="gap:10px;">
+              <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                <i class="fas fa-file-minus" style="font-size:0.9rem;color:#2E5F73;"></i>
+              </div>
+              <div>
+                <h4 class="card-text" style="margin:0;">Debit Note List</h4>
+                <p style="margin:0;font-size:0.75rem;color:#6b7280;">Manage supplier debit notes</p>
+              </div>
             </div>
-
-            <div *ngIf="hasGlPostedRows"
-              class="alert alert-danger py-1 px-2 mx-2 mb-2"
-              style="font-size:0.85rem;">
-              GL posted Debit Note exists. Add button disabled.
-            </div>
-
-            <div *ngIf="hasLockedRows"
-              class="alert alert-warning py-1 px-2 mx-2 mb-2"
-              style="font-size:0.8rem;">
-              Some debit notes belong to locked GST period. Edit/Delete disabled.
-            </div>
-
-            <div *ngIf="isPeriodLocked"
-              class="alert alert-warning py-1 px-2 mx-2 mb-2"
-              style="font-size:0.8rem;">
-              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
-            </div>
+            <button type="button" (click)="openCreate()" *ngIf="canCreate()"
+              class="btn d-inline-flex align-items-center"
+              style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;"
+              [disabled]="isPeriodLocked || hasGlPostedRows">
+              <i class="fas fa-plus-circle"></i><span>Add</span>
+            </button>
           </div>
+          <div *ngIf="hasGlPostedRows" class="alert alert-danger py-1 px-2 mb-0 mt-2" style="font-size:0.85rem;">
+            GL posted Debit Note exists. Add button disabled.
+          </div>
+          <div *ngIf="hasLockedRows" class="alert alert-warning py-1 px-2 mb-0 mt-2" style="font-size:0.8rem;">
+            Some debit notes belong to locked GST period. Edit/Delete disabled.
+          </div>
+          <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 mb-0 mt-2" style="font-size:0.8rem;">
+            Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+          </div>
+        </div>
 
-          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-              <label class="d-flex align-items-center ml-1 ml-md-0">
-                Search:
-                <input
-                  [(ngModel)]="searchValue"
-                  name="searchValue"
-                  type="search"
-                  class="form-control ml-25"
-                  (keyup)="filterUpdate($event)"
-                  (search)="filterUpdate($event)" />
-              </label>
+        <!-- Controls bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+          <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+            Show
+            <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;"
+              [(ngModel)]="selectedOption" (ngModelChange)="currentPage=1">
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+              <option [ngValue]="100">100</option>
+            </select>
+            entries
+          </label>
+          <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+            <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+            <input [(ngModel)]="searchValue" name="searchValue" type="search"
+              style="border:none;outline:none;height:100%;font-size:0.82rem;width:220px;padding:0 8px;background:transparent;"
+              placeholder="DN No / Supplier / Reason..."
+              (keyup)="filterUpdate($event)" (search)="filterUpdate($event)" />
+          </div>
+        </div>
 
-              <button
-                type="button"
-                (click)="openCreate()"
-                *ngIf="canCreate()"
-                class="btn m-1 d-inline-flex align-items-center"
-                style="background-color:#2E5F73;color:white;gap:6px;"
-                [disabled]="isPeriodLocked || hasGlPostedRows"
-                [attr.title]="hasGlPostedRows
-                  ? 'GL Posted Debit Note exists. Add disabled.'
-                  : (isPeriodLocked
-                    ? (currentPeriodName ? 'Period ' + currentPeriodName + ' is locked' : 'Accounting period is locked')
-                    : 'Create Debit Note')">
-                <i data-feather="plus-circle" class="w-4 h-4"></i>
-                <span>Add</span>
-              </button>
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th>Debit Note No</th>
+                <th>Supplier</th>
+                <th>Type</th>
+                <th>Reason</th>
+                <th>Date</th>
+                <th class="text-right">Amount</th>
+                <th class="text-right">FX Rate</th>
+                <th style="width:80px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                <td>
+                  <button class="erp-eye-btn" (click)="openLinesModal(row)" title="View Lines">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </td>
+                <td><strong style="color:#2E5F73;">{{ row.debitNoteNo || '—' }}</strong></td>
+                <td [title]="row.name">{{ row.name || '—' }}</td>
+                <td>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <span
+                      [style.background]="row.isOverseas ? '#fff4e5' : '#ecfdf5'"
+                      [style.color]="row.isOverseas ? '#8a4b08' : '#047857'"
+                      style="font-size:0.78rem;font-weight:700;padding:3px 8px;border-radius:999px;width:max-content;">
+                      {{ row.isOverseas ? 'Overseas' : 'Local' }}
+                    </span>
+                    <span *ngIf="row.isOverseas && row.incotermsName"
+                      style="font-size:0.72rem;color:#64748b;">
+                      {{ row.incotermsName }}
+                    </span>
+                  </div>
+                </td>
+                <td>{{ row.reason || '—' }}</td>
+                <td>{{ row.poDate | date:'dd-MM-yyyy' }}</td>
+                <td class="text-right">
+                  <span style="font-weight:600;">{{ row.amount | number:'1.2-2' }}</span>
+                  <span style="font-size:0.78rem;color:#6b7280;margin-left:3px;">{{ row.currencyName || 'SGD' }}</span>
+                  <div *ngIf="row.currencyName && row.currencyName !== 'SGD'"
+                    style="font-size:0.78rem;color:#2E5F73;font-weight:600;">
+                    ≈ {{ row.amountBase | number:'1.2-2' }} SGD
+                  </div>
+                </td>
+                <td class="text-right">
+                  <span *ngIf="row.currencyName && row.currencyName !== 'SGD'" style="font-size:0.82rem;color:#6b7280;">
+                    {{ row.fxRate | number:'1.4-4' }}
+                  </span>
+                  <span *ngIf="!row.currencyName || row.currencyName === 'SGD'" style="color:#6b7280;">—</span>
+                </td>
+                <td>
+                  <ng-container *ngIf="isActionDisabled(row); else dnActionsEnabled">
+                    <button class="erp-btn-icon btn-disabled"
+                      [title]="row.glPosted ? 'GL Posted' : isPeriodLocked ? 'Period locked' : 'Disabled'">
+                      <i class="fas fa-pen"></i>
+                    </button>
+                    <button class="erp-btn-icon btn-disabled"
+                      [title]="row.glPosted ? 'GL Posted' : isPeriodLocked ? 'Period locked' : 'Disabled'">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </ng-container>
+                  <ng-template #dnActionsEnabled>
+                    <button class="erp-btn-icon btn-edit" *ngIf="canEdit()"
+                      (click)="editDetails(row)" title="Edit">
+                      <i class="fas fa-pen"></i>
+                    </button>
+                    <button class="erp-btn-icon btn-delete" *ngIf="canDelete()"
+                      (click)="deleteDetails(row)" title="Delete">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </ng-template>
+                </td>
+              </tr>
+              <tr *ngIf="!rows || rows.length===0">
+                <td colspan="9" class="erp-empty-cell">No debit notes found.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+            <span class="erp-pager-info">Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries</span>
+            <div class="erp-pager-btns">
+              <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+              <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+              <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
             </div>
           </div>
         </div>
 
-        <ngx-datatable
-          class="bootstrap core-bootstrap purchase-list-table"
-          [rows]="rows"
-          [rowHeight]="50"
-          [headerHeight]="50"
-          [footerHeight]="50"
-          [limit]="selectedOption"
-          [columnMode]="'force'"
-          [scrollbarH]="true"
-          [reorderable]="true">
-
-          <!-- Eye icon -->
-          <ngx-datatable-column
-            [width]="50"
-            [resizeable]="false"
-            [sortable]="false"
-            [draggable]="false"
-            [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span
-                (click)="openLinesModal(row)"
-                title="View Lines"
-                style="cursor:pointer;font-size:18px;color:#2E5F73;">
-                <i class="fas fa-eye"></i>
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Debit Note No -->
-          <ngx-datatable-column name="Debit Note No" prop="debitNoteNo" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.debitNoteNo || '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Supplier -->
-          <ngx-datatable-column name="Supplier Name" prop="name" [width]="200">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <ng-template #popContent>
-                <div class="pp-body">{{ row.name }}</div>
-              </ng-template>
-              <span
-                class="truncate-20 pp-trigger"
-                [title]="row.name"
-                [ngbPopover]="popContent"
-                popoverTitle="Supplier Name"
-                triggers="mouseenter:mouseleave"
-                container="body"
-                placement="top"
-                popoverClass="custom-popover">
-                {{ row.name?.slice(0, 20) }}{{ row.name?.length > 20 ? '...' : '' }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Reason -->
-          <ngx-datatable-column name="Type" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div style="display:flex;flex-direction:column;gap:2px;">
-                <span
-                  [style.background]="row.isOverseas ? '#fff4e5' : '#ecfdf5'"
-                  [style.color]="row.isOverseas ? '#8a4b08' : '#047857'"
-                  style="font-size:0.78rem;font-weight:700;padding:3px 8px;border-radius:999px;width:max-content;">
-                  {{ row.isOverseas ? 'Overseas' : 'Local' }}
-                </span>
-                <span *ngIf="row.isOverseas && row.incotermsName"
-                  style="font-size:0.72rem;color:#64748b;">
-                  {{ row.incotermsName }}
-                </span>
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Reason" prop="reason" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.reason || '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Date -->
-          <ngx-datatable-column name="Date" prop="poDate" [width]="120">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.poDate | date:'dd-MM-yyyy' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- ✅ Amount -->
-          <ngx-datatable-column name="Amount" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div>
-                <span style="font-weight:600;">
-                  {{ row.amount | number:'1.2-2' }}
-                </span>
-                <span style="font-size:0.78rem;color:#6b7280;margin-left:3px;">
-                  {{ row.currencyName || 'SGD' }}
-                </span>
-              </div>
-              <!-- ✅ Base SGD — foreign currency மட்டும் -->
-              <div *ngIf="row.currencyName && row.currencyName !== 'SGD'"
-                style="font-size:0.78rem;color:#2E5F73;font-weight:600;">
-                ≈ {{ row.amountBase | number:'1.2-2' }} SGD
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- ✅ FX Rate — foreign currency மட்டும் -->
-          <ngx-datatable-column name="FX Rate" [width]="100">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span *ngIf="row.currencyName && row.currencyName !== 'SGD'"
-                style="font-size:0.82rem;color:#6b7280;">
-                {{ row.fxRate | number:'1.4-4' }}
-              </span>
-              <span *ngIf="!row.currencyName || row.currencyName === 'SGD'"
-                style="color:#6b7280;">-</span>
-            </ng-template>
-          </ngx-datatable-column>
-
-        </ngx-datatable>
       </div>
     </section>
   </div>
 
-  <!-- ✅ Lines Modal -->
+  <!-- Lines Modal -->
   <div class="dn-overlay" *ngIf="showLinesModal" (click)="closeLinesModal()">
     <div class="dn-modal" (click)="$event.stopPropagation()">
 
       <div class="dn-modal-header">
         <div>
           <h5 class="mb-0">Debit Note Lines</h5>
-          <!-- ✅ Currency + FxRate info -->
           <div *ngIf="modalCurrencyName && modalCurrencyName !== 'SGD'"
             style="font-size:0.82rem;color:#2E5F73;margin-top:3px;">
             {{ modalCurrencyName }} • FX Rate: {{ modalFxRate | number:'1.4-4' }}
@@ -216,15 +172,12 @@
               {{ modalIsOverseas ? 'Overseas Purchase' : 'Local Purchase' }}
             </span>
             <span *ngIf="modalIsOverseas && modalIncotermsName"
-              style="font-size:0.78rem;color:#334155;background:#eef2f7;
-                     padding:3px 8px;border-radius:999px;">
+              style="font-size:0.78rem;color:#334155;background:#eef2f7;padding:3px 8px;border-radius:999px;">
               Incoterms: {{ modalIncotermsName }}
             </span>
           </div>
         </div>
-        <button type="button" class="dn-modal-close" (click)="closeLinesModal()">
-          &times;
-        </button>
+        <button type="button" class="dn-modal-close" (click)="closeLinesModal()">&times;</button>
       </div>
 
       <div class="dn-modal-body">
@@ -236,67 +189,48 @@
                 <th style="background:#2E5F73;color:#fff;" class="text-right">Qty</th>
                 <th style="background:#2E5F73;color:#fff;" class="text-right">
                   Price
-                  <span *ngIf="modalCurrencyName"
-                    style="font-size:0.75rem;font-weight:400;opacity:0.85;">
+                  <span *ngIf="modalCurrencyName" style="font-size:0.75rem;font-weight:400;opacity:0.85;">
                     ({{ modalCurrencyName }})
                   </span>
                 </th>
                 <th style="background:#2E5F73;color:#fff;" class="text-right">
                   Line Total
-                  <span *ngIf="modalCurrencyName"
-                    style="font-size:0.75rem;font-weight:400;opacity:0.85;">
+                  <span *ngIf="modalCurrencyName" style="font-size:0.75rem;font-weight:400;opacity:0.85;">
                     ({{ modalCurrencyName }})
                   </span>
                 </th>
-                <!-- ✅ Base SGD column -->
                 <th *ngIf="modalCurrencyName && modalCurrencyName !== 'SGD'"
-                  style="background:#2E5F73;color:#fff;" class="text-right">
-                  Total (SGD)
-                </th>
+                  style="background:#2E5F73;color:#fff;" class="text-right">Total (SGD)</th>
                 <th style="background:#2E5F73;color:#fff;">Remarks</th>
               </tr>
             </thead>
-
             <tbody>
               <tr *ngFor="let l of modalLines">
                 <td>{{ l.item || '-' }}</td>
                 <td class="text-right">{{ l.qty | number:'1.0-0' }}</td>
                 <td class="text-right">{{ l.price | number:'1.2-2' }}</td>
-                <td class="text-right">
-                  {{ ((+l.qty || 0) * (+l.price || 0)) | number:'1.2-2' }}
-                </td>
-                <!-- ✅ SGD equivalent per line -->
+                <td class="text-right">{{ ((+l.qty || 0) * (+l.price || 0)) | number:'1.2-2' }}</td>
                 <td *ngIf="modalCurrencyName && modalCurrencyName !== 'SGD'"
-                  class="text-right"
-                  style="color:#2E5F73;font-weight:600;">
+                  class="text-right" style="color:#2E5F73;font-weight:600;">
                   {{ ((+l.qty || 0) * (+l.price || 0) * modalFxRate) | number:'1.2-2' }}
                 </td>
                 <td>{{ l.remarks || l.dcNoteNo || '-' }}</td>
               </tr>
-
               <tr *ngIf="!modalLines?.length">
                 <td [colspan]="modalCurrencyName && modalCurrencyName !== 'SGD' ? 6 : 5"
-                  class="text-center text-muted py-3">
-                  No lines.
-                </td>
+                  class="text-center text-muted py-3">No lines.</td>
               </tr>
             </tbody>
-
             <tfoot *ngIf="modalLines?.length">
               <tr class="dn-modal-total-row">
                 <td class="font-weight-bold">Total</td>
-                <td></td>
-                <td></td>
+                <td></td><td></td>
                 <td class="text-right font-weight-bold">
                   {{ modalTotal | number:'1.2-2' }}
-                  <span style="font-size:0.75rem;color:#6b7280;margin-left:2px;">
-                    {{ modalCurrencyName || 'SGD' }}
-                  </span>
+                  <span style="font-size:0.75rem;color:#6b7280;margin-left:2px;">{{ modalCurrencyName || 'SGD' }}</span>
                 </td>
-                <!-- ✅ Base SGD total -->
                 <td *ngIf="modalCurrencyName && modalCurrencyName !== 'SGD'"
-                  class="text-right font-weight-bold"
-                  style="color:#2E5F73;">
+                  class="text-right font-weight-bold" style="color:#2E5F73;">
                   {{ (modalTotal * modalFxRate) | number:'1.2-2' }} SGD
                 </td>
                 <td></td>
@@ -309,11 +243,8 @@
       <div class="dn-modal-footer">
         <button type="button" class="btn"
           style="background-color:#2E5F73;color:white;"
-          (click)="closeLinesModal()">
-          Close
-        </button>
+          (click)="closeLinesModal()">Close</button>
       </div>
-
     </div>
   </div>
 </div>

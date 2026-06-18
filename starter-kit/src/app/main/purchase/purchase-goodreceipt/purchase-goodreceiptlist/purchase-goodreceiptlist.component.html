@@ -1,200 +1,110 @@
 <div class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper purchase-list-shell">
-      <div class="card purchase-list-card">
+    <section class="users-list-wrapper" style="position:relative;">
+      <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
 
-        <!-- Header row -->
-        <div class="row">
-          <!-- Title + page size -->
-          <div class="col-md-6 col-12">
-            <h4 class="card-text ml-2 mt-2"
-                style="font-size:1.25rem;font-weight:600;color:#2E5F73">
-              GRN List
-            </h4>
-
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center">
-                Show
-                <select class="form-control mx-2" [(ngModel)]="selectedOption">
-                  <option [ngValue]="10">10</option>
-                  <option [ngValue]="25">25</option>
-                  <option [ngValue]="50">50</option>
-                  <option [ngValue]="100">100</option>
-                </select>
-                entries
-              </label>
+        <!-- Header -->
+        <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+          <div class="d-flex align-items-center justify-content-between" style="gap:12px;">
+            <div class="d-flex align-items-center" style="gap:10px;">
+              <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                <i class="fas fa-truck" style="font-size:0.9rem;color:#2E5F73;"></i>
+              </div>
+              <div>
+                <h4 class="card-text" style="margin:0;">GRN List</h4>
+                <p style="margin:0;font-size:0.75rem;color:#6b7280;">Goods Receipt Note management</p>
+              </div>
             </div>
-
-            <!-- optional lock info -->
-            <div *ngIf="isPeriodLocked"
-                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
-                 style="font-size: 0.8rem;">
-              Period <strong>{{ periodName || 'current' }}</strong> is locked.
-            </div>
+            <button (click)="goToCreateGRN()" *ngIf="canCreate()" [disabled]="isPeriodLocked"
+              class="btn d-inline-flex align-items-center"
+              style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;"
+              [attr.title]="isPeriodLocked ? (periodName ? 'Period ' + periodName + ' is locked' : 'Period is locked') : 'Create GRN'">
+              <i class="fas fa-plus-circle"></i><span>Create GRN</span>
+            </button>
           </div>
-
-          <!-- Search + Create GRN -->
-          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-              <label class="d-flex align-items-center ml-1 ml-md-0">
-                Search:
-                <input
-                  [(ngModel)]="searchValue"
-                  type="search"
-                  class="form-control ml-2"
-                  (keyup)="filterUpdate($event)" />
-              </label>
-
-              <button
-                (click)="goToCreateGRN()"
-                *ngIf="canCreate()"
-                class="btn m-1 d-inline-flex align-items-center"
-                style="background-color:#2E5F73; color:white; gap:6px;"
-                [disabled]="isPeriodLocked"
-                [attr.title]="isPeriodLocked
-                               ? (periodName ? 'Period ' + periodName + ' is locked'
-                                             : 'Period is locked')
-                               : 'Create GRN'">
-                <i class="fas fa-plus-circle"></i>
-                <span>Create GRN</span>
-              </button>
-            </div>
+          <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 mb-0 mt-2" style="font-size:0.8rem;">
+            Period <strong>{{ periodName || 'current' }}</strong> is locked.
           </div>
         </div>
 
-        <!-- NGX DATATABLE -->
-        <ngx-datatable
-          class="bootstrap core-bootstrap grn-table purchase-list-table"
-          [rows]="rows"
-          [rowHeight]="50"
-          [headerHeight]="50"
-          [footerHeight]="50"
-          [limit]="selectedOption"
-          [columnMode]="ColumnMode.force"
-          [scrollbarH]="true"
-          [reorderable]="true">
+        <!-- Controls bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+          <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+            Show
+            <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" [(ngModel)]="selectedOption" (ngModelChange)="currentPage=1">
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+              <option [ngValue]="100">100</option>
+            </select>
+            entries
+          </label>
+          <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+            <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+            <input [(ngModel)]="searchValue" type="search"
+              style="border:none;outline:none;height:100%;font-size:0.82rem;width:200px;padding:0 8px;background:transparent;"
+              placeholder="Search..." (keyup)="filterUpdate($event)" />
+          </div>
+        </div>
 
-          <!-- Eye column -->
-          <ngx-datatable-column
-            [width]="60"
-            [resizeable]="false"
-            [sortable]="false"
-            [draggable]="false"
-            [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <button class="eye-btn"
-                      type="button"
-                      (click)="openLinesModal(row)"
-                      title="View Lines">
-                <i class="fas fa-eye"></i>
-              </button>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="GRN No" prop="grnNo" [width]="140"></ngx-datatable-column>
-          <ngx-datatable-column name="PO No"  prop="pono"  [width]="160"></ngx-datatable-column>
-
-          <ngx-datatable-column name="Items" prop="itemName" [width]="200">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span class="truncate-20"
-                    [title]="row.itemName">
-                {{ row.itemName?.slice(0, 20) }}{{ row.itemName?.length > 20 ? '...' : '' }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-    
-<!-- Supplier Name column -->
-<ngx-datatable-column name="Supplier Name" prop="name" [width]="200">
-  <ng-template ngx-datatable-cell-template let-row="row">
-    <ng-template #popContent>
-      <div class="pp-body">{{ row.name }}</div>
-    </ng-template>
-
-    <span
-      class="truncate-20 pp-trigger"
-      [title]="row.name"
-      [ngbPopover]="popContent"
-      popoverTitle="Supplier Name"
-      triggers="mouseenter:mouseleave"
-      container="body"
-      placement="top"
-      popoverClass="custom-popover">
-      {{ row.name?.slice(0, 20) }}{{ row.name?.length > 20 ? '...' : '' }}
-    </span>
-  </ng-template>
-</ngx-datatable-column>  
-
-
-<ngx-datatable-column name="Total (INR)" [width]="140">
-  <ng-template let-row="row" ngx-datatable-cell-template>
-    {{ getGrnLineTotal(row) | number:'1.2-2' }}
-  </ng-template>
-</ngx-datatable-column>
-
-<ngx-datatable-column name="Total (Base SGD)" [width]="150">
-  <ng-template let-row="row" ngx-datatable-cell-template>
-    <span style="color:#2E5F73; font-weight:600;">
-      {{ getGrnBaseCurrencyTotal(row) | number:'1.2-2' }} SGD
-    </span>
-  </ng-template>
-</ngx-datatable-column>
-
-          <ngx-datatable-column name="Received" [width]="110" [sortable]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              {{ (row.receivedQty || row.qtyReceived || 0) | number:'1.0-2' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Pending" [width]="110" [sortable]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              {{ (row.pendingQty || 0) | number:'1.0-2' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Status" [width]="140" [sortable]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span class="badge" [ngClass]="statusClass(row)" [title]="row.closeReason || ''">
-                {{ statusText(row) }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-          <!-- Action -->
-          <ngx-datatable-column
-            name="Action"
-            [width]="190"
-            [sortable]="false"
-            [canAutoResize]="false">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="d-flex justify-content-center align-items-center h-100" style="gap:8px;">
-                <i class="fas fa-pen"
-                   [class.text-primary]="!row.isPostInventory && !row.isClosed && !isPeriodLocked"
-                   [class.icon-disabled]="row.isPostInventory || row.isClosed || isPeriodLocked"
-                   [attr.title]="row.isPostInventory
-                                  ? 'Posted to Inventory (cannot edit)'
-                                  : (row.isClosed ? 'Closed GRN (reopen first)' : (isPeriodLocked ? 'Period locked' : 'Edit'))"
-                   style="cursor:pointer;"
-                    *ngIf="canEdit()"
-                   (click)="onEdit(row)">
-                </i>
-                <button
-                  *ngIf="canClose(row)"
-                  type="button"
-                  class="btn btn-sm btn-outline-warning"
-                  (click)="closeGrn(row)">
-                  Close
-                </button>
-                <button
-                  *ngIf="canReopen(row)"
-                  type="button"
-                  class="btn btn-sm btn-outline-success"
-                  (click)="reopenGrn(row)">
-                  Reopen
-                </button>
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-        </ngx-datatable>
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th>GRN No</th>
+                <th>PO No</th>
+                <th>Supplier Name</th>
+                <th>Total (SGD)</th>
+                <th style="width:110px;">Status</th>
+                <th style="width:100px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                <td>
+                  <button class="erp-eye-btn" (click)="openLinesModal(row)" title="View Lines">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </td>
+                <td><strong>{{ row.grnNo }}</strong></td>
+                <td>{{ row.pono || '—' }}</td>
+                <td [title]="row.name">{{ row.name || '—' }}</td>
+                <td><span style="font-weight:600;color:#2E5F73;">{{ getGrnBaseCurrencyTotal(row) | number:'1.2-2' }} SGD</span></td>
+                <td>
+                  <span class="badge" [ngClass]="statusClass(row)">{{ statusText(row) }}</span>
+                </td>
+                <td>
+                  <button class="erp-btn-icon" *ngIf="canEdit()"
+                    [ngClass]="row.isPostInventory || isPeriodLocked ? 'btn-disabled' : 'btn-edit'"
+                    [disabled]="row.isPostInventory || isPeriodLocked"
+                    [title]="row.isPostInventory ? 'Posted to Inventory' : isPeriodLocked ? 'Period locked' : 'Edit'"
+                    (click)="onEdit(row)">
+                    <i class="fas fa-pen"></i>
+                  </button>
+                  <button *ngIf="canClose(row)" type="button"
+                    class="btn btn-sm btn-outline-warning" style="font-size:0.75rem;padding:2px 8px;"
+                    (click)="closeGrn(row)">Close</button>
+                  <button *ngIf="canReopen(row)" type="button"
+                    class="btn btn-sm btn-outline-success" style="font-size:0.75rem;padding:2px 8px;"
+                    (click)="reopenGrn(row)">Reopen</button>
+                </td>
+              </tr>
+              <tr *ngIf="!rows || rows.length===0">
+                <td colspan="7" class="erp-empty-cell">No GRN records found.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+            <span class="erp-pager-info">Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries</span>
+            <div class="erp-pager-btns">
+              <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+              <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+              <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </div>

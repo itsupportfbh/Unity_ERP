@@ -2,6 +2,20 @@
 @import '@core/scss/base/pages/app-user.scss';
 @import '@core/scss/angular/libs/select.component.scss';
 @import '@core/scss/angular/libs/sweet-alerts.component.scss';
+.pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.77rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pill-success  { background: #d1fae5; color: #065f46; }
+.pill-info     { background: #dbeafe; color: #1e3a8a; }
+.pill-neutral  { background: #e5e7eb; color: #374151; }
+.pill-warning  { background: #fef3c7; color: #92400e; }
+.pill-danger   { background: #fee2e2; color: #7f1d1d; }
+
 .page-title {
   margin-left: .85rem;
   margin-top: .75rem;

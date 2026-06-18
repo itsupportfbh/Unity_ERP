@@ -25,6 +25,27 @@ export class ListBankComponent implements OnInit {
 
   selectedOption = 10;
   searchValue = '';
+  currentPage = 1;
+
+  get totalPages(): number {
+    return Math.ceil(this.bankListFiltered.length / this.selectedOption) || 1;
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const cur = this.currentPage;
+    const pages: number[] = [];
+    for (let i = Math.max(1, cur - 2); i <= Math.min(total, cur + 2); i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
 
   // simple map for account type id -> name
   accountTypeMap: { [key: number]: string } = {
@@ -135,6 +156,7 @@ export class ListBankComponent implements OnInit {
     }
   // ---------- SEARCH / FILTER ----------
   filterUpdate(event?: any): void {
+    this.currentPage = 1;
     const term = (this.searchValue || '').toLowerCase().trim();
 
     if (!term) {

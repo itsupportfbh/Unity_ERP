@@ -58,17 +58,15 @@ export class DepartmentMenuAccessComponent implements OnInit {
   loadDepartmentAccess(departmentId: number): void {
     this.loading = true;
     this.service.getByDepartmentId(departmentId).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.checkedIds.clear();
-
-        // top-level modules மட்டும் mark பண்ணுறோம்
+        const rawIds: string[] = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
         const topModuleIds = this.getTopModules().map(x => x.id);
-        (res || []).forEach(x => {
+        rawIds.forEach(x => {
           if (topModuleIds.includes(x)) {
             this.checkedIds.add(x);
           }
         });
-
         this.loading = false;
       },
       error: () => {

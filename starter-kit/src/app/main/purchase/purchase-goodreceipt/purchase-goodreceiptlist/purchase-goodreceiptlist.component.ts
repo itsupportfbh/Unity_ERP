@@ -80,6 +80,10 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
   public ColumnMode = ColumnMode;
   public selectedOption = 10;
   public searchValue = '';
+  currentPage = 1;
+  get totalPages(): number { return Math.ceil((this.rows?.length || 0) / this.selectedOption); }
+  get pageNumbers(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
+  onPageChange(p: number): void { if (p >= 1 && p <= this.totalPages) this.currentPage = p; }
   userId: number;
 
     functionId = 'grn-list';
@@ -322,13 +326,12 @@ export class PurchaseGoodreceiptlistComponent implements OnInit, AfterViewInit {
 
   // ---------- search ----------
   filterUpdate(event: Event): void {
+    this.currentPage = 1;
     const val = (event.target as HTMLInputElement).value?.toLowerCase().trim() ?? '';
     this.searchValue = val;
 
     if (!val) {
       this.rows = this.collapseByGrn(this.allRows);
-      if (this.table) this.table.offset = 0;
-      this.refreshFeatherIcons();
       return;
     }
 

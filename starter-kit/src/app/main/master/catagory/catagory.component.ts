@@ -12,6 +12,7 @@ import * as feather from 'feather-icons';
 
 import { CatagoryService } from './catagory.service';
 import { FunctionPermission, PermissionService } from 'app/shared/permission.service';
+import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
 
 @Component({
   selector: 'app-catagory',
@@ -39,11 +40,19 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
+  ItemCategoryType: number | null = null;
+  coaList: any[] = [];
+  salesBudgetLines: any[] = [];
+  purchaseBudgetLines: any[] = [];
+
+  SalesParentHeadCode: number | null = null;
+  PurchaseParentHeadCode: number | null = null;
 
   constructor(
     private fb: FormBuilder,
     private CatagoryService: CatagoryService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+     private chartOfAccountService: ChartofaccountService,
   ) {
     this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -51,6 +60,7 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   ngOnInit(): void {
     this.loadPermission();
+    this.loadCoaBudgetLines();
   }
 
   ngAfterViewInit(): void {
@@ -60,6 +70,41 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
   ngAfterViewChecked(): void {
     feather.replace();
   }
+  loadCoaBudgetLines(): void {
+  this.chartOfAccountService.getAllChartOfAccount().subscribe({
+    next: (res: any) => {
+      this.coaList = (res?.data || []).filter((x: any) => x.isActive === true);
+
+      const buildFullPath = (item: any, all: any[]): string => {
+        let path = item.headName;
+        let current = all.find((x: any) => Number(x.headCode) === Number(item.parentHead));
+
+        while (current) {
+          path = `${current.headName} >> ${path}`;
+          current = all.find((x: any) => Number(x.headCode) === Number(current.parentHead));
+        }
+
+        return path;
+      };
+
+      this.salesBudgetLines = this.coaList
+        .filter((x: any) => Number(x.headCode).toString().startsWith('4'))
+        .map((x: any) => ({
+          ...x,
+          headCode: Number(x.headCode),
+          label: `${x.headCode} - ${buildFullPath(x, this.coaList)}`
+        }));
+
+      this.purchaseBudgetLines = this.coaList
+        .filter((x: any) => Number(x.headCode).toString().startsWith('5'))
+        .map((x: any) => ({
+          ...x,
+          headCode: Number(x.headCode),
+          label: `${x.headCode} - ${buildFullPath(x, this.coaList)}`
+        }));
+    }
+  });
+}
 
   loadPermission(): void {
     if (!this.userId || this.userId <= 0) {
@@ -168,6 +213,9 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
     this.isDisplay = true;
     this.isEditMode = true;
     this.selectedCatagory = data;
+    this.ItemCategoryType = Number(data.itemCategoryType ?? data.ItemCategoryType ?? 0);
+    this.SalesParentHeadCode = Number(data.salesParentHeadCode ?? data.SalesParentHeadCode ?? 0) || null;
+    this.PurchaseParentHeadCode = Number(data.purchaseParentHeadCode ?? data.PurchaseParentHeadCode ?? 0) || null;
 
     this.CatagoryName = data.catagoryName || '';
     this.description = data.description || '';
@@ -181,10 +229,13 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
   }
 
   reset(): void {
-    this.CatagoryName = '';
-    this.description = '';
-    this.modeHeader = this.isEditMode ? 'Edit Catagory' : 'Create Catagory';
-  }
+  this.CatagoryName = '';
+  this.description = '';
+  this.ItemCategoryType = null;
+  this.modeHeader = this.isEditMode ? 'Edit Catagory' : 'Create Catagory';
+  this.SalesParentHeadCode = null;
+  this.PurchaseParentHeadCode = null;
+}
 
   onSubmit(form: NgForm): void {
     if (!form.valid) {
@@ -220,19 +271,28 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
 
     const payload = {
       catagoryName: this.CatagoryName,
+      itemCategoryType: Number(this.ItemCategoryType),
       description: this.description,
-      CreatedBy: this.userId,
-      UpdatedBy: this.userId,
-      CreatedDate: new Date(),
-      UpdatedDate: new Date(),
-      isActive: true
+      createdBy: this.userId,
+      updatedBy: this.userId,
+      createdDate: new Date(),
+      updatedDate: new Date(),
+      isActive: true,
+      salesParentHeadCode: this.SalesParentHeadCode,
+      purchaseParentHeadCode: this.PurchaseParentHeadCode,
     };
 
     if (this.isEditMode) {
       const updatedCatagory = {
-        ...this.selectedCatagory,
-        ...payload
-      };
+      ...this.selectedCatagory,
+      ID: this.selectedCatagory.id ?? this.selectedCatagory.ID,
+      catagoryName: this.CatagoryName,
+      itemCategoryType: Number(this.ItemCategoryType),
+      salesParentHeadCode: this.SalesParentHeadCode,
+      purchaseParentHeadCode: this.PurchaseParentHeadCode,
+      updatedBy: this.userId,
+      isActive: true
+    };
 
       this.CatagoryService.updateCatagory(this.selectedCatagory.id, updatedCatagory).subscribe({
         next: (res: any) => {

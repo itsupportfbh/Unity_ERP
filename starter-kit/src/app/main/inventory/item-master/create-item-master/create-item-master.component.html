@@ -96,7 +96,7 @@
   [ngClass]="{ 'imN__select--ph': item.itemType == null }"
   [(ngModel)]="item.itemType"
   name="itemType"
-  (change)="onItemTypeChange()"
+  
   required>
   <option value="" [ngValue]="null" disabled>Select Item Type</option>
   <option *ngFor="let i of ItemTypeList" [ngValue]="i.id">{{ i.itemTypeName }}</option>
@@ -104,7 +104,7 @@
         </div>
 
         <!-- Fulfillment Mode -->
-        <div class="imN__field">
+         <!-- <div class="imN__field">
           <label class="imN__label">Usage Type <span class="imN__req">*</span></label>
 
        <select
@@ -114,11 +114,11 @@
   name="fulfillmentMode"
   required>
   <option value="" [ngValue]="null" disabled>Select</option>
-  <option [ngValue]="1">Sales Item</option>
-  <option [ngValue]="2">Internal Use Item</option>
-  <option [ngValue]="3">Sales & Internal Use</option>
+ <option *ngFor="let u of allowedUsageTypes" [ngValue]="u.id">
+  {{ u.name }}
+</option>
 </select>
-        </div>
+        </div> -->
 
         <!-- Category -->
         <div class="imN__field">
@@ -129,6 +129,7 @@
   [ngClass]="{ 'imN__select--ph': item.categoryId == null }"
   [(ngModel)]="item.categoryId"
   name="categoryId"
+  (change)="onCategoryChange(true)"
   required>
   <option value="" [ngValue]="null" disabled>Select Category</option>
   <option *ngFor="let c of CategoryList" [ngValue]="c.id">{{ c.catagoryName }}</option>
@@ -236,7 +237,7 @@
       <div class="imN__grid">
 
         <!-- Ledger Name -->
-        <div class="imN__field imN__span2">
+        <!-- <div class="imN__field imN__span2">
           <label class="imN__label">Ledger Name <span class="imN__req">*</span></label>
 
         <select
@@ -248,7 +249,7 @@
   <option value="" [ngValue]="null" disabled>Select Ledger Name</option>
   <option *ngFor="let l of parentHeadList" [ngValue]="l.value">{{ l.label }}</option>
 </select>
-        </div>
+        </div> -->
 
         <!-- Costing -->
         <div class="imN__field">

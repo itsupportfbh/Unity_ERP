@@ -75,6 +75,7 @@ export class StackOverviewListComponent implements OnInit {
   // paging + search
   pageSizes = [10, 25, 50, 100];
   pageSize = 10;
+  currentPage = 1;
   searchValue = '';
 
   // ui state
@@ -104,6 +105,26 @@ export class StackOverviewListComponent implements OnInit {
   ngOnInit(): void {
     this.loadPermission();
       this.checkPeriodLockForToday();
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredRows.length / this.pageSize));
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
   }
 
   private getErrorMessage(err: any, fallback: string): string {
@@ -261,6 +282,7 @@ loadMasterItem(): void {
 
       this.rows = finalList;
       this.filteredRows = [...finalList];
+      this.currentPage = 1;
       this.loading = false;
     },
     error: (err) => {
@@ -280,6 +302,7 @@ loadMasterItem(): void {
     const q = (this.searchValue || '').toLowerCase().trim();
     if (!q) {
       this.filteredRows = [...this.rows];
+      this.currentPage = 1;
       return;
     }
 
@@ -299,6 +322,7 @@ loadMasterItem(): void {
         (loc.supplierName ?? '').toLowerCase().includes(q)
       );
     });
+    this.currentPage = 1;
   }
 
   /** Open modal with ALL warehouses/bins for the item */

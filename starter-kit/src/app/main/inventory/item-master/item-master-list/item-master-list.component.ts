@@ -33,9 +33,10 @@ export class ItemMasterListComponent implements OnInit {
  rows: ItemMaster[] = [];
   filteredRows: ItemMaster[] = [];
 
-   // paging + search
+  // paging + search
   pageSizes = [10, 25, 50, 100];
   pageSize = 10;
+  currentPage = 1;
   searchValue = '';
 
     // ui state
@@ -66,6 +67,26 @@ export class ItemMasterListComponent implements OnInit {
     this.loadPermission();
   }
 
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredRows.length / this.pageSize));
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
   private getErrorMessage(err: any, fallback: string): string {
     return err?.error?.message || err?.message || fallback;
   }
@@ -81,6 +102,7 @@ export class ItemMasterListComponent implements OnInit {
         const list: ItemMaster[] = Array.isArray(res?.data) ? res.data : [];
         this.rows = list;
         this.filteredRows = [...list]; // initial render
+        this.currentPage = 1;
         this.loading = false;
       },
       error: (err) => {
@@ -157,6 +179,7 @@ export class ItemMasterListComponent implements OnInit {
     const q = (this.searchValue || '').toLowerCase().trim();
     if (!q) {
       this.filteredRows = [...this.rows];
+      this.currentPage = 1;
       return;
     }
 
@@ -177,6 +200,7 @@ export class ItemMasterListComponent implements OnInit {
         wh.includes(q)
       );
     });
+    this.currentPage = 1;
   }
 
   /** Eye action */
@@ -334,7 +358,7 @@ deleteItem(id: number) {
           timer: 1200,
           showConfirmButton: false
         });
-        this.loadMasterItem?.();
+        this.loadMasterItem();
       },
       error: (err) => {
         Swal.close();

@@ -1,5 +1,5 @@
 .custom-white {
-  color: #fff !important;
+  color: #2E5F73 !important;
 }
 .nav-toggle .feather {
   display: inline-block !important;
@@ -55,12 +55,12 @@
 /* ✅ App name LEFT + single line */
 .uw-appname{
   margin: 0 !important;
-  color: #fff;
+  color: #2E5F73;
   text-align: left;
 
-  white-space: nowrap !important;   /* ✅ no wrap */
-  overflow: hidden;                  /* ✅ cut */
-  text-overflow: ellipsis;           /* ✅ ... */
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
   max-width: 100%;
   line-height: 1;
   font-size: 22px;
@@ -85,6 +85,6 @@
 
 .uw-sb-toggle .toggle-icon{
   font-size: 22px;
-  color: #fff !important;
+  color: #2E5F73 !important;
 }
 

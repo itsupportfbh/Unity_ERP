@@ -65,7 +65,25 @@ export class DeliveryorderlistComponent implements OnInit, AfterViewInit, AfterV
   rows: DoRow[] = [];
   allRows: DoRow[] = [];
   selectedOption = 10;
+  currentPage = 1;
   searchValue = '';
+
+  get totalPages(): number {
+    return Math.ceil((this.rows?.length || 0) / this.selectedOption);
+  }
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+  onPageChange(p: number): void {
+    if (p < 1 || p > this.totalPages) return;
+    this.currentPage = p;
+  }
 
   // lookups
   driverMap  = new Map<number, string>();
@@ -291,6 +309,7 @@ canDelete(): boolean {
   }
 
   filterUpdate(_: any) {
+    this.currentPage = 1;
     const q = (this.searchValue || '').trim().toLowerCase();
     if (!q) {
       this.rows = [...this.allRows];

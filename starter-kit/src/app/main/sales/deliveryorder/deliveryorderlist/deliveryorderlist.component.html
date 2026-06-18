@@ -1,214 +1,110 @@
-<div *ngIf="isPermissionLoaded; else loadingTemplate">
+﻿<div *ngIf="isPermissionLoaded; else loadingTemplate">
   <div class="content-wrapper p-0" *ngIf="canView(); else noAccessTemplate">
-<div class="content-wrapper p-0">
   <div class="content-body">
     <section class="users-list-wrapper">
-      <div class="card">
-
-        <div class="row">
-          <!-- Title + page size -->
-          <div class="col-md-6 col-12">
-            <h4 class="card-text page-title">
-              Delivery Order List
-            </h4>
-
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center gap-1">
-                Show
-                <select class="form-control mx-25" (change)="onLimitChange($event)">
-                  <option [selected]="selectedOption===10" value="10">10</option>
-                  <option [selected]="selectedOption===25" value="25">25</option>
-                  <option [selected]="selectedOption===50" value="50">50</option>
-                  <option [selected]="selectedOption===100" value="100">100</option>
-                </select>
-                entries
-              </label>
+      <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
+        <!-- Header -->
+        <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+          <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
+            <div class="d-flex align-items-center" style="gap:10px;">
+              <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                <i class="fas fa-truck" style="color:#2E5F73;font-size:0.9rem;"></i>
+              </div>
+              <div>
+                <h4 class="card-text" style="margin:0;">Delivery Orders</h4>
+                <p style="margin:0;font-size:0.75rem;color:#6b7280;">Manage and track customer deliveries</p>
+              </div>
             </div>
-
-            <div *ngIf="isPeriodLocked"
-                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
-                 style="font-size: 0.8rem;">
-              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
-            </div>
+            <button *ngIf="canCreate()" (click)="goToCreate()" [disabled]="isPeriodLocked"
+              [attr.title]="isPeriodLocked ? (currentPeriodName ? 'Period ' + currentPeriodName + ' is locked' : 'Accounting period is locked') : 'Create Delivery Order'"
+              class="btn d-inline-flex align-items-center"
+              style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;">
+              <i class="fas fa-plus-circle"></i><span>Add</span>
+            </button>
           </div>
+        </div>
+        <!-- Controls bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+          <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+            Show
+            <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" [(ngModel)]="selectedOption" (ngModelChange)="currentPage=1">
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+              <option [ngValue]="100">100</option>
+            </select>
+            entries
+          </label>
+          <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+            <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+            <input [(ngModel)]="searchValue" name="searchValue" type="search"
+              (keyup)="filterUpdate($event)" (search)="filterUpdate($event)"
+              placeholder="DO number / route / driver / status"
+              style="border:none;outline:none;height:100%;font-size:0.82rem;width:230px;padding:0 8px;background:transparent;" />
+          </div>
+        </div>
+        <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-3 mx-3 mt-2 mb-0" style="font-size:0.8rem;">
+          Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+        </div>
 
-          <!-- Search + buttons -->
-          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-
-              <label class="d-flex align-items-center ml-1 ml-md-0">
-                Search:
-                <input
-                  [(ngModel)]="searchValue"
-                  name="searchValue"
-                  type="search"
-                  class="form-control ml-25"
-                  (keyup)="filterUpdate($event)"
-                  (search)="filterUpdate($event)"
-                  placeholder="DO number / route / driver / status"
-                />
-              </label>
-
-              <button
-  *ngIf="canCreate()"
-  (click)="goToCreate()"
-  class="btn m-1 d-inline-flex align-items-center"
-  style="background-color:#2E5F73;color:white;gap:6px;"
-  [disabled]="isPeriodLocked"
-  [attr.title]="isPeriodLocked
-    ? (currentPeriodName
-        ? 'Period ' + currentPeriodName + ' is locked'
-        : 'Accounting period is locked')
-    : 'Create Delivery Order'">
-  <i data-feather="plus-circle" class="w-4 h-4"></i>
-  <span>Add</span>
-</button>
-
+        <!-- Main table -->
+        <div class="table-responsive">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th>DO No</th>
+                <th>SO No</th>
+                <th>Driver</th>
+                <th>Location</th>
+                <th>Delivery Date</th>
+                <th style="width:90px;">Posted</th>
+                <th style="width:70px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                <td>
+                  <button class="erp-eye-btn" (click)="openLinesModal(row)" title="View Details">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </td>
+                <td><strong>{{ row.doNumber || '—' }}</strong></td>
+                <td>{{ row.salesOrderNo || '—' }}</td>
+                <td>{{ getDriverName(row.driverId) || '—' }}</td>
+                <td>{{ row.routeName || '—' }}</td>
+                <td>{{ row.deliveryDate | date:'dd-MM-yyyy' }}</td>
+                <td>
+                  <span class="erp-badge" [ngClass]="row.isPosted ? 'badge-posted' : 'badge-draft'">
+                    {{ row.isPosted ? 'Posted' : 'Draft' }}
+                  </span>
+                </td>
+                <td>
+                  <button class="erp-btn-icon btn-print" (click)="printFromRow(row)" title="Print">
+                    <i class="fas fa-print"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="!rows || rows.length===0">
+                <td colspan="8" class="erp-empty-cell">No delivery orders found.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+            <span class="erp-pager-info">
+              Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries
+            </span>
+            <div class="erp-pager-btns">
+              <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+              <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+              <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
             </div>
           </div>
         </div>
-
-        <!-- Main datatable -->
-        <ngx-datatable
-          class="bootstrap core-bootstrap"
-          [rows]="rows"
-          [rowHeight]="50"
-          [headerHeight]="50"
-          [footerHeight]="50"
-          [limit]="selectedOption"
-          [columnMode]="'force'"
-          [scrollbarH]="true"
-          [reorderable]="true">
-
-          <!-- View lines -->
-          <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false" [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span (click)="openLinesModal(row)" title="View Details" class="eye">
-                <i class="fas fa-eye"></i>
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="DO No" prop="doNumber" [width]="200"></ngx-datatable-column>
-
-          <ngx-datatable-column name="SO No" [width]="200">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.salesOrderNo || '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Driver" [width]="180">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ getDriverName(row.driverId) || ('#' + row.driverId) }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Driver Contact" [width]="120">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.driverMobileNo || '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Received Person" [width]="200">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.receivedPersonName || '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Received Contact" [width]="170">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.receivedPersonMobileNo || '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Vehicle" [width]="130">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="po-wrap-cell" [title]="row.vehicleId">
-                {{ getVehicleNo(row.vehicleId) || '-' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Location" [width]="200">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.routeName || '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="120">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.deliveryDate | date:'dd-MM-yyyy' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Posted" [width]="80">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="badge badge-pill" [ngClass]="row.isPosted ? 'badge-success' : 'badge-secondary'">
-                {{ row.isPosted ? 'Yes' : 'No' }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Action -->
-         <ngx-datatable-column
-  *ngIf="canEdit() || canDelete()"
-  name="Action"
-  [width]="60"
-  [sortable]="false">
-
-  <ng-template let-row="row" ngx-datatable-cell-template>
-    <div class="actions">
-
-      <!-- <ng-container *ngIf="row?.isPosted || isPeriodLocked; else editDeleteEnabled">
-        <i
-          *ngIf="canEdit()"
-          class="fas fa-pen text-muted me-2"
-          [attr.title]="isPeriodLocked ? 'Period locked' : 'Posted - Edit disabled'"
-          style="pointer-events:none; opacity:.45;">
-        </i>
-
-        <i
-          *ngIf="canDelete()"
-          class="fas fa-trash text-muted me-2"
-          [attr.title]="isPeriodLocked ? 'Period locked' : 'Posted - Delete disabled'"
-          style="pointer-events:none; opacity:.45;">
-        </i>
-      </ng-container> -->
-<!-- 
-      <ng-template #editDeleteEnabled>
-        <i
-          *ngIf="canEdit()"
-          class="fas fa-pen text-primary me-2"
-          (click)="editDo(row.id)"
-          title="Edit"
-          style="cursor:pointer;">
-        </i>
-
-        <i
-          *ngIf="canDelete()"
-          class="fas fa-trash text-danger me-2"
-          (click)="deleteDo(row.id)"
-          title="Delete"
-          style="cursor:pointer;">
-        </i>
-      </ng-template> -->
-
-      <i
-        class="fas fa-print text-info"
-        (click)="printFromRow(row)"
-        title="Print"
-        style="cursor:pointer;">
-      </i>
-
-    </div>
-  </ng-template>
-</ngx-datatable-column>
-        </ngx-datatable>
       </div>
     </section>
   </div>
-</div>
-</div>
+  </div>
 </div>
 <!-- DO Lines Modal -->
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="overlay">

@@ -397,18 +397,20 @@
                       autocomplete="off"
                       class="prl-input"
                       placeholder="Search supplier" />
-                    <div *ngIf="supplierDropdownOpen && filteredSuppliers?.length && activePriceIndex===i" class="prl-menu">
-                      <div
-                        *ngFor="let s of filteredSuppliers; trackBy: trackBySupplierId"
-                        (click)="selectSupplierForRow(i, s, $event)"
-                        class="prl-mi prl-mi-split">
-                        <span class="truncate">{{ s.name }}</span>
-                        <small class="prl-muted ml-3">#{{ s.code || s.id }}</small>
-                      </div>
-                    </div>
-                    <div *ngIf="supplierDropdownOpen && activePriceIndex===i && (!filteredSuppliers?.length) && p.supplierSearch?.trim()?.length"
-                         class="prl-menu">
-                      <div class="prl-mi text-gray-400">No matches</div>
+                    <div *ngIf="supplierDropdownOpen && activePriceIndex===i" class="prl-menu">
+                      <div *ngIf="supplierLoading" class="prl-mi text-gray-400">Searching...</div>
+                      <ng-container *ngIf="!supplierLoading">
+                        <div
+                          *ngFor="let s of filteredSuppliers; trackBy: trackBySupplierId"
+                          (click)="selectSupplierForRow(i, s, $event)"
+                          class="prl-mi prl-mi-split">
+                          <span class="truncate">{{ s.name }}</span>
+                          <small class="prl-muted ml-3">#{{ s.code || s.id }}</small>
+                        </div>
+                        <div *ngIf="!filteredSuppliers?.length && !p.supplierSearch?.trim()?.length" class="prl-mi text-gray-400">Type to search supplier...</div>
+                        <div *ngIf="!filteredSuppliers?.length && p.supplierSearch?.trim()?.length" class="prl-mi text-gray-400">No matches</div>
+                        <div *ngIf="filteredSuppliers?.length === 20" class="prl-mi text-gray-400" style="border-top:1px solid #eee; text-align:center;">Showing top 20 — type more to narrow down</div>
+                      </ng-container>
                     </div>
                   </div>
                 </td>

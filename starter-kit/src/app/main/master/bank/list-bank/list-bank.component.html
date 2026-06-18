@@ -1,47 +1,44 @@
-<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
+﻿<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
   <div class="content-body">
     <section *ngIf="canView(); else noAccessTemplate" class="users-list-wrapper">
-      <div class="card">
+      <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
 
-        <!-- Header row -->
-        <div class="row">
-          <div class="col-md-6 col-12">
-            <h4 class="card-text"
-                style="margin-left:0.85rem;margin-top:0.75rem;
-                       font-size:1.25rem;font-weight:600;color:#2E5F73;">
-              Bank List
-            </h4>
-
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center">Show
-                <select class="form-control mx-25" [(ngModel)]="selectedOption">
-                  <option [ngValue]="10">10</option>
-                  <option [ngValue]="25">25</option>
-                  <option [ngValue]="50">50</option>
-                  <option [ngValue]="100">100</option>
-                </select>
-                entries
-              </label>
+        <!-- Header -->
+        <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+          <div class="d-flex align-items-center justify-content-between" style="gap:12px;">
+            <div class="d-flex align-items-center" style="gap:10px;">
+              <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                <i class="fas fa-university" style="font-size:0.9rem;color:#2E5F73;"></i>
+              </div>
+              <div>
+                <h4 class="card-text" style="margin:0;">Bank List</h4>
+                <p style="margin:0;font-size:0.75rem;color:#6b7280;">Bank account management</p>
+              </div>
             </div>
+            <button class="btn d-inline-flex align-items-center" *ngIf="canCreate()" (click)="Add()"
+              style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;">
+              <i class="fas fa-plus-circle"></i><span>Add</span>
+            </button>
           </div>
+        </div>
 
-          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-              <label class="d-flex align-items-center ml-1 ml-md-0">
-                Search:
-                <input [(ngModel)]="searchValue"
-                       name="searchValue"
-                       type="search"
-                       class="form-control ml-25"
-                       (keyup)="filterUpdate($event)"
-                       (search)="filterUpdate($event)" />
-              </label>
-
-              <button class="btn btn-primary m-1" *ngIf="canCreate()" (click)="Add()">
-                <i data-feather="plus" class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
-                <span class="d-none d-sm-inline-block">Add</span>
-              </button>
-            </div>
+        <!-- Controls bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+          <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+            Show
+            <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" [(ngModel)]="selectedOption">
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+              <option [ngValue]="100">100</option>
+            </select>
+            entries
+          </label>
+          <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+            <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+            <input [(ngModel)]="searchValue" name="searchValue" type="search"
+              style="border:none;outline:none;height:100%;font-size:0.82rem;width:200px;padding:0 8px;background:transparent;"
+              placeholder="Search..." (keyup)="filterUpdate($event)" (search)="filterUpdate($event)" />
           </div>
         </div>
 
@@ -53,7 +50,7 @@
                        [footerHeight]="50"
                        [limit]="selectedOption"
                        [columnMode]="'force'"
-                       [scrollbarH]="true"
+                       [scrollbarH]="false"
                        [reorderable]="true">
 
           <!-- Bank Name -->

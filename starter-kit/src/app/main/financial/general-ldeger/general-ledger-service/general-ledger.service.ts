@@ -13,8 +13,11 @@ private url = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
-  GetGeneralLedger(): Observable<any> {
-    return this.http.get<any[]>(this.url + GeneralLedgerApiUrls.GetGeneralLedger);
+  GetGeneralLedger(fromDate?: string, toDate?: string): Observable<any> {
+    const params: any = {};
+    if (fromDate) params['fromDate'] = fromDate;
+    if (toDate)   params['toDate']   = toDate;
+    return this.http.get<any[]>(this.url + GeneralLedgerApiUrls.GetGeneralLedger, { params });
   }
 
 }

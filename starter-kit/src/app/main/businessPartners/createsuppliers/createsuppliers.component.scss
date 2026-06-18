@@ -1,6 +1,56 @@
-// Force number input to always show the spinner buttons
+@import '@core/scss/angular/libs/select.component.scss';
+
+// Prevent number input spinner
 input[type='number'] {
-  -moz-appearance: number-input;        // Firefox
-  -webkit-appearance: number-input;     // Chrome, Safari, Edge
+  -moz-appearance: number-input;
+  -webkit-appearance: number-input;
   appearance: number-input;
+}
+
+// Clean file-upload trigger label
+.sup-file-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  background: #2E5F73;
+  color: #fff;
+  font-size: 0.80rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 0;
+  white-space: nowrap;
+  border: none;
+  line-height: 1;
+
+  &:hover {
+    background: #26516a;
+  }
+}
+
+// Fix ng-select multiple chip color
+// 4-class specificity beats core theme's 3-class rule regardless of injection order
+.ng-select.ng-select-multiple .ng-select-container .ng-value {
+  background-color: #e3f0f4 !important;
+  color: #2E5F73 !important;
+  border: 1px solid rgba(46, 95, 115, 0.30) !important;
+  border-radius: 4px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+}
+
+.ng-select.ng-select-multiple .ng-select-container .ng-value .ng-value-label {
+  color: #2E5F73 !important;
+  padding: 2px 4px !important;
+}
+
+.ng-select.ng-select-multiple .ng-select-container .ng-value .ng-value-icon {
+  color: #2E5F73 !important;
+  background: transparent !important;
+  border-right: 1px solid rgba(46, 95, 115, 0.20) !important;
+}
+
+.ng-select.ng-select-multiple .ng-select-container .ng-value .ng-value-icon:hover {
+  background: rgba(46, 95, 115, 0.10) !important;
 }

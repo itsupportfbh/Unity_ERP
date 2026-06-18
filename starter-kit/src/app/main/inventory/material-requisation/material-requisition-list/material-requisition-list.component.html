@@ -3,176 +3,137 @@
 
     <div class="card mrq-card">
 
-      <!-- ===== Header ===== -->
-      <div class="row mrq-head-row">
-        <div class="col-md-6 col-12">
-          <h4 class="card-text mrq-head-title">Internal Material Transfer Request List</h4>
-
-          <div class="d-flex justify-content-between align-items-center mrq-show-wrap">
-            <label class="d-flex align-items-center mrq-show-label mb-0">
-              Show
-              <select class="form-control mrq-select mx-2" [(ngModel)]="pageSize">
-                <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
-              </select>
-              entries
-            </label>
+      <!-- ===== Card Header: Title + New Request ===== -->
+      <div class="mrq-header">
+        <div class="d-flex align-items-center" style="gap:12px;">
+          <div class="mrq-header-icon">
+            <i class="fas fa-clipboard-list" style="color:#2E5F73;font-size:1rem;"></i>
+          </div>
+          <div>
+            <h4 class="card-text" style="margin:0;">Internal Material Transfer Request</h4>
+            <p style="margin:0;font-size:0.75rem;color:#6b7280;">Track and manage internal stock transfer requests</p>
           </div>
         </div>
 
-        <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-          <div class="mrq-right-stack">
+        <button
+          class="btn d-inline-flex align-items-center"
+          style="background:#2E5F73;color:#fff;gap:7px;height:36px;border-radius:8px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;white-space:nowrap;"
+          type="button"
+          *ngIf="canCreate()"
+          [disabled]="isPeriodLocked"
+          [attr.title]="isPeriodLocked ? (periodName ? 'Period ' + periodName + ' is locked' : 'Period is locked') : 'Create new request'"
+          (click)="goToCreateForm()">
+          <i class="fas fa-plus-circle"></i>
+          <span>New Request</span>
+        </button>
+      </div>
 
-            <div class="mrq-right-search">
-              <label class="d-flex align-items-center mrq-search-label mb-0">
-                Search:
-                <input
-                  [(ngModel)]="searchValue"
-                  type="search"
-                  class="form-control mrq-search-input ml-2"
-                  (input)="applyFilter()"
-                  placeholder="Req No / Requester / Warehouse" />
-              </label>
-            </div>
+      <!-- ===== Controls Bar: Show + Search + Stock Buttons ===== -->
+      <div class="mrq-controls">
 
-            <div class="mrq-right-btnrow">
-              <button class="btn mrq-btn-outline" type="button" *ngIf="canShowStockButtons()" (click)="goStockOverview()">
-                Stock Overview List
-              </button>
+        <!-- Show entries -->
+        <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;white-space:nowrap;">
+          Show
+          <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;"
+            [(ngModel)]="pageSize" (ngModelChange)="currentPage=1">
+            <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
+            <option [ngValue]="999999">All</option>
+          </select>
+          entries
+        </label>
 
-              <button class="btn mrq-btn-outline" type="button" *ngIf="canShowStockButtons()" (click)="goStockTransfer()">
-                Stock Transfer List
-              </button>
+        <div class="d-flex align-items-center" style="gap:8px;flex-wrap:wrap;">
 
-              <button class="btn mrq-btn-primary" type="button" (click)="goToCreateForm()" *ngIf="canCreate()"[disabled]="isPeriodLocked" [attr.title]="isPeriodLocked
-                 ? (periodName ? 'Period ' + periodName + ' is locked'
-                               : 'Period is locked') 
-                 : 'Create new request'">
-                <i class="fas fa-plus-circle mr-50"></i>
-                <span>New Request</span>
-              </button>
-            </div>
-
+          <!-- Search -->
+          <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+            <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+            <input [(ngModel)]="searchValue" type="search" (input)="applyFilter()"
+              placeholder="Req No / Requester / Warehouse"
+              style="border:none;outline:none;height:100%;font-size:0.82rem;width:200px;padding:0 8px;background:transparent;" />
           </div>
+
+          <!-- Stock buttons -->
+          <button class="mrq-outline-btn" type="button" *ngIf="canShowStockButtons()" (click)="goStockOverview()">
+            <i class="fas fa-boxes" style="font-size:12px;"></i>
+            <span>Stock Overview</span>
+          </button>
+
+          <button class="mrq-outline-btn" type="button" *ngIf="canShowStockButtons()" (click)="goStockTransfer()">
+            <i class="fas fa-exchange-alt" style="font-size:12px;"></i>
+            <span>Stock Transfer</span>
+          </button>
+
         </div>
       </div>
- <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 m-1" style="font-size:0.8rem;">
-          Period <strong>{{ periodName || 'current' }}</strong> is locked.
-        </div>
+
+      <!-- Period lock warning -->
+      <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-3 mx-3 mb-2" style="font-size:0.8rem;">
+        Period <strong>{{ periodName || 'current' }}</strong> is locked.
+      </div>
+
       <!-- Loading / Error -->
       <div *ngIf="loading" class="px-3 pb-2 small text-muted">Loading…</div>
       <div *ngIf="errorMsg" class="alert alert-danger mx-3 my-2">{{ errorMsg }}</div>
 
-      <!-- ===== TABLE WRAP (Horizontal Scroll) ===== -->
-      <div class="mrq-table-shell1">
-
-        <ngx-datatable
-          class="bootstrap core-bootstrap item-table mrq-table"
-          [rows]="filteredRows"
-          [rowHeight]="56"
-          [headerHeight]="48"
-          [footerHeight]="48"
-          [limit]="pageSize"
-          [columnMode]="'standard'"
-          [scrollbarH]="true"
-          [reorderable]="true"
-          [rowIdentity]="rowIdentity"
-          [trackByProp]="'gridKey'">
-
-          <!-- REQ NO -->
-          <ngx-datatable-column name="REQ NO" [width]="280" [minWidth]="280">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="mrq-cell-flex">
-                <button
-                  type="button"
-                  class="mrq-icon-btn"
-                  title="View"
-                  (click)="openViewModal(row, viewModal)">
+      <div class="table-responsive">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th style="width:40px;"></th>
+              <th>Req No</th>
+              <th>Warehouse</th>
+              <th>Requester</th>
+              <th>Total Qty</th>
+              <th>Req Date</th>
+              <th style="width:160px;">Status</th>
+              <th *ngIf="canEdit()" style="width:70px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of filteredRows | slice:(currentPage-1)*pageSize:currentPage*pageSize">
+              <td>
+                <button class="erp-eye-btn" (click)="openViewModal(row, viewModal)" title="View">
                   <i class="fas fa-eye"></i>
                 </button>
-
-                <span class="mrq-ellipsis one-line mrq-reqno"
-                      [title]="row.reqNo || '-'">
-                  {{ row.reqNo || '-' }}
-                </span>
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- WAREHOUSE -->
-          <ngx-datatable-column name="WAREHOUSE" [width]="240" [minWidth]="240">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="mrq-ellipsis one-line" [title]="row.outletName ?? '-'">
-                {{ row.outletName ?? '-' }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- REQUESTER -->
-          <ngx-datatable-column name="REQUESTER" [width]="210" [minWidth]="210">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="mrq-ellipsis one-line" [title]="row.requesterName ?? '-'">
-                {{ row.requesterName ?? '-' }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- TOTAL QTY (header cut fix) -->
-          <ngx-datatable-column name="TOTAL QTY" [width]="150" [minWidth]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="mrq-num" [title]="(row.totalQty ?? 0) + ''">
-                {{ row.totalQty ?? 0 }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- REQ DATE -->
-          <ngx-datatable-column name="REQ DATE" [width]="160" [minWidth]="160">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="mrq-ellipsis one-line"
-                    [title]="row.reqDate ? (row.reqDate | date:'yyyy-MM-dd') : '-'">
-                {{ row.reqDate ? (row.reqDate | date:'yyyy-MM-dd') : '-' }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- STATUS -->
-          <ngx-datatable-column name="STATUS" [width]="260" [minWidth]="260">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="mrq-status-pill" [ngClass]="{
-                'is-pending': row.status === 1,
-                'is-pending-partial': row.status === 2,
-                'is-delivered-partial': row.status === 3,
-                'is-pending-full': row.status === 4,
-                'is-delivered': row.status === 5
-              }">
-                <span class="mrq-ellipsis one-line" [title]="getStatusLabel(row.status)">
-                  {{ getStatusLabel(row.status) }}
-                </span>
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- ACTION -->
-          <ngx-datatable-column name="ACTION" [width]="120" [minWidth]="120" [sortable]="false" [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <button
-                type="button"
-                class="mrq-icon-btn"
-                title="Edit"
-                (click)="row.status === 1 && editReq(row)"
-                *ngIf="canEdit()"
-                [disabled]="row.status !== 1"
-                [ngClass]="{ 'is-disabled': row.status !== 1 }">
-                <i class="fas fa-pen"></i>
-              </button>
-            </ng-template>
-          </ngx-datatable-column>
-
-        </ngx-datatable>
-
-        <!-- <div class="mrq-total px-2 py-1">
-          {{ filteredRows?.length || 0 }} total
-        </div> -->
+              </td>
+              <td><strong>{{ row.reqNo || '—' }}</strong></td>
+              <td>{{ row.outletName ?? '—' }}</td>
+              <td>{{ row.requesterName ?? '—' }}</td>
+              <td>{{ row.totalQty ?? 0 }}</td>
+              <td>{{ row.reqDate ? (row.reqDate | date:'yyyy-MM-dd') : '—' }}</td>
+              <td>
+                <span class="mrq-status-pill" [ngClass]="{
+                  'is-pending': row.status===1,
+                  'is-pending-partial': row.status===2,
+                  'is-delivered-partial': row.status===3,
+                  'is-pending-full': row.status===4,
+                  'is-delivered': row.status===5
+                }">{{ getStatusLabel(row.status) }}</span>
+              </td>
+              <td *ngIf="canEdit()">
+                <button class="erp-btn-icon" *ngIf="canEdit()"
+                  [ngClass]="row.status!==1 ? 'btn-disabled' : 'btn-edit'"
+                  title="Edit" [disabled]="row.status!==1"
+                  (click)="row.status===1 && editReq(row)">
+                  <i class="fas fa-pen"></i>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="!filteredRows || filteredRows.length===0">
+              <td colspan="8" class="erp-empty-cell">No material requisitions found.</td>
+            </tr>
+          </tbody>
+        </table>
+      <div class="erp-pager" *ngIf="pageSize < 999999 && totalPages > 1">
+        <span class="erp-pager-info">
+          Showing {{ (currentPage-1)*pageSize+1 }}–{{ currentPage*pageSize < filteredRows.length ? currentPage*pageSize : filteredRows.length }} of {{ filteredRows.length }} entries
+        </span>
+        <div class="erp-pager-btns">
+          <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+          <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+          <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+        </div>
+      </div>
       </div>
     </div>
 

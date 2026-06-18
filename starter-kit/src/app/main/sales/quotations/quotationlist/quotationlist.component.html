@@ -2,215 +2,122 @@
   <div class="content-wrapper p-0" *ngIf="canView(); else noAccessTemplate">
     <div class="content-body">
       <section class="users-list-wrapper">
-        <div class="card">
+        <div class="card" style="border-radius:12px;border:none;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
 
-          <div class="row">
-            <div class="col-md-6 col-12">
-              <h4 class="card-text page-title">Quotation List</h4>
 
-              <div class="d-flex justify-content-between align-items-center m-1">
-                <label class="d-flex align-items-center gap-1">
-                  Show
-                  <select class="form-control mx-25" (change)="onLimitChange($event)">
-                    <option [selected]="selectedOption===10" value="10">10</option>
-                    <option [selected]="selectedOption===25" value="25">25</option>
-                    <option [selected]="selectedOption===50" value="50">50</option>
-                    <option [selected]="selectedOption===100" value="100">100</option>
-                  </select>
-                  entries
-                </label>
+          <!-- Header -->
+          <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+            <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
+              <div class="d-flex align-items-center" style="gap:10px;">
+                <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                  <i class="fas fa-file-signature" style="color:#2E5F73;font-size:0.9rem;"></i>
+                </div>
+                <div>
+                  <h4 class="card-text" style="margin:0;">Quotations</h4>
+                  <p style="margin:0;font-size:0.75rem;color:#6b7280;">Manage sales quotations and proposals</p>
+                </div>
               </div>
-                <div *ngIf="isPeriodLocked"
-                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
-                 style="font-size: 0.8rem;">
-              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+              <button *ngIf="canCreate()" (click)="goToCreate()" [disabled]="isPeriodLocked"
+                [attr.title]="isPeriodLocked ? (currentPeriodName ? 'Period ' + currentPeriodName + ' is locked' : 'Accounting period is locked') : 'Create Quotation'"
+                class="btn d-inline-flex align-items-center"
+                style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;">
+                <i class="fas fa-plus-circle"></i><span>Add</span>
+              </button>
             </div>
+          </div>
+          <!-- Controls bar -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+            <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+              Show
+              <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" (change)="onLimitChange($event)">
+                <option [selected]="selectedOption===10" value="10">10</option>
+                <option [selected]="selectedOption===25" value="25">25</option>
+                <option [selected]="selectedOption===50" value="50">50</option>
+                <option [selected]="selectedOption===100" value="100">100</option>
+                <option [selected]="selectedOption===999999" value="999999">All</option>
+              </select>
+              entries
+            </label>
+            <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+              <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+              <input [(ngModel)]="searchValue" name="searchValue" type="search"
+                (keyup)="filterUpdate($event)" (search)="filterUpdate($event)"
+                placeholder="QT number / customer / status"
+                style="border:none;outline:none;height:100%;font-size:0.82rem;width:230px;padding:0 8px;background:transparent;" />
             </div>
+          </div>
+          <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-3 mx-3 mt-2 mb-0" style="font-size:0.8rem;">
+            Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+          </div>
 
-            <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-              <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-                <label class="d-flex align-items-center ml-1 ml-md-0">
-                  Search:
-                  <input
-                    [(ngModel)]="searchValue"
-                    name="searchValue"
-                    type="search"
-                    class="form-control ml-25"
-                    (keyup)="filterUpdate($event)"
-                    (search)="filterUpdate($event)"
-                    placeholder="QT number / customer / status / created / modified"
-                  />
-                </label>
-
-             <button
-  *ngIf="canCreate()"
-  (click)="goToCreate()"
-  class="btn m-1 d-inline-flex align-items-center"
-  style="background-color:#2E5F73;color:white;gap:6px;"
-  [disabled]="isPeriodLocked"
-  [attr.title]="isPeriodLocked
-    ? (currentPeriodName ? 'Period ' + currentPeriodName + ' is locked' : 'Accounting period is locked')
-    : 'Create Quotation'">
-  <i data-feather="plus-circle" class="w-4 h-4"></i>
-  <span>Add</span>
-</button>
+          <div class="table-responsive">
+            <table class="erp-table">
+              <thead>
+                <tr>
+                  <th style="width:40px;"></th>
+                  <th>QT No</th>
+                  <th>Customer</th>
+                  <th>Grand Total</th>
+                  <th>Delivery Date</th>
+                  <th>Validity Date</th>
+                  <th style="width:100px;">Status</th>
+                  <th *ngIf="canEdit() || canDelete()" style="width:80px;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                  <td>
+                    <button class="erp-eye-btn" (click)="openLinesModal(row)" title="View Details">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </td>
+                  <td><strong>{{ row.number }}</strong></td>
+                  <td>{{ row.isCashSales || row.customerId===0 || row.customerId==null ? 'Cash Sales' : (getCustomerName(row.customerId) || row.customerName || '—') }}</td>
+                  <td>
+                    <span style="font-weight:600;">{{ row.grandTotal | number:'1.2-2' }}</span>
+                    <span style="font-size:0.72rem;color:#6b7280;margin-left:3px;">{{ getCurrencyCode(row.currencyId) || 'SGD' }}</span>
+                    <div *ngIf="getCurrencyCode(row.currencyId) && getCurrencyCode(row.currencyId) !== 'SGD'" style="font-size:0.72rem;color:#2E5F73;font-weight:600;">
+                      ≈ {{ (row.grandTotal * (row.fxRate || 1)) | number:'1.2-2' }} SGD
+                    </div>
+                  </td>
+                  <td>{{ row.deliveryDate | date:'dd-MM-yyyy' }}</td>
+                  <td>{{ row.validityDate | date:'dd-MM-yyyy' }}</td>
+                  <td>
+                    <span class="erp-badge"
+                      [ngClass]="row.status===0 ? 'badge-draft' : row.status===1 ? 'badge-pending' : row.status===2 ? 'badge-completed' : row.status===3 ? 'badge-rejected' : 'badge-posted'">
+                      {{ statusLabel(row.status) }}
+                    </span>
+                  </td>
+                  <td *ngIf="canEdit() || canDelete()">
+                    <button class="erp-btn-icon btn-print" (click)="printFromRow(row)" title="Print / PDF">
+                      <i class="fas fa-print"></i>
+                    </button>
+                    <ng-container *ngIf="+row.status===2 || +row.status===3 || +row.status===4 || isPeriodLocked; else qtActionsEnabled">
+                      <button class="erp-btn-icon btn-disabled" *ngIf="canEdit()" title="Disabled"><i class="fas fa-pen"></i></button>
+                      <button class="erp-btn-icon btn-disabled" *ngIf="canDelete()" title="Disabled"><i class="fas fa-trash"></i></button>
+                    </ng-container>
+                    <ng-template #qtActionsEnabled>
+                      <button class="erp-btn-icon btn-edit" *ngIf="canEdit()" title="Edit" (click)="editQuotation(row.id)"><i class="fas fa-pen"></i></button>
+                      <button class="erp-btn-icon btn-delete" *ngIf="canDelete()" title="Delete" (click)="deleteQuotation(row.id)"><i class="fas fa-trash"></i></button>
+                    </ng-template>
+                  </td>
+                </tr>
+                <tr *ngIf="!rows || rows.length === 0">
+                  <td colspan="8" class="erp-empty-cell">No quotations found.</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+              <span class="erp-pager-info">
+                Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries
+              </span>
+              <div class="erp-pager-btns">
+                <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249; Prev</button>
+                <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+                <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">Next &#8250;</button>
               </div>
             </div>
           </div>
-
-          <ngx-datatable
-            class="bootstrap core-bootstrap qt-table"
-            [rows]="rows"
-            [rowHeight]="50"
-            [headerHeight]="50"
-            [footerHeight]="50"
-            [limit]="selectedOption"
-            [columnMode]="'standard'"
-            [scrollbarH]="true"
-            [reorderable]="true"
-          >
-
-            <ngx-datatable-column
-              [width]="50"
-              [resizeable]="false"
-              [sortable]="false"
-              [draggable]="false"
-              [canAutoResize]="false">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                <span (click)="openLinesModal(row)" title="View Details" class="eye">
-                  <i class="fas fa-eye"></i>
-                </span>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="QT No" prop="number" [width]="190">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="cell-clip" [title]="row.number">{{ row.number }}</div>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="Customer" [width]="240">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div
-                  class="cell-clip"
-                  [title]="getCustomerName(row.customerId) || row.customerName || ('#' + row.customerId)"
-                >
-                  {{
-                    row.isCashSales || row.customerId === 0 || row.customerId == null
-                      ? 'Cash Sales'
-                      : (getCustomerName(row.customerId) || row.customerName || ('#' + row.customerId))
-                  }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="Currency" [width]="110">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="cell-clip" [title]="getCurrencyCode(row.currencyId) || '-'">
-                  {{ getCurrencyCode(row.currencyId) || '-' }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="Payment Terms" [width]="150">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="cell-clip" [title]="row.paymentTermsName || '-'">
-                  {{ row.paymentTermsName || '-' }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-          <ngx-datatable-column name="Grand Total" [width]="180">
-  <ng-template let-row="row" ngx-datatable-cell-template>
-    <div>
-      <!-- Amount + Currency -->
-      <span style="font-weight:600;">
-        {{ row.grandTotal | number:'1.2-2' }}
-      </span>
-      <span style="font-size:0.78rem;color:#6b7280;margin-left:3px;">
-        {{ getCurrencyCode(row.currencyId) || 'SGD' }}
-      </span>
-    </div>
-  
-    <div *ngIf="getCurrencyCode(row.currencyId) && getCurrencyCode(row.currencyId) !== 'SGD'"
-      style="font-size:0.78rem;color:#2E5F73;font-weight:600;">
-      ≈ {{ (row.grandTotal * (row.fxRate || 1)) | number:'1.2-2' }} SGD
-    </div>
-  </ng-template>
-</ngx-datatable-column>
-
-            <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="140">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="cell-clip" [title]="row.deliveryDate | date:'dd-MM-yyyy'">
-                  {{ row.deliveryDate | date:'dd-MM-yyyy' }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="Validity Date" prop="validityDate" [width]="140">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="cell-clip" [title]="row.validityDate | date:'dd-MM-yyyy'">
-                  {{ row.validityDate | date:'dd-MM-yyyy' }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="Created By" prop="createdUserName" [width]="160">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="cell-clip" [title]="row.createdUserName || '-'">
-                  {{ row.createdUserName || '-' }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="Modified By" prop="modifiedUserName" [width]="160">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="cell-clip" [title]="row.modifiedUserName || '-'">
-                  {{ row.modifiedUserName || '-' }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="Status" prop="status" [width]="130">
-              <ng-template let-value="value" ngx-datatable-cell-template>
-                <div class="badge badge-pill status-pill" [ngClass]="statusClass(value)" [title]="statusLabel(value)">
-                  {{ statusLabel(value) }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column
-              *ngIf="canEdit() || canDelete()"
-              name="Action"
-              [width]="80"
-              [sortable]="false"
-            >
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="actions">
-
-                  <i
-                    class="fas fa-print text-info"
-                    title="Print / Download PDF"
-                    (click)="printFromRow(row)">
-                  </i>
-
-                 <ng-container *ngIf="+row.status === 2 || +row.status === 3 || +row.status === 4 || isPeriodLocked; else actionsEnabled">
-                    <i *ngIf="canEdit()" class="fas fa-pen text-muted" title="Disabled"></i>
-                    <i *ngIf="canDelete()" class="fas fa-trash text-muted" title="Disabled"></i>
-                  </ng-container>
-
-                  <ng-template #actionsEnabled>
-                  <i *ngIf="canEdit()" class="fas fa-pen text-muted"
-   [title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
-<i *ngIf="canDelete()" class="fas fa-trash text-muted"
-   [title]="isPeriodLocked ? 'Period locked' : 'Disabled'"></i>
-                  </ng-template>
-
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-          </ngx-datatable>
 
         </div>
       </section>

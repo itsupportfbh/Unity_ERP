@@ -1,166 +1,110 @@
 <div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
 <section *ngIf="canView(); else noAccessTemplate" id="customer-list" class="content-wrapper p-0">
   <div class="content-body">
-    <div class="card shadow-sm">
+    <div class="card" style="border-radius:12px;border:none;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
 
-      <!-- ===== Card header: Title + Search + Add (same as supplier) ===== -->
-      <div
-        class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-0 pb-0 border-0"
-      >
-        <h4 class="card-title mb-0" style="font-weight:600; color:#2E5F73;">
-          Customer List
-        </h4>
-
-        <div class="mt-1 mt-md-0 d-flex align-items-center">
-          <label class="d-flex align-items-center mb-0 mr-1">
-            Search:
-            <input
-              [(ngModel)]="searchValue"
-              name="searchValue"
-              type="search"
-              class="form-control ml-25"
-              (keyup)="filterUpdate($event)"
-              (search)="filterUpdate($event)"
-            />
-          </label>
-
-          <button class="btn btn-primary ml-1" *ngIf="canCreate()" (click)="Add()">
-            <i data-feather="plus" class="d-sm-none d-inline-block mr-0 mr-sm-1"></i>
-            <span class="d-none d-sm-inline-block">Add</span>
+      <!-- Header -->
+      <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
+          <div class="d-flex align-items-center" style="gap:10px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+              <i class="fas fa-user-tie" style="color:#2E5F73;font-size:0.9rem;"></i>
+            </div>
+            <div>
+              <h4 class="card-text" style="margin:0;">Customer List</h4>
+              <p style="margin:0;font-size:0.75rem;color:#6b7280;">Manage customer accounts and details</p>
+            </div>
+          </div>
+          <button class="btn d-inline-flex align-items-center"
+            style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;"
+            *ngIf="canCreate()" (click)="Add()">
+            <i data-feather="plus"></i>
+            <span>Add</span>
           </button>
         </div>
       </div>
+      <!-- Controls bar -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+        <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+          Show
+          <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" [(ngModel)]="selectedOption" (ngModelChange)="onPageSizeChange()">
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="25">25</option>
+            <option [ngValue]="50">50</option>
+            <option [ngValue]="100">100</option>
+            <option [ngValue]="999999">All</option>
+          </select>
+          entries
+        </label>
+        <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+          <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+          <input [(ngModel)]="searchValue" name="searchValue" type="search" (keyup)="filterUpdate($event)" (search)="filterUpdate($event)"
+            placeholder="Search customers..."
+            style="border:none;outline:none;height:100%;font-size:0.82rem;width:220px;padding:0 8px;background:transparent;" />
+        </div>
+      </div>
 
-      <!-- ===== Card body: Show entries + table (same as supplier) ===== -->
+      <!-- ===== Table ===== -->
       <div class="card-body pt-1">
-        <div class="row align-items-center mb-1">
-          <!-- Page size -->
-          <div class="col-md-6 col-12">
-            <div class="d-flex align-items-center">
-              <label class="d-flex align-items-center mb-0">
-                Show
-                <select class="form-control mx-25" [(ngModel)]="selectedOption">
-                  <option [ngValue]="10">10</option>
-                  <option [ngValue]="25">25</option>
-                  <option [ngValue]="50">50</option>
-                  <option [ngValue]="100">100</option>
-                </select>
-                entries
-              </label>
-            </div>
+        <div class="table-responsive">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>Customer</th>
+                <th>Contact</th>
+                <th>Email</th>
+                <th>Customer Group</th>
+                <th>Location</th>
+                <th style="width:100px;">KYC Status</th>
+                <th style="width:80px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of CustomerMasterListFiltered | slice:(currentPage-1)*selectedOption:currentPage*selectedOption; let i = index">
+                <td>{{ (currentPage - 1) * selectedOption + i + 1 }}</td>
+                <td>{{ row?.customerName || '—' }}</td>
+                <td>{{ row?.contactNumber ?? '—' }}</td>
+                <td>{{ row?.email || '—' }}</td>
+                <td>{{ row?.customerGroupName || '—' }}</td>
+                <td>{{ row?.locationName || '—' }}</td>
+                <td>
+                  <span class="erp-badge" [ngClass]="row?.isApproved ? 'badge-kyc-ok' : 'badge-kyc-pend'">
+                    {{ row?.isApproved ? 'Approved' : 'Pending' }}
+                  </span>
+                </td>
+                <td>
+                  <button class="erp-btn-icon btn-edit" *ngIf="canEdit()" (click)="onEdit(row)" title="Edit">
+                    <i class="fas fa-pen"></i>
+                  </button>
+                  <button class="erp-btn-icon btn-delete" *ngIf="canDelete()" (click)="deleteCustomer(row)" title="Delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="!CustomerMasterListFiltered || CustomerMasterListFiltered.length === 0">
+                <td colspan="8" class="erp-empty-cell">No customers found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+          <span class="erp-pager-info">
+            Showing {{ (currentPage - 1) * selectedOption + 1 }} to
+            {{ currentPage * selectedOption < CustomerMasterListFiltered.length ? currentPage * selectedOption : CustomerMasterListFiltered.length }}
+            of {{ CustomerMasterListFiltered.length }} entries
+          </span>
+          <div class="erp-pager-btns">
+            <button class="erp-pager-btn" [disabled]="currentPage === 1" (click)="onPageChange(1)">«</button>
+            <button class="erp-pager-btn" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)">‹</button>
+            <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p === currentPage" (click)="onPageChange(p)">{{ p }}</button>
+            <button class="erp-pager-btn" [disabled]="currentPage === totalPages" (click)="onPageChange(currentPage + 1)">›</button>
+            <button class="erp-pager-btn" [disabled]="currentPage === totalPages" (click)="onPageChange(totalPages)">»</button>
           </div>
-
-          <!-- right blank spacing (to match supplier) -->
-          <div class="col-md-6 col-12 text-right d-none d-md-block"></div>
         </div>
 
-        <!-- ===== Table ===== -->
-        <div class="table-responsive table-wrap">
-          <ngx-datatable
-            class="bootstrap core-bootstrap customers-table"
-            [rows]="CustomerMasterListFiltered"
-            [rowHeight]="58"
-            [limit]="selectedOption"
-            [columnMode]="'force'"
-            [headerHeight]="40"
-            [footerHeight]="50"
-            [scrollbarH]="true"
-            [reorderable]="true"
-          >
-
-            <!-- Customer Name -->
-            <ngx-datatable-column name="CUSTOMER" prop="customerName" [width]="220">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                <div class="po-wrap-cell" [title]="row?.customerName">
-                  {{ row?.customerName || '—' }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <!-- Contact Number -->
-            <ngx-datatable-column name="CONTACT" [width]="150">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                {{ row?.contactNumber ?? '—' }}
-              </ng-template>
-            </ngx-datatable-column>
-
-            <!-- Point of Contact -->
-            <ngx-datatable-column name="POC" [width]="180">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                {{ row?.pointOfContactPerson || '—' }}
-              </ng-template>
-            </ngx-datatable-column>
-
-            <!-- Email -->
-            <ngx-datatable-column name="EMAIL" [width]="220">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                {{ row?.email || '—' }}
-              </ng-template>
-            </ngx-datatable-column>
-
-            <!-- Credit Amount -->
-            <ngx-datatable-column name="CREDIT AMOUNT" [width]="150">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                {{
-                  row?.creditAmount === null || row?.creditAmount === undefined
-                    ? '—'
-                    : (row.creditAmount | number : '1.2-2')
-                }}
-              </ng-template>
-            </ngx-datatable-column>
-
-            <!-- Payment Terms -->
-            <ngx-datatable-column name="PAYMENT TERMS" [width]="180">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                {{ row?.paymentTermsName || '—' }}
-              </ng-template>
-            </ngx-datatable-column>
-
-            <!-- Customer Group -->
-            <ngx-datatable-column name="CUSTOMER GROUP" [width]="180">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                {{ row?.customerGroupName || '—' }}
-              </ng-template>
-            </ngx-datatable-column>
-
-            <!-- Location -->
-            <ngx-datatable-column name="LOCATION" [width]="150">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                {{ row?.locationName || '—' }}
-              </ng-template>
-            </ngx-datatable-column>
-
-            <!-- Approved -->
-            <ngx-datatable-column name="KYC VERIFICATION" [width]="160">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                <span
-                  class="badge rounded-pill"
-                  [ngClass]="row?.isApproved ? 'bg-success' : 'bg-warning'"
-                >
-                  {{ row?.isApproved ? 'Approved' : 'Pending' }}
-                </span>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <!-- Actions -->
-            <ngx-datatable-column name="ACTIONS" [width]="110" [sortable]="false">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="d-flex align-items-center">
-                  <i
-                    class="fas fa-pen text-primary mr-2 cursor-pointer" *ngIf="canEdit()"
-                    (click)="onEdit(row)"
-                  ></i>
-                  <i
-                    class="fas fa-trash text-danger"
-                    style="cursor:pointer" *ngIf="canDelete()"
-                    (click)="deleteCustomer(row)"
-                  ></i>
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-          </ngx-datatable>
-        </div>
       </div>
     </div>
   </div>

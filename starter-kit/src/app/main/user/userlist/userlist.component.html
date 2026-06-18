@@ -1,4 +1,4 @@
-<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
+﻿<div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
   <div class="content-body">
     <section *ngIf="canView(); else noAccessTemplate"  class="users-list-wrapper">
       <div class="card">
@@ -58,7 +58,7 @@
           [footerHeight]="50"
           [limit]="pageSize"
           [columnMode]="'force'"
-          [scrollbarH]="true">
+          [scrollbarH]="false">
 
       
 

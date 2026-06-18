@@ -1,65 +1,53 @@
-<div *ngIf="isPermissionLoaded; else loadingTemplate">
+﻿<div *ngIf="isPermissionLoaded; else loadingTemplate">
   <div class="content-wrapper p-0" *ngIf="canView(); else noAccessTemplate">
     <div class="content-body">
-      <section class="users-list-wrapper">
-        <div class="card">
+      <section class="users-list-wrapper" style="position:relative;">
+        <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
 
-          <div class="row">
-            <div class="col-md-6 col-12">
-              <h4 class="card-text page-title">
-                Sales Invoice List
-              </h4>
-
-              <div class="d-flex justify-content-between align-items-center m-1">
-                <label class="d-flex align-items-center gap-1">
-                  Show
-                  <select class="form-control mx-25" (change)="onLimitChange($event)">
-                    <option [selected]="selectedOption===10" value="10">10</option>
-                    <option [selected]="selectedOption===25" value="25">25</option>
-                    <option [selected]="selectedOption===50" value="50">50</option>
-                    <option [selected]="selectedOption===100" value="100">100</option>
-                  </select>
-                  entries
-                </label>
+          <!-- Header -->
+          <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+            <div class="d-flex align-items-center justify-content-between" style="gap:12px;">
+              <div class="d-flex align-items-center" style="gap:10px;">
+                <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                  <i class="fas fa-receipt" style="font-size:0.9rem;color:#2E5F73;"></i>
+                </div>
+                <div>
+                  <h4 class="card-text" style="margin:0;">Sales Invoice List</h4>
+                  <p style="margin:0;font-size:0.75rem;color:#6b7280;">Sales Invoice management</p>
+                </div>
               </div>
-<div *ngIf="isPeriodLocked"
-                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
-                 style="font-size: 0.8rem;">
+              <button *ngIf="canCreate()" (click)="goToCreate()" [disabled]="hasGlPostedRows || isPeriodLocked"
+                class="btn d-inline-flex align-items-center"
+                style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;"
+                [title]="hasGlPostedRows ? 'GL Posted invoice exists. Add disabled.' : 'Create Sales Invoice'">
+                <i class="fas fa-plus-circle"></i><span>Add</span>
+              </button>
+            </div>
+            <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 mb-0 mt-2" style="font-size:0.8rem;">
               Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
             </div>
-            <div *ngIf="hasGlPostedRows"
-     class="alert alert-danger py-1 px-2 mx-2 mb-2"
-     style="font-size:0.8rem;">
-  Some invoices are already GL posted. Add/Edit/Delete disabled.
-</div>
+            <div *ngIf="hasGlPostedRows" class="alert alert-danger py-1 px-2 mb-0 mt-2" style="font-size:0.8rem;">
+              Some invoices are already GL posted. Add/Edit/Delete disabled.
             </div>
+          </div>
 
-            <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-              <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-                <label class="d-flex align-items-center ml-1 ml-md-0">
-                  Search:
-                  <input
-                    [(ngModel)]="searchValue"
-                    name="searchValue"
-                    type="search"
-                    class="form-control ml-25"
-                    (keyup)="filterUpdate($event)"
-                    (search)="filterUpdate($event)"
-                    placeholder="Invoice no / source ref" />
-                </label>
-
-    <button
-  *ngIf="canCreate()"
-  (click)="goToCreate()"
-  [disabled]="hasGlPostedRows"
-  [disabled]="isPeriodLocked"
-  class="btn m-1 d-inline-flex align-items-center"
-  style="background-color:#2E5F73;color:white;gap:6px;"
-  [title]="hasGlPostedRows ? 'GL Posted invoice exists. Add disabled.' : 'Create Sales Invoice'">
-  <i data-feather="plus-circle" class="w-4 h-4"></i>
-  <span>Add</span>
-</button>
-              </div>
+          <!-- Controls bar -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+            <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+              Show
+              <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" (change)="onLimitChange($event)">
+                <option [selected]="selectedOption===10" value="10">10</option>
+                <option [selected]="selectedOption===25" value="25">25</option>
+                <option [selected]="selectedOption===50" value="50">50</option>
+                <option [selected]="selectedOption===100" value="100">100</option>
+              </select>
+              entries
+            </label>
+            <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+              <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+              <input [(ngModel)]="searchValue" name="searchValue" type="search"
+                style="border:none;outline:none;height:100%;font-size:0.82rem;width:220px;padding:0 8px;background:transparent;"
+                placeholder="Invoice no / source ref" (keyup)="filterUpdate($event)" (search)="filterUpdate($event)" />
             </div>
           </div>
 
@@ -71,7 +59,7 @@
             [footerHeight]="50"
             [limit]="selectedOption"
             [columnMode]="'force'"
-            [scrollbarH]="true"
+            [scrollbarH]="false"
             [reorderable]="true">
 
             <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false" [draggable]="false" [canAutoResize]="false">
@@ -90,13 +78,7 @@
               </ng-template>
             </ngx-datatable-column>
 
-            <ngx-datatable-column name="Source" [width]="100">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                {{ sourceLabel(row.sourceType) }}
-              </ng-template>
-            </ngx-datatable-column>
-
-          <ngx-datatable-column name="Source Ref" prop="sourceRef" [width]="200">
+          <ngx-datatable-column name="Source Ref" prop="sourceRef" [width]="220">
   <ng-template let-row="row" ngx-datatable-cell-template>
     <div class="text-ellipsis-cell" [title]="row.sourceRef || '-'">
       {{ row.sourceRef || '-' }}

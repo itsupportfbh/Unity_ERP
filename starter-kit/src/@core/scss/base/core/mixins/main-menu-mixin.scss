@@ -41,7 +41,7 @@
     > a:after {
       content: '';
       // background-image: url(str-replace(str-replace($chevron-right, 'currentColor', $body-color), '#', '%23'));
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white'><path d='M4 2l4 4-4 4z'/></svg>");
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280'><path d='M4 2l4 4-4 4z'/></svg>");
       background-repeat: no-repeat;
       background-position: center;
       background-size: $arrow-font-size;
@@ -297,6 +297,11 @@ body.menu-collapsed {
   .main-menu .navigation,
   .main-menu .navigation li {
     list-style: none !important;
+  }
+
+  /* 5) Hide submenu circles in collapsed icon-only state; show only on hover (expanded) */
+  .main-menu:not(.expanded) .navigation > li.has-sub > ul {
+    display: none !important;
   }
 }
 

@@ -1,71 +1,45 @@
 <div class="content-body">
   <section class="users-list-wrapper">
-    <div class="card">
-      <div class="row">
-        <!-- Title + page size -->
-        <div class="col-md-6 col-12">
-          <h4 class="card-text ml-2 mt-2" style="font-size:1.25rem;font-weight:600;color:#2E5F73">
-            Item Master List
-          </h4>
-
-          <div class="d-flex justify-content-between align-items-center m-1">
-            <label class="d-flex align-items-center">Show
-              <select class="form-control mx-2" [(ngModel)]="pageSize">
-                <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
-              </select>
-              entries
-            </label>
+    <div class="card" style="border-radius:12px;border:none;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+      <!-- Header -->
+      <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
+          <div class="d-flex align-items-center" style="gap:10px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+              <i class="fas fa-box-open" style="color:#2E5F73;font-size:0.9rem;"></i>
+            </div>
+            <div>
+              <h4 class="card-text" style="margin:0;">Item Master</h4>
+              <p style="margin:0;font-size:0.75rem;color:#6b7280;">Manage inventory items and product catalogue</p>
+            </div>
           </div>
-        </div>
-
-        <!-- Search + Create -->
-        <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-          <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-            <label class="d-flex align-items-center ml-1 ml-md-0">Search:
-              <input
-                [(ngModel)]="searchValue"
-                type="search"
-                class="form-control ml-2"
-                (input)="applyFilter()"
-                placeholder="Item / SKU / Category / UOM / Warehouse" />
-            </label>
-
-            <button
-              (click)="goToCreateItem()"
-              *ngIf="canCreate()"
-              class="btn m-1 d-inline-flex align-items-center"
-              style="background-color:#2E5F73; color:white; gap:6px;">
-              <i class="fas fa-plus-circle"></i>
-              <span>Create Item</span>
-            </button>
-          </div>
+          <button (click)="goToCreateItem()" *ngIf="canCreate()"
+            class="btn d-inline-flex align-items-center"
+            style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;">
+            <i class="fas fa-plus-circle"></i><span>Create Item</span>
+          </button>
         </div>
       </div>
-
+      <!-- Controls bar -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+        <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+          Show
+          <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" [(ngModel)]="pageSize" (ngModelChange)="currentPage=1">
+            <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
+            <option [ngValue]="999999">All</option>
+          </select>
+          entries
+        </label>
+        <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+          <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+          <input [(ngModel)]="searchValue" type="search" (input)="applyFilter()"
+            placeholder="Item / SKU / Category / UOM"
+            style="border:none;outline:none;height:100%;font-size:0.82rem;width:240px;padding:0 8px;background:transparent;" />
+        </div>
+      </div>
       <!-- Loading / Error -->
       <div *ngIf="loading" class="px-3 pb-2 small text-muted">Loading items…</div>
       <div *ngIf="errorMsg" class="alert alert-danger mx-3 my-2">{{ errorMsg }}</div>
-
-      <!-- NGX DATATABLE -->
-      <ngx-datatable
-        class="bootstrap core-bootstrap item-table"
-        [rows]="filteredRows"
-        [rowHeight]="50"
-        [headerHeight]="50"
-        [footerHeight]="50"
-        [limit]="pageSize"
-        [columnMode]="'force'"
-        [scrollbarH]="false"
-        [reorderable]="true">
-
-          <!-- Your existing column -->
-<ngx-datatable-column [width]="60" [resizeable]="false" [sortable]="false" [draggable]="false" [canAutoResize]="false">
-  <ng-template ngx-datatable-cell-template let-row="row">
-    <span (click)="openLinesModal(row)" title="View Details" style="cursor:pointer;font-size:18px;color:#2E5F73;">
-      <i class="fas fa-eye"></i>
-    </span>
-  </ng-template>
-</ngx-datatable-column>
 
 <!-- Put the modal template anywhere in the component template -->
 <ng-template #itemViewModal let-m="modal">
@@ -115,74 +89,66 @@
 
     <!-- Warehouse table -->
     <div *ngIf="activeTab==='warehouse'" class="px-3 pb-3">
-      <ngx-datatable
-        class="bootstrap brand-grid"
-        [rows]="warehouseRows"
-        [columnMode]="'force'"
-        [headerHeight]="44"
-        [rowHeight]="'auto'">
-        <ngx-datatable-column name="Warehouse" prop="warehouseName"></ngx-datatable-column>
-        <ngx-datatable-column name="Bin" prop="binName"></ngx-datatable-column>
-        <ngx-datatable-column name="On Hand" prop="onHand" [headerClass]="'th-right'" [cellClass]="'td-right'"></ngx-datatable-column>
-        <ngx-datatable-column name="Reserved" prop="reserved" [headerClass]="'th-right'" [cellClass]="'td-right'"></ngx-datatable-column>
-        <ngx-datatable-column name="Available" prop="available" [headerClass]="'th-right'" [cellClass]="'td-right'"></ngx-datatable-column>
-        <ngx-datatable-column name="Min" prop="minQty" [headerClass]="'th-right'" [cellClass]="'td-right'"></ngx-datatable-column>
-        <ngx-datatable-column name="Max" prop="maxQty" [headerClass]="'th-right'" [cellClass]="'td-right'"></ngx-datatable-column>
-        <ngx-datatable-column name="Reorder" prop="reorderQty" [headerClass]="'th-right'" [cellClass]="'td-right'"></ngx-datatable-column>
-        <ngx-datatable-column name="Lead (days)" prop="leadTimeDays" [headerClass]="'th-right'" [cellClass]="'td-right'"></ngx-datatable-column>
-        <ngx-datatable-column name="Batch" prop="batchFlag">
-          <ng-template ngx-datatable-cell-template let-value="value">
-            <span class="chip" [class.chip-yes]="value" [class.chip-no]="!value">{{ value ? 'Yes' : 'No' }}</span>
-          </ng-template>
-        </ngx-datatable-column>
-        <ngx-datatable-column name="Serial" prop="serialFlag">
-          <ng-template ngx-datatable-cell-template let-value="value">
-            <span class="chip" [class.chip-yes]="value" [class.chip-no]="!value">{{ value ? 'Yes' : 'No' }}</span>
-          </ng-template>
-        </ngx-datatable-column>
-      </ngx-datatable>
+      <div class="table-responsive">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th>Warehouse</th><th>Bin</th>
+              <th class="text-right">On Hand</th><th class="text-right">Reserved</th><th class="text-right">Available</th>
+              <th class="text-right">Min</th><th class="text-right">Max</th><th class="text-right">Reorder</th>
+              <th class="text-right">Lead (days)</th><th>Batch</th><th>Serial</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of warehouseRows">
+              <td>{{ r.warehouseName }}</td><td>{{ r.binName }}</td>
+              <td class="text-right">{{ r.onHand }}</td><td class="text-right">{{ r.reserved }}</td><td class="text-right">{{ r.available }}</td>
+              <td class="text-right">{{ r.minQty }}</td><td class="text-right">{{ r.maxQty }}</td><td class="text-right">{{ r.reorderQty }}</td>
+              <td class="text-right">{{ r.leadTimeDays }}</td>
+              <td><span class="chip" [class.chip-yes]="r.batchFlag" [class.chip-no]="!r.batchFlag">{{ r.batchFlag ? 'Yes' : 'No' }}</span></td>
+              <td><span class="chip" [class.chip-yes]="r.serialFlag" [class.chip-no]="!r.serialFlag">{{ r.serialFlag ? 'Yes' : 'No' }}</span></td>
+            </tr>
+            <tr *ngIf="!warehouseRows?.length"><td colspan="11" class="erp-empty-cell">No warehouse data.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Supplier table -->
     <div *ngIf="activeTab==='supplier'" class="px-3 pb-3">
-      <ngx-datatable
-        class="bootstrap brand-grid"
-        [rows]="supplierRows"
-        [columnMode]="'force'"
-        [headerHeight]="44"
-        [rowHeight]="'auto'">
-        <ngx-datatable-column name="Supplier" prop="supplierName"></ngx-datatable-column>
-        <ngx-datatable-column name="Price" prop="price" ></ngx-datatable-column>
-        <ngx-datatable-column name="Barcode" prop="barcode" ></ngx-datatable-column>
-      </ngx-datatable>
+      <div class="table-responsive">
+        <table class="erp-table">
+          <thead><tr><th>Supplier</th><th>Price</th><th>Barcode</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of supplierRows"><td>{{ r.supplierName }}</td><td>{{ r.price }}</td><td>{{ r.barcode }}</td></tr>
+            <tr *ngIf="!supplierRows?.length"><td colspan="3" class="erp-empty-cell">No supplier data.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Audit table -->
     <div *ngIf="activeTab==='audit'" class="px-3 pb-3">
-      <ngx-datatable
-        class="bootstrap brand-grid"
-        [rows]="auditRows"
-        [columnMode]="'force'"
-        [headerHeight]="44"
-        [rowHeight]="'auto'">
-        <ngx-datatable-column name="User" prop="userName"></ngx-datatable-column>
-
-        <ngx-datatable-column name="Action" prop="action" [cellTemplate]="actionTpl"></ngx-datatable-column>
-        <ng-template #actionTpl let-value="value">
-          <span class="chip"
-                [class.chip-create]="(value||'').toUpperCase()==='CREATE'"
-                [class.chip-update]="(value||'').toUpperCase()==='UPDATE'"
-                [class.chip-delete]="(value||'').toUpperCase()==='DELETE'">
-            {{ (value || '').toUpperCase() }}
-          </span>
-        </ng-template>
-
-        <ngx-datatable-column name="Occurred (UTC)" prop="occurredAtUtc" [cellTemplate]="utcTpl"></ngx-datatable-column>
-        <ng-template #utcTpl let-value="value">
-          {{ value | date:'yyyy-MM-dd HH:mm:ss':'UTC' }} UTC
-        </ng-template>
-      </ngx-datatable>
-
+      <div class="table-responsive">
+        <table class="erp-table">
+          <thead><tr><th>User</th><th>Action</th><th>Occurred (UTC)</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of auditRows">
+              <td>{{ r.userName }}</td>
+              <td>
+                <span class="chip"
+                  [class.chip-create]="(r.action||'').toUpperCase()==='CREATE'"
+                  [class.chip-update]="(r.action||'').toUpperCase()==='UPDATE'"
+                  [class.chip-delete]="(r.action||'').toUpperCase()==='DELETE'">
+                  {{ (r.action || '').toUpperCase() }}
+                </span>
+              </td>
+              <td>{{ r.occurredAtUtc | date:'yyyy-MM-dd HH:mm:ss':'UTC' }} UTC</td>
+            </tr>
+            <tr *ngIf="!auditRows?.length"><td colspan="3" class="erp-empty-cell">No audit data.</td></tr>
+          </tbody>
+        </table>
+      </div>
       <div class="audit-detail" *ngIf="selectedAudit">
         <div class="title">Old Values</div>
         <pre>{{ selectedAudit.oldValuesJson }}</pre>
@@ -194,43 +160,51 @@
 </ng-template>
 
 
-        <!-- Main columns (map to your API response) -->
-        <!-- <ngx-datatable-column name="ID" prop="id" [width]="80"></ngx-datatable-column> -->
-        <ngx-datatable-column name="SKU" prop="itemCode" [width]="140"></ngx-datatable-column>
-        <ngx-datatable-column name="Item Name" prop="itemName" [width]="220"></ngx-datatable-column>
-        <ngx-datatable-column name="Category" prop="catagoryName" [width]="160"></ngx-datatable-column>
-        <ngx-datatable-column name="UOM" prop="uomName" [width]="120"></ngx-datatable-column>
-       
-
-        <!-- Actions -->
-      <ngx-datatable-column
-  name="Action"
-  [width]="120"
-  [sortable]="false"
-  [canAutoResize]="false"
-  [resizeable]="false"
-  [draggable]="false">
-  <ng-template ngx-datatable-cell-template let-row="row">
-    <div class="d-flex align-items-center justify-content-center gap-3">
-      <i class="fas fa-pen text-blue-600"
-         title="Edit"
-         style="cursor:pointer;"
-         (click)="editItem(row.id)"
-         *ngIf="canEdit()"
-         ></i>
-
-      <i class="fas fa-trash"
-         title="Delete"
-         style="cursor:pointer; color:#ef4444;"
-         (click)="deleteItem(row.id)"
-         *ngIf="canDelete()"
-         ></i>
-    </div>
-  </ng-template>
-</ngx-datatable-column>
-
-
-      </ngx-datatable>
+      <!-- Item Master Table -->
+      <div class="table-responsive">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th style="width:40px;"></th>
+              <th style="width:120px;">SKU</th>
+              <th style="width:280px;">Item Name</th>
+              <th>Category</th>
+              <th style="width:110px;">UOM</th>
+              <th style="width:80px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of filteredRows | slice:(currentPage-1)*pageSize:currentPage*pageSize">
+              <td>
+                <button class="erp-eye-btn" (click)="openLinesModal(row)" title="View Details">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </td>
+              <td>{{ row.itemCode }}</td>
+              <td><strong>{{ row.itemName }}</strong></td>
+              <td>{{ row.catagoryName || '—' }}</td>
+              <td>{{ row.uomName || '—' }}</td>
+              <td>
+                <button class="erp-btn-icon btn-edit" *ngIf="canEdit()" (click)="editItem(row.id)" title="Edit"><i class="fas fa-pen"></i></button>
+                <button class="erp-btn-icon btn-delete" *ngIf="canDelete()" (click)="deleteItem(row.id)" title="Delete"><i class="fas fa-trash"></i></button>
+              </td>
+            </tr>
+            <tr *ngIf="!filteredRows || filteredRows.length === 0">
+              <td colspan="6" class="erp-empty-cell">No items found.</td>
+            </tr>
+          </tbody>
+        </table>
+      <div class="erp-pager" *ngIf="pageSize < 999999 && totalPages > 1">
+        <span class="erp-pager-info">
+          Showing {{ (currentPage-1)*pageSize+1 }}–{{ currentPage*pageSize < filteredRows.length ? currentPage*pageSize : filteredRows.length }} of {{ filteredRows.length }} entries
+        </span>
+        <div class="erp-pager-btns">
+          <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+          <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+          <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+        </div>
+      </div>
+      </div>
     </div>
   </section>
 </div>

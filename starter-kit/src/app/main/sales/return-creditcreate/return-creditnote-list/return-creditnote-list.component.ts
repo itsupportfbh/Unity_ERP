@@ -34,7 +34,25 @@ export class ReturnCreditnoteListComponent implements OnInit, AfterViewInit, Aft
 
   ColumnMode = ColumnMode;
   selectedOption = 10;
+  currentPage = 1;
   searchValue = '';
+
+  get totalPages(): number {
+    return Math.ceil((this.rows?.length || 0) / this.selectedOption);
+  }
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+  onPageChange(p: number): void {
+    if (p < 1 || p > this.totalPages) return;
+    this.currentPage = p;
+  }
 
   showLinesModal = false;
   modalLines: any[] = [];
@@ -287,6 +305,7 @@ loadList(): void {
 }
 
   filterUpdate(event: any): void {
+    this.currentPage = 1;
     const val = (event?.target?.value ?? this.searchValue ?? '').toString().toLowerCase().trim();
 
     this.rows = this.tempData.filter(d => {

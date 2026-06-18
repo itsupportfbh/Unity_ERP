@@ -2,151 +2,102 @@
   <div class="content-wrapper p-0" *ngIf="canView(); else noAccessTemplate">
     <div class="content-body">
       <section class="users-list-wrapper">
-        <div class="card">
-          <div class="row">
-            <div class="col-md-6 col-12">
-              <h4
-                class="card-text"
-                style="margin-left:0.85rem;margin-top:0.75rem;font-size:1.25rem;font-weight:600;color:#2E5F73;">
-                Picking & Packing List
-              </h4>
-
-              <div class="d-flex justify-content-between align-items-center m-1">
-                <label class="d-flex align-items-center">
-                  Show
-                  <select class="form-control mx-25" [(ngModel)]="selectedOption">
-                    <option [ngValue]="10">10</option>
-                    <option [ngValue]="25">25</option>
-                    <option [ngValue]="50">50</option>
-                    <option [ngValue]="100">100</option>
-                  </select>
-                  entries
-                </label>
+        <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
+          <!-- Header -->
+          <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+            <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
+              <div class="d-flex align-items-center" style="gap:10px;">
+                <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                  <i class="fas fa-boxes" style="color:#2E5F73;font-size:0.9rem;"></i>
+                </div>
+                <div>
+                  <h4 class="card-text" style="margin:0;">Picking &amp; Packing</h4>
+                  <p style="margin:0;font-size:0.75rem;color:#6b7280;">Manage order picking and packing operations</p>
+                </div>
               </div>
-               <div *ngIf="isPeriodLocked"
-                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
-                 style="font-size: 0.8rem;">
-              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
-            </div>
-            </div>
-
-            <div class="col-md-6 col-12 d-flex justify-content-md-end">
-              <div class="d-flex align-items-center justify-content-md-end gap-2 flex-md-nowrap flex-wrap w-100">
-                <input
-                  [(ngModel)]="searchValue"
-                  name="searchValue"
-                  type="search"
-                  class="form-control me-2 flex-shrink-0"
-                  placeholder="Search"
-                  (keyup)="filterUpdate($event)"
-                  (search)="filterUpdate($event)"
-                  style="flex:0 0 320px; max-width:40vw;" />
-
-                <button
-  *ngIf="canCreate()"
-  (click)="openCreate()"
-  class="btn d-inline-flex align-items-center flex-shrink-0"
-  style="background-color:#2E5F73; color:white; gap:4px;"
-  [disabled]="isPeriodLocked"
-  [attr.title]="isPeriodLocked
-    ? (currentPeriodName ? 'Period ' + currentPeriodName + ' is locked' : 'Accounting period is locked')
-    : 'Create Picking & Packing'">
-  <i data-feather="plus-circle" class="w-4 h-4"></i>
-  <span>Add</span>
-</button>
-              </div>
+              <button *ngIf="canCreate()" (click)="openCreate()" [disabled]="isPeriodLocked"
+                [attr.title]="isPeriodLocked ? (currentPeriodName ? 'Period ' + currentPeriodName + ' is locked' : 'Accounting period is locked') : 'Create Picking & Packing'"
+                class="btn d-inline-flex align-items-center"
+                style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;">
+                <i class="fas fa-plus-circle"></i><span>Add</span>
+              </button>
             </div>
           </div>
+          <!-- Controls bar -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+            <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+              Show
+              <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" [(ngModel)]="selectedOption" (ngModelChange)="currentPage=1">
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="25">25</option>
+                <option [ngValue]="50">50</option>
+                <option [ngValue]="100">100</option>
+                <option [ngValue]="999999">All</option>
+              </select>
+              entries
+            </label>
+            <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+              <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+              <input [(ngModel)]="searchValue" name="searchValue" type="search"
+                (keyup)="filterUpdate($event)" (search)="filterUpdate($event)"
+                placeholder="Search"
+                style="border:none;outline:none;height:100%;font-size:0.82rem;width:220px;padding:0 8px;background:transparent;" />
+            </div>
+          </div>
+          <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-3 mx-3 mt-2 mb-0" style="font-size:0.8rem;">
+            Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+          </div>
 
-          <ngx-datatable
-            class="bootstrap core-bootstrap"
-            [rows]="rows"
-            [rowHeight]="50"
-            [headerHeight]="50"
-            [footerHeight]="50"
-            [limit]="selectedOption"
-            [columnMode]="'force'"
-            [scrollbarH]="true"
-            [reorderable]="true">
-
-            <ngx-datatable-column
-              [width]="50"
-              [resizeable]="false"
-              [sortable]="false"
-              [draggable]="false"
-              [canAutoResize]="false">
-              <ng-template ngx-datatable-cell-template let-row="row">
-                <span
-                  (click)="openLinesModal(row)"
-                  title="View Details"
-                  style="cursor:pointer;font-size:18px;color:#2E5F73;">
-                  <i class="fas fa-eye"></i>
-                </span>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="SO Number" prop="salesOrderNo" [width]="120"></ngx-datatable-column>
-
-            <ngx-datatable-column name="Customer Name" prop="customerName" [width]="140">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="po-wrap-cell" [title]="row.customerName">
-                  {{ row.customerName || '-' }}
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="Requested Date" prop="soDate" [width]="140">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                {{ row.soDate | date:'dd-MM-yyyy' }}
-              </ng-template>
-            </ngx-datatable-column>
-
-            <ngx-datatable-column name="Delivery Date" prop="deliveryDate" [width]="140">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                {{ row.deliveryDate | date:'dd-MM-yyyy' }}
-              </ng-template>
-            </ngx-datatable-column>
-
-        <ngx-datatable-column
-  *ngIf="canEdit() || canDelete()"
-  name="Action"
-  [width]="120"
-  [sortable]="false">
-  <ng-template let-row="row" ngx-datatable-cell-template>
-
-    <ng-container *ngIf="isPeriodLocked || isRowLocked(row); else actionsEnabled">
-      <i
-        *ngIf="canEdit()"
-        class="fas fa-pen text-muted mr-2"
-        [title]="isPeriodLocked ? 'Period locked' : 'Disabled'">
-      </i>
-
-      <i
-        *ngIf="canDelete()"
-        class="fas fa-trash text-muted"
-        [title]="isPeriodLocked ? 'Period locked' : 'Disabled'">
-      </i>
-    </ng-container>
-
-    <ng-template #actionsEnabled>
-      <i
-        *ngIf="canEdit()"
-        class="fas fa-pen text-primary mr-2"
-        style="cursor:pointer;"
-        (click)="editPicking(row)">
-      </i>
-
-      <i
-        *ngIf="canDelete()"
-        class="fas fa-trash text-danger"
-        style="cursor:pointer;"
-        (click)="deletePicking(row.id)">
-      </i>
-    </ng-template>
-
-  </ng-template>
-</ngx-datatable-column>
-          </ngx-datatable>
+          <div class="table-responsive">
+            <table class="erp-table">
+              <thead>
+                <tr>
+                  <th style="width:40px;"></th>
+                  <th>SO Number</th>
+                  <th>Customer Name</th>
+                  <th>Requested Date</th>
+                  <th>Delivery Date</th>
+                  <th *ngIf="canEdit() || canDelete()" style="width:80px;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                  <td>
+                    <button class="erp-eye-btn" (click)="openLinesModal(row)" title="View Details">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </td>
+                  <td><strong>{{ row.salesOrderNo }}</strong></td>
+                  <td>{{ row.customerName || '—' }}</td>
+                  <td>{{ row.soDate | date:'dd-MM-yyyy' }}</td>
+                  <td>{{ row.deliveryDate | date:'dd-MM-yyyy' }}</td>
+                  <td *ngIf="canEdit() || canDelete()">
+                    <ng-container *ngIf="isPeriodLocked || isRowLocked(row); else ppActionsEnabled">
+                      <button class="erp-btn-icon btn-disabled" *ngIf="canEdit()" [title]="isPeriodLocked ? 'Period locked' : 'Disabled'"><i class="fas fa-pen"></i></button>
+                      <button class="erp-btn-icon btn-disabled" *ngIf="canDelete()" [title]="isPeriodLocked ? 'Period locked' : 'Disabled'"><i class="fas fa-trash"></i></button>
+                    </ng-container>
+                    <ng-template #ppActionsEnabled>
+                      <button class="erp-btn-icon btn-edit" *ngIf="canEdit()" (click)="editPicking(row)" title="Edit"><i class="fas fa-pen"></i></button>
+                      <button class="erp-btn-icon btn-delete" *ngIf="canDelete()" (click)="deletePicking(row.id)" title="Delete"><i class="fas fa-trash"></i></button>
+                    </ng-template>
+                  </td>
+                </tr>
+                <tr *ngIf="!rows || rows.length===0">
+                  <td colspan="6" class="erp-empty-cell">No picking & packing records found.</td>
+                </tr>
+              </tbody>
+            </table>
+          <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+            <span class="erp-pager-info">
+              Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries
+            </span>
+            <div class="erp-pager-btns">
+              <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+              <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+              <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+            </div>
+          </div>
+          </div>
         </div>
       </section>
     </div>

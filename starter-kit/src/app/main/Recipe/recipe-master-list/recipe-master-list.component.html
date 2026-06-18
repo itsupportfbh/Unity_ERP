@@ -1,146 +1,102 @@
 <div *ngIf="isPermissionLoaded; else loadingTemplate" class="content-wrapper p-0">
   <div class="content-body">
     <section *ngIf="canView(); else noAccessTemplate" class="users-list-wrapper">
-      <div class="card">
+      <div class="card" style="border-radius:12px;border:none;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
 
-        <!-- ==================== HEADER ROW ==================== -->
-        <div class="row">
-          <!-- Title + page size -->
-          <div class="col-md-3 col-12">
-            <h4 class="card-text"
-                style="margin-left:0.85rem;margin-top:0.75rem;font-size:1.25rem;font-weight:600;color:#2E5F73;">
-              Recipe List
-            </h4>
-
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center">
-                Show
-                <select class="form-control mx-25" (change)="onLimitChange($event)">
-                  <option [selected]="selectedOption===10" value="10">10</option>
-                  <option [selected]="selectedOption===25" value="25">25</option>
-                  <option [selected]="selectedOption===50" value="50">50</option>
-                  <option [selected]="selectedOption===100" value="100">100</option>
-                </select>
-                entries
-              </label>
-            </div>
-          </div>
-
-          <!-- Search + Add -->
-          <div class="col-md-9 col-12 d-flex justify-content-start justify-content-md-end">
-            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-
-              <!-- Search -->
-              <label class="d-flex align-items-center ml-1 ml-md-0">
-                Search:
-                <input
-                  [(ngModel)]="searchValue"
-                  name="searchValue"
-                  type="search"
-                  class="form-control ml-25"
-                  (keyup)="filterUpdate($event)"
-                  (search)="filterUpdate($event)" />
-              </label>
-
-              <div class="d-flex align-items-center ml-1">
-                <!-- Add -->
-                <button
-                  *ngIf="canCreate()"
-                  (click)="goToCreate()"
-                  class="btn mr-1 d-inline-flex align-items-center"
-                  style="background-color:#2E5F73;color:white;gap:6px;"
-                  title="Create Recipe">
-                  <i data-feather="plus-circle" class="w-4 h-4"></i>
-                  <span>Add</span>
-                </button>
+        <!-- Header -->
+        <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+          <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
+            <div class="d-flex align-items-center" style="gap:10px;">
+              <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                <i class="fas fa-book" style="color:#2E5F73;font-size:0.9rem;"></i>
               </div>
-
+              <div>
+                <h4 class="card-text" style="margin:0;">Recipe Master</h4>
+                <p style="margin:0;font-size:0.75rem;color:#6b7280;">Manage production recipes and formulas</p>
+              </div>
             </div>
+            <button
+              *ngIf="canCreate()"
+              (click)="goToCreate()"
+              class="btn d-inline-flex align-items-center"
+              style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;"
+              title="Create Recipe">
+              <i data-feather="plus-circle" class="w-4 h-4"></i>
+              <span>Add</span>
+            </button>
+          </div>
+        </div>
+        <!-- Controls bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+          <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+            Show
+            <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" (change)="onLimitChange($event)">
+              <option [selected]="selectedOption===10" value="10">10</option>
+              <option [selected]="selectedOption===25" value="25">25</option>
+              <option [selected]="selectedOption===50" value="50">50</option>
+              <option [selected]="selectedOption===100" value="100">100</option>
+              <option [selected]="selectedOption===999999" value="999999">All</option>
+            </select>
+            entries
+          </label>
+          <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+            <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+            <input [(ngModel)]="searchValue" name="searchValue" type="search" (keyup)="filterUpdate($event)" (search)="filterUpdate($event)"
+              placeholder="Search recipes..."
+              style="border:none;outline:none;height:100%;font-size:0.82rem;width:220px;padding:0 8px;background:transparent;" />
           </div>
         </div>
 
-        <!-- ==================== MAIN DATATABLE ==================== -->
-        <ngx-datatable
-          class="bootstrap core-bootstrap"
-          [rows]="rows"
-          [rowHeight]="50"
-          [headerHeight]="50"
-          [footerHeight]="50"
-          [limit]="selectedOption"
-          [columnMode]="'force'"
-          [scrollbarH]="false"
-          [reorderable]="true">
-
-          <!-- View lines -->
-          <ngx-datatable-column
-            [width]="50"
-            [resizeable]="false"
-            [sortable]="false"
-            [draggable]="false"
-            [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span
-                (click)="openLinesModal(row)"
-                title="View Ingredients"
-                style="cursor:pointer;font-size:18px;color:#2E5F73;">
-                <i class="fas fa-eye"></i>
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- <ngx-datatable-column name="Code" prop="code" [width]="140"></ngx-datatable-column> -->
-          <ngx-datatable-column name="Name" prop="finishedItemName" [width]="240"></ngx-datatable-column>
-
-          <ngx-datatable-column name="Cuisine" prop="cuisine" [width]="170">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.cuisine || '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Cost" prop="totalCost" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span style="font-weight:700;">
-                {{ row.totalCost ?? 0 | number:'1.2-2' }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Status" prop="status" [width]="130">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="badge badge-pill status-pill"
-                   [ngClass]="{
-                     'badge-secondary': (row.status || '').toLowerCase() === 'draft',
-                     'badge-success'  : (row.status || '').toLowerCase() === 'active',
-                     'badge-warning'  : (row.status || '').toLowerCase() === 'inactive'
-                   }">
-                {{ row.status || 'Draft' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Action" [width]="170">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div style="display:flex;justify-content:center;align-items:center;gap:10px;">
-
-                <!-- Edit -->
-                <i *ngIf="canEdit()" class="fas fa-pen text-primary"
-                   style="cursor:pointer;"
-                   (click)="editRecipe(row.id)"
-                   title="Edit"></i>
-
-                <!-- Delete -->
-                <i 
-                  *ngIf="canDelete()"
-                  class="fas fa-trash text-danger"
-                   style="cursor:pointer;"
-                   (click)="deleteRecipe(row.id)"
-                   title="Delete"></i>
-
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-        </ngx-datatable>
+        <!-- ==================== MAIN TABLE ==================== -->
+        <div class="table-responsive">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th>Name</th>
+                <th>Cuisine</th>
+                <th>Cost</th>
+                <th style="width:100px;">Status</th>
+                <th *ngIf="canEdit() || canDelete()" style="width:80px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                <td>
+                  <button class="erp-eye-btn" (click)="openLinesModal(row)" title="View Ingredients">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </td>
+                <td><strong>{{ row.finishedItemName }}</strong></td>
+                <td>{{ row.cuisine || '—' }}</td>
+                <td style="font-weight:600;">{{ row.totalCost ?? 0 | number:'1.2-2' }}</td>
+                <td>
+                  <span class="erp-badge"
+                    [ngClass]="(row.status||'').toLowerCase()==='active' ? 'badge-active' : (row.status||'').toLowerCase()==='inactive' ? 'badge-inactive' : 'badge-draft'">
+                    {{ row.status || 'Draft' }}
+                  </span>
+                </td>
+                <td *ngIf="canEdit() || canDelete()">
+                  <button class="erp-btn-icon btn-edit" *ngIf="canEdit()" (click)="editRecipe(row.id)" title="Edit"><i class="fas fa-pen"></i></button>
+                  <button class="erp-btn-icon btn-delete" *ngIf="canDelete()" (click)="deleteRecipe(row.id)" title="Delete"><i class="fas fa-trash"></i></button>
+                </td>
+              </tr>
+              <tr *ngIf="!rows || rows.length===0">
+                <td colspan="6" class="erp-empty-cell">No recipes found.</td>
+              </tr>
+            </tbody>
+          </table>
+        <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+          <span class="erp-pager-info">
+            Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries
+          </span>
+          <div class="erp-pager-btns">
+            <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+            <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+            <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+          </div>
+        </div>
+        </div>
 
       </div>
     </section>
@@ -269,4 +225,3 @@
     </div>
   </div>
 </ng-template>
-

@@ -10,9 +10,9 @@
 }
 
 .ufx-title {
-  font-size: 20px;
+  font-size: 1.2rem;
   font-weight: 700;
-  color: #2f4256;
+  color: #2E5F73;
   line-height: 1.2;
   margin-bottom: 4px;
 }
@@ -112,26 +112,29 @@
   padding-bottom: 3px !important;
 }
 
-.ufx-select.ng-select-multiple .ng-value {
-  background: rgba(46, 95, 115, 0.08) !important;
-  border: 1px solid rgba(46, 95, 115, 0.16) !important;
+/* Higher specificity (4 classes) to beat core theme's 3-class rule */
+.ufx-select.ng-select.ng-select-multiple .ng-value {
+  background-color: rgba(46, 95, 115, 0.10) !important;
+  background: rgba(46, 95, 115, 0.10) !important;
+  border: 1px solid rgba(46, 95, 115, 0.22) !important;
   color: #2e5f73 !important;
   border-radius: 999px !important;
-  padding: 2px 7px !important;
+  padding: 2px 8px !important;
   font-size: 11px !important;
-  margin-top: 1px !important;
+  margin: 2px 2px !important;
 }
 
-.ufx-select.ng-select-multiple .ng-value-label {
+.ufx-select.ng-select.ng-select-multiple .ng-value .ng-value-label {
   color: #2e5f73 !important;
-  font-weight: 700;
+  font-weight: 700 !important;
 }
 
-.ufx-select.ng-select-multiple .ng-value-icon {
+.ufx-select.ng-select.ng-select-multiple .ng-value .ng-value-icon {
   border-right: 0 !important;
   color: #2e5f73 !important;
-  padding-left: 5px !important;
+  padding-left: 4px !important;
   padding-right: 2px !important;
+  background: transparent !important;
 }
 
 .ng-dropdown-panel {
@@ -186,8 +189,8 @@
 }
 
 .ufx-btn {
-  min-width: 116px;
-  height: 40px;
+  min-width: 100px;
+  height: 36px;
   border-radius: 10px;
   border: 1px solid transparent;
   padding: 0 16px;

@@ -66,6 +66,7 @@ export class StockTransferListComponent implements OnInit, AfterViewInit, AfterV
   searchValue = '';
   ColumnMode = ColumnMode;
   selectedOption = 10;
+  currentPage = 1;
 
   userId: number = 0;
     functionId = 'mr-list';
@@ -86,6 +87,27 @@ export class StockTransferListComponent implements OnInit, AfterViewInit, AfterV
 
   ngOnInit(): void {
     this.loadPermission();
+  }
+
+  get totalPages(): number {
+    const pageSize = Number(this.selectedOption) || 10;
+    return Math.max(1, Math.ceil(this.rows.length / pageSize));
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
   }
 
    loadPermission(): void {
@@ -211,6 +233,7 @@ export class StockTransferListComponent implements OnInit, AfterViewInit, AfterV
 
         this.rows = list.map(r => this.toUiRow(r));
         this.tempData = [...this.rows];
+        this.currentPage = 1;
       },
       error: (err: any) => {
         this.rows = [];
@@ -226,6 +249,7 @@ export class StockTransferListComponent implements OnInit, AfterViewInit, AfterV
 
     if (!val) {
       this.rows = [...this.tempData];
+      this.currentPage = 1;
       if (this.table) this.table.offset = 0;
       return;
     }
@@ -241,6 +265,7 @@ export class StockTransferListComponent implements OnInit, AfterViewInit, AfterV
       contains(d.statusLabel) ||
       contains(d.transferQtyNum)
     );
+    this.currentPage = 1;
 
     if (this.table) this.table.offset = 0;
   }

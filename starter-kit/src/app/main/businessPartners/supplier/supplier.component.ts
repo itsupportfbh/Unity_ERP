@@ -37,6 +37,25 @@ export class SupplierComponent implements OnInit {
 
   searchValue = '';
   pageSize = 10;
+  currentPage = 1;
+
+  get totalPages(): number {
+    if (this.pageSize >= 999999) return 1;
+    return Math.max(1, Math.ceil(this.rows.length / this.pageSize));
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  onPageChange(page: number): void { this.currentPage = page; }
+  onPageSizeChange(): void { this.currentPage = 1; }
 
   ColumnMode = ColumnMode;
   SelectionType = SelectionType;
@@ -59,6 +78,7 @@ this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
 }
   filterUpdate(): void {
+    this.currentPage = 1;
     const val = (this.searchValue || '').toLowerCase().trim();
     if (!val) {
       this.rows = [...this.tempData];

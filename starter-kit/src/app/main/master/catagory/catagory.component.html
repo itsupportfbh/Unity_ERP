@@ -123,6 +123,70 @@
                 [maxlength]="50"
                 required />
             </div>
+            <div class="form-group">
+            <label>Item Category Type</label>
+            <select class="form-control" name="itemCategoryType" [(ngModel)]="ItemCategoryType" required>
+              <option [ngValue]="null">Select Type</option>
+              <option [ngValue]="1">Sales Item</option>
+              <option [ngValue]="2">Purchase Item</option>
+              <option [ngValue]="3">Both</option>
+            </select>
+          </div>
+          <div class="form-group" *ngIf="ItemCategoryType === 1 || ItemCategoryType === 3">
+            <label>Sales Budget Line</label>
+           <ng-select
+            [items]="salesBudgetLines"
+            bindLabel="label"
+            bindValue="headCode"
+            name="salesParentHeadCode"
+            [(ngModel)]="SalesParentHeadCode"
+            placeholder="Select Sales Budget Line"
+            [searchable]="true"
+            [clearable]="true"
+            required>
+
+            <ng-template ng-option-tmp let-item="item">
+              <div [title]="item.label" class="budget-option">
+                {{ item.label }}
+              </div>
+            </ng-template>
+
+            <ng-template ng-label-tmp let-item="item">
+              <div [title]="item.label" class="budget-selected">
+                {{ item.label }}
+              </div>
+            </ng-template>
+
+          </ng-select>
+          </div>
+
+          <div class="form-group" *ngIf="ItemCategoryType === 2 || ItemCategoryType === 3">
+            <label>Purchase Budget Line</label>
+            <ng-select
+              [items]="purchaseBudgetLines"
+              bindLabel="label"
+              bindValue="headCode"
+              name="purchaseParentHeadCode"
+              [(ngModel)]="PurchaseParentHeadCode"
+              placeholder="Select Purchase Budget Line"
+              [searchable]="true"
+              [clearable]="true"
+              required>
+
+              <ng-template ng-option-tmp let-item="item">
+                <div [title]="item.label" class="budget-option">
+                  {{ item.label }}
+                </div>
+              </ng-template>
+
+              <ng-template ng-label-tmp let-item="item">
+                <div [title]="item.label" class="budget-selected">
+                  {{ item.label }}
+                </div>
+              </ng-template>
+
+            </ng-select>
+          </div>
 
             <div class="row justify-content-start p-1">
               <button

@@ -219,10 +219,10 @@ export class CreateItemMasterComponent implements OnInit {
         Swal.fire({ icon: 'warning', title: 'Required', text: 'Conversion Factor must be greater than 0.' });
         return;
       }
-      if (!this.item.budgetLineId) {
-        Swal.fire({ icon: 'warning', title: 'Required', text: 'Ledger Name is required.' });
-        return;
-      }
+      // if (!this.item.budgetLineId) {
+      //   Swal.fire({ icon: 'warning', title: 'Required', text: 'Ledger Name is required.' });
+      //   return;
+      // }
     }
 
     if (this.step < this.stepsView.length - 1) {
@@ -249,7 +249,7 @@ export class CreateItemMasterComponent implements OnInit {
   item: any = this.makeEmptyItem();
 
   /* Lists */
-  CategoryList: Array<{ id: number; catagoryName: string }> = []; // ✅ for Category dropdown
+  CategoryList: {  id: number;  catagoryName: string;  itemCategoryType: number;  }[] = [];; // ✅ for Category dropdown
   uomList: Array<{ id?: number; name: string }> = [];
   parentHeadList: Array<{ value: number; label: string }> = []; // ✅ Budget Line dropdown
 
@@ -285,6 +285,11 @@ export class CreateItemMasterComponent implements OnInit {
   userId: any;
   showRaw: Record<string | number, boolean> = {};
   reasonList: any;
+    allowedUsageTypes: any[] = [
+  { id: 1, name: 'Sales Item' },
+  { id: 2, name: 'Internal Use Item' },
+  { id: 3, name: 'Sales & Internal Use' }
+];
 
   @ViewChild('supplierSearchBox', { static: false }) supplierSearchBox!: ElementRef<HTMLElement>;
   @ViewChild('topOfWizard') topOfWizard!: ElementRef<HTMLDivElement>;
@@ -378,7 +383,7 @@ export class CreateItemMasterComponent implements OnInit {
             itemType: h.itemTypeId != null ? Number(h.itemTypeId) : null,
             categoryId: h.categoryId ?? h.categoryID ?? null,
             uomId: h.uomId ?? h.uomID ?? null,
-            budgetLineId: h.budgetLineId ?? h.budgetLineID ?? null,
+            budgetLineId: h.budgetLineId ?? h.budgetLineID ?? 0,
             fulfillmentMode: h.fulfillmentMode,
             // keep old fields too (if your backend expects)
             sku: h.sku ?? h.itemCode ?? '',
@@ -397,6 +402,9 @@ export class CreateItemMasterComponent implements OnInit {
             updatedBy: this.userId,
             expiryDate: new Date(),
           };
+           setTimeout(() => {
+            this.onCategoryChange(false);
+          }, 300);
 
           const stockArr: any[] = Array.isArray(stocks)
             ? stocks
@@ -470,7 +478,7 @@ export class CreateItemMasterComponent implements OnInit {
       await Swal.fire({ icon: 'warning', title: 'Required', text: 'Item Code and Item Name are required.' });
       return;
     }
-    if (!this.item.itemType || !this.item.categoryId || !this.item.uomId || !this.item.baseUomId || !this.item.budgetLineId) {
+    if (!this.item.itemType || !this.item.categoryId || !this.item.uomId || !this.item.baseUomId ) {
       await Swal.fire({ icon: 'warning', title: 'Required', text: 'Item Type, Category, UOM , Base UOM and Ledger Name are required.' });
       return;
     }
@@ -543,7 +551,7 @@ export class CreateItemMasterComponent implements OnInit {
       uomId: Number(this.item.uomId),
        BaseUomId: Number(this.item.baseUomId),   // new
        UomFactor: Number(this.item.uomFactor),
-      budgetLineId: Number(this.item.budgetLineId),
+      budgetLineId: Number(this.item.budgetLineId)||0,
 
       itemStocks: stocksPayload,
       prices: pricesPayload,
@@ -1769,5 +1777,38 @@ onBaseOrPurchaseUomChange(): void {
 getUomName(id: any): string {
   const u = this.uomList.find(x => String(x.id) === String(id));
   return u?.name ?? '-';
+}
+onCategoryChange(resetUsage: boolean = true) {
+  const category = this.CategoryList.find(
+    x => Number(x.id) === Number(this.item.categoryId)
+  );
+
+  if (!category) return;
+
+  const categoryType = Number(category.itemCategoryType);
+
+  switch (categoryType) {
+    case 1:
+      this.allowedUsageTypes = [{ id: 1, name: 'Sales Item' }];
+      this.item.fulfillmentMode = 1;
+      break;
+
+    case 2:
+      this.allowedUsageTypes = [{ id: 2, name: 'Internal Use Item' }];
+      this.item.fulfillmentMode = 2;
+      break;
+
+    case 3:
+      this.allowedUsageTypes = [
+        { id: 1, name: 'Sales Item' },
+        { id: 2, name: 'Internal Use Item' },
+        { id: 3, name: 'Sales & Internal Use' }
+      ];
+
+      if (resetUsage) {
+        this.item.fulfillmentMode = 3;
+      }
+      break;
+  }
 }
 }

@@ -106,6 +106,10 @@ export class PurchaseOrdeListComponent
   public searchValue = '';
   public ColumnMode = ColumnMode;
   public selectedOption = 10;
+  currentPage = 1;
+  get totalPages(): number { return Math.ceil((this.rows?.length || 0) / this.selectedOption); }
+  get pageNumbers(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
+  onPageChange(p: number): void { if (p >= 1 && p <= this.totalPages) this.currentPage = p; }
 
   // PO lines modal
   showLinesModal = false;
@@ -436,11 +440,11 @@ approveRejectPO(row: any, status: number): void {
   }
 
   filterUpdate(event: any): void {
+    this.currentPage = 1;
     const val = (event?.target?.value || '').toString().toLowerCase();
 
     if (!val) {
       this.rows = [...this.tempData];
-      if (this.table) this.table.offset = 0;
       return;
     }
 

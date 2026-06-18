@@ -1,211 +1,147 @@
-﻿<div class="content-wrapper p-0">
+<div class="content-wrapper p-0">
   <div class="content-body">
     <section class="users-list-wrapper">
-      <div class="card">
+      <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
 
-        <!-- Header row -->
-        <div class="row align-items-start">
-          <!-- Title + page size -->
-          <div class="col-md-3 col-12">
-            <h4 class="card-text page-title">Average Margin Reports</h4>
-
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center gap-1">
-                Show
-                <select class="form-control mx-25" (change)="onLimitChange($event)">
-                  <option [selected]="selectedOption===10" value="10">10</option>
-                  <option [selected]="selectedOption===25" value="25">25</option>
-                  <option [selected]="selectedOption===50" value="50">50</option>
-                  <option [selected]="selectedOption===100" value="100">100</option>
-                </select>
-                entries
-              </label>
+        <!-- Header -->
+        <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+          <div class="d-flex align-items-center" style="gap:10px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+              <i class="fas fa-chart-bar" style="font-size:0.9rem;color:#2E5F73;"></i>
             </div>
-          </div>
-
-          <!-- Search + Sort + Filter buttons -->
-          <div class="col-md-9 col-12 d-flex justify-content-start justify-content-md-end">
-            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0 flex-wrap">
-
-              <!-- Search -->
-              <label class="d-flex align-items-center ml-1 ml-md-0">
-                Search:
-                <input
-                  [(ngModel)]="searchValue"
-                  name="searchValue"
-                  type="search"
-                  class="form-control ml-25"
-                  (keyup)="filterUpdate($event)"
-                  (search)="filterUpdate($event)"
-                  placeholder="Invoice / customer / item"
-                />
-              </label>
-
-              <!-- Sort By -->
-              <label class="d-flex align-items-center ml-1">
-                Sort:
-                <select class="form-control ml-25" [(ngModel)]="sortBy" (change)="onSortChange()">
-                  <option value="">None</option>
-                  <option value="salesInvoiceDate">Invoice Date</option>
-                  <option value="customerName">Customer Name</option>
-                  <option value="netSales">Net Sales</option>
-                  <option value="costOfSales">Cost of Sales</option>
-                  <option value="marginAmount">Margin (Value)</option>
-                  <option value="marginPct">Margin (%)</option>
-                  <option value="location">Branch</option>
-                  <option value="salesPerson">Salesperson</option>
-                </select>
-              </label>
-
-              <!-- Sort Direction -->
-              <button
-                type="button"
-                class="btn btn-outline-secondary m-1"
-                (click)="toggleSortDir()"
-                title="Toggle Asc / Desc">
-                {{ sortDir === 'asc' ? '▲ Asc' : '▼ Desc' }}
-              </button>
-
-              <!-- Filter button -->
-              <button
-                class="btn m-1 d-inline-flex align-items-center"
-                style="background-color:#2E5F73;color:white;gap:6px;"
-                (click)="openFilters()"
-              >
-                <i data-feather="filter" class="w-4 h-4"></i>
-                <span>Filter</span>
-              </button>
-
+            <div>
+              <h4 class="card-text" style="margin:0;">Average Margin Reports</h4>
+              <p style="margin:0;font-size:0.75rem;color:#6b7280;">Sales invoice margin analysis</p>
             </div>
           </div>
         </div>
 
-        <!-- Main datatable -->
-        <ngx-datatable
-          class="bootstrap core-bootstrap"
-          [rows]="rows"
-          [rowHeight]="50"
-          [headerHeight]="50"
-          [footerHeight]="50"
-          [limit]="selectedOption"
-          [columnMode]="'force'"
-          [scrollbarH]="false"
-          [reorderable]="true"
-        >
+        <!-- Controls bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+          <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+            Show
+            <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;"
+              [(ngModel)]="selectedOption" (ngModelChange)="currentPage=1">
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+              <option [ngValue]="100">100</option>
+            </select>
+            entries
+          </label>
 
-          <!-- Invoice No -->
-          <ngx-datatable-column name="Invoice No." prop="salesInvoiceNo" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="fw-600" style="color:#2E5F73;">
-                {{ row.salesInvoiceNo || '—' }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
+          <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
+            <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+              <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+              <input [(ngModel)]="searchValue" name="searchValue" type="search"
+                style="border:none;outline:none;height:100%;font-size:0.82rem;width:180px;padding:0 8px;background:transparent;"
+                placeholder="Invoice / customer / item"
+                (keyup)="filterUpdate($event)" (search)="filterUpdate($event)" />
+            </div>
 
-          <!-- Invoice Date -->
-          <ngx-datatable-column name="Invoice Date" prop="salesInvoiceDate" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.salesInvoiceDate ? (row.salesInvoiceDate | date:'dd-MM-yyyy') : '—' }}
-            </ng-template>
-          </ngx-datatable-column>
+            <select class="form-control" style="height:34px;font-size:0.82rem;padding:3px 10px;border-radius:8px;width:160px;"
+              [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
+              <option value="">Sort: None</option>
+              <option value="salesInvoiceDate">Invoice Date</option>
+              <option value="customerName">Customer Name</option>
+              <option value="netSales">Net Sales</option>
+              <option value="costOfSales">Cost of Sales</option>
+              <option value="marginAmount">Margin (Value)</option>
+              <option value="marginPct">Margin (%)</option>
+              <option value="location">Branch</option>
+              <option value="salesPerson">Salesperson</option>
+            </select>
 
-          <!-- Customer -->
-          <ngx-datatable-column name="Customer" prop="customerName" [width]="220">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="text-truncate" title="{{ row.customerName }}">
-                {{ row.customerName || '—' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+              style="height:34px;border-radius:8px;font-size:0.82rem;"
+              (click)="toggleSortDir()">
+              {{ sortDir === 'asc' ? '▲ Asc' : '▼ Desc' }}
+            </button>
 
-          <!-- Item / Category -->
-          <ngx-datatable-column name="Item / Category" [width]="260">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="text-truncate" title="{{ row.itemName }} / {{ row.category }}">
-                {{ row.itemName || '—' }}
-                <span class="text-muted"> / </span>
-                <span class="text-muted">{{ row.category || '—' }}</span>
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
+            <button class="btn d-inline-flex align-items-center"
+              style="background:#2E5F73;color:#fff;height:34px;border-radius:8px;gap:6px;font-size:0.82rem;font-weight:600;padding:0 14px;border:none;"
+              (click)="openFilters()">
+              <i class="fas fa-filter" style="font-size:11px;"></i>
+              <span>Filter</span>
+            </button>
+          </div>
+        </div>
 
-          <!-- Qty -->
-          <ngx-datatable-column name="Qty" prop="qty" [width]="90">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.qty ?? 0 }}
-            </ng-template>
-          </ngx-datatable-column>
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th>Invoice No</th>
+                <th>Invoice Date</th>
+                <th>Customer</th>
+                <th>Item / Category</th>
+                <th class="text-right" style="width:70px;">Qty</th>
+                <th class="text-right">Net Sales</th>
+                <th class="text-right">Cost of Sales</th>
+                <th class="text-right">Margin (Value)</th>
+                <th class="text-right" style="width:100px;">Margin (%)</th>
+                <th>Branch</th>
+                <th>Salesperson</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                <td><strong style="color:#2E5F73;">{{ row.salesInvoiceNo || '—' }}</strong></td>
+                <td>{{ row.salesInvoiceDate ? (row.salesInvoiceDate | date:'dd-MM-yyyy') : '—' }}</td>
+                <td [title]="row.customerName">{{ row.customerName || '—' }}</td>
+                <td [title]="(row.itemName || '') + ' / ' + (row.category || '')">
+                  {{ row.itemName || '—' }}<span class="text-muted small"> / {{ row.category || '—' }}</span>
+                </td>
+                <td class="text-right">{{ row.qty ?? 0 }}</td>
+                <td class="text-right">{{ formatMoney(row.netSales) }}</td>
+                <td class="text-right">{{ formatMoney(row.costOfSales) }}</td>
+                <td class="text-right" [ngClass]="getMarginClass(row.marginAmount)">{{ formatMoney(row.marginAmount) }}</td>
+                <td class="text-right" [ngClass]="getMarginClass(row.marginPct)">{{ formatPct(row.marginPct) }}</td>
+                <td>{{ row.location || '—' }}</td>
+                <td>{{ row.salesPerson || '—' }}</td>
+              </tr>
+              <tr *ngIf="!rows || rows.length===0">
+                <td colspan="11" class="erp-empty-cell">No margin data found.</td>
+              </tr>
+            </tbody>
+          </table>
 
-          <!-- Net Sales -->
-          <ngx-datatable-column name="Net Sales" prop="netSales" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ formatMoney(row.netSales) }}
-            </ng-template>
-          </ngx-datatable-column>
+          <div class="d-flex align-items-center justify-content-between flex-wrap"
+            style="padding:6px 16px 4px;font-size:0.79rem;color:#6b7280;border-top:1px solid #f1f5f9;">
+            <span>{{ rows.length }} total</span>
+          </div>
 
-          <!-- Cost of Sales -->
-          <ngx-datatable-column name="Cost of Sales" prop="costOfSales" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ formatMoney(row.costOfSales) }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Margin (Value) -->
-          <ngx-datatable-column name="Margin (Value)" prop="marginAmount" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span [ngClass]="getMarginClass(row.marginAmount)">
-                {{ formatMoney(row.marginAmount) }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Margin (%) -->
-          <ngx-datatable-column name="Margin (%)" prop="marginPct" [width]="120">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span [ngClass]="getMarginClass(row.marginPct)">
-                {{ formatPct(row.marginPct) }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Branch -->
-          <ngx-datatable-column name="Branch" prop="location" [width]="160">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.location || '—' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Salesperson -->
-          <ngx-datatable-column name="Salesperson" prop="salesPerson" [width]="160">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.salesPerson || '—' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-        </ngx-datatable>
+          <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+            <span class="erp-pager-info">Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries</span>
+            <div class="erp-pager-btns">
+              <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+              <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+              <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+            </div>
+          </div>
+        </div>
 
       </div>
-
-      <!-- Filter sidebar -->
-      <core-sidebar
-        class="modal modal-slide-in sidebar-todo-modal fade"
-        name="reports-filters-sidebar"
-        overlayClass="modal-backdrop"
-      >
-        <app-reports-filters
-          [showCustomer]="true"
-          [showBranch]="true"
-          [showStatus]="false"
-          [showSalesperson]="true"
-          [showCategory]="false"
-          [customers]="customers"
-          [branches]="branches"
-          [salespersons]="salespersons"
-          (saved)="onFiltersApplied($event)"
-          (canceled)="onFilterCanceled()"
-        ></app-reports-filters>
-      </core-sidebar>
-
     </section>
   </div>
 </div>
+
+<!-- Filter sidebar -->
+<core-sidebar
+  class="modal modal-slide-in sidebar-todo-modal fade"
+  name="reports-filters-sidebar"
+  overlayClass="modal-backdrop">
+  <app-reports-filters
+    [showCustomer]="true"
+    [showBranch]="true"
+    [showStatus]="false"
+    [showSalesperson]="true"
+    [showCategory]="false"
+    [customers]="customers"
+    [branches]="branches"
+    [salespersons]="salespersons"
+    (saved)="onFiltersApplied($event)"
+    (canceled)="onFilterCanceled()">
+  </app-reports-filters>
+</core-sidebar>

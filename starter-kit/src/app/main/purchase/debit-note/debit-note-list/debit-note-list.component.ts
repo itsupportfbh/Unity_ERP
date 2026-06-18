@@ -35,6 +35,24 @@ export class DebitNoteListComponent implements OnInit {
   selectedOption = 10;
   ColumnMode     = ColumnMode;
 
+  currentPage = 1;
+
+  get totalPages(): number {
+    return Math.ceil(this.rows.length / this.selectedOption) || 1;
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const cur = this.currentPage;
+    const pages: number[] = [];
+    for (let i = Math.max(1, cur - 2); i <= Math.min(total, cur + 2); i++) { pages.push(i); }
+    return pages;
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) { this.currentPage = page; }
+  }
+
   showLinesModal    = false;
   modalLines: any[] = [];
   modalTotal        = 0;
@@ -207,6 +225,7 @@ export class DebitNoteListComponent implements OnInit {
 
   filterUpdate(event: any): void {
     const val = (event?.target?.value ?? this.searchValue ?? '').toString().toLowerCase().trim();
+    this.currentPage = 1;
 
     this.rows = this.tempData.filter(d => {
       const poDate = this.datePipe.transform(d.poDate, 'dd-MM-yyyy')?.toLowerCase() || '';
@@ -221,7 +240,6 @@ export class DebitNoteListComponent implements OnInit {
     });
 
     this.checkRowsGstLock(this.rows, 'poDate');
-    if (this.table) this.table.offset = 0;
   }
 
   private showPeriodLockedSwal(action: string): void {

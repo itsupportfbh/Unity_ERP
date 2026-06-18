@@ -26,12 +26,30 @@ interface DeliveryRow {
 })
 export class ReportsDeliveriesComponent implements OnInit {
 rows: DeliveryRow[] = [];
-allRows: DeliveryRow[] = []
+allRows: DeliveryRow[] = [];
   selectedOption = 10;
   searchValue = '';
   lastFilters: FilterApplyPayload | null = null;
   loading = false;
   errorMsg: string | null = null;
+
+  currentPage = 1;
+
+  get totalPages(): number {
+    return Math.ceil(this.rows.length / this.selectedOption) || 1;
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const cur = this.currentPage;
+    const pages: number[] = [];
+    for (let i = Math.max(1, cur - 2); i <= Math.min(total, cur + 2); i++) { pages.push(i); }
+    return pages;
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) { this.currentPage = page; }
+  }
    customers: Array<{ id: string; name: string }> = [];
   branches:  Array<{ id: string; name: string }> = [];
  statuses:  Array<{ value: string; label: string }> = [
@@ -66,6 +84,7 @@ deliveredPct(row: DeliveryRow): number {
   }
  filterUpdate(event?: any) {
     this.searchValue = event?.target?.value ?? this.searchValue ?? '';
+    this.currentPage = 1;
     this.applyFilters();
   }
   applyFilters() {

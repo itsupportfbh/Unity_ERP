@@ -1,159 +1,120 @@
 <div class="content-wrapper p-0">
   <div class="content-body">
     <section class="users-list-wrapper">
-      <div class="card">
+      <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
 
-        <div class="row">
-          <!-- Title + page size -->
-          <div class="col-md-6 col-12">
-            <h4 class="card-text page-title">
-             On-Time Delivery Reports
-            </h4>
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center gap-1">
-                Show
-                <select class="form-control mx-25" (change)="onLimitChange($event)">
-                  <option [selected]="selectedOption===10" value="10">10</option>
-                  <option [selected]="selectedOption===25" value="25">25</option>
-                  <option [selected]="selectedOption===50" value="50">50</option>
-                  <option [selected]="selectedOption===100" value="100">100</option>
-                </select>
-                entries
-              </label>
+        <!-- Header -->
+        <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+          <div class="d-flex align-items-center" style="gap:10px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+              <i class="fas fa-truck" style="font-size:0.9rem;color:#2E5F73;"></i>
             </div>
-          </div>
-
-          <!-- Search + buttons -->
-          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-
-              <label class="d-flex align-items-center ml-1 ml-md-0">
-                Search:
-                <input
-                  [(ngModel)]="searchValue"
-                  name="searchValue"
-                  type="search"
-                  class="form-control ml-25"
-                  (keyup)="filterUpdate($event)"
-                  (search)="filterUpdate($event)"
-                  placeholder="QT number / customer / status"
-                />
-              </label>
-
-              <button
-                type="button"
-                (click)="toggleSidebar('reports-filters-sidebar')"
-                class="btn m-1 d-inline-flex align-items-center"
-                style="background-color:#2E5F73;color:white;gap:6px;"
-              >
-                <i data-feather="filter" class="w-4 h-4"></i>
-                <span>Filters</span>
-              </button>
-
-              <!-- <button
-                (click)="openDrafts()"
-                class="btn m-1 d-inline-flex align-items-center position-relative btn-outline-brand"
-              >
-                <i data-feather="file-text" class="w-4 h-4"></i>
-                <span>Drafts</span>
-                <span
-                  *ngIf="draftCount > 0"
-                  class="badge badge-pill badge-warning draft-badge"
-                >
-                  {{ draftCount }}
-                </span>
-              </button> -->
+            <div>
+              <h4 class="card-text" style="margin:0;">On-Time Delivery Reports</h4>
+              <p style="margin:0;font-size:0.75rem;color:#6b7280;">Delivery performance and schedule tracking</p>
             </div>
           </div>
         </div>
 
-        <div *ngIf="loading" class="px-2 pb-1 text-muted small">Loading delivery report...</div>
-        <div *ngIf="errorMsg" class="alert alert-danger mx-2">{{ errorMsg }}</div>
+        <!-- Controls bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+          <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+            Show
+            <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;"
+              [(ngModel)]="selectedOption" (ngModelChange)="currentPage=1">
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+              <option [ngValue]="100">100</option>
+            </select>
+            entries
+          </label>
 
-        <!-- Main datatable -->
-<ngx-datatable
-  *ngIf="!loading && !errorMsg"
-  class="bootstrap core-bootstrap"
-  [rows]="rows"
-  [rowHeight]="50"
-  [headerHeight]="50"
-  [footerHeight]="50"
-  [limit]="selectedOption"
-  [columnMode]="'force'"
-  [scrollbarH]="true"
-  [reorderable]="true">
+          <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
+            <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+              <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+              <input [(ngModel)]="searchValue" name="searchValue" type="search"
+                style="border:none;outline:none;height:100%;font-size:0.82rem;width:200px;padding:0 8px;background:transparent;"
+                placeholder="DO No / Customer / Status"
+                (keyup)="filterUpdate($event)" (search)="filterUpdate($event)" />
+            </div>
 
-  <ngx-datatable-column name="Delivery Order No." prop="doNo" [width]="170">
-    <ng-template let-row="row" ngx-datatable-cell-template>
-      <span class="fw-600 brand">{{ row.doNo }}</span>
-    </ng-template>
-  </ngx-datatable-column>
+            <button type="button"
+              (click)="toggleSidebar('reports-filters-sidebar')"
+              class="btn d-inline-flex align-items-center"
+              style="background:#2E5F73;color:#fff;height:34px;border-radius:8px;gap:6px;font-size:0.82rem;font-weight:600;padding:0 14px;border:none;">
+              <i class="fas fa-filter" style="font-size:11px;"></i>
+              <span>Filters</span>
+            </button>
+          </div>
+        </div>
 
-  <ngx-datatable-column name="Customer / Branch" [width]="240">
-    <ng-template let-row="row" ngx-datatable-cell-template>
-      {{ row.customerName }} <span class="text-muted">/</span> {{ row.branch }}
-    </ng-template>
-  </ngx-datatable-column>
+        <!-- Loading/Error messages -->
+        <div *ngIf="loading" class="px-3 py-2 text-muted" style="font-size:0.82rem;">
+          <i class="fas fa-spinner fa-spin"></i> Loading delivery report...
+        </div>
+        <div *ngIf="errorMsg" class="alert alert-danger mx-3 my-2">{{ errorMsg }}</div>
 
-  <ngx-datatable-column name="Planned Delivery Date" prop="plannedDate" [width]="180">
-    <ng-template let-row="row" ngx-datatable-cell-template>
-      {{ row.plannedDate | date:'dd-MM-yyyy' }}
-    </ng-template>
-  </ngx-datatable-column>
+        <!-- Table -->
+        <div class="table-responsive" *ngIf="!loading && !errorMsg">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th>DO No.</th>
+                <th>Customer / Branch</th>
+                <th>Planned Delivery</th>
+                <th>Actual Delivery</th>
+                <th class="text-right">Delay (Days)</th>
+                <th>Status</th>
+                <th class="text-right">Delivery Qty / %</th>
+                <th>Driver / Vehicle</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                <td><strong style="color:#2E5F73;">{{ row.doNo || '—' }}</strong></td>
+                <td>{{ row.customerName }} <span class="text-muted">/</span> {{ row.branch }}</td>
+                <td>{{ row.plannedDate | date:'dd-MM-yyyy' }}</td>
+                <td>
+                  <span *ngIf="row.actualDate">{{ row.actualDate | date:'dd-MM-yyyy' }}</span>
+                  <span *ngIf="!row.actualDate" class="text-muted">—</span>
+                </td>
+                <td class="text-right">{{ delayDays(row) }}</td>
+                <td><span [ngClass]="statusClass(row.status)">{{ row.status }}</span></td>
+                <td class="text-right">
+                  {{ row.deliveryQty | number:'1.0-2' }}
+                  <span class="text-muted">/</span>
+                  {{ deliveredPct(row) | number:'1.0-0' }}%
+                </td>
+                <td>{{ row.driver }} <span class="text-muted">/</span> {{ row.vehicle }}</td>
+                <td [title]="row.remarks || ''">{{ row.remarks || '—' }}</td>
+              </tr>
+              <tr *ngIf="!rows || rows.length===0">
+                <td colspan="9" class="erp-empty-cell">No delivery records found.</td>
+              </tr>
+            </tbody>
+          </table>
 
-  <ngx-datatable-column name="Actual Delivery Date" prop="actualDate" [width]="180">
-    <ng-template let-row="row" ngx-datatable-cell-template>
-      <span *ngIf="row.actualDate; else pending">
-        {{ row.actualDate | date:'dd-MM-yyyy' }}
-      </span>
-      <ng-template #pending><span class="text-muted">—</span></ng-template>
-    </ng-template>
-  </ngx-datatable-column>
-
-  <ngx-datatable-column name="Delay (Days)" [width]="130">
-    <ng-template let-row="row" ngx-datatable-cell-template>
-      {{ delayDays(row) }}
-    </ng-template>
-  </ngx-datatable-column>
-
-  <ngx-datatable-column name="Status" prop="status" [width]="140">
-    <ng-template let-row="row" ngx-datatable-cell-template>
-      <span [ngClass]="statusClass(row.status)">{{ row.status }}</span>
-    </ng-template>
-  </ngx-datatable-column>
-
-  <ngx-datatable-column name="Delivery Qty / %" [width]="170">
-    <ng-template let-row="row" ngx-datatable-cell-template>
-      {{ row.deliveryQty | number:'1.0-2' }}
-      <span class="text-muted">/</span>
-      {{ deliveredPct(row) | number:'1.0-0' }}%
-    </ng-template>
-  </ngx-datatable-column>
-
-  <ngx-datatable-column name="Driver / Vehicle" [width]="200">
-    <ng-template let-row="row" ngx-datatable-cell-template>
-      {{ row.driver }} <span class="text-muted">/</span> {{ row.vehicle }}
-    </ng-template>
-  </ngx-datatable-column>
-
-  <ngx-datatable-column name="Remarks" prop="remarks" [width]="240">
-    <ng-template let-row="row" ngx-datatable-cell-template>
-      <span [title]="row.remarks || ''">{{ row.remarks || '—' }}</span>
-    </ng-template>
-  </ngx-datatable-column>
-
-</ngx-datatable>
-
-<div *ngIf="!loading && !errorMsg && rows.length === 0" class="text-center text-muted py-3">
-  No delivery records found.
-</div>
+          <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+            <span class="erp-pager-info">Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries</span>
+            <div class="erp-pager-btns">
+              <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+              <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+              <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+            </div>
+          </div>
+        </div>
 
       </div>
-       <core-sidebar
+    </section>
+  </div>
+</div>
+
+<core-sidebar
   class="modal modal-slide-in sidebar-todo-modal fade"
   name="reports-filters-sidebar"
-  overlayClass="modal-backdrop"
->
+  overlayClass="modal-backdrop">
   <app-reports-filters
     [showCustomer]="true"
     [showBranch]="true"
@@ -164,13 +125,6 @@
     [branches]="branches"
     [statuses]="statuses"
     (saved)="onFiltersApplied($event)"
-    (canceled)="onFilterCanceled()"
-  ></app-reports-filters>
+    (canceled)="onFilterCanceled()">
+  </app-reports-filters>
 </core-sidebar>
-
-
-    </section>
-  </div>
-</div>
-
-

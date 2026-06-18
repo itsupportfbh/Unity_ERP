@@ -1,4 +1,4 @@
-<div class="content-wrapper p-0 pin-page">
+<div class="content-wrapper p-0">
   <div class="content-body">
 
     <!-- KPI ROW -->
@@ -9,21 +9,18 @@
           <div class="pin-kpi-value text-warning">{{ totalPending }}</div>
         </div>
       </div>
-
       <div class="col-6 col-md-3 mb-1">
         <div class="pin-kpi-card">
           <div class="pin-kpi-title">Auto-Matched</div>
           <div class="pin-kpi-value text-success">{{ autoMatched }}</div>
         </div>
       </div>
-
       <div class="col-6 col-md-3 mb-1">
         <div class="pin-kpi-card">
           <div class="pin-kpi-title">Mismatched</div>
           <div class="pin-kpi-value text-danger">{{ mismatched }}</div>
         </div>
       </div>
-
       <div class="col-6 col-md-3 mb-1">
         <div class="pin-kpi-card">
           <div class="pin-kpi-title">Awaiting Approval</div>
@@ -32,218 +29,166 @@
       </div>
     </div>
 
-    <section class="users-list-wrapper purchase-list-shell">
-      <div class="card purchase-list-card">
+    <section class="users-list-wrapper">
+      <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
 
-        <!-- HEADER -->
-        <div class="row">
-          <div class="col-md-6 col-12">
-            <h4 class="card-text pin-title">Supplier Invoice List</h4>
-
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center">
-                Show
-                <select class="form-control mx-25" [(ngModel)]="selectedOption">
-                  <option [ngValue]="10">10</option>
-                  <option [ngValue]="25">25</option>
-                  <option [ngValue]="50">50</option>
-                  <option [ngValue]="100">100</option>
-                </select>
-                entries
-              </label>
+        <!-- Header -->
+        <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+          <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
+            <div class="d-flex align-items-center" style="gap:10px;">
+              <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                <i class="fas fa-file-invoice" style="font-size:0.9rem;color:#2E5F73;"></i>
+              </div>
+              <div>
+                <h4 class="card-text" style="margin:0;">Supplier Invoice List</h4>
+                <p style="margin:0;font-size:0.75rem;color:#6b7280;">Manage and match supplier invoices</p>
+              </div>
             </div>
-<div *ngIf="isPeriodLocked"
-                 class="alert alert-warning py-1 px-2 mx-2 mb-2"
-                 style="font-size: 0.8rem;">
-              Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
-            </div>
-          <div
-  *ngIf="hasLockedRows"
-  class="alert alert-warning py-1 px-2 mx-2 mb-2"
-  style="font-size:0.8rem;">
-  Some credit notes belong to locked GST period. Edit/Delete disabled.
-</div>
-       <div *ngIf="hasGlPostedRows"
-     class="alert alert-danger mx-2 mb-2"
-     style="font-size:0.85rem;">
-  GL posted supplier invoice exists. Add button disabled.
-</div>
+            <button (click)="goToCreate()" *ngIf="canCreate()"
+              class="btn d-inline-flex align-items-center"
+              style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;"
+              [disabled]="isPeriodLocked || hasGlPostedRows"
+              [attr.title]="hasGlPostedRows ? 'GL Posted invoice exists. Add disabled.' : isPeriodLocked ? 'Period locked' : 'Create Supplier Invoice'">
+              <i class="fas fa-plus-circle"></i><span>Add</span>
+            </button>
           </div>
-
-          <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-            <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-              <label class="d-flex align-items-center ml-1 ml-md-0">
-                Search:
-                <input
-                  [(ngModel)]="searchValue"
-                  name="searchValue"
-                  type="search"
-                  class="form-control ml-25"
-                  (keyup)="filterUpdate($event)"
-                  (search)="filterUpdate($event)" />
-              </label>
-
-             <button
-  (click)="goToCreate()"
-  *ngIf="canCreate()"
-  class="btn m-1 d-inline-flex align-items-center"
-  style="background-color:#2E5F73;color:white;gap:6px;"
-  [disabled]="isPeriodLocked || hasGlPostedRows"
-  [attr.title]="hasGlPostedRows
-    ? 'GL Posted invoice exists. Add disabled.'
-    : isPeriodLocked
-      ? (currentPeriodName ? 'Period ' + currentPeriodName + ' is locked' : 'Accounting period is locked')
-      : 'Create Supplier Invoice'">
-  <i data-feather="plus-circle" class="w-4 h-4"></i>
-  <span>Add</span>
-</button>
-       
-            </div>
+          <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 mb-0 mt-2" style="font-size:0.8rem;">
+            Period <strong>{{ currentPeriodName || 'current' }}</strong> is locked.
+          </div>
+          <div *ngIf="hasLockedRows" class="alert alert-warning py-1 px-2 mb-0 mt-2" style="font-size:0.8rem;">
+            Some credit notes belong to locked GST period. Edit/Delete disabled.
+          </div>
+          <div *ngIf="hasGlPostedRows" class="alert alert-danger py-1 px-2 mb-0 mt-2" style="font-size:0.85rem;">
+            GL posted supplier invoice exists. Add button disabled.
           </div>
         </div>
 
-        <!-- TABLE -->
-        <ngx-datatable
-          class="bootstrap core-bootstrap pin-table purchase-list-table"
-          [rows]="rows"
-          [rowHeight]="50"
-          [headerHeight]="50"
-          [footerHeight]="50"
-          [limit]="selectedOption"
-          [columnMode]="'standard'"
-          [scrollbarH]="true"
-          [reorderable]="true">
+        <!-- Controls bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+          <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+            Show
+            <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;"
+              [(ngModel)]="selectedOption" (ngModelChange)="currentPage=1">
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+              <option [ngValue]="100">100</option>
+            </select>
+            entries
+          </label>
+          <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+            <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+            <input [(ngModel)]="searchValue" name="searchValue" type="search"
+              style="border:none;outline:none;height:100%;font-size:0.82rem;width:220px;padding:0 8px;background:transparent;"
+              placeholder="Invoice No / Supplier / GRN..."
+              (keyup)="filterUpdate($event)" (search)="filterUpdate($event)" />
+          </div>
+        </div>
 
-          <!-- View lines -->
-          <ngx-datatable-column [width]="50" [resizeable]="false" [sortable]="false"
-                                [draggable]="false" [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span (click)="openLinesModal(row)" title="View lines" class="pin-eye">
-                <i class="fas fa-eye"></i>
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Inv No (Auto)" prop="invoiceNo" [width]=" 150"></ngx-datatable-column>
-           <ngx-datatable-column name="Sup. Inv. No" prop="grnInvoiceNos" [width]="180"></ngx-datatable-column>
-          <ngx-datatable-column name="GRN" prop="grnNos" [width]="150">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span class="pin-truncate" title="{{ row.grnNos }}">{{ row.grnNos || '-' }}</span>
-            </ng-template>   
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Inv Date" prop="invoiceDate" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.invoiceDate | date:'dd-MM-yyyy' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Amount" prop="amount" [width]="120">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.amount | number:'1.2-2' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Tax" prop="tax" [width]="100">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.tax | number:'1.2-2' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-            <ngx-datatable-column name="Base Amount" prop="baseAmount" [width]="120">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.baseAmount | number:'1.2-2' }}
-            </ng-template>
-          </ngx-datatable-column>
-  <ngx-datatable-column name="Type" [width]="130" [sortable]="false">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <span
-                class="pin-type-badge"
-                [ngClass]="isOverseasPin(row) ? 'pin-type-badge--overseas' : 'pin-type-badge--local'"
-                [title]="isOverseasPin(row) && row.incotermsName ? 'Incoterms: ' + row.incotermsName : ''">
-                {{ isOverseasPin(row) ? 'Overseas' : 'Local' }}
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-          
-
-          <!-- ✅ STATUS (Always visible, never blank) -->
-          <ngx-datatable-column name="Status" [width]="250" [minWidth]="250" [canAutoResize]="false">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-
-              <!-- fallback: if listStatusLabel empty -> show '-' (so never blank) -->
-              <span class="pin-status-pill"
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th>Inv No (Auto)</th>
+                <th>Sup. Inv. No</th>
+                <th>GRN</th>
+                <th>Inv Date</th>
+                <th class="text-right">Amount</th>
+                <th class="text-right">Base Amount</th>
+                <th>Type</th>
+                <th style="width:200px;">Status</th>
+                <th style="width:110px;">3-Way Match</th>
+                <th style="width:80px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                <td>
+                  <button class="erp-eye-btn" (click)="openLinesModal(row)" title="View Lines">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </td>
+                <td><strong style="color:#2E5F73;">{{ row.invoiceNo || '—' }}</strong></td>
+                <td>{{ row.grnInvoiceNos || '—' }}</td>
+                <td [title]="row.grnNos">{{ row.grnNos || '—' }}</td>
+                <td>{{ row.invoiceDate | date:'dd-MM-yyyy' }}</td>
+                <td class="text-right">{{ row.amount | number:'1.2-2' }}</td>
+                <td class="text-right">{{ row.baseAmount | number:'1.2-2' }}</td>
+                <td>
+                  <span class="pin-type-badge"
+                    [ngClass]="isOverseasPin(row) ? 'pin-type-badge--overseas' : 'pin-type-badge--local'"
+                    [title]="isOverseasPin(row) && row.incotermsName ? 'Incoterms: ' + row.incotermsName : ''">
+                    {{ isOverseasPin(row) ? 'Overseas' : 'Local' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="pin-status-pill"
                     [ngClass]="{
                       's1': +row.listStatusCode === 1,
                       's2': +row.listStatusCode === 2,
                       's3': +row.listStatusCode === 3,
                       's4': +row.listStatusCode === 4
                     }">
-                {{ row.listStatusLabel || row.statusLabel || '-' }}
-
-                <span *ngIf="row.linkedWithInvoiceNo" class="pin-status-link">
-                  · Linked with {{ row.linkedWithInvoiceNo }}
-                </span>
-              </span>
-
-            </ng-template>
-          </ngx-datatable-column>
-<!-- <ngx-datatable-column name="GL Status" [width]="120">
-  <ng-template let-row="row" ngx-datatable-cell-template>
-    <span
-      class="badge badge-pill"
-      [ngClass]="row.glPosted ? 'badge-success' : 'badge-warning'">
-      {{ row.glPosted ? 'GL Posted' : 'Pending' }}
-    </span>
-  </ng-template>
-</ngx-datatable-column> -->
-          <!-- 3-Way Match -->
-          <ngx-datatable-column name="3-Way Match" [width]="170">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-primary"
-               [disabled]="isPeriodLocked || isRowLocked(row) || row.glPosted || +row.status === 3 || (row.listStatusCode === 3 && row.linkedWithInvoiceNo)"
-                (click)="openMatchModal(row)">
-                3-Way Match
-              </button>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <!-- Actions -->
-          <ngx-datatable-column name="Action" [width]="140">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-
-              <ng-container *ngIf="isActionDisabled(row); else actionsEnabled">
-                <i class="fas fa-pen text-gray-300 mr-2"
-                  [attr.title]="row.glPosted ? 'Already Posted to GL' : isPeriodLocked ? 'Period locked' : isRowLocked(row) ? 'GST period locked' : 'Disabled'"></i>
-                <i class="fas fa-trash text-gray-300"
-                  [attr.title]="row.glPosted ? 'Already Posted to GL' : isPeriodLocked ? 'Period locked' : isRowLocked(row) ? 'GST period locked' : 'Disabled'"></i>
-              </ng-container>
-
-              <ng-template #actionsEnabled>
-                <i class="fas fa-pen text-blue-600 cursor-pointer mr-2"
-                   title="Edit"
-                   *ngIf="row.canEdit && !isPeriodLocked && !isRowLocked(row) && canEdit()"
-                   (click)="editInvoice(row.id)"></i>
-
-                <i class="fas fa-trash text-danger cursor-pointer"
-                   title="Delete"
-                   *ngIf="canShowDelete(row) && canDelete()"
-                   (click)="deleteInvoice(row.id)"></i>
-              </ng-template>
-
-            </ng-template>
-          </ngx-datatable-column>
-
-        </ngx-datatable>
+                    {{ row.listStatusLabel || row.statusLabel || '-' }}
+                    <span *ngIf="row.linkedWithInvoiceNo" class="pin-status-link">
+                      · {{ row.linkedWithInvoiceNo }}
+                    </span>
+                  </span>
+                </td>
+                <td>
+                  <button type="button" class="btn btn-sm btn-outline-primary"
+                    style="font-size:0.75rem;padding:2px 8px;border-radius:6px;white-space:nowrap;"
+                    [disabled]="isPeriodLocked || isRowLocked(row) || row.glPosted || +row.status === 3 || (row.listStatusCode === 3 && row.linkedWithInvoiceNo)"
+                    (click)="openMatchModal(row)">
+                    3-Way Match
+                  </button>
+                </td>
+                <td>
+                  <ng-container *ngIf="isActionDisabled(row); else actionsEnabled">
+                    <button class="erp-btn-icon btn-disabled"
+                      [title]="row.glPosted ? 'GL Posted' : isPeriodLocked ? 'Period locked' : 'Disabled'">
+                      <i class="fas fa-pen"></i>
+                    </button>
+                    <button class="erp-btn-icon btn-disabled"
+                      [title]="row.glPosted ? 'GL Posted' : isPeriodLocked ? 'Period locked' : 'Disabled'">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </ng-container>
+                  <ng-template #actionsEnabled>
+                    <button class="erp-btn-icon btn-edit"
+                      *ngIf="row.canEdit && !isPeriodLocked && !isRowLocked(row) && canEdit()"
+                      (click)="editInvoice(row.id)" title="Edit">
+                      <i class="fas fa-pen"></i>
+                    </button>
+                    <button class="erp-btn-icon btn-delete"
+                      *ngIf="canShowDelete(row) && canDelete()"
+                      (click)="deleteInvoice(row.id)" title="Delete">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </ng-template>
+                </td>
+              </tr>
+              <tr *ngIf="!rows || rows.length===0">
+                <td colspan="11" class="erp-empty-cell">No supplier invoices found.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+            <span class="erp-pager-info">Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries</span>
+            <div class="erp-pager-btns">
+              <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+              <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+              <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+            </div>
+          </div>
+        </div>
 
       </div>
     </section>
   </div>
 </div>
-
-<!-- LINES MODAL + MATCH MODAL (உங்க existing code 그대로) -->
 
 <!-- LINES MODAL -->
 <div *ngIf="showLinesModal" (click)="closeLinesModal()" class="pin-overlay">
@@ -252,7 +197,6 @@
       <h3>PIN Lines</h3>
       <button (click)="closeLinesModal()" aria-label="Close">×</button>
     </div>
-
     <div class="pin-modal-body">
       <div class="pin-modal-table">
         <table>
@@ -267,7 +211,6 @@
               <th class="text-right">Line Total</th>
             </tr>
           </thead>
-
           <tbody>
             <tr *ngFor="let l of modalLines; let i = index" [class.alt]="i % 2 === 0">
               <td class="truncate">{{ l.item || '-' }}</td>
@@ -275,30 +218,24 @@
               <td class="text-right">{{ l.qty || 0 }}</td>
               <td class="text-right">{{ (l.unitPrice ?? l.price ?? 0) | number:'1.2-2' }}</td>
               <td class="text-right">{{ (l.discountPct ?? 0) | number:'1.2-2' }}</td>
-              <td class="text-right">{{(l.taxAmt)| number:'1.2-2'}}</td>
-              <td class="text-right">{{ (l.lineGrandTotal ) | number:'1.2-2' }}</td>
+              <td class="text-right">{{ (l.taxAmt) | number:'1.2-2' }}</td>
+              <td class="text-right">{{ (l.lineGrandTotal) | number:'1.2-2' }}</td>
             </tr>
-
             <tr *ngIf="!modalLines?.length">
               <td colspan="6" class="empty">No lines</td>
             </tr>
           </tbody>
-
           <tfoot *ngIf="modalLines?.length">
-            <tr class="font-semibold bg-gray-50">
-              <td>Total</td>
-              <td></td>
+            <tr>
+              <td>Total</td><td></td>
               <td class="text-right">{{ modalTotalQty }}</td>
-              <td></td>
-              <td></td>
-              <td></td>
+              <td></td><td></td><td></td>
               <td class="text-right">{{ modalTotalAmt | number:'1.2-2' }}</td>
             </tr>
           </tfoot>
         </table>
       </div>
     </div>
-
     <div class="pin-modal-foot">
       <button (click)="closeLinesModal()">Close</button>
     </div>
@@ -312,75 +249,42 @@
       <h3>3-Way Match</h3>
       <button (click)="closeMatchModal()" aria-label="Close">×</button>
     </div>
-
     <div class="pin-modal-body">
       <div class="match-body" *ngIf="threeWay; else loadingMatch">
         <div class="match-card match-card-po">
           <h4>PO</h4>
-            <p>
-            Type:
-            <span
-              class="pin-type-badge"
-              [ngClass]="isOverseasPin(threeWay) ? 'pin-type-badge--overseas' : 'pin-type-badge--local'">
-              {{ isOverseasPin(threeWay) ? 'Overseas' : 'Local' }}
-            </span>
-          </p>
-          <p *ngIf="isOverseasPin(threeWay) && threeWay.incotermsName">
-            Incoterms: {{ threeWay.incotermsName }}
-          </p>
+          <p>Type: <span class="pin-type-badge" [ngClass]="isOverseasPin(threeWay) ? 'pin-type-badge--overseas' : 'pin-type-badge--local'">{{ isOverseasPin(threeWay) ? 'Overseas' : 'Local' }}</span></p>
+          <p *ngIf="isOverseasPin(threeWay) && threeWay.incotermsName">Incoterms: {{ threeWay.incotermsName }}</p>
           <p>Qty: {{ threeWay.poQty || 0 }}</p>
           <p>Price: {{ (threeWay.poPrice || 0) | number:'1.2-2' }}</p>
           <p>Total: {{ (threeWay.poTotal || 0) | number:'1.2-2' }}</p>
         </div>
-
-   <div class="match-card match-card-grn">
-  <h4>GRN</h4>
-  <p>Received: {{ threeWay.grnReceivedQty }}</p>
-  <p>Pending Receive: {{ threeWay.poQty - threeWay.grnReceivedQty }}</p>
-
-  <p class="text-warning"
-     *ngIf="threeWay.grnReceivedQty < threeWay.poQty">
-     Partial Receipt
-  </p>
-
-  <p class="text-success"
-     *ngIf="threeWay.grnReceivedQty === threeWay.poQty">
-     Fully Received
-  </p>
-</div>
-    <div class="match-card match-card-pin">
-  <h4>PIN</h4>
-
-  <p>Invoice Qty: {{ threeWay.pinQty }}</p>
-  <p>Total Invoiced: {{ threeWay.totalInvoicedQty }}</p>
-  <p>Total: {{ threeWay.pinTotal | number:'1.2-2' }}</p>
-
-  <p class="text-success"
-     *ngIf="threeWay.pinMatch">
-     Matched with GRN
-  </p>
-
-  <p class="text-danger"
-     *ngIf="!threeWay.pinMatch">
-     Qty mismatch with GRN
-  </p>
-</div>
+        <div class="match-card match-card-grn">
+          <h4>GRN</h4>
+          <p>Received: {{ threeWay.grnReceivedQty }}</p>
+          <p>Pending Receive: {{ threeWay.poQty - threeWay.grnReceivedQty }}</p>
+          <p class="text-warning" *ngIf="threeWay.grnReceivedQty < threeWay.poQty">Partial Receipt</p>
+          <p class="text-success" *ngIf="threeWay.grnReceivedQty === threeWay.poQty">Fully Received</p>
+        </div>
+        <div class="match-card match-card-pin">
+          <h4>PIN</h4>
+          <p>Invoice Qty: {{ threeWay.pinQty }}</p>
+          <p>Total Invoiced: {{ threeWay.totalInvoicedQty }}</p>
+          <p>Total: {{ threeWay.pinTotal | number:'1.2-2' }}</p>
+          <p class="text-success" *ngIf="threeWay.pinMatch">Matched with GRN</p>
+          <p class="text-danger" *ngIf="!threeWay.pinMatch">Qty mismatch with GRN</p>
+        </div>
       </div>
-
       <ng-template #loadingMatch>
         <div class="py-3 text-center text-muted">Loading 3-way match details...</div>
       </ng-template>
     </div>
-
-<div class="match-footer">
-  <button
-  *ngIf="canApprove()"
-  type="button"
-  class="btn btn-primary"
-  (click)="approveAndPostToAp()"
-  [disabled]="isPosting || isPeriodLocked || isRowLocked(currentRow) || !currentRow || !currentRow.canApproveToAp">
-  Approve &amp; Post to A/P
-</button>
-</div>
+    <div class="match-footer">
+      <button *ngIf="canApprove()" type="button" class="btn btn-primary"
+        (click)="approveAndPostToAp()"
+        [disabled]="isPosting || isPeriodLocked || isRowLocked(currentRow) || !currentRow || !currentRow.canApproveToAp">
+        Approve &amp; Post to A/P
+      </button>
+    </div>
   </div>
 </div>

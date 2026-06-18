@@ -1,6 +1,8 @@
 <div class="content-wrapper p-0 supplier-scorecard-page">
   <div class="content-body">
     <section class="scorecard-wrapper">
+
+      <!-- Page Header -->
       <div class="scorecard-header">
         <div>
           <h4>Supplier Scorecard</h4>
@@ -13,6 +15,7 @@
         </div>
       </div>
 
+      <!-- Filters -->
       <div class="scorecard-filters">
         <label>
           From
@@ -33,10 +36,12 @@
         </label>
         <label>
           Search
-          <input class="form-control" type="search" [(ngModel)]="searchValue" (keyup)="filterUpdate($event)" placeholder="Supplier / code / rating" />
+          <input class="form-control" type="search" [(ngModel)]="searchValue"
+            (keyup)="filterUpdate($event)" placeholder="Supplier / code / rating" />
         </label>
       </div>
 
+      <!-- KPI Cards -->
       <div class="scorecard-kpis">
         <div class="kpi">
           <span>Suppliers</span>
@@ -56,11 +61,15 @@
         </div>
       </div>
 
-      <div class="table-shell">
-        <div class="table-toolbar">
-          <label class="d-flex align-items-center mb-0">
+      <!-- Card with Table -->
+      <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);margin-top:0;">
+
+        <!-- Controls bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+          <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
             Show
-            <select class="form-control mx-1" [(ngModel)]="selectedOption">
+            <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;"
+              [(ngModel)]="selectedOption" (ngModelChange)="currentPage=1">
               <option [ngValue]="10">10</option>
               <option [ngValue]="25">25</option>
               <option [ngValue]="50">50</option>
@@ -68,78 +77,86 @@
             </select>
             entries
           </label>
-          <span *ngIf="isLoading">Loading...</span>
+          <span *ngIf="isLoading" style="font-size:0.82rem;color:#6b7280;">
+            <i class="fas fa-spinner fa-spin"></i> Loading...
+          </span>
         </div>
 
-        <ngx-datatable
-          class="bootstrap core-bootstrap"
-          [rows]="rows"
-          [rowHeight]="58"
-          [headerHeight]="50"
-          [footerHeight]="50"
-          [limit]="selectedOption"
-          [columnMode]="ColumnMode.force"
-          [scrollbarH]="true">
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th>Supplier</th>
+                <th>Type</th>
+                <th>Rating</th>
+                <th>PO</th>
+                <th>GRN</th>
+                <th>Qty</th>
+                <th>Invoice / Payment</th>
+                <th>Scores</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                <td>
+                  <div class="supplier-name" [title]="row.supplierName" style="font-weight:600;color:#111827;">
+                    {{ row.supplierName || '—' }}
+                  </div>
+                  <small style="color:#6b7280;">{{ row.supplierCode || '—' }}</small>
+                </td>
+                <td>
+                  <span class="type-pill" [class.overseas]="row.overseasPoCount > 0">
+                    {{ row.purchaseType || 'Local' }}
+                  </span>
+                  <small *ngIf="row.incotermsName" style="display:block;color:#6b7280;font-size:0.72rem;margin-top:2px;">
+                    {{ row.incotermsName }}
+                  </small>
+                </td>
+                <td>
+                  <span class="rating-pill" [ngClass]="scoreClass(row)">{{ row.rating }}</span>
+                  <span class="score-text">{{ row.overallScore | number:'1.2-2' }}</span>
+                </td>
+                <td>
+                  <div style="font-size:0.83rem;">{{ row.poCount }} PO / {{ row.approvedPoCount }} approved</div>
+                  <small style="color:#6b7280;">L {{ row.localPoCount }} / O {{ row.overseasPoCount }} / {{ row.poValueBase | number:'1.2-2' }} base</small>
+                </td>
+                <td>
+                  <div style="font-size:0.83rem;">{{ row.grnCount }} GRN / {{ row.fulfillmentPct | number:'1.0-2' }}%</div>
+                  <small style="color:#6b7280;">Full {{ row.fullGrnCount }} · Partial {{ row.partialGrnCount }} · Closed {{ row.closedGrnCount }}</small>
+                </td>
+                <td>
+                  <div style="font-size:0.83rem;">Ordered {{ row.orderedQty | number:'1.0-2' }}</div>
+                  <small style="color:#6b7280;">Received {{ row.receivedQty | number:'1.0-2' }} / Pending {{ row.pendingQty | number:'1.0-2' }}</small>
+                </td>
+                <td>
+                  <div style="font-size:0.83rem;">{{ row.invoiceCount }} invoice / {{ row.paymentPct | number:'1.0-2' }}% paid</div>
+                  <small style="color:#6b7280;">Out {{ row.outstandingValueBase | number:'1.2-2' }}</small>
+                </td>
+                <td>
+                  <div class="mini-scores">
+                    <span>Approval {{ row.approvalScore | number:'1.0-0' }}</span>
+                    <span>Fulfill {{ row.fulfillmentScore | number:'1.0-0' }}</span>
+                    <span>Pay {{ row.paymentScore | number:'1.0-0' }}</span>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="!rows || rows.length===0">
+                <td colspan="8" class="erp-empty-cell">No scorecard data found.</td>
+              </tr>
+            </tbody>
+          </table>
 
-          <ngx-datatable-column name="Supplier" [width]="230">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <div class="supplier-name" [title]="row.supplierName">{{ row.supplierName || '-' }}</div>
-              <small>{{ row.supplierCode || '-' }}</small>
-            </ng-template>
-          </ngx-datatable-column>
+          <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+            <span class="erp-pager-info">Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries</span>
+            <div class="erp-pager-btns">
+              <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+              <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+              <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+            </div>
+          </div>
+        </div>
 
-          <ngx-datatable-column name="Type" [width]="150" [sortable]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span class="type-pill" [class.overseas]="row.overseasPoCount > 0">{{ row.purchaseType || 'Local' }}</span>
-              <small *ngIf="row.incotermsName">{{ row.incotermsName }}</small>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Rating" [width]="110" [sortable]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span class="rating-pill" [ngClass]="scoreClass(row)">{{ row.rating }}</span>
-              <span class="score-text">{{ row.overallScore | number:'1.2-2' }}</span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="PO" [width]="170" [sortable]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <div>{{ row.poCount }} PO / {{ row.approvedPoCount }} approved</div>
-              <small>L {{ row.localPoCount }} / O {{ row.overseasPoCount }} / {{ row.poValueBase | number:'1.2-2' }} base</small>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="GRN" [width]="190" [sortable]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <div>{{ row.grnCount }} GRN / {{ row.fulfillmentPct | number:'1.0-2' }}%</div>
-              <small>Full {{ row.fullGrnCount }} · Partial {{ row.partialGrnCount }} · Closed {{ row.closedGrnCount }}</small>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Qty" [width]="210" [sortable]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <div>Ordered {{ row.orderedQty | number:'1.0-2' }}</div>
-              <small>Received {{ row.receivedQty | number:'1.0-2' }} / Pending {{ row.pendingQty | number:'1.0-2' }}</small>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Invoice / Payment" [width]="220" [sortable]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <div>{{ row.invoiceCount }} invoice / {{ row.paymentPct | number:'1.0-2' }}% paid</div>
-              <small>Out {{ row.outstandingValueBase | number:'1.2-2' }}</small>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Scores" [width]="230" [sortable]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <div class="mini-scores">
-                <span>Approval {{ row.approvalScore | number:'1.0-0' }}</span>
-                <span>Fulfill {{ row.fulfillmentScore | number:'1.0-0' }}</span>
-                <span>Pay {{ row.paymentScore | number:'1.0-0' }}</span>
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-        </ngx-datatable>
       </div>
     </section>
   </div>

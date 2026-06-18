@@ -131,6 +131,19 @@
   &.badge-kyc-pend  { background: #fef3c7; color: #78350f; }
 }
 
+/* Standalone badge colors — work without the erp-badge wrapper */
+.badge-active    { background: #dcf5e4 !important; color: #14532d !important; border-color: #a7f3d0 !important; }
+.badge-inactive  { background: #fce4e4 !important; color: #7f1d1d !important; border-color: #fca5a5 !important; }
+.badge-pending   { background: #fef3c7 !important; color: #78350f !important; border-color: #fcd34d !important; }
+.badge-approved  { background: #dbeafe !important; color: #1e3a8a !important; border-color: #93c5fd !important; }
+.badge-completed { background: #dcfce7 !important; color: #14532d !important; border-color: #6ee7b7 !important; }
+.badge-rejected  { background: #fce4e4 !important; color: #7f1d1d !important; border-color: #fca5a5 !important; }
+.badge-draft     { background: #e5e7eb !important; color: #374151 !important; border-color: #d1d5db !important; }
+.badge-hold      { background: #fef9c3 !important; color: #713f12 !important; border-color: #fde68a !important; }
+.badge-posted    { background: #d1fae5 !important; color: #065f46 !important; border-color: #6ee7b7 !important; }
+.badge-open      { background: #dbeafe !important; color: #1e3a8a !important; border-color: #93c5fd !important; }
+.badge-closed    { background: #e5e7eb !important; color: #374151 !important; border-color: #d1d5db !important; }
+
 .erp-btn-icon {
   display: inline-flex;
   align-items: center;
@@ -769,6 +782,27 @@ label {
   border-bottom: 1px solid #e3eaef !important;
   background-color: #f8fbfc !important;
   padding: 10px 12px !important;
+}
+
+/* ERP branded tables — teal header always wins over generic .table rule */
+.ap-table thead th,
+.taxmaster-table thead th,
+.gst-table thead th,
+.journal-table thead th,
+.trial-table thead th,
+.aging-table thead th,
+.db-table thead th,
+.receipt-table thead th,
+.ar-table thead th,
+.invoice-table thead th {
+  background-color: #2E5F73 !important;
+  color: #fff !important;
+  border-bottom: none !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  padding: 9px 12px !important;
 }
 .table tbody td {
   font-size: 0.83rem !important;

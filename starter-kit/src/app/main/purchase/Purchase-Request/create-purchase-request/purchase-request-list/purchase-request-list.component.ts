@@ -51,6 +51,10 @@ export class PurchaseRequestListComponent
   public ColumnMode = ColumnMode;
   public selectedOption = 10;
   public searchValue = '';
+  currentPage = 1;
+  get totalPages(): number { return Math.ceil((this.rows?.length || 0) / this.selectedOption); }
+  get pageNumbers(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
+  onPageChange(p: number): void { if (p >= 1 && p <= this.totalPages) this.currentPage = p; }
 
   // PR lines modal
   showLinesModal = false;
@@ -243,10 +247,10 @@ export class PurchaseRequestListComponent
   }
 
   filterUpdate(event: any): void {
+    this.currentPage = 1;
     const val = (event?.target?.value ?? '').toString().toLowerCase();
     if (!val) {
       this.rows = [...this.tempData];
-      if (this.table) this.table.offset = 0;
       return;
     }
     this.rows = this.tempData.filter((d: any) =>
@@ -255,13 +259,12 @@ export class PurchaseRequestListComponent
       (d.departmentName || '').toLowerCase().includes(val) ||
       (d.deliveryDate || '').toLowerCase().includes(val)
     );
-    if (this.table) this.table.offset = 0;
   }
 
   onLimitChange(e: any): void {
     const v = Number(e?.target?.value || 10);
     this.selectedOption = v > 0 ? v : 10;
-    if (this.table) this.table.offset = 0;
+    this.currentPage = 1;
   }
 
   editRequest(id: number): void {

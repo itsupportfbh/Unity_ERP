@@ -70,6 +70,7 @@ export class GeneralLdegerComponent implements OnInit {
 
   @ViewChild('table') table: DatatableComponent | undefined;
   isExpanded: boolean = false;
+  showFilter: boolean = false;
   headervalue = 'General Ledger';
   selectedOption = 10;
   searchValue = '';
@@ -94,9 +95,33 @@ export class GeneralLdegerComponent implements OnInit {
   roots: CoaNode[] = [];
   displayRows: CoaNode[] = [];
 
+  fromDate: string = '';
+  toDate: string = '';
+
+  currentPage: number = 1;
+
+  get totalPages(): number {
+    if (!this.displayRows || this.selectedOption >= 999999) return 1;
+    return Math.ceil(this.displayRows.length / this.selectedOption);
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages, cur = this.currentPage;
+    const pages: number[] = [];
+    for (let i = Math.max(1, cur - 2); i <= Math.min(total, cur + 2); i++) pages.push(i);
+    return pages;
+  }
+
+  onPageChange(p: number): void {
+    if (p >= 1 && p <= this.totalPages) this.currentPage = p;
+  }
+
   constructor(private service: GeneralLedgerService) { }
 
   ngOnInit(): void {
+    const now = new Date();
+    this.fromDate = `${now.getFullYear()}-01-01`;
+    this.toDate   = `${now.getFullYear()}-12-31`;
     this.load();
   }
 
@@ -106,8 +131,10 @@ export class GeneralLdegerComponent implements OnInit {
 
   load(): void {
     this.isLoading = true;
+    this.roots = [];
+    this.displayRows = [];
 
-    this.service.GetGeneralLedger().subscribe({
+    this.service.GetGeneralLedger(this.fromDate || undefined, this.toDate || undefined).subscribe({
       next: (res: any) => {
         const raw = res?.data ?? res ?? [];
 
@@ -350,12 +377,20 @@ export class GeneralLdegerComponent implements OnInit {
     this.roots.forEach(r => visit(r));
 
     const term = (this.searchValue || '').toLowerCase();
-    this.displayRows = term
-      ? output.filter(n =>
-          n.headName.toLowerCase().includes(term) ||
-          String(n.headCode).includes(term)
-        )
-      : output;
+    if (term) {
+      const allFlat: CoaNode[] = [];
+      const collectAll = (node: CoaNode) => {
+        allFlat.push(node);
+        if (node.children) node.children.forEach(ch => collectAll(ch));
+      };
+      this.roots.forEach(r => collectAll(r));
+      this.displayRows = allFlat.filter(n =>
+        n.headName.toLowerCase().includes(term) ||
+        String(n.headCode).includes(term)
+      );
+    } else {
+      this.displayRows = output;
+    }
   }
 
   toggleRow(row: CoaNode): void {
@@ -365,6 +400,11 @@ export class GeneralLdegerComponent implements OnInit {
     row.$$expanded = !row.$$expanded;
     this.rebuildDisplayRows();
     this.isExpanded = this.displayRows?.some((r: any) => r.$$expanded) || false;
+  }
+
+  applyFilter(): void {
+    this.showFilter = false;
+    this.load();
   }
 
   filterUpdate(): void {

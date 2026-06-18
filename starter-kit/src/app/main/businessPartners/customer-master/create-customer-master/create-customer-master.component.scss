@@ -6,14 +6,38 @@
 /* ===== Brand ===== */
 $brand: #2E5F73;
 
+/* ===== Section titles ===== */
+.content-header {
+  margin-bottom: 1.25rem;
+
+  h5 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2E5F73;
+    margin-bottom: 4px;
+  }
+
+  small.text-muted {
+    font-size: 0.78rem;
+    color: #8A94A6;
+  }
+}
+
+.form-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 5px;
+}
+
 /* ===== Wizard buttons ===== */
 .wizard-actions { padding-top: 1rem; }
 
 .btn-wiz {
-  display: inline-flex; align-items: center; gap: .5rem;
-  height: 48px; padding: 0 22px; border-radius: 12px;
-  font-weight: 600; border: 1px solid transparent;
-  box-shadow: 0 8px 20px rgba(2,8,23,.06);
+  display: inline-flex; align-items: center; gap: .4rem;
+  height: 36px; padding: 0 16px; border-radius: 10px;
+  font-size: 0.855rem; font-weight: 600; border: 1px solid transparent;
+  box-shadow: 0 4px 12px rgba(2,8,23,.06);
 }
 .btn-prev-wiz { background:#fff; color:#8A94A6; border-color:#D6DBE1; }
 .btn-prev-wiz:disabled { color:#B4BCC7; background:#fff; border-color:#E2E8F0; box-shadow:none; }

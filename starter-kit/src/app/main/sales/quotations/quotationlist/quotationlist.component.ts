@@ -74,7 +74,25 @@ export class QuotationlistComponent implements OnInit, OnDestroy, AfterViewInit,
   rows: QuotationRow[] = [];
   allRows: QuotationRow[] = [];
   selectedOption = 10;
+  currentPage = 1;
   searchValue = '';
+
+  get totalPages(): number {
+    return Math.ceil((this.rows?.length || 0) / this.selectedOption);
+  }
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+  onPageChange(p: number): void {
+    if (p < 1 || p > this.totalPages) return;
+    this.currentPage = p;
+  }
 
   customerMap = new Map<number, string>();
   currencyMap = new Map<number, string>();
@@ -251,40 +269,47 @@ private showPeriodLockedSwal(action: string): void {
   }
 
   private loadQuotations(): void {
-    this.quotationSvc.getAll().subscribe((res: any) => {
-      const data = res?.data ?? res ?? [];
+    this.quotationSvc.getAll().subscribe({
+      next: (res: any) => {
+        const data = res?.data ?? res ?? [];
 
-      this.allRows = (data || []).map((q: any) => ({
-        id: Number(q.id ?? q.Id),
-        number: String(q.number ?? q.Number ?? ''),
-        status: Number(q.status ?? q.Status ?? 0),
+        this.allRows = (data || []).map((q: any) => ({
+          id: Number(q.id ?? q.Id),
+          number: String(q.number ?? q.Number ?? ''),
+          status: Number(q.status ?? q.Status ?? 0),
 
-        customerId: Number(q.customerId ?? q.CustomerId ?? 0),
-        customerName: q.customerName ?? q.CustomerName ?? '',
-        isCashSales: q.isCashSales ?? q.IsCashSales ?? false,
+          customerId: Number(q.customerId ?? q.CustomerId ?? 0),
+          customerName: q.customerName ?? q.CustomerName ?? '',
+          isCashSales: q.isCashSales ?? q.IsCashSales ?? false,
 
-        currencyId: Number(q.currencyId ?? q.CurrencyId ?? 0),
-        fxRate: Number(q.fxRate ?? q.FxRate ?? 1),
+          currencyId: Number(q.currencyId ?? q.CurrencyId ?? 0),
+          fxRate: Number(q.fxRate ?? q.FxRate ?? 1),
 
-        paymentTermsId: Number(q.paymentTermsId ?? q.PaymentTermsId ?? 0),
-        paymentTermsName: String(q.paymentTermsName ?? q.PaymentTermsName ?? ''),
+          paymentTermsId: Number(q.paymentTermsId ?? q.PaymentTermsId ?? 0),
+          paymentTermsName: String(q.paymentTermsName ?? q.PaymentTermsName ?? ''),
 
-        validityDate: q.validityDate ?? q.ValidityDate ?? null,
-        deliveryDate: q.deliveryDate ?? q.DeliveryDate ?? null,
+          validityDate: q.validityDate ?? q.ValidityDate ?? null,
+          deliveryDate: q.deliveryDate ?? q.DeliveryDate ?? null,
 
-        subtotal: Number(q.subtotal ?? q.Subtotal ?? 0),
-        taxAmount: Number(q.taxAmount ?? q.TaxAmount ?? 0),
-        rounding: Number(q.rounding ?? q.Rounding ?? 0),
-        grandTotal: Number(q.grandTotal ?? q.GrandTotal ?? 0),
+          subtotal: Number(q.subtotal ?? q.Subtotal ?? 0),
+          taxAmount: Number(q.taxAmount ?? q.TaxAmount ?? 0),
+          rounding: Number(q.rounding ?? q.Rounding ?? 0),
+          grandTotal: Number(q.grandTotal ?? q.GrandTotal ?? 0),
 
-        createdDate: q.createdDate ?? q.CreatedDate ?? null,
-        remarks: q.remarks ?? q.Remarks ?? null,
-        deliveryTo: q.deliveryTo ?? q.DeliveryTo ?? null,
-        createdUserName: q.createdUserName ?? q.CreatedUserName ?? '',
-        modifiedUserName: q.modifiedUserName ?? q.ModifiedUserName ?? ''
-      })) as QuotationRow[];
+          createdDate: q.createdDate ?? q.CreatedDate ?? null,
+          remarks: q.remarks ?? q.Remarks ?? null,
+          deliveryTo: q.deliveryTo ?? q.DeliveryTo ?? null,
+          createdUserName: q.createdUserName ?? q.CreatedUserName ?? '',
+          modifiedUserName: q.modifiedUserName ?? q.ModifiedUserName ?? ''
+        })) as QuotationRow[];
 
-      this.rows = [...this.allRows];
+        this.rows = [...this.allRows];
+      },
+      error: (err) => {
+        console.error('Failed to load quotations', err);
+        this.allRows = [];
+        this.rows = [];
+      }
     });
   }
 
@@ -359,9 +384,11 @@ private showPeriodLockedSwal(action: string): void {
   onLimitChange(ev: Event): void {
     const val = Number((ev.target as HTMLSelectElement).value);
     this.selectedOption = val || 10;
+    this.currentPage = 1;
   }
 
   filterUpdate(_: any): void {
+    this.currentPage = 1;
     const q = (this.searchValue || '').trim().toLowerCase();
 
     if (!q) {

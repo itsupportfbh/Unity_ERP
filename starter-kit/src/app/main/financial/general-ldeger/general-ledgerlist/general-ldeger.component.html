@@ -1,119 +1,178 @@
 <div class="content-wrapper p-0">
   <div class="content-body">
-    <section class="users-list-wrapper">
-      <div class="card">
+    <section class="users-list-wrapper" style="position:relative;">
+      <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
 
-        <!-- Header / Controls -->
-        <div class="row align-items-center px-1 pt-1">
-          <div class="col-md-6 col-12">
-            <h4 class="card-text page-title">
-              {{ headervalue || 'General Ledger' }}
-            </h4>
+        <!-- ===== Header ===== -->
+        <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+          <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
 
-            <div class="d-flex align-items-center m-1">
-              <label class="d-flex align-items-center mb-0">
+            <!-- Title block -->
+            <div class="d-flex align-items-center" style="gap:12px;">
+              <div style="width:44px;height:44px;border-radius:12px;background:#eaf2f5;
+                          display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                <i class="fas fa-book-open" style="font-size:1.1rem;color:#2E5F73;"></i>
+              </div>
+              <div>
+                <h4 class="card-text" style="margin:0;">{{ headervalue || 'General Ledger' }}</h4>
+                <p style="margin:0;font-size:0.76rem;color:#6b7280;margin-top:2px;">
+                  Account balances &amp; movements &nbsp;·&nbsp; <strong style="color:#2E5F73;">{{ baseCurrency }}</strong>
+                </p>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="d-flex align-items-center" style="gap:10px;flex-wrap:wrap;">
+
+              <!-- Filter button -->
+              <button (click)="showFilter = !showFilter"
+                      title="Date filter"
+                      style="height:36px;width:36px;border:1px solid #d1d5db;border-radius:8px;
+                             background:#fff;cursor:pointer;display:flex;align-items:center;
+                             justify-content:center;color:#2E5F73;">
+                <i class="fas fa-filter" style="font-size:13px;"></i>
+              </button>
+
+              <!-- Show entries -->
+              <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;white-space:nowrap;">
                 Show
-                <select class="form-control mx-25 w-auto" [(ngModel)]="selectedOption">
+                <select class="form-control mx-2" style="width:72px;height:36px;font-size:0.82rem;padding:4px 6px;"
+                        [(ngModel)]="selectedOption" (ngModelChange)="currentPage=1">
                   <option [ngValue]="10">10</option>
                   <option [ngValue]="25">25</option>
                   <option [ngValue]="50">50</option>
                   <option [ngValue]="100">100</option>
+                  <option [ngValue]="999999">All</option>
                 </select>
                 entries
               </label>
+
             </div>
           </div>
+        </div>
 
-          <div class="col-md-6 col-12 d-flex justify-content-md-end">
-            <label class="d-flex align-items-center mb-0">
-              Search:
-              <input
-                [(ngModel)]="searchValue"
-                type="search"
-                class="form-control ml-25 search-input"
-                (keyup)="filterUpdate()"
-                (search)="filterUpdate()" />
-            </label>
-          </div>
+        <!-- Loading -->
+        <div *ngIf="isLoading" style="padding:24px;text-align:center;color:#6b7280;font-size:0.85rem;">
+          <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Loading ledger...
         </div>
 
         <!-- TABLE -->
-        <div class="table-wrap px-1 pb-1">
-          <ngx-datatable
-            #table
-            class="bootstrap core-bootstrap coa-table"
-            [rows]="displayRows"
-            [rowHeight]="48"
-            [headerHeight]="50"
-            [footerHeight]="50"
-            [limit]="selectedOption"
-            [columnMode]="'standard'"
-            [scrollbarH]="true"
-            [scrollbarV]="false"
-            [virtualization]="false">
+        <div class="table-responsive" *ngIf="!isLoading">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th style="width:80px;">Code</th>
+                <th>Account Name</th>
+                <th class="text-right">Opening Bal</th>
+                <th class="text-right">Debit ({{ baseCurrency }})</th>
+                <th class="text-right">Credit ({{ baseCurrency }})</th>
+                <th class="text-right">Balance ({{ baseCurrency }})</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of displayRows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption"
+                  [style.background]="row.level === 0 ? '#f4f8fa' : 'transparent'"
+                  [style.border-left]="row.level === 1 ? '3px solid #c7dde4' : row.level > 1 ? '3px solid #e5eff2' : 'none'">
 
-            <!-- HEAD CODE -->
-            <ngx-datatable-column name="HEAD CODE" [width]="100">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <span class="cell-text">{{ row.headCode }}</span>
-              </ng-template>
-            </ngx-datatable-column>
+                <td>
+                  <span style="font-size:0.78rem;color:#9ca3af;font-family:monospace;">{{ row.headCode }}</span>
+                </td>
 
-            <!-- HEAD NAME -->
-            <ngx-datatable-column name="HEAD NAME" [width]="280">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <div class="head-cell" [class.child]="row.level > 0">
-                  <span class="indent" [style.width.px]="row.level * 18"></span>
-                  <button
-                    *ngIf="row.hasChildren"
-                    type="button"
-                    class="coa-toggle-btn"
-                    (click)="toggleRow(row)">
-                    {{ row.$$expanded ? '−' : '+' }}
-                  </button>
-                  <span class="head-text">{{ row.headName }}</span>
-                </div>
-              </ng-template>
-            </ngx-datatable-column>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <span [style.display]="'inline-block'" [style.min-width.px]="row.level * 20"></span>
 
-            <!-- OPENING BALANCE -->
-            <ngx-datatable-column name="OPENING BAL" [width]="140">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <span class="num">{{ row.openingBalance || 0 | number:'1.2-2' }}</span>
-              </ng-template>
-            </ngx-datatable-column>
+                    <button *ngIf="row.hasChildren" type="button"
+                            (click)="toggleRow(row)"
+                            style="width:22px;height:22px;border-radius:6px;background:#2E5F73;border:none;color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-right:8px;flex:0 0 auto;padding:0;">
+                      <i class="fas" [ngClass]="row.$$expanded ? 'fa-minus' : 'fa-plus'"
+                         style="font-size:10px;"></i>
+                    </button>
 
-            <!-- ✅ DEBIT — single column, header shows baseCurrency -->
-            <ngx-datatable-column [name]="'DEBIT (' + baseCurrency + ')'" [width]="150">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <span class="num">
+                    <span *ngIf="!row.hasChildren"
+                          style="width:20px;margin-right:8px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                      <span style="width:5px;height:5px;border-radius:50%;background:#cbd5e1;"></span>
+                    </span>
+
+                    <span class="head-text"
+                          [style.font-weight]="row.level === 0 ? '700' : row.hasChildren ? '600' : '400'"
+                          [style.color]="row.level === 0 ? '#1e3a4f' : '#374151'">
+                      {{ row.headName }}
+                    </span>
+                  </div>
+                </td>
+
+                <td class="text-right" style="font-size:0.8rem;color:#9ca3af;">
+                  {{ row.openingBalance || 0 | number:'1.2-2' }}
+                </td>
+
+                <td class="text-right" style="color:#2563eb;">
                   {{ row.displayDebit || 0 | number:'1.2-2' }}
-                </span>
-              </ng-template>
-            </ngx-datatable-column>
+                </td>
 
-            <!-- ✅ CREDIT — single column, header shows baseCurrency -->
-            <ngx-datatable-column [name]="'CREDIT (' + baseCurrency + ')'" [width]="150">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <span class="num">
+                <td class="text-right" style="color:#059669;">
                   {{ row.displayCredit || 0 | number:'1.2-2' }}
-                </span>
-              </ng-template>
-            </ngx-datatable-column>
+                </td>
 
-            <!-- ✅ BALANCE — single column, header shows baseCurrency -->
-            <ngx-datatable-column [name]="'BALANCE (' + baseCurrency + ')'" [width]="160">
-              <ng-template let-row="row" ngx-datatable-cell-template>
-                <span class="num" style="font-weight:600;">
+                <td class="text-right"
+                    [style.font-weight]="row.level === 0 ? '700' : '500'"
+                    [style.color]="(row.displayBalance || 0) !== 0 ? '#111827' : '#9ca3af'">
                   {{ row.displayBalance || 0 | number:'1.2-2' }}
-                </span>
-              </ng-template>
-            </ngx-datatable-column>
+                </td>
+              </tr>
 
-          </ngx-datatable>
+              <tr *ngIf="!displayRows || displayRows.length === 0">
+                <td colspan="6" class="erp-empty-cell">No general ledger entries found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ===== Pagination ===== -->
+        <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+          <span class="erp-pager-info">
+            Showing {{ (currentPage-1)*selectedOption+1 }}-{{ currentPage*selectedOption < displayRows.length ? currentPage*selectedOption : displayRows.length }} of {{ displayRows.length }} entries
+          </span>
+          <div class="erp-pager-btns">
+            <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+            <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+            <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+          </div>
         </div>
 
       </div>
+
+      <!-- Filter popup -->
+      <div *ngIf="showFilter"
+           style="position:absolute;right:16px;top:70px;z-index:300;background:#fff;
+                  border:1px solid #d1d5db;border-radius:12px;
+                  box-shadow:0 4px 20px rgba(0,0,0,0.14);padding:16px;min-width:260px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span style="font-size:0.82rem;font-weight:700;color:#1e3a4f;">Date Filter</span>
+          <button (click)="showFilter=false"
+                  style="border:none;background:transparent;cursor:pointer;color:#9ca3af;font-size:1.1rem;line-height:1;">
+            &times;
+          </button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <label style="font-size:0.75rem;color:#6b7280;display:block;margin-bottom:4px;">From</label>
+            <input type="date" [(ngModel)]="fromDate"
+                   style="width:100%;height:34px;border:1px solid #d1d5db;border-radius:8px;font-size:0.82rem;padding:0 8px;background:#fff;" />
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:#6b7280;display:block;margin-bottom:4px;">To</label>
+            <input type="date" [(ngModel)]="toDate"
+                   style="width:100%;height:34px;border:1px solid #d1d5db;border-radius:8px;font-size:0.82rem;padding:0 8px;background:#fff;" />
+          </div>
+          <button (click)="applyFilter()" [disabled]="isLoading"
+                  style="height:34px;background:#2E5F73;color:#fff;border:none;border-radius:8px;
+                         font-size:0.82rem;cursor:pointer;font-weight:600;">
+            {{ isLoading ? 'Loading...' : 'Submit' }}
+          </button>
+        </div>
+      </div>
+
     </section>
   </div>
 </div>

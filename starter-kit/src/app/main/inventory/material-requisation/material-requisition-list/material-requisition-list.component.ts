@@ -46,6 +46,7 @@ export class MaterialRequisitionListComponent implements OnInit {
 
   pageSizes = [10, 25, 50, 100];
   pageSize = 10;
+  currentPage = 1;
   searchValue = '';
 
   rows: MaterialReqRow[] = [];
@@ -79,6 +80,26 @@ companyId: number = 0;
   ngOnInit(): void {
     this.loadPermission();
     this.checkPeriodLockForToday();
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredRows.length / this.pageSize));
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
   }
 
   private getErrorMessage(err: any, fallback: string): string {
@@ -174,6 +195,7 @@ getStatusClass(status?: number | null): string {
     const q = (this.searchValue || '').trim().toLowerCase();
     if (!q) {
       this.filteredRows = [...this.rows];
+      this.currentPage = 1;
       return;
     }
 
@@ -192,6 +214,7 @@ getStatusClass(status?: number | null): string {
 
       return headerHay.includes(q) || linesHay.includes(q);
     });
+    this.currentPage = 1;
   }
 
   // ✅ View modal (eye icon)
@@ -265,6 +288,7 @@ getStatusClass(status?: number | null): string {
 
         this.filteredRows = [...this.rows];
         this.applyFilter();
+        this.currentPage = 1;
         this.loading = false;
       },
       error: (err) => {

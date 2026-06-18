@@ -14,6 +14,12 @@ export class SupplierService {
     GetAllSupplier(): Observable<any[]> {
       return this.http.get<any[]>(this.url + SupplierApiUrls.GetAllSupplier);
     }
+
+    searchSupplier(query: string = '', pageSize: number = 20): Observable<any> {
+      return this.http.get<any>(this.url + SupplierApiUrls.SearchSupplier, {
+        params: { query, pageSize: pageSize.toString() }
+      });
+    }
   
      getSupplierDetails(): Observable<any[]> {
       return this.http.get<any[]>(this.url + SupplierApiUrls.GetAllSupplierDetails);

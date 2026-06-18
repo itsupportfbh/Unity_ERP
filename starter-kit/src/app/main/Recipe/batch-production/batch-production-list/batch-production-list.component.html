@@ -1,166 +1,114 @@
 <div *ngIf="isPermissionLoaded; else loadingTemplate"  class="content-wrapper p-0">
   <div class="content-body">
     <section *ngIf="canView(); else noAccessTemplate" class="users-list-wrapper">
-      <div class="card">
+      <div class="card" style="border-radius:12px;border:none;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
 
-        <!-- ==================== HEADER ROW ==================== -->
-        <div class="row">
-          <!-- Title + page size -->
-          <div class="col-md-3 col-12">
-            <h4 class="card-text bp-title" style="color:#2E5F73;">Batch Production List</h4>
-
-            <div class="d-flex justify-content-between align-items-center m-1">
-              <label class="d-flex align-items-center">
-                Show
-                <select class="form-control mx-25" (change)="onLimitChange($event)">
-                  <option [selected]="selectedOption===10" value="10">10</option>
-                  <option [selected]="selectedOption===25" value="25">25</option>
-                  <option [selected]="selectedOption===50" value="50">50</option>
-                  <option [selected]="selectedOption===100" value="100">100</option>
-                </select>
-                entries
-              </label>
-            </div>
-          </div>
-
-          <!-- Search + Add -->
-          <div class="col-md-9 col-12">
-            <div class="bp-head-right">
-
-              <!-- Search -->
-              <div class="bp-search">
-                <label class="mb-0">Search:</label>
-                <input
-                  [(ngModel)]="searchValue"
-                  name="searchValue"
-                  type="search"
-                  class="form-control bp-search-input"
-                  (keyup)="filterUpdate($event)"
-                  (search)="filterUpdate($event)" />
+        <!-- Header -->
+        <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+          <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px;">
+            <div class="d-flex align-items-center" style="gap:10px;">
+              <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+                <i class="fas fa-cogs" style="color:#2E5F73;font-size:0.9rem;"></i>
               </div>
-
-              <!-- Add -->
-              <button
-               *ngIf="canCreate()"
-                type="button"
-                (click)="goToCreate()"
-                class="btn bp-addbtn"
-                title="Create Batch">
-                <i class="fas fa-plus-circle"></i>
-                <span>Add</span>
-              </button>
-
+              <div>
+                <h4 class="card-text" style="margin:0;">Batch Production</h4>
+                <p style="margin:0;font-size:0.75rem;color:#6b7280;">Track production batch runs</p>
+              </div>
             </div>
+            <button
+              *ngIf="canCreate()"
+              type="button"
+              (click)="goToCreate()"
+              class="btn d-inline-flex align-items-center"
+              style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;"
+              title="Create Batch">
+              <i class="fas fa-plus-circle"></i>
+              <span>Add</span>
+            </button>
+          </div>
+        </div>
+        <!-- Controls bar -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+          <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+            Show
+            <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" (change)="onLimitChange($event)">
+              <option [selected]="selectedOption===10" value="10">10</option>
+              <option [selected]="selectedOption===25" value="25">25</option>
+              <option [selected]="selectedOption===50" value="50">50</option>
+              <option [selected]="selectedOption===100" value="100">100</option>
+              <option [selected]="selectedOption===999999" value="999999">All</option>
+            </select>
+            entries
+          </label>
+          <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+            <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+            <input [(ngModel)]="searchValue" name="searchValue" type="search" (keyup)="filterUpdate($event)" (search)="filterUpdate($event)"
+              placeholder="Search batch production..."
+              style="border:none;outline:none;height:100%;font-size:0.82rem;width:220px;padding:0 8px;background:transparent;" />
           </div>
         </div>
 
-        <!-- ==================== MAIN DATATABLE ==================== -->
-        <ngx-datatable
-          class="bootstrap core-bootstrap"
-          [rows]="rows"
-          [rowHeight]="50"
-          [headerHeight]="50"
-          [footerHeight]="50"
-          [limit]="selectedOption"
-          [columnMode]="'force'"
-          [scrollbarH]="false"
-          [reorderable]="true">
-
-          <!-- View details -->
-          <ngx-datatable-column
-            [width]="50"
-            [resizeable]="false"
-            [sortable]="false"
-            [draggable]="false"
-            [canAutoResize]="false">
-            <ng-template ngx-datatable-cell-template let-row="row">
-              <span
-                (click)="openLinesModal(row)"
-                title="View Batch Lines"
-                class="bp-eye">
-                <i class="fas fa-eye"></i>
-              </span>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Batch No" prop="batchNo" [width]="160"></ngx-datatable-column>
-
-          <ngx-datatable-column name="Prod Plan No" prop="planName" [width]="220">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.productionPlanNo || '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Plan Date" prop="planDate" [width]="170">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.planDate ? (row.planDate | date:'yyyy-MM-dd') : '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-          <ngx-datatable-column name="Posted Date" prop="postedDate" [width]="180">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.postedDate ? (row.postedDate | date:'yyyy-MM-dd') : '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Outlet" prop="outletName" [width]="190">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              {{ row.name || '-' }}
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Status" prop="status" [width]="180">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="badge badge-pill status-pill"
-                   [ngClass]="{
-                     'badge-secondary': (row.status || '').toLowerCase() === 'draft',
-                     'badge-info'     : (row.status || '').toLowerCase() === 'inprogress',
-                     'badge-success'  : (row.status || '').toLowerCase() === 'posted',
-                     'badge-warning'  : (row.status || '').toLowerCase() === 'cancelled'
-                   }">
-                {{ row.status || 'Draft' }}
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-column name="Action" [width]="320" [sortable]="false">
-            <ng-template let-row="row" ngx-datatable-cell-template>
-              <div class="bp-actions">
-
-                <!-- Execute/Edit -->
-                <!-- <i *ngIf="canEdit()" class="fas fa-pen text-primary"
-                   style="cursor:pointer;"
-                   (click)="editBatch(row.id)"
-                   title="Open / Execute"></i> -->
-
-                <!-- Food Preparation Complete ✅ (NEW) -->
-                <button
-                  type="button"
-                  class="bp-fpc-btn"
-                  (click)="$event.stopPropagation(); openFoodPrepPopup(row)"
-                  [disabled]="isFoodPrepDisabled(row)"
-                  [title]="foodPrepTooltip(row)">
-                  <i class="fas fa-utensils"></i>
-                  <!-- <span>{{ getFoodPrepLabel(row) }}</span> -->
-                </button>
-                <!-- Post -->
-                <!-- <i class="fas fa-check-circle text-success"
-                   style="cursor:pointer;"
-                   (click)="quickPost(row)"
-                   [style.opacity]="(row.status || '').toLowerCase() === 'posted' ? 0.35 : 1"
-                   [style.pointerEvents]="(row.status || '').toLowerCase() === 'posted' ? 'none' : 'auto'"
-                   title="Post to Inventory"></i> -->
-
-                <!-- Delete -->
-                <i *ngIf="canDelete()" class="fas fa-trash text-danger"
-                   style="cursor:pointer;"
-                   (click)="deleteBatch(row.id)"
-                   title="Delete"></i>
-
-              </div>
-            </ng-template>
-          </ngx-datatable-column>
-
-        </ngx-datatable>
+        <!-- ==================== MAIN TABLE ==================== -->
+        <div class="table-responsive">
+          <table class="erp-table">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th>Batch No</th>
+                <th>Prod Plan No</th>
+                <th>Plan Date</th>
+                <th>Posted Date</th>
+                <th>Outlet</th>
+                <th style="width:110px;">Status</th>
+                <th style="width:90px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of rows | slice:(currentPage-1)*selectedOption:currentPage*selectedOption">
+                <td>
+                  <button class="erp-eye-btn" (click)="openLinesModal(row)" title="View Batch Lines">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </td>
+                <td><strong>{{ row.batchNo }}</strong></td>
+                <td>{{ row.productionPlanNo || '—' }}</td>
+                <td>{{ row.planDate ? (row.planDate | date:'yyyy-MM-dd') : '—' }}</td>
+                <td>{{ row.postedDate ? (row.postedDate | date:'yyyy-MM-dd') : '—' }}</td>
+                <td>{{ row.name || '—' }}</td>
+                <td>
+                  <span class="erp-badge"
+                    [ngClass]="(row.status||'').toLowerCase()==='draft' ? 'badge-draft' : (row.status||'').toLowerCase()==='inprogress' ? 'badge-pending' : (row.status||'').toLowerCase()==='posted' ? 'badge-posted' : 'badge-hold'">
+                    {{ row.status || 'Draft' }}
+                  </span>
+                </td>
+                <td>
+                  <button type="button" class="erp-btn-icon btn-view"
+                    (click)="$event.stopPropagation(); openFoodPrepPopup(row)"
+                    [disabled]="isFoodPrepDisabled(row)"
+                    [title]="foodPrepTooltip(row)">
+                    <i class="fas fa-utensils"></i>
+                  </button>
+                  <button class="erp-btn-icon btn-delete" *ngIf="canDelete()" (click)="deleteBatch(row.id)" title="Delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="!rows || rows.length===0">
+                <td colspan="8" class="erp-empty-cell">No batch production records found.</td>
+              </tr>
+            </tbody>
+          </table>
+        <div class="erp-pager" *ngIf="selectedOption < 999999 && totalPages > 1">
+          <span class="erp-pager-info">
+            Showing {{ (currentPage-1)*selectedOption+1 }}–{{ currentPage*selectedOption < rows.length ? currentPage*selectedOption : rows.length }} of {{ rows.length }} entries
+          </span>
+          <div class="erp-pager-btns">
+            <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+            <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+            <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+          </div>
+        </div>
+        </div>
 
       </div>
     </section>

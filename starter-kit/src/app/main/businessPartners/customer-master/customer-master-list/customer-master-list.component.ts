@@ -12,9 +12,28 @@ import { FunctionPermission, PermissionService } from 'app/shared/permission.ser
 })
 export class CustomerMasterListComponent implements OnInit {
  selectedOption = 10;
+  currentPage = 1;
   searchValue = '';
   CustomerMasterList: any[] = [];
   CustomerMasterListFiltered: any[] = [];
+
+  get totalPages(): number {
+    if (this.selectedOption >= 999999) return 1;
+    return Math.max(1, Math.ceil(this.CustomerMasterListFiltered.length / this.selectedOption));
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  onPageChange(page: number): void { this.currentPage = page; }
+  onPageSizeChange(): void { this.currentPage = 1; }
   
   userId: number = 0;
   functionId = 'bp-customer';
@@ -97,6 +116,7 @@ export class CustomerMasterListComponent implements OnInit {
   }
 
   filterUpdate(evt?: any) {
+  this.currentPage = 1;
   const val = (this.searchValue || '').toString().toLowerCase().trim();
 
   if (!val) {

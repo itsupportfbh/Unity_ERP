@@ -1,52 +1,46 @@
 <div class="content-body">
-  <section class="users-list-wrapper">
-    <div class="card">
-      <div class="row">
-        <!-- Title + page size -->
-        <div class="col-md-6 col-12">
-          <h4 class="card-text ml-2 mt-2" style="font-size:1.25rem;font-weight:600;color:#2E5F73">
-            Stock Overview List
-          </h4>
+  <section class="users-list-wrapper" style="position:relative;">
+    <div class="card" style="border-radius:14px;overflow:hidden;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.06);">
 
-          <div class="d-flex justify-content-between align-items-center m-1">
-            <label class="d-flex align-items-center">
-              Show
-              <select class="form-control mx-2" [(ngModel)]="pageSize">
-                <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
-              </select>
-              entries
-            </label>
+      <!-- Header -->
+      <div style="padding:16px 20px 14px;border-bottom:1px solid #f1f5f9;">
+        <div class="d-flex align-items-center justify-content-between" style="gap:12px;">
+          <div class="d-flex align-items-center" style="gap:10px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:#eaf2f5;display:flex;align-items:center;justify-content:center;flex:0 0 auto;">
+              <i class="fas fa-boxes" style="font-size:0.9rem;color:#2E5F73;"></i>
+            </div>
+            <div>
+              <h4 class="card-text" style="margin:0;">Stock Overview</h4>
+              <p style="margin:0;font-size:0.75rem;color:#6b7280;">Stock levels across warehouses</p>
+            </div>
           </div>
+          <button (click)="goToCreateItem()" *ngIf="canCreate()" [disabled]="isPeriodLocked"
+            class="btn d-inline-flex align-items-center"
+            style="background:#2E5F73;color:#fff;height:36px;border-radius:8px;gap:7px;font-size:0.85rem;font-weight:600;padding:0 16px;border:none;">
+            <i class="fas fa-eye"></i><span>Go to Overview</span>
+          </button>
         </div>
-
-        <!-- Search + Create -->
-        <div class="col-md-6 col-12 d-flex justify-content-start justify-content-md-end">
-          <div class="d-flex align-items-center justify-content-end pr-1 pb-1 pb-md-0">
-            <label class="d-flex align-items-center ml-1 ml-md-0">
-              Search:
-              <input
-                [(ngModel)]="searchValue"
-                type="search"
-                class="form-control ml-2"
-                (input)="applyFilter()"
-                placeholder="Item / SKU / Category / UOM / Warehouse / Bin" />
-            </label>
-
-            <button
-              (click)="goToCreateItem()"
-              *ngIf="canCreate()"
-              [disabled]="isPeriodLocked"
-              class="btn m-1 d-inline-flex align-items-center"
-              style="background-color:#2E5F73; color:white; gap:6px;">
-              <i class="fas fa-plus-circle"></i>
-              <span>Go to Overview</span>
-            </button>
-          </div>
-        </div>
-      </div>
- <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 m-1" style="font-size:0.8rem;">
+        <div *ngIf="isPeriodLocked" class="alert alert-warning py-1 px-2 mb-0 mt-2" style="font-size:0.8rem;">
           Period <strong>{{ PeriodName || 'current' }}</strong> is locked.
         </div>
+      </div>
+
+      <!-- Controls bar -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:10px;padding:10px 20px 12px;border-bottom:1px solid #f1f5f9;">
+        <label class="d-flex align-items-center mb-0" style="font-size:0.82rem;color:#6b7280;">
+          Show
+          <select class="form-control mx-2" style="width:70px;height:32px;font-size:0.82rem;padding:3px 6px;" [(ngModel)]="pageSize">
+            <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
+          </select>
+          entries
+        </label>
+        <div style="display:flex;align-items:center;border:1px solid #d1d5db;border-radius:8px;background:#fff;overflow:hidden;height:34px;">
+          <span style="padding:0 10px;color:#9ca3af;"><i class="fas fa-search" style="font-size:11px;"></i></span>
+          <input [(ngModel)]="searchValue" type="search"
+            style="border:none;outline:none;height:100%;font-size:0.82rem;width:260px;padding:0 8px;background:transparent;"
+            placeholder="Item / SKU / Category / UOM / Warehouse / Bin" (input)="applyFilter()" />
+        </div>
+      </div>
       <!-- Loading / Error -->
       <div *ngIf="loading" class="px-3 pb-2 small text-muted">Loading items…</div>
       <div *ngIf="errorMsg" class="alert alert-danger mx-3 my-2">{{ errorMsg }}</div>
@@ -64,6 +58,50 @@
         [reorderable]="true"
         [rowIdentity]="rowIdentity"
         [trackByProp]="'gridKey'">
+      <!-- Table -->
+      <div class="table-responsive">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th style="width:40px;"></th>
+              <th style="width:120px;">SKU</th>
+              <th>Item Name</th>
+              <th>Category</th>
+              <th>UOM</th>
+              <th>On Hand (All WH)</th>
+              <th>Available (All WH)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of filteredRows | slice:(currentPage-1)*pageSize:currentPage*pageSize">
+              <td>
+                <button class="erp-eye-btn" (click)="openViewModal(row, viewModal)" title="View stock by Warehouse/bins">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </td>
+              <td style="font-family:monospace;color:#6b7280;">{{ row.sku }}</td>
+              <td><strong>{{ row.name }}</strong></td>
+              <td>{{ row.category || '—' }}</td>
+              <td>{{ row.uom || '—' }}</td>
+              <td style="font-weight:700;color:#2E5F73;">{{ row.totalOnHand ?? 0 }}</td>
+              <td style="font-weight:700;color:#059669;">{{ row.totalAvailable ?? 0 }}</td>
+            </tr>
+            <tr *ngIf="!filteredRows || filteredRows.length===0">
+              <td colspan="7" class="erp-empty-cell">No stock overview records found.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="erp-pager" *ngIf="pageSize < 999999 && totalPages > 1">
+          <span class="erp-pager-info">
+            Showing {{ (currentPage-1)*pageSize+1 }}–{{ currentPage*pageSize < filteredRows.length ? currentPage*pageSize : filteredRows.length }} of {{ filteredRows.length }} entries
+          </span>
+          <div class="erp-pager-btns">
+            <button class="erp-pager-btn" [disabled]="currentPage===1" (click)="onPageChange(currentPage-1)">&#8249;</button>
+            <button *ngFor="let p of pageNumbers" class="erp-pager-btn" [class.active]="p===currentPage" (click)="onPageChange(p)">{{ p }}</button>
+            <button class="erp-pager-btn" [disabled]="currentPage===totalPages" (click)="onPageChange(currentPage+1)">&#8250;</button>
+          </div>
+        </div>
+      </div>
 
         <!-- View column -->
         <ngx-datatable-column

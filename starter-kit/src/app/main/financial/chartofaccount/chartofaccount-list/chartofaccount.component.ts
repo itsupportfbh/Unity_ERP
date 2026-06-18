@@ -41,6 +41,7 @@ export class ChartofaccountComponent implements OnInit {
 
   headervalue = 'Chart of Accounts';
   selectedOption = 10;
+  currentPage = 1;
   searchValue = '';
   isLoading = false;
 
@@ -76,6 +77,27 @@ export class ChartofaccountComponent implements OnInit {
   
   ngOnInit(): void {
     this.loadPermission();
+  }
+
+  get totalPages(): number {
+    const pageSize = Number(this.selectedOption) || 10;
+    return Math.max(1, Math.ceil(this.displayRows.length / pageSize));
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
   }
 
   // ============================================================
@@ -214,6 +236,7 @@ export class ChartofaccountComponent implements OnInit {
 
       this.roots = roots;
       this.allNodes = Array.from(byId.values());
+      this.currentPage = 1;
 
       // initial visible rows – only roots (collapsed)
       this.rebuildVisibleRows();
@@ -254,6 +277,9 @@ export class ChartofaccountComponent implements OnInit {
 
     this.roots.forEach(addNode);
     this.displayRows = rows;
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = 1;
+    }
   }
 
   // ============================================================
@@ -264,6 +290,7 @@ export class ChartofaccountComponent implements OnInit {
 
     if (!term) {
       // clear search → show tree again
+      this.currentPage = 1;
       this.rebuildVisibleRows();
       return;
     }
@@ -280,6 +307,7 @@ export class ChartofaccountComponent implements OnInit {
         contains(n.balance)
       )
       .sort((a, b) => a.headCode - b.headCode);
+    this.currentPage = 1;
   }
 
   // ============================================================

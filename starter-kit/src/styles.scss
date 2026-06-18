@@ -29,6 +29,8 @@
     height: var(--ctl-h) !important;
     padding: var(--ctl-py) var(--ctl-px) !important;
     border-radius: var(--ctl-radius) !important;
+    border: none !important;
+    outline: none !important;
   }
 
   /* Tailwind utilities you used (shrink them only inside this page) */
@@ -62,5 +64,1036 @@
   /* Table cells */
   table th, table td{ padding: 8px 10px !important; font-size: 14px !important; }
   
+
 }
+
+/* ===================================================
+   ERP Custom List Tables — global styles
+   =================================================== */
+.erp-table,
+.company-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead tr {
+    background-color: #2E5F73;
+
+    th {
+      padding: 9px 12px;
+      font-weight: 600;
+      font-size: 0.72rem;
+      letter-spacing: 0.45px;
+      text-transform: uppercase;
+      color: #fff;
+      white-space: nowrap;
+      border: none;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #eef0f2;
+      transition: background 0.12s;
+
+      &:nth-child(even) { background: #f9fafb; }
+      &:hover           { background: #ebf4f7 !important; }
+    }
+
+    td {
+      padding: 7px 12px;
+      font-size: 0.79rem;
+      color: #374151;
+      vertical-align: middle;
+      border: none;
+    }
+  }
+}
+
+.erp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.69rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.badge-active    { background: #dcf5e4; color: #14532d; }
+  &.badge-inactive  { background: #fce4e4; color: #7f1d1d; }
+  &.badge-pending   { background: #fef3c7; color: #78350f; }
+  &.badge-approved  { background: #dbeafe; color: #1e3a8a; }
+  &.badge-completed { background: #dcfce7; color: #14532d; }
+  &.badge-rejected  { background: #fce4e4; color: #7f1d1d; }
+  &.badge-draft     { background: #e5e7eb; color: #374151; }
+  &.badge-hold      { background: #fef9c3; color: #713f12; }
+  &.badge-posted    { background: #d1fae5; color: #065f46; }
+  &.badge-kyc-ok    { background: #dcf5e4; color: #14532d; }
+  &.badge-kyc-pend  { background: #fef3c7; color: #78350f; }
+}
+
+.erp-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+  padding: 0;
+  margin-right: 2px;
+  flex-shrink: 0;
+
+  &.btn-edit   { color: #2E5F73; &:hover { background: #e5f0f3; } }
+  &.btn-delete { color: #dc3545; &:hover { background: #fde8ea; } }
+  &.btn-view   { color: #2E5F73; &:hover { background: #e5f0f3; } }
+  &.btn-print  { color: #198754; &:hover { background: #d1fae5; } }
+  &.btn-mail   { color: #fd7e14; &:hover { background: #fff3e0; } }
+  &.btn-match  { color: #7c3aed; &:hover { background: #ede9fe; } }
+  &.btn-disabled { color: #9ca3af; cursor: default; }
+
+  i { font-size: 13px !important; line-height: 1; }
+}
+
+/* Keep action buttons on a single line in all list tables */
+.erp-table td:last-child,
+.company-table td:last-child {
+  white-space: nowrap;
+}
+.erp-table th:last-child,
+.company-table th:last-child {
+  white-space: nowrap;
+}
+
+.erp-empty-cell {
+  text-align: center;
+  padding: 24px !important;
+  color: #9ca3af;
+  font-size: 0.82rem;
+}
+
+.erp-eye-btn {
+  background: none;
+  border: none;
+  color: #2E5F73;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 2px 4px;
+  &:hover { color: #1a3d4f; }
+}
+
+/* ===== Menu UI — Light Sidebar (white bg, teal accents) ===== */
+
+/* Sidebar container — white background */
+.main-menu,
+.main-menu.menu-light {
+  background-color: #ffffff !important;
+  box-shadow: 1px 0 8px rgba(0, 0, 0, 0.07) !important;
+}
+
+.main-menu.menu-light .navigation,
+.main-menu .navigation {
+  background: #ffffff !important;
+}
+
+/* Logo / brand text */
+.main-menu .navbar-header .navbar-brand .brand-text {
+  color: #2E5F73 !important;
+}
+
+/* Modern toggle icon */
+.main-menu .navbar-header .modern-nav-toggle .feather {
+  stroke: #2E5F73 !important;
+}
+
+/* Section headers */
+.main-menu .navigation .navigation-header span:not(.feather-more-horizontal) {
+  color: #9ca3af !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.6px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  opacity: 1 !important;
+}
+
+/* ── TOP-LEVEL items ── */
+.vertical-layout.vertical-menu-modern .main-menu .navigation > li > a {
+  padding: 10px 15px !important;
+  border-radius: 8px !important;
+  margin: 2px 10px !important;
+  width: calc(100% - 20px) !important;
+  color: #4b5563 !important;
+
+  .menu-title {
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    color: #4b5563 !important;
+  }
+
+  > svg, > i {
+    font-size: 1.1rem !important;
+    height: 20px !important;
+    width: 20px !important;
+    margin-right: 0.85rem !important;
+    color: #6b7280 !important;
+  }
+
+  &:hover {
+    background: #f0f9fb !important;
+    color: #2E5F73 !important;
+    .menu-title { color: #2E5F73 !important; }
+    > svg, > i { color: #2E5F73 !important; }
+  }
+}
+
+/* TOP-LEVEL active / open */
+.vertical-layout.vertical-menu-modern .main-menu .navigation > li.active > a,
+.vertical-layout.vertical-menu-modern .main-menu .navigation > li.open > a,
+.vertical-layout.vertical-menu-modern .main-menu .navigation > li.sidebar-group-active > a {
+  background: #e8f4f8 !important;
+  color: #2E5F73 !important;
+  box-shadow: none !important;
+
+  .menu-title {
+    color: #2E5F73 !important;
+    font-weight: 600 !important;
+  }
+
+  > svg, > i { color: #2E5F73 !important; }
+}
+
+/* ── 1ST-LEVEL SUBMENU items ── */
+.vertical-layout.vertical-menu-modern .main-menu .navigation .menu-content > li > a {
+  padding: 8px 15px 8px 44px !important;
+  border-radius: 6px !important;
+  margin: 1px 10px !important;
+  font-size: 0.875rem !important;
+  font-weight: 400 !important;
+  color: #6b7280 !important;
+
+  .menu-title {
+    font-size: 0.875rem !important;
+    font-weight: 400 !important;
+    color: #6b7280 !important;
+  }
+
+  &:hover {
+    background: #f0f9fb !important;
+    color: #2E5F73 !important;
+    .menu-title { color: #2E5F73 !important; }
+  }
+}
+
+/* 1ST-LEVEL active */
+.vertical-layout.vertical-menu-modern .main-menu .navigation .menu-content > li.active > a,
+.vertical-layout.vertical-menu-modern .main-menu .navigation .menu-content > li > a.active {
+  background: #e8f4f8 !important;
+  color: #2E5F73 !important;
+  box-shadow: none !important;
+  .menu-title { color: #2E5F73 !important; font-weight: 600 !important; }
+}
+
+/* ── 2ND-LEVEL SUBMENU items ── */
+.vertical-layout.vertical-menu-modern .main-menu .navigation .menu-content .menu-content > li > a {
+  padding: 7px 15px 7px 60px !important;
+  font-size: 0.84rem !important;
+  color: #9ca3af !important;
+  .menu-title { font-size: 0.84rem !important; color: #9ca3af !important; }
+  &:hover .menu-title { color: #2E5F73 !important; }
+}
+
+.vertical-layout.vertical-menu-modern .main-menu .navigation .menu-content .menu-content > li.active > a,
+.vertical-layout.vertical-menu-modern .main-menu .navigation .menu-content .menu-content > li > a.active {
+  color: #2E5F73 !important;
+  .menu-title { color: #2E5F73 !important; font-weight: 600 !important; }
+}
+
+/* Submenu chevron arrow — dark for light sidebar */
+.vertical-layout.vertical-menu-modern.menu-expanded .main-menu .navigation li.has-sub > a:after {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280'><path d='M4 2l4 4-4 4z'/></svg>") !important;
+}
+
+/* Collapsed sidebar icon color fix */
+body.menu-collapsed .main-menu .navigation > li > a > svg,
+body.menu-collapsed .main-menu .navigation > li > a > i {
+  color: #6b7280 !important;
+}
+body.menu-collapsed .main-menu .navigation > li.active > a > svg,
+body.menu-collapsed .main-menu .navigation > li.active > a > i,
+body.menu-collapsed .main-menu .navigation > li.open > a > svg,
+body.menu-collapsed .main-menu .navigation > li.open > a > i {
+  color: #2E5F73 !important;
+}
+
+/* ===== Universal page title — same on every screen ===== */
+h4.card-text,
+h4.page-title {
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  color: #2E5F73 !important;
+  margin-left: 0.75rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* Global content font */
+.content-wrapper { font-size: 0.875rem; }
+.card-body { font-size: 0.875rem; }
+label { font-size: 0.85rem; }
+
+/* ===== ERP Pagination ===== */
+.erp-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-top: 1px solid #eef0f2;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.erp-pager-info {
+  font-size: 0.77rem;
+  color: #6b7280;
+}
+
+.erp-pager-btns {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.erp-pager-btn {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  font-size: 0.7rem;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  line-height: 1;
+
+  &:hover:not(:disabled) { background: #e8f4f8; border-color: #2E5F73; color: #2E5F73; }
+  &.active { background: #2E5F73 !important; color: #fff !important; border-color: #2E5F73 !important; font-weight: 600; }
+  &:disabled { opacity: 0.35; cursor: default; }
+}
+
+/* ===== SweetAlert2 — fix button overlap across all screens ===== */
+.swal2-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  margin-top: 1.25rem !important;
+}
+
+.swal2-styled {
+  margin: 0 !important;
+  min-width: 100px;
+  white-space: nowrap;
+}
+
+/* ================================================================
+   GLOBAL UI REFRESH — Step 1
+   ================================================================ */
+
+/* Body & content area background */
+body,
+.wrapper,
+.app-content {
+  background-color: #f5f7f8 !important;
+}
+
+/* Navbar — white, clean border */
+.header-navbar {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.07) !important;
+}
+.header-navbar.navbar-static-top {
+  border-bottom: 1px solid #e3eaef !important;
+}
+.header-navbar .navbar-container {
+  background-color: #ffffff !important;
+}
+
+/* Cards — lighter border, minimal shadow */
+.card:not(.no-style-override) {
+  border: 1px solid #e3eaef !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 10px !important;
+}
+
+/* Sidebar navbar-header border */
+.main-menu .navbar-header {
+  border-bottom: 1px solid #e3eaef !important;
+}
+
+/* ================================================================
+   GLOBAL UI REFRESH — Step 2: Navbar, Footer, Breadcrumb
+   ================================================================ */
+
+/* Navbar feather icons — teal on hover (was purple) */
+.header-navbar .navbar-container ul.navbar-nav li i.ficon,
+.header-navbar .navbar-container ul.navbar-nav li svg.ficon {
+  color: #6b7280 !important;
+}
+.header-navbar .navbar-container ul.navbar-nav li i.ficon:hover,
+.header-navbar .navbar-container ul.navbar-nav li svg.ficon:hover {
+  color: #2E5F73 !important;
+}
+
+/* Dark/Light mode toggle button in navbar */
+.header-navbar .navbar-container .nav-link-style {
+  color: #6b7280 !important;
+  font-size: 0.78rem !important;
+  border: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  small { font-size: 0.72rem !important; }
+  &:hover { color: #2E5F73 !important; }
+}
+
+/* Navbar user name & status */
+.header-navbar .navbar-container .user-name {
+  color: #1f2937 !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+}
+.header-navbar .navbar-container .user-status {
+  color: #6b7280 !important;
+  font-size: 0.75rem !important;
+}
+
+/* Navbar scroll style — white + shadow instead of teal */
+.navbar-static-style-on-scroll {
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.09) !important;
+}
+
+/* Dropdown menu — cleaner */
+.dropdown-menu {
+  border: 1px solid #e3eaef !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.09) !important;
+  border-radius: 10px !important;
+}
+
+/* ── Breadcrumb ─────────────────────────────────────────────── */
+.breadcrumb {
+  background: transparent !important;
+  padding: 0 !important;
+  margin-bottom: 0.5rem !important;
+}
+.breadcrumb-item {
+  font-size: 0.78rem !important;
+  color: #9ca3af !important;
+  a { color: #6b7280 !important; &:hover { color: #2E5F73 !important; } }
+  + .breadcrumb-item::before { color: #d1d5db !important; }
+  &.active { color: #2E5F73 !important; font-weight: 600 !important; }
+}
+
+/* Content header title */
+.content-header .content-header-title {
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+  border-right: 1px solid #e3eaef !important;
+  padding-right: 1rem !important;
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+footer.footer {
+  background-color: #ffffff !important;
+  border-top: 1px solid #e3eaef !important;
+  padding: 0.75rem 1.5rem !important;
+  font-size: 0.78rem !important;
+  color: #9ca3af !important;
+  a { color: #6b7280 !important; &:hover { color: #2E5F73 !important; } }
+}
+
+/* ── Scrollbar — thin teal ───────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #b0ccd6; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2E5F73; }
+
+/* ================================================================
+   GLOBAL UI REFRESH — Step 3: Inputs, Focus, Buttons, Selects
+   ================================================================ */
+
+/* ── Form inputs & textareas ─────────────────────────────────── */
+.form-control {
+  height: 38px !important;
+  border: 1px solid #d1d8e0 !important;
+  border-radius: 8px !important;
+  font-size: 0.855rem !important;
+  color: #374151 !important;
+  background-color: #ffffff !important;
+  padding: 0 10px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.form-control:focus {
+  border-color: #2E5F73 !important;
+  box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.12) !important;
+  outline: none !important;
+}
+
+.form-control::placeholder {
+  color: #b0bec5 !important;
+  font-size: 0.82rem !important;
+}
+
+.form-control:disabled,
+.form-control[readonly] {
+  background-color: #f3f6f8 !important;
+  color: #9ca3af !important;
+  cursor: not-allowed;
+}
+
+/* ── Textarea ─────────────────────────────────────────────────── */
+textarea.form-control {
+  height: auto !important;
+  min-height: 80px !important;
+  padding: 8px 10px !important;
+  resize: vertical !important;
+  line-height: 1.5 !important;
+}
+
+/* ── Native select ───────────────────────────────────────────── */
+select.form-control {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  background-size: 10px !important;
+  padding-right: 28px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  cursor: pointer !important;
+}
+
+/* ── Input group ─────────────────────────────────────────────── */
+.input-group .form-control {
+  border-radius: 0 8px 8px 0 !important;
+}
+.input-group-prepend .input-group-text,
+.input-group-append .input-group-text {
+  border-color: #d1d8e0 !important;
+  background-color: #f3f6f8 !important;
+  color: #6b7280 !important;
+  font-size: 0.82rem !important;
+}
+.input-group-prepend .input-group-text {
+  border-radius: 8px 0 0 8px !important;
+}
+.input-group-append .input-group-text {
+  border-radius: 0 8px 8px 0 !important;
+}
+
+/* ── Form labels ─────────────────────────────────────────────── */
+.form-group label,
+label {
+  color: #374151 !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 5px !important;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn {
+  border-radius: 8px !important;
+}
+
+.btn-primary {
+  background-color: #2E5F73 !important;
+  border-color: #2E5F73 !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #245060 !important;
+  border-color: #245060 !important;
+  box-shadow: 0 4px 12px rgba(46, 95, 115, 0.3) !important;
+}
+
+.btn-outline-primary {
+  border-color: #2E5F73 !important;
+  color: #2E5F73 !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+.btn-outline-primary:hover {
+  background-color: #2E5F73 !important;
+  color: #ffffff !important;
+}
+
+.btn-secondary {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+}
+
+.btn-success  { border-radius: 8px !important; font-weight: 600 !important; }
+.btn-danger   { border-radius: 8px !important; font-weight: 600 !important; }
+.btn-warning  { border-radius: 8px !important; font-weight: 600 !important; }
+
+/* ── ng-select (custom dropdown library) ────────────────────── */
+.ng-select .ng-select-container {
+  border: 1px solid #d1d8e0 !important;
+  border-radius: 8px !important;
+  min-height: 38px !important;
+  height: 38px !important;
+  font-size: 0.855rem !important;
+  color: #374151 !important;
+  background: #fff !important;
+  cursor: pointer !important;
+}
+.ng-select.ng-select-multiple .ng-select-container {
+  height: auto !important;
+  min-height: 38px !important;
+}
+.ng-select.ng-select-focused .ng-select-container {
+  border-color: #2E5F73 !important;
+  box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.12) !important;
+}
+.ng-select .ng-placeholder {
+  color: #b0bec5 !important;
+  font-size: 0.82rem !important;
+}
+.ng-select .ng-arrow-wrapper .ng-arrow {
+  border-color: #6b7280 transparent transparent !important;
+  border-width: 5px 4px 2.5px !important;
+}
+.ng-select.ng-select-opened .ng-arrow-wrapper .ng-arrow {
+  border-color: transparent transparent #2E5F73 !important;
+  top: -2px !important;
+}
+.ng-select .ng-dropdown-panel {
+  border: 1px solid #d1d8e0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.10) !important;
+  overflow: hidden !important;
+  margin-top: 2px !important;
+}
+.ng-select .ng-dropdown-panel .ng-option {
+  font-size: 0.855rem !important;
+  color: #374151 !important;
+  padding: 7px 12px !important;
+}
+.ng-select .ng-option.ng-option-selected,
+.ng-select .ng-option.ng-option-marked {
+  background-color: #e8f4f8 !important;
+  color: #2E5F73 !important;
+}
+.ng-select .ng-option.ng-option-selected.ng-option-marked {
+  background-color: #d4edf4 !important;
+}
+/* Single-select: plain text value (no chip background) */
+.ng-select:not(.ng-select-multiple) .ng-value {
+  background: transparent !important;
+  border-radius: 0 !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 0.855rem !important;
+  color: #374151 !important;
+  font-weight: 400 !important;
+}
+.ng-select:not(.ng-select-multiple) .ng-value-label {
+  color: #374151 !important;
+  font-size: 0.855rem !important;
+}
+
+/* Multi-select tags — chip style */
+.ng-select.ng-select-multiple .ng-value {
+  background-color: #e8f4f8 !important;
+  border-radius: 5px !important;
+  color: #2E5F73 !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  padding: 1px 6px !important;
+  margin: 2px 2px !important;
+}
+.ng-select.ng-select-multiple .ng-value-icon {
+  color: #2E5F73 !important;
+  &:hover { background: #c5e2ec !important; }
+}
+/* Clear button */
+.ng-select .ng-clear-wrapper {
+  color: #9ca3af !important;
+  &:hover { color: #dc3545 !important; }
+}
+
+/* ── Checkbox & radio — teal accent ─────────────────────────── */
+.custom-control-input:checked ~ .custom-control-label::before {
+  background-color: #2E5F73 !important;
+  border-color: #2E5F73 !important;
+}
+.custom-control-input:focus ~ .custom-control-label::before {
+  box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.15) !important;
+}
+
+/* ── Card header ─────────────────────────────────────────────── */
+.card-header {
+  background-color: #f8fbfc !important;
+  border-bottom: none !important;
+  padding: 0.9rem 1.25rem !important;
+}
+
+.card-header .card-title,
+.card-header h4 {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+  margin-bottom: 0 !important;
+}
+
+/* ── Table — tighten up ──────────────────────────────────────── */
+.table thead th {
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: #6b7280 !important;
+  border-bottom: 1px solid #e3eaef !important;
+  background-color: #f8fbfc !important;
+  padding: 10px 12px !important;
+}
+.table tbody td {
+  font-size: 0.83rem !important;
+  color: #374151 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding: 8px 12px !important;
+  vertical-align: middle !important;
+}
+.table tbody tr:hover td {
+  background-color: #f0f9fb !important;
+}
+
+/* ================================================================
+   GLOBAL UI REFRESH — Step 4: Links, Badges, Alerts, Tabs, Swal
+   ================================================================ */
+
+/* ── Global link color → teal ────────────────────────────────── */
+.content-wrapper a:not(.btn):not(.nav-link):not([class*='menu']):not(.dropdown-item) {
+  color: #2E5F73;
+}
+.content-wrapper a:not(.btn):not(.nav-link):not([class*='menu']):not(.dropdown-item):hover {
+  color: #1d4357;
+}
+
+/* ── Bootstrap badge variants → teal primary ─────────────────── */
+.badge-primary {
+  background-color: #2E5F73 !important;
+  color: #fff !important;
+}
+.badge-light-primary {
+  background-color: rgba(46, 95, 115, 0.12) !important;
+  color: #2E5F73 !important;
+}
+.text-primary { color: #2E5F73 !important; }
+.bg-primary    { background-color: #2E5F73 !important; }
+.border-primary { border-color: #2E5F73 !important; }
+
+/* ── Alert primary → teal tint ───────────────────────────────── */
+.alert-primary {
+  background-color: #e8f4f8 !important;
+  border-color: #b0d4e0 !important;
+  color: #1d4357 !important;
+}
+
+/* ── Tabs → teal active ──────────────────────────────────────── */
+.nav-tabs .nav-link {
+  color: #6b7280 !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  border-radius: 0 !important;
+}
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-item.show .nav-link {
+  color: #2E5F73 !important;
+  border-bottom: 2px solid #2E5F73 !important;
+  font-weight: 700 !important;
+}
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background-color: #2E5F73 !important;
+  color: #fff !important;
+}
+
+/* ── SweetAlert2 — confirm button → teal ────────────────────── */
+.swal2-confirm {
+  background-color: #2E5F73 !important;
+  border-color: #2E5F73 !important;
+  border-radius: 8px !important;
+  &:focus { box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.3) !important; }
+}
+.swal2-cancel {
+  border-radius: 8px !important;
+}
+.swal2-popup {
+  border-radius: 14px !important;
+  padding: 2rem !important;
+}
+.swal2-title { font-size: 1.1rem !important; color: #1f2937 !important; }
+.swal2-html-container { font-size: 0.875rem !important; color: #6b7280 !important; }
+
+/* ── Spinner / loading → teal ────────────────────────────────── */
+.spinner-border.text-primary,
+.spinner-grow.text-primary { color: #2E5F73 !important; }
+
+/* ── Progress bar → teal ─────────────────────────────────────── */
+.progress-bar { background-color: #2E5F73 !important; }
+.progress { border-radius: 99px !important; }
+
+/* ── Toastr notifications ────────────────────────────────────── */
+.toast-success { background-color: #1a5c3a !important; }
+.toast-info    { background-color: #2E5F73 !important; }
+.toast-warning { background-color: #92400e !important; }
+.toast-error   { background-color: #991b1b !important; }
+
+/* ── Sidebar active submenu dot ──────────────────────────────── */
+.vertical-layout.vertical-menu-modern .main-menu .navigation .menu-content > li.active > a::before,
+.vertical-layout.vertical-menu-modern .main-menu .navigation .menu-content > li > a.active::before {
+  background-color: #2E5F73 !important;
+  box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.2) !important;
+}
+
+/* ── Input group addon ───────────────────────────────────────── */
+.input-group-text {
+  border-color: #d1d8e0 !important;
+  background-color: #f8fbfc !important;
+  color: #6b7280 !important;
+  border-radius: 8px !important;
+  font-size: 0.875rem !important;
+}
+
+/* ── Pagination ──────────────────────────────────────────────── */
+.page-item.active .page-link {
+  background-color: #2E5F73 !important;
+  border-color: #2E5F73 !important;
+}
+.page-link {
+  color: #2E5F73 !important;
+  border-radius: 6px !important;
+}
+.page-link:focus { box-shadow: 0 0 0 3px rgba(46, 95, 115, 0.15) !important; }
+
+/* ================================================================
+   GLOBAL UI REFRESH — Step 5: Modals, Datatable, Dividers, Polish
+   ================================================================ */
+
+/* ── Bootstrap Modal ─────────────────────────────────────────── */
+.modal-content {
+  border: none !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16) !important;
+  overflow: hidden !important;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #2E5F73 0%, #1d4357 100%) !important;
+  border-bottom: none !important;
+  padding: 1rem 1.25rem !important;
+  border-radius: 0 !important;
+
+  .modal-title {
+    color: #ffffff !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+  }
+
+  .close {
+    color: rgba(255, 255, 255, 0.8) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+    padding: 0.3rem 0.6rem !important;
+
+    &:hover {
+      color: #ffffff !important;
+      background: rgba(255, 255, 255, 0.2) !important;
+    }
+  }
+}
+
+.modal-body {
+  padding: 1.25rem !important;
+  font-size: 0.875rem !important;
+  color: #374151 !important;
+}
+
+.modal-footer {
+  border-top: 1px solid #e3eaef !important;
+  padding: 0.75rem 1.25rem !important;
+  background: #f8fbfc !important;
+  border-radius: 0 0 14px 14px !important;
+}
+
+/* ── Ngx-datatable ───────────────────────────────────────────── */
+.ngx-datatable.bootstrap {
+  border: 1px solid #e3eaef !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+
+  .datatable-header {
+    background-color: #2E5F73 !important;
+    border-bottom: none !important;
+
+    .datatable-header-cell {
+      color: #ffffff !important;
+      font-size: 0.72rem !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.04em !important;
+      padding: 10px 12px !important;
+      border-right: 1px solid rgba(255,255,255,0.1) !important;
+
+      .sort-btn { color: rgba(255,255,255,0.7) !important; }
+      &.active .sort-btn { color: #ffffff !important; }
+    }
+  }
+
+  .datatable-body {
+    .datatable-body-row {
+      border-bottom: 1px solid #f1f5f9 !important;
+      transition: background 0.1s !important;
+
+      &:nth-child(even) .datatable-row-center { background: #f9fafb !important; }
+      &:hover .datatable-row-center { background: #f0f9fb !important; }
+
+      .datatable-body-cell {
+        font-size: 0.83rem !important;
+        color: #374151 !important;
+        padding: 8px 12px !important;
+        vertical-align: middle !important;
+        border-right: none !important;
+      }
+    }
+  }
+
+  .datatable-footer {
+    background: #f8fbfc !important;
+    border-top: 1px solid #e3eaef !important;
+    font-size: 0.8rem !important;
+    color: #6b7280 !important;
+
+    .datatable-pager {
+      .pager li a {
+        color: #2E5F73 !important;
+        border-radius: 6px !important;
+      }
+      .pager li.active a {
+        background-color: #2E5F73 !important;
+        color: #fff !important;
+      }
+    }
+  }
+}
+
+/* Purchase module list screens should match the standard list shell
+   while keeping horizontal scroll inside the table only. */
+.purchase-list-shell {
+  .purchase-list-card {
+    border-radius: 12px !important;
+    overflow: hidden;
+  }
+
+  .purchase-list-card > .row:first-child {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    align-items: flex-start;
+  }
+
+  .purchase-list-card > .row:first-child > [class*='col-'] {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .purchase-list-card h4.card-text {
+    margin: 0 0 10px 0 !important;
+  }
+
+  .purchase-list-card .form-control {
+    max-width: 100%;
+  }
+
+  .purchase-list-table {
+    margin: 0 16px 16px;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+  }
+
+  .purchase-list-table .datatable-body,
+  .purchase-list-table .datatable-scroll {
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+
+  .purchase-list-table .datatable-body-row .datatable-row-center {
+    overflow: visible !important;
+  }
+}
+
+/* ── Content wrapper padding ─────────────────────────────────── */
+.content-wrapper {
+  padding: 1.5rem !important;
+}
+
+/* ── HR divider ──────────────────────────────────────────────── */
+hr {
+  border-color: #e3eaef !important;
+  margin: 1rem 0 !important;
+}
+
+/* ── Flatpickr date picker — teal ────────────────────────────── */
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover {
+  background: #2E5F73 !important;
+  border-color: #2E5F73 !important;
+}
+.flatpickr-day:hover { background: #e8f4f8 !important; color: #2E5F73 !important; }
+.flatpickr-months .flatpickr-month { background: #2E5F73 !important; }
+.flatpickr-current-month .flatpickr-monthDropdown-months { background: #2E5F73 !important; }
+.flatpickr-weekday { color: #2E5F73 !important; }
+
+/* ── Sidebar section-header label ────────────────────────────── */
+.main-menu .navigation .navigation-header {
+  margin: 1rem 0 0.3rem 1rem !important;
+  padding: 0 !important;
+}
+
+/* ── Sidebar border when collapsed ──────────────────────────────*/
+.vertical-layout.vertical-menu-modern.menu-collapsed .main-menu {
+  background-color: #ffffff !important;
+}
+
+/* ── Card bottom margin ──────────────────────────────────────── */
+.card {
+  margin-bottom: 1.25rem !important;
+}
+
+/* ── Sidebar active left accent bar ─────────────────────────── */
+.vertical-layout.vertical-menu-modern .main-menu .navigation > li.active > a {
+  border-left: 3px solid #2E5F73 !important;
+  padding-left: 12px !important;
+}
+
+/* ── Page content top spacing ────────────────────────────────── */
+.content-body { padding-top: 0.25rem !important; }
 

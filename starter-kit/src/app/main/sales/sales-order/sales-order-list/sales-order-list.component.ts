@@ -97,6 +97,7 @@ export class SalesOrderListComponent implements OnInit, AfterViewInit, AfterView
   searchValue = '';
   ColumnMode = ColumnMode;
   selectedOption = 10;
+  currentPage = 1;
 
   showDraftsModal = false;
   draftRows: any[] = [];
@@ -149,6 +150,27 @@ activeRow: SoHeader | null = null;
   ngOnInit(): void { this.loadPermission(); }
   ngAfterViewInit(): void  { feather.replace(); }
   ngAfterViewChecked(): void { feather.replace(); }
+
+  get totalPages(): number {
+    const pageSize = Number(this.selectedOption) || 10;
+    return Math.max(1, Math.ceil(this.rows.length / pageSize));
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
 
   // ===================================================
   // PERMISSION
@@ -257,7 +279,8 @@ activeRow: SoHeader | null = null;
 loadRequests(): void {
   this.salesOrderService.getSO().subscribe({
     next: (res: any) => {
-      const list: SoHeader[] = (res ?? []).map((r: any) => ({
+      const source = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      const list: SoHeader[] = source.map((r: any) => ({
         ...r,
         
         fxRate:       Number(r.fxRate       ?? r.FxRate       ?? 1),
@@ -266,6 +289,7 @@ loadRequests(): void {
       }));
       this.rows     = list;
       this.tempData = list;
+      this.currentPage = 1;
       this.filterUpdate({ target: { value: this.searchValue } });
       this.refreshGrnAlerts();
     },
@@ -293,6 +317,7 @@ loadRequests(): void {
     });
 
     this.rows = temp;
+    this.currentPage = 1;
     if (this.table) this.table.offset = 0;
   }
 

@@ -584,13 +584,20 @@ netPayableBase: number = 0; // ✅ SGD amount
             ? `${x.warehouseName} / ${x.binName}`
             : '';
 
+        const budgetLineId = Number(
+          x.budgetLineId ??
+          x.BudgetLineId ??
+          x.budgetlineid ??
+          0
+        );
+
         merged.push({
           item: itemText,
           qty,
           unitPrice,
           discountPct: 0,
           location,
-          budgetLineId: null,
+          budgetLineId: budgetLineId > 0 ? budgetLineId : null,
           taxMode: defaultMode
         });
       });

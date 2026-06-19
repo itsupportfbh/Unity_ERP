@@ -12,8 +12,14 @@ export class ItemsService {
 
   constructor(private http: HttpClient) {}
 
-  getAllItem(): Observable<any> {
-    return this.http.get<any[]>(this.url + ItemApiUrls.GetAllItem);
+ getAllItem(itemCategoryType?: number): Observable<any> {
+    let url = this.url + ItemApiUrls.GetAllItem;
+
+    if (itemCategoryType) {
+      url += `?itemCategoryType=${itemCategoryType}`;
+    }
+
+    return this.http.get<any>(url);
   }
 
   createItem(data: any): Observable<any> {

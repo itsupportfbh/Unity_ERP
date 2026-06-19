@@ -94,6 +94,33 @@
                    [maxlength]="150"
                    required />
           </div>
+          <div class="form-group">
+            <label>Sales Budget Line</label>
+
+            <ng-select
+              [items]="salesBudgetLines"
+              bindLabel="label"
+              bindValue="headCode"
+              name="salesParentHeadCode"
+              [(ngModel)]="SalesParentHeadCode"
+              placeholder="Select Sales Budget Line"
+              [searchable]="true"
+              [clearable]="true"
+              required>
+
+              <ng-template ng-option-tmp let-item="item">
+                <div [title]="item.label" class="budget-option">
+                  {{ item.label }}
+                </div>
+              </ng-template>
+
+              <ng-template ng-label-tmp let-item="item">
+                <div [title]="item.label" class="budget-selected">
+                  {{ item.label }}
+                </div>
+              </ng-template>
+            </ng-select>
+          </div>
 
           <!-- Items Multi Select -->
           <div class="form-group">

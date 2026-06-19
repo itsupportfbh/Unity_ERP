@@ -237,6 +237,15 @@ baseCurrencyName: string  = 'SGD';
 grandTotalBase:   number  = 0;
 fxRateLoading:    boolean = false;
 private apiUrl = environment.apiUrl;
+
+itemCategoryTypes = [
+  { id: 1, name: 'Sales Item' },
+  { id: 2, name: 'Purchase Item' },
+  { id: 3, name: 'Both' }
+];
+
+salesItemCategoryType = this.itemCategoryTypes.find(x => x.id === 1);
+
   constructor(
     private router: Router,
     private route: ActivatedRoute,
@@ -564,7 +573,7 @@ isForeignCurrency(): boolean {
 
   loadLookups() {
     this.chartOfAccountService.getAllChartOfAccount().subscribe(() => {
-      this.itemsService.getAllItem().subscribe((ires: any) => {
+      this.itemsService.getAllItem(this.salesItemCategoryType?.id).subscribe((ires: any) => {
         const raw = ires?.data ?? [];
       this.itemsList = raw.map((item: any) => ({
   id: Number(item.id ?? item.itemId ?? 0),

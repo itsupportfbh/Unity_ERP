@@ -126,13 +126,13 @@
             <div class="form-group">
             <label>Item Category Type</label>
             <select class="form-control" name="itemCategoryType" [(ngModel)]="ItemCategoryType" required>
-              <option [ngValue]="null">Select Type</option>
-              <option [ngValue]="1">Sales Item</option>
-              <option [ngValue]="2">Purchase Item</option>
-              <option [ngValue]="3">Both</option>
-            </select>
+  <option [ngValue]="null">Select Type</option>
+  <option *ngFor="let type of itemCategoryTypes" [ngValue]="type">
+    {{ type.name }}
+  </option>
+</select>
           </div>
-          <div class="form-group" *ngIf="ItemCategoryType === 1 || ItemCategoryType === 3">
+          <div class="form-group" *ngIf="ItemCategoryType?.id === 1 || ItemCategoryType?.id === 3">
             <label>Sales Budget Line</label>
            <ng-select
             [items]="salesBudgetLines"
@@ -160,7 +160,7 @@
           </ng-select>
           </div>
 
-          <div class="form-group" *ngIf="ItemCategoryType === 2 || ItemCategoryType === 3">
+        <div class="form-group" *ngIf="ItemCategoryType?.id === 2 || ItemCategoryType?.id === 3">
             <label>Purchase Budget Line</label>
             <ng-select
               [items]="purchaseBudgetLines"

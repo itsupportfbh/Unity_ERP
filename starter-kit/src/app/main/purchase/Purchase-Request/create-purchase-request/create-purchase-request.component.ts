@@ -140,6 +140,14 @@ currentPeriodName = '';
   // Baseline signature for unsaved detection
   private initialSignature = '';
 
+  itemCategoryTypes = [
+  { id: 1, name: 'Sales Item' },
+  { id: 2, name: 'Purchase Item' },
+  { id: 3, name: 'Both' }
+];
+
+  purchaseItemCategoryType = this.itemCategoryTypes.find(x => x.id === 2);
+
   constructor(
     private purchaseService: PurchaseService,
     private router: Router,
@@ -710,7 +718,7 @@ loadDepartments() {
         label: this.buildFullPath(head)
       }));
 
-      this.itemService.getAllItem().subscribe((ires: any) => {
+      this.itemService.getAllItem(this.purchaseItemCategoryType?.id).subscribe((ires: any) => {
         const raw = ires?.data ?? [];
         this.itemsList = raw.map((item: any) => {
           const matched = this.parentHeadList.find(h => +h.value === +item.budgetLineId);
@@ -1138,7 +1146,7 @@ selectModalItem(item: any) {
   /** Reload items only and rebuild itemsList with labels */
   private reloadItemsList(): Promise<void> {
     return new Promise<void>((resolve) => {
-      this.itemService.getAllItem().subscribe((ires: any) => {
+      this.itemService.getAllItem(this.purchaseItemCategoryType?.id).subscribe((ires: any) => {
         const raw = ires?.data ?? [];
         this.itemsList = raw.map((item: any) => {
           const matched = this.parentHeadList.find(h => +h.value === +item.budgetLineId);

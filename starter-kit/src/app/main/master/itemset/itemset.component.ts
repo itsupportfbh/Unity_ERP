@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import * as feather from 'feather-icons';
 import { ItemsetService } from './itemsetservice/itemset.service';
 import { ItemMasterService } from 'app/main/inventory/item-master/item-master.service';
+import { ChartofaccountService } from 'app/main/financial/chartofaccount/chartofaccount.service';
 
 type ItemMaster = {
   id: number;
@@ -39,10 +40,14 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
   modeHeader = 'Create Item Set';
 
   userId: string = 'system';
+  coaList: any[] = [];
+  salesBudgetLines: any[] = [];
+  SalesParentHeadCode: number | null = null;
 
   constructor(
     private itemSetService: ItemsetService,
-    private itemMasterService: ItemMasterService
+    private itemMasterService: ItemMasterService,
+    private chartOfAccountService: ChartofaccountService
   ) {
     this.userId = localStorage.getItem('id') || 'system';
   }
@@ -50,6 +55,7 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
   ngOnInit(): void {
     this.loadItemSets();
     this.loadItemsMaster();
+    this.loadCoaBudgetLines();
   }
 
   ngAfterViewInit(): void {
@@ -119,9 +125,11 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
     this.modeHeader = 'Edit Item Set';
 
     this.setName = data?.setName || '';
-
+    this.SalesParentHeadCode = Number(data.salesParentHeadCode ?? data.SalesParentHeadCode ?? 0) || null;
     // backend returns Items: [{ itemId, ... }]
-    this.selectedItemIds = (data?.items || []).map((x: any) => Number(x.itemId));
+    this.selectedItemIds = (data?.items || data?.Items || [])
+  .map((x: any) => Number(x.itemId ?? x.ItemId))
+  .filter((id: number) => id > 0);
   }
 
   cancel() {
@@ -132,6 +140,7 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
   reset() {
     this.setName = '';
     this.selectedItemIds = [];
+    this.SalesParentHeadCode = null;
   }
 
   // =========================
@@ -159,9 +168,20 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
       });
       return;
     }
+    if (!this.SalesParentHeadCode) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: 'Please select Sales Budget Line',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0e3a4c'
+      });
+      return;
+    }
 
     const payload = {
       setName: this.setName,
+      salesParentHeadCode: this.SalesParentHeadCode,
       createdBy: this.userId,
       updatedBy: this.userId,
       createdDate: new Date(),
@@ -270,4 +290,34 @@ export class ItemsetComponent implements OnInit, AfterViewInit, AfterViewChecked
       }
     });
   }
+  loadCoaBudgetLines(): void {
+  this.chartOfAccountService.getAllChartOfAccount().subscribe({
+    next: (res: any) => {
+      this.coaList = (res?.data || []).filter((x: any) => x.isActive === true);
+
+      const buildFullPath = (item: any, all: any[]): string => {
+        let path = item.headName;
+        let current = all.find((x: any) => Number(x.headCode) === Number(item.parentHead));
+
+        while (current) {
+          path = `${current.headName} >> ${path}`;
+          current = all.find((x: any) => Number(x.headCode) === Number(current.parentHead));
+        }
+
+        return path;
+      };
+
+      this.salesBudgetLines = this.coaList
+        .filter((x: any) => Number(x.headCode).toString().startsWith('4'))
+        .map((x: any) => ({
+          ...x,
+          headCode: Number(x.headCode),
+          label: `${x.headCode} - ${buildFullPath(x, this.coaList)}`
+        }));
+    },
+    error: () => {
+      this.salesBudgetLines = [];
+    }
+  });
+}
 }

@@ -18,19 +18,25 @@ export class MobileReceivingApi {
     };
   }
 
-  // Validate barcode against PO
-  validateScan(poNo: string, barcode: string, qty = 1) {
-    return this.http.post(
-      this.url + '/mobile-receiving/scan',
-      {
-        purchaseOrderNo: poNo,
-        itemKey: barcode,
-        qty,
-        createdBy: Number(localStorage.getItem('id') || 0)
-      },
-      this.headers(poNo)
-    );
-  }
+validateScan(poNo: string, barcode: string, qty = 1) {
+
+  const token = sessionStorage.getItem('mrToken') || '';
+
+  return this.http.post(
+    this.url + '/mobile-receiving/scan',
+    {
+      purchaseOrderNo: poNo,
+      itemKey: barcode,
+      qty,
+      createdBy: Number(localStorage.getItem('id') || 0)
+    },
+    {
+      headers: new HttpHeaders({
+        'X-MR-TOKEN': token   // ✅ THIS is correct token
+      })
+    }
+  );
+}
 
   // Sync receiving lines
  sync(body: { purchaseOrderNo: string; lines: any[] }) {

@@ -1,11 +1,13 @@
 import {
   Component,
+  ElementRef,
   OnInit,
   ViewChild,
   ViewEncapsulation,
   AfterViewInit,
   AfterViewChecked
 } from '@angular/core';
+import { BrowserQRCodeSvgWriter } from '@zxing/browser';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { ColumnMode, DatatableComponent } from '@swimlane/ngx-datatable';
@@ -129,6 +131,8 @@ export class PurchaseOrdeListComponent
 isPeriodLocked = false;
   currentPeriodName = '';
   // QR modal
+  @ViewChild('qrSvgContainer') qrSvgContainer?: ElementRef<HTMLDivElement>;
+  private qrSvgEl: SVGSVGElement | null = null;
 showQrModal = false;
 qrPoNo = '';
 qrPayloadUrl = '';
@@ -826,15 +830,25 @@ private showPeriodLockedSwal(action: string): void {
   this.qrPoNo = poNo;
   this.showQrModal = true;
 
+  // Generate simple QR (just PO number) on frontend — short content = easy to scan
+  setTimeout(() => {
+    const container = this.qrSvgContainer?.nativeElement;
+    if (container) {
+      container.innerHTML = '';
+      const svg = new BrowserQRCodeSvgWriter().write(poNo, 260, 260);
+      svg.setAttribute('style', 'width:260px;height:260px;');
+      container.appendChild(svg);
+      this.qrSvgEl = svg;
+    }
+  }, 50);
+
+  // Also fetch from backend for WhatsApp share URL
   this.poService.getPoQr(poNo).subscribe({
     next: (res: any) => {
       this.qrPayloadUrl = res.qrPayloadUrl;
       this.qrImgBase64 = res.qrCodeSrcBase64;
     },
-    error: err => {
-      this.showQrModal = false;
-      Swal.fire('Error', 'Failed to load QR', 'error');
-    }
+    error: () => { /* WhatsApp share won't work but QR still shows */ }
   });
 }
 
@@ -843,6 +857,31 @@ closeQr(): void {
   this.qrPoNo = '';
   this.qrPayloadUrl = '';
   this.qrImgBase64 = '';
+  this.qrSvgEl = null;
+}
+
+downloadQr(): void {
+  const svg = this.qrSvgEl;
+  if (!svg) return;
+  const svgStr = new XMLSerializer().serializeToString(svg);
+  const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 260;
+    canvas.height = 260;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 260, 260);
+    ctx.drawImage(img, 0, 0, 260, 260);
+    URL.revokeObjectURL(blobUrl);
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `PO-${this.qrPoNo}.png`;
+    a.click();
+  };
+  img.src = blobUrl;
 }
 
 copyQrLink(): void {
@@ -850,6 +889,15 @@ copyQrLink(): void {
     navigator.clipboard.writeText(this.qrPayloadUrl);
     Swal.fire('Copied', 'QR link copied', 'success');
   }
+}
+
+shareViaWhatsApp(): void {
+  if (!this.qrPayloadUrl) return;
+  const absUrl = this.qrPayloadUrl.startsWith('http')
+    ? this.qrPayloadUrl
+    : `${window.location.origin}/${this.qrPayloadUrl.replace(/^\//, '')}`;
+  const text = `Mobile Receiving – PO ${this.qrPoNo}\n${absUrl}`;
+  window.open(`https://web.whatsapp.com/send/?text=${encodeURIComponent(text)}`, 'wa_share');
 }
  openPendingPrAlerts() {
     this.showPendingPrModal = true;

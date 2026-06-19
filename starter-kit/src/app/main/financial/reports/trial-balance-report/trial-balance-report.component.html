@@ -107,7 +107,7 @@
               </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
-              <button class="btn btn-primary w-100" (click)="runTB()" [disabled]="isLoading">
+              <button class="btn btn-primary w-100" (click)="runTB()" [disabled]="isLoading || !canView()">
                 {{ isLoading ? 'Running…' : 'Run TB' }}
               </button>
             </div>
@@ -210,7 +210,7 @@
         <!-- Action -->
         <td class="text-center">
           <ng-container *ngIf="r.isLeaf">
-            <button *ngIf="!r.isEditingOpening"
+            <button *ngIf="!r.isEditingOpening && canEdit()"
               class="btn btn-sm btn-link p-0 tb-action-btn"
               (click)="startEditOpening(r, $event)" title="Edit opening">
               <i data-feather="edit-2" class="tb-action-icon"></i>

@@ -372,7 +372,7 @@ export const ALL_MENU: CoreMenu[] = [
        { id: 'year-end', title: 'Year End Close', type: 'item', icon: 'circle', url: '/financial/year-close' },
 
 
-      { id: 'tb', title: 'Trail Balance', type: 'item', icon: 'circle', url: '/financial/report' },
+      { id: 'tb', title: 'Trial Balance', type: 'item', icon: 'circle', url: '/financial/report' },
       { id: 'reports', title: 'Reports', type: 'item', icon: 'circle', url: '/financial/finance-report' },
 
       { id: 'aging', title: 'Aging', type: 'item', icon: 'circle', url: '/financial/aging', hidden: true },

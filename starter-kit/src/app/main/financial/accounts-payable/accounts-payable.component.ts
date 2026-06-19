@@ -16,6 +16,8 @@ type ApTab = 'invoices' | 'payments' | 'aging' | 'advances' | 'match';
 type SupplierInvoiceGroup = {
   supplierId:     number;
   supplierName:   string;
+  currencyName:    string;
+  isMixedCurrency: boolean;
   totalGrandTotal: number;
   totalPaid:       number;
   totalDebitNote:  number;
@@ -64,6 +66,7 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
   totalInvDebitNote   = 0;
   totalInvAdvance     = 0;
   totalInvOutstanding = 0;
+  invoiceSummaryCurrencyName = '';
 
   supplierGroups:      SupplierInvoiceGroup[] = [];
   expandedSupplierIds  = new Set<number>();
@@ -509,10 +512,20 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
       status:                   x.status        || x.Status,
       fxRate:       Number(x.fxRate       ?? x.FxRate       ?? 1),
       currencyId:   Number(x.currencyId   ?? x.CurrencyId   ?? 0),
-      currencyName: x.currencyName        ?? x.CurrencyName  ?? '',
+      currencyName: (x.currencyName       ?? x.CurrencyName  ?? 'SGD').toString().trim() || 'SGD',
       amountBase:   Number(x.amountBase   ?? x.AmountBase   ?? 0),
       isSelected: false
     };
+  }
+
+  private getCurrencyLabel(rows: any[]): string {
+    const names = Array.from(new Set(
+      rows
+        .map(x => (x.currencyName || x.CurrencyName || 'SGD').toString().trim() || 'SGD')
+        .filter(Boolean)
+    ));
+    if (names.length === 0) return 'SGD';
+    return names.length === 1 ? names[0] : 'Mixed';
   }
 
   private applyUtilisedAdvanceToInvoices(utilisedAdvanceMap: Map<number, number>): void {
@@ -561,6 +574,7 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
     this.totalInvDebitNote   = Number(this.totalInvDebitNote.toFixed(2));
     this.totalInvAdvance     = Number(this.totalInvAdvance.toFixed(2));
     this.totalInvOutstanding = Number(this.totalInvOutstanding.toFixed(2));
+    this.invoiceSummaryCurrencyName = this.getCurrencyLabel(this.invoices);
   }
 
   buildSupplierGroups(): void {
@@ -569,11 +583,18 @@ export class AccountsPayableComponent implements OnInit, AfterViewInit {
       const sid = Number(inv.supplierId || 0);
       if (!sid) return;
       if (!map.has(sid)) {
+        const currencyName = (inv.currencyName || 'SGD').toString().trim() || 'SGD';
         map.set(sid, { supplierId: sid, supplierName: inv.supplierName || '',
+          currencyName, isMixedCurrency: false,
           totalGrandTotal: 0, totalPaid: 0, totalDebitNote: 0,
           totalAdvance: 0, totalPayable: 0, invoices: [] });
       }
       const g = map.get(sid)!;
+      const invCurrencyName = (inv.currencyName || 'SGD').toString().trim() || 'SGD';
+      if (g.currencyName !== invCurrencyName) {
+        g.currencyName = 'Mixed';
+        g.isMixedCurrency = true;
+      }
       g.totalGrandTotal += Number(inv.grandTotal          || 0);
       g.totalPaid       += Number(inv.paidAmount          || 0);
       g.totalDebitNote  += Number(inv.debitNoteAmount     || 0);

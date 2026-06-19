@@ -470,6 +470,7 @@
 <app-ocr-upload-modal
   *ngIf="ocrOpen"
   [open]="ocrOpen"
+  [createdBy]="userId ? userId.toString() : undefined"
   (closed)="ocrOpen = false"
   (applied)="onOcrApplied($event)">
 </app-ocr-upload-modal>

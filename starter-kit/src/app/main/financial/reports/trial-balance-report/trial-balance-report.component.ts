@@ -147,6 +147,11 @@ canExport(): boolean {
   // ================== RUN TB ==================
 // ================== RUN TB — FIXED ==================
 runTB(): void {
+  if (!this.canView()) {
+    Swal.fire('Access Denied', 'You do not have view permission.', 'warning');
+    return;
+  }
+
   this.companyId = Number(localStorage.getItem('companyId') || 0);
 
   const body = {
@@ -357,6 +362,10 @@ private recalcTotalsRecursive(node: TbNode): void {
 
   // ================== DETAIL ==================
   onRowClick(row: TbNode): void {
+    if (!this.canView()) {
+      return;
+    }
+
     if (!row.isLeaf && row.children.length) {
       return;
     }
@@ -399,6 +408,10 @@ private recalcTotalsRecursive(node: TbNode): void {
     if (event) {
       event.stopPropagation();
     }
+    if (!this.canEdit()) {
+      Swal.fire('Access Denied', 'You do not have edit permission.', 'warning');
+      return;
+    }
     if (!node.isLeaf) return;
 
     node.isEditingOpening = true;
@@ -423,6 +436,10 @@ private recalcTotalsRecursive(node: TbNode): void {
   saveOpening(node: TbNode, event?: MouseEvent): void {
     if (event) {
       event.stopPropagation();
+    }
+    if (!this.canEdit()) {
+      Swal.fire('Access Denied', 'You do not have edit permission.', 'warning');
+      return;
     }
     this.userName = localStorage.getItem('username') || '';
     this.companyId = Number(localStorage.getItem('companyId') || 0);
@@ -527,6 +544,11 @@ private buildTbExportRows(): any[] {
 
 
   exportToExcel(): void {
+    if (!this.canExport()) {
+      Swal.fire('Access Denied', 'You do not have export permission.', 'warning');
+      return;
+    }
+
     const data = this.buildTbExportRows();
     if (!data.length) { return; }
 
@@ -542,6 +564,11 @@ private buildTbExportRows(): any[] {
   }
 
   exportToPdf(): void {
+    if (!this.canExport()) {
+      Swal.fire('Access Denied', 'You do not have export permission.', 'warning');
+      return;
+    }
+
     const data = this.buildTbExportRows();   // already filtered > 0
     if (!data.length) { return; }
 

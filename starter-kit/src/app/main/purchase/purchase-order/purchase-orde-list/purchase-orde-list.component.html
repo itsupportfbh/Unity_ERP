@@ -241,6 +241,12 @@
                 <td>
                   <button class="erp-btn-icon btn-mail" *ngIf="canExportPO" [disabled]="row.approvalStatus!==2" (click)="openEmailConfirm(row)" title="Email"><i class="fas fa-envelope"></i></button>
                   <button class="erp-btn-icon btn-print" *ngIf="canPrintPO" (click)="openPoPdfPreview(row)" title="Print"><i class="fas fa-print"></i></button>
+                   <button class="erp-btn-icon" 
+    style="color:#2E5F73; border-color:#2E5F73;"
+    (click)="openQr(row)"
+    title="Mobile Receiving QR">
+    <i class="fas fa-qrcode"></i>
+  </button>
                   <button class="erp-btn-icon" [ngClass]="isRowLocked(row) ? 'btn-disabled' : 'btn-edit'" [disabled]="isRowLocked(row)" (click)="editPO(row)" title="Edit"><i class="fas fa-pen"></i></button>
                   <button class="erp-btn-icon" *ngIf="canDeletePO" [ngClass]="isRowLocked(row) ? 'btn-disabled' : 'btn-delete'" [disabled]="isRowLocked(row)" (click)="deletePO(row.id)" title="Delete"><i class="fas fa-trash"></i></button>
                 </td>
@@ -565,26 +571,30 @@
     </div>
 
     <div style="padding:16px; text-align:center;">
-      <img *ngIf="qrImgBase64"
-           [src]="qrImgBase64"
-           style="width:260px; height:260px;" />
+      <div #qrSvgContainer style="width:260px;height:260px;margin:0 auto;"></div>
 
-      <div style="font-size:12px; color:#6b7280; word-break:break-all;">
-        {{ qrPayloadUrl }}
+      <div style="font-size:11px;color:#6b7280;margin-top:6px;">
+        Scan this QR in Mobile Receiving camera to load PO
       </div>
 
-      <div class="mt-3 d-flex justify-content-center gap-2">
-        <a class="btn btn-sm"
-           [href]="qrImgBase64"
-           [attr.download]="'PO-' + qrPoNo + '.png'"
-           style="background:#2E5F73; color:white;">
+      <div class="mt-3 d-flex justify-content-center gap-2 flex-wrap">
+        <button class="btn btn-sm"
+                style="background:#2E5F73; color:white; border:none;"
+                (click)="downloadQr()">
           Download
-        </a>
+        </button>
 
         <button class="btn btn-sm"
                 style="border:1px solid #2E5F73; color:#2E5F73;"
                 (click)="copyQrLink()">
           Copy Link
+        </button>
+
+        <button class="btn btn-sm d-inline-flex align-items-center gap-1"
+                style="background:#25D366; color:#fff; border:none;"
+                [disabled]="!qrPayloadUrl"
+                (click)="shareViaWhatsApp()">
+          <i class="fab fa-whatsapp"></i> Share via WhatsApp
         </button>
       </div>
     </div>

@@ -1,9 +1,9 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MobileReceivingApi } from './mobile-receiving-service';
 import { ActivatedRoute } from '@angular/router';
 import Swal from 'sweetalert2';
-
-declare const BarcodeDetector: any;
+import { BrowserMultiFormatReader } from '@zxing/browser';
+import { BarcodeFormat, DecodeHintType } from '@zxing/library';
 
 type MobileScanRow = {
   ts: Date;
@@ -42,9 +42,10 @@ export class MobileReceivingComponent implements OnInit, OnDestroy {
   poIncotermsName = '';
   mrToken: string = '';
   private cameraStream: MediaStream | null = null;
-  private scanTimer: any = null;
+  private codeReader: BrowserMultiFormatReader | null = null;
+  private scanControls: any = null;
 
-  constructor(private api: MobileReceivingApi,private route: ActivatedRoute) {}
+  constructor(private api: MobileReceivingApi, private route: ActivatedRoute, private ngZone: NgZone) {}
 
 ngOnInit(): void {
   // load offline after po set (key needs po)
@@ -279,10 +280,25 @@ clearQueue(): void {
   });
 }
 
+lineInputQty: { [item: string]: number } = {};
+
 useLine(line: any): void {
   this.mrBarcode = this.itemCodeFrom(line?.item);
   this.mrQty = Math.max(1, Number(this.lineRemainingAfterQueue(line) || 1));
   this.focusBarcode();
+}
+
+addLineDirectly(line: any): void {
+  const qty = Number(this.lineInputQty[line.item] || 1);
+  if (qty <= 0) { Swal.fire('Validation', 'Enter a valid qty.', 'warning'); return; }
+  this.mrBarcode = this.itemCodeFrom(line?.item);
+  this.mrQty = qty;
+  this.addScan();
+  this.lineInputQty[line.item] = 1;
+}
+
+lineDefaultQty(line: any): number {
+  return Math.max(1, this.lineRemainingAfterQueue(line));
 }
 
 lineQueuedQty(line: any): number {
@@ -323,71 +339,102 @@ get receiveProgressPct(): number {
 
 async startCamera(): Promise<void> {
   this.cameraError = '';
+  this.mrScanMode = 'camera';
+  this.isCameraOpen = true;
 
-  if (typeof BarcodeDetector === 'undefined') {
-    this.cameraError = 'Camera barcode detection is not supported in this browser. Use hardware scanner/manual scan.';
-    Swal.fire('Camera Not Supported', this.cameraError, 'info');
+  // Wait one tick for Angular to render the <video> element
+  await new Promise(r => setTimeout(r, 50));
+
+  const videoEl = this.cameraVideo?.nativeElement;
+  if (!videoEl) {
+    this.isCameraOpen = false;
+    this.mrScanMode = 'manual';
+    Swal.fire('Camera Error', 'Camera element not ready.', 'error');
     return;
   }
 
+  const hints = new Map<DecodeHintType, any>();
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+    BarcodeFormat.QR_CODE,
+    BarcodeFormat.CODE_128,
+    BarcodeFormat.CODE_39,
+    BarcodeFormat.EAN_13,
+    BarcodeFormat.EAN_8,
+    BarcodeFormat.UPC_A,
+    BarcodeFormat.UPC_E,
+  ]);
+
+  this.codeReader = new BrowserMultiFormatReader(hints);
+
   try {
-    this.mrScanMode = 'camera';
-    this.isCameraOpen = true;
+    // Get stream first so video shows immediately (avoids black screen)
     this.cameraStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' } },
       audio: false
     });
+    videoEl.srcObject = this.cameraStream;
+    await videoEl.play();
 
-    setTimeout(() => {
-      if (this.cameraVideo?.nativeElement && this.cameraStream) {
-        this.cameraVideo.nativeElement.srcObject = this.cameraStream;
-        this.cameraVideo.nativeElement.play();
-        this.scanTimer = setInterval(() => this.decodeFrame(), 700);
+    this.scanControls = await this.codeReader.decodeFromStream(
+      this.cameraStream,
+      videoEl,
+      (result) => {
+        if (!result) return;
+        this.ngZone.run(() => {
+          const raw = result.getText().trim();
+          const now = Date.now();
+          if (raw === this.lastScanCode && now - this.lastScanAt < 1500) return;
+          this.lastScanCode = raw;
+          this.lastScanAt = now;
+
+          // Case 1: PO setup URL (e.g. http://host/mobilereceiving?poNo=PO-001&t=TOKEN)
+          try {
+            const url = new URL(raw);
+            const poNo = url.searchParams.get('poNo');
+            if (poNo) {
+              const token = url.searchParams.get('t') || url.searchParams.get('T') || '';
+              if (token) { this.mrToken = token; sessionStorage.setItem('mrToken', token); }
+              if (this.mrPo !== poNo) { this.mrPo = poNo; this.loadPo(); }
+              this.mrScanMessage = `PO loaded: ${poNo}`;
+              return;
+            }
+          } catch { }
+
+          // Case 2: Plain PO number (e.g. PO-00001)
+          if (/^PO-\d+$/i.test(raw)) {
+            if (this.mrPo !== raw.toUpperCase()) { this.mrPo = raw.toUpperCase(); this.loadPo(); }
+            this.mrScanMessage = `PO loaded: ${raw.toUpperCase()}`;
+            return;
+          }
+
+          // Case 3: Product barcode
+          this.mrBarcode = raw;
+          this.mrScanMessage = `Detected: ${this.itemCodeFrom(raw)}`;
+          if (this.mrAutoAdd) this.addScan();
+        });
       }
-    }, 0);
+    );
   } catch (err: any) {
     this.cameraError = err?.message || 'Unable to open camera.';
     this.isCameraOpen = false;
+    this.mrScanMode = 'manual';
+    this.codeReader = null;
     Swal.fire('Camera Error', this.cameraError, 'error');
   }
 }
 
 stopCamera(): void {
-  if (this.scanTimer) {
-    clearInterval(this.scanTimer);
-    this.scanTimer = null;
+  if (this.scanControls) {
+    this.scanControls.stop();
+    this.scanControls = null;
   }
-
   if (this.cameraStream) {
     this.cameraStream.getTracks().forEach(t => t.stop());
     this.cameraStream = null;
   }
-
+  this.codeReader = null;
   this.isCameraOpen = false;
   this.mrScanMode = 'manual';
-}
-
-private async decodeFrame(): Promise<void> {
-  if (!this.cameraVideo?.nativeElement || typeof BarcodeDetector === 'undefined') return;
-
-  try {
-    const detector = new BarcodeDetector({
-      formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e']
-    });
-    const codes = await detector.detect(this.cameraVideo.nativeElement);
-    const raw = codes?.[0]?.rawValue || '';
-    if (!raw) return;
-
-    const now = Date.now();
-    if (raw === this.lastScanCode && now - this.lastScanAt < 1500) return;
-    this.lastScanCode = raw;
-    this.lastScanAt = now;
-    this.mrBarcode = raw;
-    this.mrScanMessage = `Detected ${this.itemCodeFrom(raw)}`;
-    if (this.mrAutoAdd) this.addScan();
-  } catch {
-    // keep camera running; detector can fail on blurry frames
-  }
 }
 
 private hydrateQueuedLineNames(): void {
@@ -411,7 +458,27 @@ private focusBarcode(): void {
 }
 
 private itemCodeFrom(value: any): string {
-  return String(value || '').trim().split(' - ')[0].trim().toUpperCase();
+  let raw = String(value || '').trim();
+  if (!raw) return '';
+
+  try {
+    const url = new URL(raw);
+    raw =
+      url.searchParams.get('itemKey') ||
+      url.searchParams.get('item') ||
+      url.searchParams.get('barcode') ||
+      url.searchParams.get('code') ||
+      raw;
+  } catch {
+    // Plain barcode or item code.
+  }
+
+  if (raw.includes('|')) {
+    const parts = raw.split('|').map(x => x.trim()).filter(Boolean);
+    raw = parts[parts.length - 1] || raw;
+  }
+
+  return raw.split(' - ')[0].trim().toUpperCase();
 }
 
 private toBool(value: any): boolean {

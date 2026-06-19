@@ -44,7 +44,7 @@
                   <div class="ap-summary-icon"><i class="fas fa-file-invoice-dollar"></i></div>
                   <div class="ap-summary-text">
                     <div class="label">Total Invoice Amount</div>
-                    <div class="value">{{ totalInvAmount | number:'1.2-2' }}</div>
+                    <div class="value">{{ totalInvAmount | number:'1.2-2' }} <span style="font-size:0.78rem;">{{ invoiceSummaryCurrencyName }}</span></div>
                   </div>
                 </div>
               </div>
@@ -53,7 +53,7 @@
                   <div class="ap-summary-icon"><i class="fas fa-wallet"></i></div>
                   <div class="ap-summary-text">
                     <div class="label">Total Paid</div>
-                    <div class="value">{{ totalInvPaid | number:'1.2-2' }}</div>
+                    <div class="value">{{ totalInvPaid | number:'1.2-2' }} <span style="font-size:0.78rem;">{{ invoiceSummaryCurrencyName }}</span></div>
                   </div>
                 </div>
               </div>
@@ -62,7 +62,7 @@
                   <div class="ap-summary-icon"><i class="fas fa-file-invoice"></i></div>
                   <div class="ap-summary-text">
                     <div class="label">Total Debit Notes</div>
-                    <div class="value">{{ totalInvDebitNote | number:'1.2-2' }}</div>
+                    <div class="value">{{ totalInvDebitNote | number:'1.2-2' }} <span style="font-size:0.78rem;">{{ invoiceSummaryCurrencyName }}</span></div>
                   </div>
                 </div>
               </div>
@@ -71,7 +71,7 @@
                   <div class="ap-summary-icon"><i class="fas fa-hand-holding-usd"></i></div>
                   <div class="ap-summary-text">
                     <div class="label">Advance Applied</div>
-                    <div class="value">{{ totalInvAdvance | number:'1.2-2' }}</div>
+                    <div class="value">{{ totalInvAdvance | number:'1.2-2' }} <span style="font-size:0.78rem;">{{ invoiceSummaryCurrencyName }}</span></div>
                   </div>
                 </div>
               </div>
@@ -80,7 +80,7 @@
                   <div class="ap-summary-icon"><i class="fas fa-balance-scale"></i></div>
                   <div class="ap-summary-text">
                     <div class="label">Net Outstanding</div>
-                    <div class="value">{{ totalInvOutstanding | number:'1.2-2' }}</div>
+                    <div class="value">{{ totalInvOutstanding | number:'1.2-2' }} <span style="font-size:0.78rem;">{{ invoiceSummaryCurrencyName }}</span></div>
                   </div>
                 </div>
               </div>
@@ -127,11 +127,11 @@
                       </td>
                       <td class="font-weight-semibold">{{ g.supplierName }}</td>
                       <td class="text-right">{{ g.invoices.length }}</td>
-                      <td class="text-right">{{ g.totalGrandTotal | number:'1.2-2' }}</td>
-                      <td class="text-right text-success">{{ g.totalPaid | number:'1.2-2' }}</td>
-                      <td class="text-right text-danger">{{ g.totalDebitNote | number:'1.2-2' }}</td>
-                      <td class="text-right text-success">{{ g.totalAdvance | number:'1.2-2' }}</td>
-                      <td class="text-right text-brand font-weight-bold">{{ g.totalPayable | number:'1.2-2' }}</td>
+                      <td class="text-right">{{ g.totalGrandTotal | number:'1.2-2' }} <span style="font-size:0.72rem;color:#6b7280;">{{ g.currencyName }}</span></td>
+                      <td class="text-right text-success">{{ g.totalPaid | number:'1.2-2' }} <span style="font-size:0.72rem;color:#6b7280;">{{ g.currencyName }}</span></td>
+                      <td class="text-right text-danger">{{ g.totalDebitNote | number:'1.2-2' }} <span style="font-size:0.72rem;color:#6b7280;">{{ g.currencyName }}</span></td>
+                      <td class="text-right text-success">{{ g.totalAdvance | number:'1.2-2' }} <span style="font-size:0.72rem;color:#6b7280;">{{ g.currencyName }}</span></td>
+                      <td class="text-right text-brand font-weight-bold">{{ g.totalPayable | number:'1.2-2' }} <span style="font-size:0.72rem;color:#6b7280;">{{ g.currencyName }}</span></td>
                     </tr>
 
                     <tr *ngIf="isSupplierExpanded(g.supplierId)">
@@ -178,15 +178,27 @@
                                   </td>
                                   <td class="text-right text-success">
                                     {{ inv.paidAmount | number:'1.2-2' }}
+                                    <span style="font-size:0.75rem;color:#6b7280;">
+                                      {{ inv.currencyName || 'SGD' }}
+                                    </span>
                                   </td>
                                   <td class="text-right text-danger">
                                     {{ inv.debitNoteAmount | number:'1.2-2' }}
+                                    <span style="font-size:0.75rem;color:#6b7280;">
+                                      {{ inv.currencyName || 'SGD' }}
+                                    </span>
                                   </td>
                                   <td class="text-right text-success">
                                     {{ inv.advanceAmount | number:'1.2-2' }}
+                                    <span style="font-size:0.75rem;color:#6b7280;">
+                                      {{ inv.currencyName || 'SGD' }}
+                                    </span>
                                   </td>
                                   <td class="text-right font-weight-bold">
                                     {{ inv.outstandingAmount | number:'1.2-2' }}
+                                    <span style="font-size:0.75rem;color:#6b7280;">
+                                      {{ inv.currencyName || 'SGD' }}
+                                    </span>
                                   </td>
                                   <td class="text-center">
                                     <span class="badge status-pill"

@@ -10,7 +10,7 @@ import {
 import { ALL_MENU } from 'app/menu/menu';
 import { UserService } from '../user.service';
 
-type PermissionCol = 'V' | 'C' | 'E' | 'D' | 'A' | 'R' | 'X' | 'P' | 'M';
+type PermissionCol = 'V' | 'C' | 'E' | 'D' | 'S' | 'A' | 'R' | 'N' | 'X' | 'P' | 'M';
 
 interface ModuleTab {
   id: string;
@@ -43,7 +43,7 @@ export class RolesPermissionsComponent implements OnChanges {
   @Output() previousStep = new EventEmitter<void>();
   @Output() nextStep = new EventEmitter<void>();
 
-  permCols: PermissionCol[] = ['V', 'C', 'E', 'D', 'A', 'R', 'X', 'P', 'M'];
+  permCols: PermissionCol[] = ['V', 'C', 'E', 'D', 'S', 'A', 'R', 'N', 'X', 'P', 'M'];
 
   modules: ModuleTab[] = [];
   activeModuleId = '';
@@ -146,8 +146,10 @@ private loadDepartmentMenus(): void {
   C: !!(p.Create ?? p.create),
   E: !!(p.Edit ?? p.edit),
   D: !!(p.Delete ?? p.delete),
+  S: !!(p.Submit ?? p.submit),
   A: !!(p.Approve ?? p.approve),
   R: !!(p.Reject ?? p.reject),
+  N: !!(p.Cancel ?? p.cancel),
   X: !!(p.Export ?? p.export),
   P: !!(p.Print ?? p.print),
   M: !!(p.Post ?? p.post ?? p.Finalize ?? p.finalize)
@@ -216,8 +218,10 @@ getPermissionPayload(): any[] {
       C: r.flags.C === true,
       E: r.flags.E === true,
       D: r.flags.D === true,
+      S: r.flags.S === true,
       A: r.flags.A === true,
       R: r.flags.R === true,
+      N: r.flags.N === true,
       X: r.flags.X === true,
       P: r.flags.P === true,
       M: r.flags.M === true
@@ -276,9 +280,29 @@ private buildAllowedModulesFromDepartment(
     (allowedMenuIds || []).map(x => String(x).trim().toLowerCase())
   );
 
+  const topLevelItems = (menuArr || [])
+    .filter(item => item && !item.hidden && item.type !== 'collapsible')
+    .filter(item => {
+      const itemId = String(item.id || '').trim().toLowerCase();
+      return allowedSet.has(itemId) && this.isAllowedByRole(item, roleNames);
+    })
+    .map(item => ({
+      id: item.id,
+      title: item.title,
+      url: item.url
+    }));
+
+  const topLevelModule = topLevelItems.length
+    ? [{
+        id: 'general',
+        title: 'General',
+        items: topLevelItems
+      } as ModuleTab]
+    : [];
+
   const parents = (menuArr || []).filter(x => x.type === 'collapsible' && !x.hidden);
 
-  return parents
+  const moduleTabs = parents
     .map(parent => {
       const parentId = String(parent.id || '').trim().toLowerCase();
       const parentAllowed = allowedSet.has(parentId);
@@ -301,6 +325,11 @@ private buildAllowedModulesFromDepartment(
       } as ModuleTab;
     })
     .filter((x): x is ModuleTab => !!x);
+
+  return [
+    ...topLevelModule,
+    ...moduleTabs
+  ];
 }
 
   private makeEmptyFlags(): Record<PermissionCol, boolean> {

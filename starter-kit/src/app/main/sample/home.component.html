@@ -112,6 +112,34 @@
     </div>
   </div>
 
+  <div class="card flowGuide">
+    <div class="card__hdr">
+      <div>
+        <div class="ct">Purchase to Finance Flow</div>
+        <div class="cs">Start from setup, then follow each step until finance close</div>
+      </div>
+      <button class="iconBtn" (click)="open('/purchase/list-PurchaseRequest', {})" type="button">
+        <i class="fa fa-arrow-right"></i>
+      </button>
+    </div>
+
+    <div class="flowSteps">
+      <button
+        class="flowStep"
+        *ngFor="let step of flowSteps"
+        type="button"
+        (click)="open(step.route, {})">
+        <span class="flowStep__no">{{ step.no }}</span>
+        <span class="flowStep__icon"><i class="fa" [ngClass]="step.icon"></i></span>
+        <span class="flowStep__body">
+          <span class="flowStep__title">{{ step.title }}</span>
+          <span class="flowStep__text">{{ step.text }}</span>
+        </span>
+        <span class="flowStep__go"><i class="fa fa-chevron-right"></i></span>
+      </button>
+    </div>
+  </div>
+
   <div class="loadOverlay" *ngIf="loading">
     <i class="fa fa-spinner fa-spin fa-2x"></i>
     <span>Loading dashboard...</span>

@@ -1082,16 +1082,17 @@ onOcrApplied(res: OcrResponse): void {
       location:    '',
       budgetLineId: null,
       // ✅ ZERO — line-level no tax, header tax % handles total
-      taxMode:     'ZERO' as any
+      taxMode:     taxMode as any
     })));
     this.recalcAllLines();
+    this.recalcHeaderFromLines();
   }
 
   // ✅ 4. Totals — always use OCR values directly
-  this.subTotal       = p.subTotal  ?? 0;
-  this.discountTotal  = p.discount  ?? 0;
-  this.taxAmount      = p.taxAmount ?? 0;
-  this.grandTotal     = p.total     ?? 0;
+  this.subTotal       = this.lines.length ? this.subTotal : (p.subTotal  ?? 0);
+  this.discountTotal  = this.lines.length ? this.discountTotal : (p.discount  ?? 0);
+  this.taxAmount      = this.lines.length ? this.taxAmount : (p.taxAmount ?? 0);
+  this.grandTotal     = this.lines.length ? this.grandTotal : (p.total     ?? 0);
   this.netPayable     = this.grandTotal;
   this.netPayableBase = +(this.netPayable * this.fxRate).toFixed(2);
 

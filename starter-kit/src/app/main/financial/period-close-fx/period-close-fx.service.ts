@@ -123,7 +123,7 @@ export class PeriodCloseService {
   }
   checkPeriodOpen(date: string) {
   return this.http.get<any>(
-    `${this.baseUrl}/PeriodClose/ensure-open?date=${date}`
+    `${this.baseUrl}/ensure-open?date=${date}`
   );
 }
 }

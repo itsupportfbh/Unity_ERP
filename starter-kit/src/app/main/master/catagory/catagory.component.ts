@@ -24,23 +24,29 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
   @ViewChild('addForm') addForm!: NgForm;
 
   CatagoryList: any[] = [];
-  CatagoryName: string = '';
-  description: string = '';
+  CatagoryName = '';
+  description = '';
 
   isEditMode = false;
   selectedCatagory: any = null;
   public isDisplay = false;
-  modeHeader: string = 'Add Catagory';
+  modeHeader = 'Add Catagory';
 
-  userId: number = 0;
-
-  // IMPORTANT: DB/Menu permission code exact ah match aaganum
+  userId = 0;
   functionId = 'catagory';
 
   permission: FunctionPermission;
   isPermissionLoaded = false;
   isPageLoading = false;
-  ItemCategoryType: number | null = null;
+
+  itemCategoryTypes = [
+    { id: 1, name: 'Sales Item' },
+    { id: 2, name: 'Purchase Item' },
+    { id: 3, name: 'Both' }
+  ];
+
+  ItemCategoryType: any = null;
+
   coaList: any[] = [];
   salesBudgetLines: any[] = [];
   purchaseBudgetLines: any[] = [];
@@ -52,7 +58,7 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
     private fb: FormBuilder,
     private CatagoryService: CatagoryService,
     private permissionService: PermissionService,
-     private chartOfAccountService: ChartofaccountService,
+    private chartOfAccountService: ChartofaccountService
   ) {
     this.userId = Number(localStorage.getItem('id') || 0);
     this.permission = this.permissionService.getEmptyPermission(this.functionId);
@@ -70,41 +76,42 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
   ngAfterViewChecked(): void {
     feather.replace();
   }
+
   loadCoaBudgetLines(): void {
-  this.chartOfAccountService.getAllChartOfAccount().subscribe({
-    next: (res: any) => {
-      this.coaList = (res?.data || []).filter((x: any) => x.isActive === true);
+    this.chartOfAccountService.getAllChartOfAccount().subscribe({
+      next: (res: any) => {
+        this.coaList = (res?.data || []).filter((x: any) => x.isActive === true);
 
-      const buildFullPath = (item: any, all: any[]): string => {
-        let path = item.headName;
-        let current = all.find((x: any) => Number(x.headCode) === Number(item.parentHead));
+        const buildFullPath = (item: any, all: any[]): string => {
+          let path = item.headName;
+          let current = all.find((x: any) => Number(x.headCode) === Number(item.parentHead));
 
-        while (current) {
-          path = `${current.headName} >> ${path}`;
-          current = all.find((x: any) => Number(x.headCode) === Number(current.parentHead));
-        }
+          while (current) {
+            path = `${current.headName} >> ${path}`;
+            current = all.find((x: any) => Number(x.headCode) === Number(current.parentHead));
+          }
 
-        return path;
-      };
+          return path;
+        };
 
-      this.salesBudgetLines = this.coaList
-        .filter((x: any) => Number(x.headCode).toString().startsWith('4'))
-        .map((x: any) => ({
-          ...x,
-          headCode: Number(x.headCode),
-          label: `${x.headCode} - ${buildFullPath(x, this.coaList)}`
-        }));
+        this.salesBudgetLines = this.coaList
+          .filter((x: any) => Number(x.headCode).toString().startsWith('4'))
+          .map((x: any) => ({
+            ...x,
+            headCode: Number(x.headCode),
+            label: `${x.headCode} - ${buildFullPath(x, this.coaList)}`
+          }));
 
-      this.purchaseBudgetLines = this.coaList
-        .filter((x: any) => Number(x.headCode).toString().startsWith('5'))
-        .map((x: any) => ({
-          ...x,
-          headCode: Number(x.headCode),
-          label: `${x.headCode} - ${buildFullPath(x, this.coaList)}`
-        }));
-    }
-  });
-}
+        this.purchaseBudgetLines = this.coaList
+          .filter((x: any) => Number(x.headCode).toString().startsWith('5'))
+          .map((x: any) => ({
+            ...x,
+            headCode: Number(x.headCode),
+            label: `${x.headCode} - ${buildFullPath(x, this.coaList)}`
+          }));
+      }
+    });
+  }
 
   loadPermission(): void {
     if (!this.userId || this.userId <= 0) {
@@ -137,7 +144,6 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
       },
       error: (err) => {
         console.error('Permission load error:', err);
-
         this.permission = this.permissionService.getEmptyPermission(this.functionId);
         this.isPermissionLoaded = true;
         this.isPageLoading = false;
@@ -213,9 +219,15 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
     this.isDisplay = true;
     this.isEditMode = true;
     this.selectedCatagory = data;
-    this.ItemCategoryType = Number(data.itemCategoryType ?? data.ItemCategoryType ?? 0);
-    this.SalesParentHeadCode = Number(data.salesParentHeadCode ?? data.SalesParentHeadCode ?? 0) || null;
-    this.PurchaseParentHeadCode = Number(data.purchaseParentHeadCode ?? data.PurchaseParentHeadCode ?? 0) || null;
+
+    const typeId = Number(data.itemCategoryType ?? data.ItemCategoryType ?? 0);
+    this.ItemCategoryType = this.itemCategoryTypes.find(x => x.id === typeId) || null;
+
+    this.SalesParentHeadCode =
+      Number(data.salesParentHeadCode ?? data.SalesParentHeadCode ?? 0) || null;
+
+    this.PurchaseParentHeadCode =
+      Number(data.purchaseParentHeadCode ?? data.PurchaseParentHeadCode ?? 0) || null;
 
     this.CatagoryName = data.catagoryName || '';
     this.description = data.description || '';
@@ -229,13 +241,13 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
   }
 
   reset(): void {
-  this.CatagoryName = '';
-  this.description = '';
-  this.ItemCategoryType = null;
-  this.modeHeader = this.isEditMode ? 'Edit Catagory' : 'Create Catagory';
-  this.SalesParentHeadCode = null;
-  this.PurchaseParentHeadCode = null;
-}
+    this.CatagoryName = '';
+    this.description = '';
+    this.ItemCategoryType = null;
+    this.SalesParentHeadCode = null;
+    this.PurchaseParentHeadCode = null;
+    this.modeHeader = this.isEditMode ? 'Edit Catagory' : 'Create Catagory';
+  }
 
   onSubmit(form: NgForm): void {
     if (!form.valid) {
@@ -269,9 +281,11 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
       return;
     }
 
+    const categoryTypeId = Number(this.ItemCategoryType?.id || 0);
+
     const payload = {
       catagoryName: this.CatagoryName,
-      itemCategoryType: Number(this.ItemCategoryType),
+      itemCategoryType: categoryTypeId,
       description: this.description,
       createdBy: this.userId,
       updatedBy: this.userId,
@@ -279,20 +293,20 @@ export class CatagoryComponent implements OnInit, AfterViewChecked, AfterViewIni
       updatedDate: new Date(),
       isActive: true,
       salesParentHeadCode: this.SalesParentHeadCode,
-      purchaseParentHeadCode: this.PurchaseParentHeadCode,
+      purchaseParentHeadCode: this.PurchaseParentHeadCode
     };
 
     if (this.isEditMode) {
       const updatedCatagory = {
-      ...this.selectedCatagory,
-      ID: this.selectedCatagory.id ?? this.selectedCatagory.ID,
-      catagoryName: this.CatagoryName,
-      itemCategoryType: Number(this.ItemCategoryType),
-      salesParentHeadCode: this.SalesParentHeadCode,
-      purchaseParentHeadCode: this.PurchaseParentHeadCode,
-      updatedBy: this.userId,
-      isActive: true
-    };
+        ...this.selectedCatagory,
+        ID: this.selectedCatagory.id ?? this.selectedCatagory.ID,
+        catagoryName: this.CatagoryName,
+        itemCategoryType: categoryTypeId,
+        salesParentHeadCode: this.SalesParentHeadCode,
+        purchaseParentHeadCode: this.PurchaseParentHeadCode,
+        updatedBy: this.userId,
+        isActive: true
+      };
 
       this.CatagoryService.updateCatagory(this.selectedCatagory.id, updatedCatagory).subscribe({
         next: (res: any) => {

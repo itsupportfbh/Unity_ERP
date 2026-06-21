@@ -25,7 +25,12 @@ import { AuthService } from 'app/main/pages/authentication/auth-service';
 })
 export class VerticalMenuComponent implements OnInit, OnDestroy {
   coreConfig: any;
+
   menu: any[] = [];
+  originalMenu: any[] = [];
+
+  menuSearch: string = '';
+
   isCollapsed = false;
   isScrolled = false;
 
@@ -66,12 +71,16 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
       )
       .subscribe((event: any) => {
         const url = event?.urlAfterRedirects || event?.url || this._router.url;
+
+        this.menuSearch = '';
         this.loadMenu(url);
+
         this._coreSidebarService.getSidebarRegistry('menu')?.close();
       });
   }
 
   private onMenuPermissionUpdated = () => {
+    this.menuSearch = '';
     this.loadMenu(this._router.url);
   };
 
@@ -81,8 +90,24 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
     const filtered = this.filterMenu(ALL_MENU);
     const marked = this.markActiveMenu(filtered, currentUrl);
 
-    this.menu = marked;
+    this.originalMenu = marked;
+    this.menu = this.applyMenuSearch(marked);
 
+    this.refreshCoreMenu();
+  }
+
+  onMenuSearchChange(): void {
+    this.menu = this.applyMenuSearch(this.originalMenu);
+    this.refreshCoreMenu();
+  }
+
+  clearMenuSearch(): void {
+    this.menuSearch = '';
+    this.menu = this.applyMenuSearch(this.originalMenu);
+    this.refreshCoreMenu();
+  }
+
+  private refreshCoreMenu(): void {
     try {
       this._coreMenuService.unregister('main');
     } catch {}
@@ -94,6 +119,63 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
       console.error('Core menu register error =>', err);
     }
   }
+
+private applyMenuSearch(items: any[]): any[] {
+  const search = this.menuSearch.trim().toLowerCase();
+
+  if (!search) {
+    return items || [];
+  }
+
+  const filterRecursive = (list: any[]): any[] => {
+    return (list || [])
+      .map(item => {
+        const title = String(item.title || '').toLowerCase();
+        const id = String(item.id || '').toLowerCase();
+        const url = String(item.url || '').toLowerCase();
+
+        const children = item.children
+          ? filterRecursive(item.children)
+          : [];
+
+        const selfMatched =
+          title.includes(search) ||
+          id.includes(search) ||
+          url.includes(search);
+
+        // ✅ child matched iruntha parent-a show panna vendam
+        // matched child-a direct-a return pannum
+        if (!selfMatched && children.length > 0) {
+          return children;
+        }
+
+        if (!selfMatched) {
+          return null;
+        }
+
+        // ✅ self matched na item mattum show
+        return {
+          ...item,
+          open: false,
+          isOpen: false,
+          active: false,
+          isActive: false,
+          children: []
+        };
+      })
+      .reduce((acc: any[], item: any) => {
+        if (Array.isArray(item)) {
+          acc.push(...item);
+        } else if (item) {
+          acc.push(item);
+        }
+
+        return acc;
+      }, []);
+  };
+
+  return filterRecursive(items || []);
+}
 
   private getAllowedMenuIds(): string[] {
     try {
@@ -139,14 +221,6 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
 
         const itemId = String(item.id || '').trim().toLowerCase();
 
-        /**
-         * ✅ IMPORTANT:
-         * department-menu-access should show for ALL roles.
-         * It will show even if:
-         * - allowedMenuIds does not contain it
-         * - approvalRoles is not Super Admin
-         * - teams / approvalRoles restriction exists in menu config
-         */
         const isDepartmentMenuAccess = itemId === 'department-menu-access';
 
         const children = item.children
@@ -198,8 +272,12 @@ export class VerticalMenuComponent implements OnInit, OnDestroy {
       });
   }
 
-  private isNewPurchaseMenuAllowedByParent(itemId: string, allowedSet: Set<string>): boolean {
+  private isNewPurchaseMenuAllowedByParent(
+    itemId: string,
+    allowedSet: Set<string>
+  ): boolean {
     const parentPurchaseAllowed = allowedSet.has('purchase');
+
     const newPurchaseMenuIds = new Set([
       'supplier-scorecard'
     ]);

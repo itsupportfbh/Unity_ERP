@@ -400,10 +400,12 @@
 
 .do-ui-table-wrap {
   max-height: 56vh;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: visible;
 }
 
 .do-ui-table {
+  width: 100%;
   margin-bottom: 0 !important;
 }
 
@@ -412,7 +414,7 @@
   top: 0;
   z-index: 2;
   padding: 12px !important;
-  background: linear-gradient(180deg, #2E5F73, #295565) !important;
+  background: #2E5F73 !important;
   color: #fff !important;
   border-bottom: none !important;
   font-size: 13px;

@@ -19,7 +19,9 @@
 
 /* header/body styling if you want to keep them */
 .taxmaster-table thead th {
-  border-bottom-width: 1px;
+  background: #2E5F73 !important;
+  color: #fff !important;
+  border-bottom: 1px solid rgba(255,255,255,.2) !important;
   font-size: 0.8rem;
   font-weight: 600;
 }

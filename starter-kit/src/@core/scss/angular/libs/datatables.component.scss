@@ -33,21 +33,19 @@ $datatables-dark-active-bg-color: $theme-dark-card-bg;
         border-color: #2E5F73 !important;
         .datatable-header-cell {
           border-bottom: 0;
+          border-right: 1px solid rgba(255, 255, 255, 0.13);
           padding: 0.75rem 1rem;
           font-weight: bold;
           font-size: 0.8rem;
+          &:last-child {
+            border-right: none;
+          }
         }
-        // sort-icon positioning
         .datatable-header-cell-template-wrap {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
           letter-spacing: 1px;
         }
         .sort-btn {
-          &:before {
-            font-size: 1.3rem;
-          }
+          display: none;
         }
       }
 

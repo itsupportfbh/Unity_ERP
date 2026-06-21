@@ -288,7 +288,7 @@ $brand2: #0e3a4c;
   margin: 10px 16px 0; /* reduced */
   border: 1px solid rgba(15,23,42,.08);
   border-radius: 20px;
-  overflow:auto;
+  overflow:visible;
   background:#fff;
   box-shadow: 0 14px 34px rgba(2,6,23,.08);
 
@@ -307,7 +307,7 @@ $brand2: #0e3a4c;
     position: sticky;
     top:0;
     z-index:5;
-    background: linear-gradient(180deg, rgba(33,92,115,.96), rgba(28,85,107,.96));
+    background: #2E5F73;
     color:#fff;
     padding: 12px 12px; /* reduced */
     white-space:nowrap;

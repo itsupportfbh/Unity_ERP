@@ -119,10 +119,7 @@
 /* ✅ scroll container */
 .pinX__tableScroll{
   width:100%;
-  overflow-x:auto;
-  overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
-  padding-bottom:8px;
+  overflow:visible;
 }
 
 /* ✅ a shell to position fade OUTSIDE without covering inputs */
@@ -137,12 +134,8 @@
   border:1px solid var(--pin-border);
   border-radius:16px;
   background:#fff;
-
-  /* ✅ DO NOT hide - otherwise right side (discount/total) gets cut */
   overflow:visible;
-
-  /* ✅ guarantee enough width for all columns */
-  min-width: 1180px;
+  width:100%;
 }
 
 /* header */
@@ -170,15 +163,15 @@
 .pinX__rowFixed{
   display:grid;
   grid-template-columns:
-    200px  /* c1 Item */
-    420px  /* c2 Ledger */
-    220px  /* c3 Location */
-    110px  /* c4 Qty */
-    140px  /* c5 Price */
-    140px  /* c6 Discount(%) */
-    140px  /* c7 TaxCode */
-    120px  /* c8 Tax Amt */
-    160px; /* c9 Total */
+    1.1fr  /* c1 Item */
+    2.3fr  /* c2 Ledger */
+    1.2fr  /* c3 Location */
+    0.6fr  /* c4 Qty */
+    0.8fr  /* c5 Price */
+    0.8fr  /* c6 Discount(%) */
+    0.8fr  /* c7 TaxCode */
+    0.65fr /* c8 Tax Amt */
+    0.9fr; /* c9 Total */
   align-items:center;
   column-gap:12px;
 }
@@ -206,20 +199,7 @@
 .pinX__empty{padding:14px;text-align:center;color:#94a3b8;font-weight:800;font-size:12.5px}
 
 @media (max-width: 1200px){
-  .pinX__tableWrap{ min-width: 1280px; }
-
-  .pinX__rowFixed{
-    grid-template-columns:
-      180px  /* Item */
-      340px  /* Ledger */
-      190px  /* Location */
-      90px   /* Qty */
-      120px  /* Price */
-      120px  /* Discount */
-      130px  /* TaxCode */
-      110px  /* Tax Amt */
-      140px; /* Total */
-  }
+  .pinX__tableWrap{ width: 100%; }
 }
 
 /* totals below */

@@ -490,7 +490,7 @@ textarea.app-control {
 
 /* table */
 .table-wrap {
-  overflow: auto;
+  overflow: visible;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
 }
@@ -498,15 +498,14 @@ textarea.app-control {
 .app-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 720px;
   background: #fff;
 }
 
 .app-table thead th {
   padding: 13px 14px;
-  background: #f7fafc;
-  border-bottom: 1px solid #e5ecf3;
-  color: #43546a;
+  background: #2E5F73 !important;
+  border-bottom: 1px solid rgba(255,255,255,.2);
+  color: #fff !important;
   font-size: 12px;
   font-weight: 800;
   text-align: left;

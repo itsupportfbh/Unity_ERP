@@ -46,7 +46,7 @@
 /* ===== Lines grid wrapper ===== */
 .journal-table-wrapper {
   background: #f9fafb;
-  overflow-x: auto;
+  overflow: visible;
   border-radius: 14px;
   border: 1px solid #e5e7eb;
 }

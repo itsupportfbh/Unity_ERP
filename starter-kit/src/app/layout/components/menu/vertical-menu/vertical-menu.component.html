@@ -10,23 +10,46 @@
         </span>
 
         <h2 class="brand-text mb-0 uw-appname">
-          {{ coreConfig.app.appName }}
+          {{ coreConfig?.app?.appName }}
         </h2>
       </a>
     </li>
 
     <!-- Menu Toggler -->
     <li class="nav-item nav-toggle uw-sb-toggle">
-      <a class="nav-link modern-nav-toggle d-none d-xl-block pr-0"
-         (click)="toggleSidebarCollapsible()">
-        <i class="feather toggle-icon font-medium-4 collapse-toggle-icon custom-white"
-           [ngClass]="isCollapsed ? 'icon-circle' : 'icon-disc'"></i>
+      <a
+        class="nav-link modern-nav-toggle d-none d-xl-block pr-0"
+        (click)="toggleSidebarCollapsible()"
+      >
+        <i
+          class="feather toggle-icon font-medium-4 collapse-toggle-icon custom-white"
+          [ngClass]="isCollapsed ? 'icon-circle' : 'icon-disc'"
+        ></i>
       </a>
     </li>
 
   </ul>
 </div>
 <!--/ Menu header -->
+
+<!-- Menu Search -->
+<div class="uw-menu-search" *ngIf="!isCollapsed">
+  <i class="feather icon-search"></i>
+
+  <input
+    type="text"
+    placeholder="Search menu..."
+    [(ngModel)]="menuSearch"
+    (input)="onMenuSearchChange()"
+  />
+
+  <i
+    *ngIf="menuSearch"
+    class="feather icon-x uw-search-clear"
+    (click)="clearMenuSearch()"
+  ></i>
+</div>
+<!--/ Menu Search -->
 
 <!-- Navbar shadow -->
 <div class="shadow-bottom" [ngClass]="{ 'd-block': isScrolled }"></div>

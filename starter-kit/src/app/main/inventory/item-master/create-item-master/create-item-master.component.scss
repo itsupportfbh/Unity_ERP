@@ -733,12 +733,12 @@ table thead {
 }
 
 table thead th {
-  background: #0e3a4c;
+  background: #2E5F73;
   color: #fff;
   font-weight: 600;
   padding: 10px 12px;
   white-space: nowrap;
-  border-bottom: 1px solid #0b2e3d;
+  border-bottom: 1px solid rgba(255,255,255,.2);
 }
 
 /* Body cells */
@@ -1257,19 +1257,16 @@ table td:nth-child(3) {
   color: #fff;
 }
 
-/* Table wrapper scroll (horizontal) */
+/* Table wrapper */
 .aud2-tablewrap {
-  overflow: auto;
+  overflow: visible;
   border: 1px solid #eef2f7;
   border-radius: 14px;
 }
 
-/* Make tables not shrink columns */
 .aud2-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 720px;
-  /* so horizontal scroll works when needed */
 }
 
 
@@ -1855,14 +1852,13 @@ table td:nth-child(3) {
 
 /* Table */
 .imRev__tableWrap {
-  overflow: auto;
+  overflow: visible;
 }
 
 .imRev__table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 880px;
   font-size: 12px;
 }
 
@@ -1870,13 +1866,13 @@ table td:nth-child(3) {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #0e3a4c;
+  background: #2E5F73;
   color: #fff;
   text-align: left;
   padding: 10px 12px;
   font-weight: 900;
   white-space: nowrap;
-  border-bottom: 1px solid #0b2e3d;
+  border-bottom: 1px solid rgba(255,255,255,.2);
 }
 
 .imRev__table tbody td {

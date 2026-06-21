@@ -26,6 +26,7 @@ import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { MobileLinkInterceptor} from './main/purchase/mobile-receiving/mr-token.interceptor';
 import { RecipemastercreateComponent } from './main/Recipe/recipemastercreate/recipemastercreate.component';
 import { AuthTenantInterceptor } from 'auth-tenant.interceptor';
+import { FormsModule } from '@angular/forms';
 
 
 const appRoutes: Routes = [
@@ -125,6 +126,7 @@ const appRoutes: Routes = [
 @NgModule({
   declarations: [AppComponent],
   imports: [
+    FormsModule,
     BrowserModule,
     BrowserAnimationsModule,
     HttpClientModule,

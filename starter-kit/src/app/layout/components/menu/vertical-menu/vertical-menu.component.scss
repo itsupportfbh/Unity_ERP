@@ -1,6 +1,7 @@
 .custom-white {
   color: #2E5F73 !important;
 }
+
 .nav-toggle .feather {
   display: inline-block !important;
   font-family: "feather" !important;
@@ -11,53 +12,49 @@
   text-transform: none;
   line-height: 1;
 }
+
 /* Header */
-.uw-sb-header{
-  padding-left: 25px !important;   /* 8px / 12px try */
+.uw-sb-header {
+  padding-left: 25px !important;
   padding-right: 12px !important;
-  height: 62px;                    /* fixed height */
+  height: 62px;
   display: flex;
   align-items: center;
   position: relative;
 }
-/* remove default brand spacing */
-.uw-sb-header .navbar-brand{
+
+.uw-sb-header .navbar-brand {
   padding-left: 0 !important;
   margin-left: 0 !important;
 }
 
-/* if brand-text has extra left spacing */
 .uw-sb-header .brand-text,
-.uw-sb-header .uw-appname{
+.uw-sb-header .uw-appname {
   margin-left: 0 !important;
   padding-left: 0 !important;
 }
 
-/* (optional) if icon items also have left padding */
-.uw-sb-header .nav{
+.uw-sb-header .nav {
   padding-left: 0 !important;
   margin-left: 0 !important;
 }
-/* Brand takes space but leaves room for icon */
-.uw-sb-brand{
+
+.uw-sb-brand {
   width: 100%;
   min-width: 0;
-  padding-right: 56px;          /* reserve for icon */
+  padding-right: 56px;
 }
 
-/* Brand link */
-.uw-brand{
+.uw-brand {
   display: flex;
   align-items: center;
   min-width: 0;
 }
 
-/* ✅ App name LEFT + single line */
-.uw-appname{
+.uw-appname {
   margin: 0 !important;
   color: #2E5F73;
   text-align: left;
-
   white-space: nowrap !important;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -66,7 +63,7 @@
   font-size: 22px;
 }
 
-.uw-sb-toggle{
+.uw-sb-toggle {
   position: absolute !important;
   right: 12px;
   top: 63% !important;
@@ -75,7 +72,7 @@
   z-index: 9999;
 }
 
-.uw-sb-toggle .nav-link{
+.uw-sb-toggle .nav-link {
   display: flex !important;
   align-items: center;
   justify-content: center;
@@ -83,8 +80,62 @@
   line-height: 1 !important;
 }
 
-.uw-sb-toggle .toggle-icon{
+.uw-sb-toggle .toggle-icon {
   font-size: 22px;
   color: #2E5F73 !important;
 }
 
+/* Search Box */
+.uw-menu-search {
+  margin: 8px 14px 10px 14px;
+  height: 38px;
+  padding: 0 12px;
+  border: 2px solid #9fb9c5;
+  border-radius: 10px;
+  background: #ffffff;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.uw-menu-search:focus-within {
+  border-color: #2E5F73;
+}
+
+.uw-menu-search i {
+  color: #2E5F73;
+  font-size: 15px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.uw-menu-search input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f3440;
+
+  padding: 0;
+  margin: 0;
+  line-height: 38px;
+}
+
+.uw-menu-search input::placeholder {
+  color: #7f8fa3;
+  font-weight: 500;
+}
+
+.uw-search-clear {
+  cursor: pointer;
+  color: #9aa7b8 !important;
+}
+
+.uw-search-clear:hover {
+  color: #2E5F73 !important;
+} 

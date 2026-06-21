@@ -79,7 +79,7 @@
 }
 
 /* ===== Tables ===== */
-.prl-table-wrap{ max-height:56vh; overflow:auto; }
+.prl-table-wrap{ max-height:56vh; overflow-y:auto; overflow-x:visible; }
 .prl-table td, .prl-table th{ vertical-align:middle; }
 .prl-table thead th{ font-weight:700; }
 

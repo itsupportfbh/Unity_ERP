@@ -415,7 +415,7 @@
 .qtTableWrap{
   border: 1px solid rgba(15,23,42,.06);
   border-radius: 16px;
-  overflow: auto;
+  overflow: visible;
   background: #fff;
 }
 
@@ -429,7 +429,7 @@
     position: sticky;
     top: 0;
     z-index: 2;
-    background: linear-gradient(180deg, var(--qt-brand), #1b5b70);
+    background: var(--qt-brand);
     color: #fff;
     font-size: 12px;
     letter-spacing: .2px;

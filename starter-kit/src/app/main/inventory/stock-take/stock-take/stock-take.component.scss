@@ -5,11 +5,11 @@ table td {
 
 .stock-table-wrap {
   max-width: 100%;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .stock-table {
-  min-width: 1900px;
+  width: 100%;
 }
 
 .stock-table th {
@@ -33,33 +33,31 @@ table td {
 }
 
 .stock-table ng-select {
-  min-width: 170px;
+  width: 100%;
 }
 
 .stock-table input.form-control-sm {
-  min-width: 110px;
+  width: 100%;
   height: 36px;
 }
 
 .qty-view {
-  min-width: 100px;
   font-weight: 600;
   color: #2E5F73 !important;
 }
 
 .uom-view {
-  min-width: 85px;
   font-weight: 600;
   color: #2E5F73 !important;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .reason-cell {
-  min-width: 230px;
+  width: 12%;
 }
 
 .remarks-col {
-  min-width: 220px;
+  width: 10%;
 }
 
 .remarks-col textarea {

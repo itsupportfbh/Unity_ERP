@@ -87,6 +87,8 @@
       color: #fff;
       white-space: nowrap;
       border: none;
+      border-right: 1px solid rgba(255, 255, 255, 0.13) !important;
+      &:last-child { border-right: none !important; }
     }
   }
 
@@ -1130,4 +1132,10 @@ hr {
 
 /* ── Page content top spacing ────────────────────────────────── */
 .content-body { padding-top: 0.25rem !important; }
+
+/* ── Global table header vertical dividers ───────────────────── */
+thead th {
+  border-right: 1px solid rgba(255, 255, 255, 0.13) !important;
+  &:last-child { border-right: none !important; }
+}
 

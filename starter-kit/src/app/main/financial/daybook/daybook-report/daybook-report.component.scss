@@ -127,8 +127,9 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  border-bottom: 1px solid #e5e7eb;
-  color: #6b7280;
+  border-bottom: 1px solid rgba(255,255,255,.2);
+  background: #2E5F73 !important;
+  color: #fff !important;
   white-space: nowrap;
 }
 

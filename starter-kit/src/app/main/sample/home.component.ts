@@ -18,6 +18,7 @@ interface CompanyOption {
   encapsulation: ViewEncapsulation.None
 })
 export class HomeComponent implements OnInit {
+  salesExecutive: any;
 
   constructor(
     private router: Router,
@@ -72,58 +73,6 @@ export class HomeComponent implements OnInit {
   };
 
   timeline: { type: TimelineType; title: string; sub: string; when: string }[] = [];
-
-  flowSteps = [
-    {
-      no: 1,
-      title: 'Setup',
-      text: 'Item, supplier, tax, currency, and ledger mapping',
-      route: '/master/itemType',
-      icon: 'fa-sliders'
-    },
-    {
-      no: 2,
-      title: 'Purchase Request',
-      text: 'Raise request for required items',
-      route: '/purchase/list-PurchaseRequest',
-      icon: 'fa-clipboard-list'
-    },
-    {
-      no: 3,
-      title: 'Purchase Order',
-      text: 'Convert approved request into supplier order',
-      route: '/purchase/list-purchaseorder',
-      icon: 'fa-file-signature'
-    },
-    {
-      no: 4,
-      title: 'Receive Goods',
-      text: 'Receive items against PO and update stock',
-      route: '/purchase/list-Purchasegoodreceipt',
-      icon: 'fa-boxes-stacked'
-    },
-    {
-      no: 5,
-      title: 'Supplier Invoice',
-      text: 'Match invoice with PO and received goods',
-      route: '/purchase/list-SupplierInvoice',
-      icon: 'fa-file-invoice'
-    },
-    {
-      no: 6,
-      title: 'Pay Supplier',
-      text: 'Pay approved supplier bills',
-      route: '/financial/AccountPayable',
-      icon: 'fa-money-check-dollar'
-    },
-    {
-      no: 7,
-      title: 'Finance Check',
-      text: 'Review ledger, trial balance, GST, and close period',
-      route: '/financial/ledger',
-      icon: 'fa-scale-balanced'
-    }
-  ];
 
   exceptions: {
     sev: Severity;
@@ -194,20 +143,20 @@ private get resolvedCompanyId(): number {
   }
 
   ngOnInit(): void {
-    this.contentHeader = {
-      headerTitle: 'Home',
-      actionButton: true,
-      breadcrumb: {
-        type: '',
-        links: [
-          { name: 'Home', isLink: true, link: '/' },
-          { name: 'Dashboard', isLink: false }
-        ]
-      }
-    };
+    // this.contentHeader = {
+    //   headerTitle: 'Home',
+    //   actionButton: true,
+    //   breadcrumb: {
+    //     type: '',
+    //     links: [
+    //       { name: 'Home', isLink: true, link: '/' },
+    //       { name: 'Dashboard', isLink: false }
+    //     ]
+    //   }
+    // };
 
-    this.roleName = this.getLoginRole();
-    this.loadCompanies();
+    // this.roleName = this.getLoginRole();
+    // this.loadCompanies();
   }
 
 private loadCompanies(): void {
@@ -610,5 +559,5 @@ refresh(): void {
     const r = new Date(d);
     r.setMonth(r.getMonth() + n);
     return r;
-  }
+  } 
 }

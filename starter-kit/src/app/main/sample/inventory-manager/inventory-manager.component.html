@@ -1,0 +1,99 @@
+<div class="row">
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card green-card">
+      <div class="card-body">
+        <div class="icon green-icon">
+          <i data-feather="package"></i>
+        </div>
+
+        <div class="card-title-text">TOTAL SKUS</div>
+
+        <div class="card-value">
+          {{ totalSKUs | number }}
+        </div>
+
+        <div class="bottom-section">
+          <span [ngClass]="totalSkusChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ totalSkusChange >= 0 ? '↑' : '↓' }}
+            {{ absValue(totalSkusChange) }}%
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card red-card">
+      <div class="card-body">
+        <div class="icon red-icon">
+          <i data-feather="alert-triangle"></i>
+        </div>
+
+        <div class="card-title-text">BELOW MIN</div>
+
+        <div class="card-value">
+          {{ belowMin }}
+        </div>
+
+        <div class="bottom-section">
+          <span [ngClass]="belowMinChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ belowMinChange >= 0 ? '↑' : '↓' }}
+            {{ absValue(belowMinChange) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card orange-card">
+      <div class="card-body">
+        <div class="icon orange-icon">
+          <i data-feather="minus-circle"></i>
+        </div>
+
+        <div class="card-title-text">NEGATIVE STOCK</div>
+
+        <div class="card-value">
+          {{ negativeStock }}
+        </div>
+
+        <div class="bottom-section">
+          <span [ngClass]="negativeStockChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ negativeStockChange >= 0 ? '↑' : '↓' }}
+            {{ absValue(negativeStockChange) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card blue-card">
+      <div class="card-body">
+        <div class="icon blue-icon">
+          <i data-feather="clock"></i>
+        </div>
+
+        <div class="card-title-text">SLOW MOVING</div>
+
+        <div class="card-value">
+          {{ slowMoving }}
+        </div>
+
+        <div class="bottom-section d-flex justify-content-between align-items-center">
+          <span [ngClass]="slowMovingChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ slowMovingChange >= 0 ? '↑' : '↓' }}
+            {{ absValue(slowMovingChange) }}
+          </span>
+
+          <small class="footer-text">
+            &gt;30d no mv
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

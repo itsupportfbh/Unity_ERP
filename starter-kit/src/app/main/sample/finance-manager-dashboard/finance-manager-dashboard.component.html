@@ -1,1 +1,107 @@
-<p>finance-manager-dashboard works!</p>
+<div class="row">
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card blue-card">
+      <div class="card-body">
+
+        <div class="icon blue-icon">
+          <i data-feather="dollar-sign"></i>
+        </div>
+
+        <div class="card-title-text">TOTAL REVENUE</div>
+
+        <div class="card-value">
+          {{ totalRevenue }}
+        </div>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="totalRevenueChangePercent >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ totalRevenueChangePercent >= 0 ? '↑' : '↓' }}
+            {{ absValue(totalRevenueChangePercent) }}%
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card green-card">
+      <div class="card-body">
+
+        <div class="icon green-icon">
+          <i data-feather="briefcase"></i>
+        </div>
+
+        <div class="card-title-text">COLLECTIONS</div>
+
+        <div class="card-value">
+          {{ collections }}
+        </div>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="collectionsChangePercent >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ collectionsChangePercent >= 0 ? '↑' : '↓' }}
+            {{ absValue(collectionsChangePercent) }}%
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card orange-card">
+      <div class="card-body">
+
+        <div class="icon orange-icon">
+          <i data-feather="credit-card"></i>
+        </div>
+
+        <div class="card-title-text">TOTAL PAYABLES</div>
+
+        <div class="card-value">
+          {{ totalPayables }}
+        </div>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="totalPayablesChangePercent >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ totalPayablesChangePercent >= 0 ? '↑' : '↓' }}
+            {{ absValue(totalPayablesChangePercent) }}%
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card red-card">
+      <div class="card-body">
+
+        <div class="icon red-icon">
+          <i data-feather="alert-circle"></i>
+        </div>
+
+        <div class="card-title-text">EXCEPTIONS</div>
+
+        <div class="card-value">
+          {{ exceptions }}
+        </div>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="exceptionsChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ exceptionsChange >= 0 ? '↑' : '↓' }}
+            {{ absValue(exceptionsChange) }}
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,86 @@
+.dashboard-card {
+  border-radius: 12px;
+  border-top: 3px solid transparent;
+  min-height: 120px;
+}
+
+.revenue-card {
+  border-top-color: #00a3ff;
+}
+
+.customer-card {
+  border-top-color: #28c76f;
+}
+
+.deal-card {
+  border-top-color: #ff9f43;
+}
+
+.overdue-card {
+  border-top-color: #ea5455;
+}
+
+.card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.revenue-icon {
+  background: #e7f5ff;
+  color: #00a3ff;
+}
+
+.customer-icon {
+  background: #e8fff1;
+  color: #28c76f;
+}
+
+.deal-icon {
+  background: #fff4e8;
+  color: #ff9f43;
+}
+
+.overdue-icon {
+  background: #ffe8ec;
+  color: #ea5455;
+}
+
+.card-label {
+  font-size: 10px;
+  font-weight: 100;
+  color: #6e6b7b;
+  margin-bottom: 5px;
+}
+
+.card-value {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.growth {
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 100;
+}
+
+.success {
+  background: #e8fff1;
+  color: #28c76f;
+}
+
+.danger {
+  background: #ffe8ec;
+  color: #ea5455;
+}
+
+.card-info {
+  color: #8e9baa;
+  font-size: 11px;
+}

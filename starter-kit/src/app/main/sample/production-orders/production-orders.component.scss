@@ -1,0 +1,84 @@
+.production-card {
+  border-radius: 16px;
+  border: 1px solid #e5edf4;
+  background: #fff;
+  box-shadow: none;
+}
+
+.card-body {
+  padding: 18px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 16px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.production-table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.production-table thead th {
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  padding: 8px 0;
+}
+
+.production-table tbody td {
+  border: none;
+  padding: 10px 0;
+  font-size: 14px;
+  color: #111827;
+  vertical-align: middle;
+}
+
+.qty {
+  font-weight: 600;
+  color: #111827;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Done */
+.done {
+  background: #e8f5e9;
+  color: #4d7c0f;
+}
+
+/* In Progress */
+.progress {
+  background: #e8f1fd;
+  color: #2563eb;
+}
+
+/* Pending */
+.pending {
+  background: #fff4db;
+  color: #b45309;
+}
+
+/* Overdue */
+.overdue {
+  background: #fde8e8;
+  color: #dc2626;
+}

@@ -1,0 +1,51 @@
+<div class="card aging-card">
+  <div class="card-body">
+
+    <h5 class="card-title">
+      AR + AP Aging
+    </h5>
+
+    <div class="aging-section">
+      <div class="section-header">
+        RECEIVABLES
+      </div>
+
+      <div
+        class="aging-row"
+        *ngFor="let item of receivables">
+
+        <span>{{ item.period }}</span>
+
+        <span
+          [ngClass]="{
+            'amount': !item.overdue,
+            'overdue': item.overdue
+          }">
+          {{ item.amount }}
+        </span>
+      </div>
+    </div>
+
+    <div class="aging-section mt-1">
+      <div class="section-header">
+        PAYABLES
+      </div>
+
+      <div
+        class="aging-row"
+        *ngFor="let item of payables">
+
+        <span>{{ item.period }}</span>
+
+        <span
+          [ngClass]="{
+            'amount': !item.overdue,
+            'overdue': item.overdue
+          }">
+          {{ item.amount }}
+        </span>
+      </div>
+    </div>
+
+  </div>
+</div>

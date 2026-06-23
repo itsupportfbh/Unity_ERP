@@ -1,0 +1,50 @@
+<div class="card sales-trend-card">
+  <div class="card-body">
+
+    <h4 class="mb-0">Sales Trend</h4>
+    <small class="text-muted">
+      Daily posted invoices - Jun 2025
+    </small>
+
+   
+    <div class="row mt-1 mb-2">
+
+      <div class="col-4">
+        <div class="summary-box">
+          <small>REVENUE</small>
+          <h5>{{ revenue }}</h5>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="summary-box">
+          <small>AVG/DAY</small>
+          <h5>{{ avgDay }}</h5>
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="summary-box">
+          <small>INVOICES</small>
+          <h5>{{ invoices }}</h5>
+        </div>
+      </div>
+
+    </div>
+
+
+    <apx-chart
+      [series]="apexLineAreaChart.series"
+      [chart]="apexLineAreaChart.chart"
+      [stroke]="apexLineAreaChart.stroke"
+      [fill]="apexLineAreaChart.fill"
+      [colors]="apexLineAreaChart.colors"
+      [dataLabels]="apexLineAreaChart.dataLabels"
+      [grid]="apexLineAreaChart.grid"
+      [xaxis]="apexLineAreaChart.xaxis"
+      [yaxis]="apexLineAreaChart.yaxis"
+      [tooltip]="apexLineAreaChart.tooltip">
+    </apx-chart>
+
+  </div>
+</div>

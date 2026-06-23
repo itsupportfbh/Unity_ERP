@@ -1,0 +1,66 @@
+<div class="card top-recipes-card">
+
+  <div class="card-body">
+
+    <h5 class="card-title">
+      Top recipes
+    </h5>
+
+    <ng-container *ngIf="recipes.length > 0; else noData">
+
+      <div
+        class="recipe-item"
+        *ngFor="let item of recipes">
+
+        <div class="recipe-left">
+
+          <div
+            class="recipe-image"
+            [ngClass]="item.imageClass">
+          </div>
+
+          <div>
+
+            <div class="recipe-name">
+              {{ item.name }}
+            </div>
+
+            <div class="recipe-subtitle">
+              {{ item.cuisine }}
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="recipe-right">
+
+          <div class="recipe-cost">
+            {{ item.cost }}
+          </div>
+
+          <span
+            class="status-badge"
+            [ngClass]="item.badgeClass">
+
+            {{ item.status }}
+
+          </span>
+
+        </div>
+
+      </div>
+
+    </ng-container>
+
+    <ng-template #noData>
+
+      <div class="text-center p-3">
+        No top recipes found
+      </div>
+
+    </ng-template>
+
+  </div>
+
+</div>

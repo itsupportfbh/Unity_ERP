@@ -1,0 +1,29 @@
+<div class="card pipeline-card">
+  <div class="card-body">
+
+    <h5 class="mb-0 font-weight-bold">
+      My Pipeline
+    </h5>
+
+    <small class="text-muted">
+      PR to PIN progress
+    </small>
+
+    <div class="pipeline-item" *ngFor="let item of myPipeline">
+
+      <div class="d-flex justify-content-between mb-25">
+        <span class="pipeline-name">{{ item.name }}</span>
+        <span class="pipeline-count">{{ item.count }}</span>
+      </div>
+
+      <div class="progress">
+        <div
+          class="progress-bar pipeline-bar"
+          [style.width.%]="item.percentage">
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,91 @@
+<div class="row">
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card blue-card">
+      <div class="card-body">
+        <div class="icon blue-icon">
+          <i class="fa fa-file-text"></i>
+        </div>
+
+        <h6 class="card-title-text">OPEN PRs</h6>
+
+        <h2 class="card-value">{{ openPRs }}</h2>
+
+        <div class="bottom-section">
+          <span class="badge-success-custom">
+            ↑ {{ openPrsChange }}
+          </span>
+
+          <small class="card-footer-text">Pending approval</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card orange-card">
+      <div class="card-body">
+        <div class="icon orange-icon">
+          <i class="fa fa-truck"></i>
+        </div>
+
+        <h6 class="card-title-text">OPEN POs</h6>
+
+        <h2 class="card-value">{{ openPOs }}</h2>
+
+        <div class="bottom-section">
+          <span class="badge-success-custom">
+            ↑ {{ openPosChange }}
+          </span>
+
+          <small class="card-footer-text">Awaiting delivery</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card green-card">
+      <div class="card-body">
+        <div class="icon green-icon">
+          <i class="fa fa-clipboard"></i>
+        </div>
+
+        <h6 class="card-title-text">PENDING GRN</h6>
+
+        <h2 class="card-value">{{ pendingGRN }}</h2>
+
+        <div class="bottom-section">
+          <span class="badge-danger-custom">
+            ↓ {{ pendingGrnChange * -1 }}
+          </span>
+
+          <small class="card-footer-text">To receive</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card red-card">
+      <div class="card-body">
+        <div class="icon red-icon">
+          <i class="fa fa-money"></i>
+        </div>
+
+        <h6 class="card-title-text">AP OUTSTANDING</h6>
+
+        <h2 class="card-value">{{ apOutstanding }}</h2>
+
+        <div class="bottom-section">
+          <span class="badge-danger-custom">
+            ↓ {{ apOutstandingChangePercent * -1 }}%
+          </span>
+
+          <small class="card-footer-text">Total payable</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

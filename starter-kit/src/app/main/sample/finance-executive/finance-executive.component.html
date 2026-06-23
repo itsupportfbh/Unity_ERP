@@ -1,0 +1,102 @@
+<div class="row">
+
+  <!-- Open AR Invoices -->
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card blue-card">
+      <div class="card-body">
+
+        <div class="icon blue-icon">
+          <i class="fa fa-file-text"></i>
+        </div>
+
+        <h6 class="card-title-text">
+          OPEN AR INVOICES
+        </h6>
+
+        <h2 class="card-value">
+          {{ openARInvoices }}
+        </h2>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="openArInvoicesChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ openArInvoicesChange >= 0 ? '↑' : '↓' }}
+            {{ positiveValue(openArInvoicesChange) }}
+          </span>
+
+          <small class="card-footer-text">
+            Pending collection
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- AP Due Today -->
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card orange-card">
+      <div class="card-body">
+
+        <div class="icon orange-icon">
+          <i class="fa fa-truck"></i>
+        </div>
+
+        <h6 class="card-title-text">
+          AP DUE TODAY
+        </h6>
+
+        <h2 class="card-value">
+          {{ apDueToday }}
+        </h2>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="apDueTodayChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ apDueTodayChange >= 0 ? '↑' : '↓' }}
+            {{ positiveValue(apDueTodayChange) }}
+          </span>
+
+          <small class="card-footer-text">
+            Payments due
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 3-Way Mismatch -->
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card red-card">
+      <div class="card-body">
+
+        <div class="icon red-icon">
+          <i class="fa fa-money"></i>
+        </div>
+
+        <h6 class="card-title-text">
+          3-WAY MISMATCH
+        </h6>
+
+        <h2 class="card-value">
+          {{ _3WayMismatch }}
+        </h2>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="threeWayMismatchChangePercent >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ threeWayMismatchChangePercent >= 0 ? '↑' : '↓' }}
+            {{ positiveValue(threeWayMismatchChangePercent) }}%
+          </span>
+
+          <small class="card-footer-text">
+            PO/GRN/PIN
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

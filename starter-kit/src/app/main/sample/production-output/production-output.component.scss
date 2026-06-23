@@ -1,0 +1,31 @@
+.production-card {
+  border-radius: 16px;
+  border: 1px solid #e5edf4;
+  box-shadow: none;
+  background: #ffffff;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+::ng-deep .apexcharts-canvas {
+  margin-top: 8px;
+}
+
+::ng-deep .apexcharts-xaxis-label,
+::ng-deep .apexcharts-yaxis-label {
+  font-size: 12px;
+  fill: #6b7280;
+}
+
+::ng-deep .apexcharts-gridline {
+  stroke: #e5e7eb;
+}

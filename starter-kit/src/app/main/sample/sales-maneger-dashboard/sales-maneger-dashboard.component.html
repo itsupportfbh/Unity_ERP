@@ -1,0 +1,118 @@
+<div class="row">
+
+  <!-- Total Revenue -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card revenue-card">
+      <div class="card-body">
+
+        <div class="card-icon revenue-icon">
+          <i class="fa fa-inr"></i>
+        </div>
+
+        <h6 class="card-label">TOTAL REVENUE</h6>
+<h2 class="card-value">
+  {{ formatCurrency(totalRevenue) }}
+</h2>
+
+        <div class="d-flex justify-content-between align-items-center mt-1">
+          <span class="growth success">
+            ↑ 18%
+          </span>
+
+          <small class="card-info">
+            vs last month
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Customers -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card customer-card">
+      <div class="card-body">
+
+        <div class="card-icon customer-icon">
+          <i class="fa fa-users"></i>
+        </div>
+
+        <h6 class="card-label">ACTIVE CUSTOMERS</h6>
+
+        <h2 class="card-value">
+  {{ activeCustomers }}
+</h2>
+
+        <div class="d-flex justify-content-between align-items-center mt-1">
+          <span class="growth success">
+            ↑ 6%
+          </span>
+
+          <small class="card-info">
+            Billed this month
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Avg Deal Size -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card deal-card">
+      <div class="card-body">
+
+        <div class="card-icon deal-icon">
+          <i class="fa fa-bar-chart"></i>
+        </div>
+
+        <h6 class="card-label">AVG DEAL SIZE</h6>
+
+        <h2 class="card-value">
+  {{ formatCurrency(avgDealSize) }}
+</h2>
+
+        <div class="d-flex justify-content-between align-items-center mt-1">
+          <span class="growth success">
+            ↑ 11%
+          </span>
+
+          <small class="card-info">
+            Per invoice
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- AR Overdue -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card overdue-card">
+      <div class="card-body">
+
+        <div class="card-icon overdue-icon">
+          <i class="fa fa-history"></i>
+        </div>
+
+        <h6 class="card-label">AR OVERDUE</h6>
+
+        <h2 class="card-value">
+  {{ formatCurrency(arOverdue) }}
+</h2>
+
+        <div class="d-flex justify-content-between align-items-center mt-1">
+          <span class="growth danger">
+            ↓ 4%
+          </span>
+
+          <small class="card-info">
+            >30 days
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

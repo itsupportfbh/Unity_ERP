@@ -1,0 +1,50 @@
+.stock-card {
+  border-radius: 14px;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6e6b7b;
+  background: #fafbfc;
+  vertical-align: middle;
+}
+
+.table td {
+  font-size: 13px;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.badge {
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-normal {
+  background: #e7f8ee;
+  color: #28c76f;
+  border: 1px solid #b8ebcb;
+}
+
+.badge-warning {
+  background: #fff1df;
+  color: #ff9f43;
+  border: 1px solid #ffd8a8;
+}
+
+.badge-danger-custom {
+  background: #ffe8e8;
+  color: #ea5455;
+  border: 1px solid #f5c2c7;
+}
+
+.text-muted {
+  font-size: 12px;
+}

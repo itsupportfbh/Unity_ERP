@@ -1,0 +1,62 @@
+<div class="card purchase-card">
+
+  <div class="card-body">
+
+    <h5 class="page-title">
+      Stock Movements Today
+    </h5>
+
+    <div class="page-subtitle">
+      Pending action
+    </div>
+
+    <div class="table-wrapper mt-2">
+
+      <table class="table custom-table mb-0">
+
+        <thead>
+          <tr>
+            <th>PR #</th>
+            <th>ITEM</th>
+            <th>QTY</th>
+            <th>STATUS</th>
+          </tr>
+        </thead>
+
+        <tbody>
+<tr *ngFor="let item of Stockmovement">
+  <td>{{ item.prNo }}</td>
+  <td>{{ item.item }}</td>
+  <td>{{ item.qty }}</td>
+  <td>
+    <span class="status-badge" [ngClass]="item.class">
+      {{ item.status }}
+    </span>
+  </td>
+</tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <div class="button-section">
+
+      <button class="action-btn">
+        New Item
+      </button>
+
+      <button class="action-btn">
+        Stock Transfer
+      </button>
+
+       <button class="action-btn">
+        Below Min  
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

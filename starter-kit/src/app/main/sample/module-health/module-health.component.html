@@ -1,0 +1,37 @@
+<div class="card module-health-card">
+  <div class="card-body">
+
+    <h5 class="card-title">
+      Module Health
+    </h5>
+
+    <div class="card-subtitle">
+      Cross-module status
+    </div>
+
+    <div class="module-item" *ngFor="let item of moduleHealth">
+
+      <div class="d-flex justify-content-between align-items-center mb-1">
+
+        <span class="module-name">
+          {{ item.name }}
+        </span>
+
+        <span class="module-status">
+          {{ item.status }}
+        </span>
+
+      </div>
+
+      <div class="progress custom-progress">
+        <div
+          class="progress-bar custom-bar"
+          [style.width.%]="item.percentage"
+          [style.background]="item.color">
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>

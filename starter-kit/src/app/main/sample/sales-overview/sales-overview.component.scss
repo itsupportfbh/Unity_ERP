@@ -1,0 +1,18 @@
+@import '@core/scss/base/plugins/charts/chart-apex';
+@import '@core/scss/angular/libs/flatpickr.component.scss';
+
+.sales-overview-card {
+  border-radius: 12px;
+}
+
+::ng-deep .apexcharts-canvas {
+  margin: 0 auto;
+}
+
+::ng-deep .apexcharts-xaxis-label {
+  font-size: 12px !important;
+}
+
+::ng-deep .apexcharts-yaxis-label {
+  font-size: 12px !important;
+}

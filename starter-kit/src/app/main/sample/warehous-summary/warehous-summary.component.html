@@ -1,0 +1,104 @@
+<div class="card warehouse-card">
+  <div class="card-body">
+
+    <h5 class="mb-0 font-weight-bold">
+      Warehouse Summary
+    </h5>
+
+    <small class="text-muted">
+      On-hand by location
+    </small>
+
+    <!-- Warehouses -->
+
+    <div
+      class="warehouse-item"
+      *ngFor="let warehouse of warehouses">
+
+      <div class="d-flex justify-content-between mb-25">
+
+        <span class="warehouse-name">
+          {{ warehouse.warehouseName }}
+        </span>
+
+        <span class="warehouse-percent">
+          {{ warehouse.percentage }}%
+        </span>
+
+      </div>
+
+      <div class="progress">
+
+        <div
+          class="progress-bar bg-success"
+          [style.width.%]="warehouse.percentage">
+        </div>
+
+      </div>
+
+      <small class="text-muted">
+        {{ warehouse.totalSkus | number }} SKUs
+      </small>
+
+    </div>
+
+    <!-- Summary Cards -->
+
+    <div class="row mt-2">
+
+      <div class="col-md-6">
+
+        <div class="summary-box">
+
+          <h6>NEW ITEMS</h6>
+
+          <h3>{{ newItems }}</h3>
+
+          <small>This Month</small>
+
+        </div>
+
+      </div>
+
+      <div class="col-md-6">
+
+        <div class="summary-box">
+
+          <h6>PENDING DOs</h6>
+
+          <h3>{{ pendingDOs }}</h3>
+
+          <small>For Dispatch</small>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Buttons -->
+
+    <div class="mt-2">
+
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm mr-1">
+        Open GRN
+      </button>
+
+      <!-- <button
+        type="button"
+        class="btn btn-outline-primary btn-sm mr-1">
+        Below Min
+      </button> -->
+
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm">
+        Negative Stock
+      </button>
+
+    </div>
+
+  </div>
+</div>

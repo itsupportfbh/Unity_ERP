@@ -1,0 +1,114 @@
+.dashboard-card {
+  border-radius: 14px;
+  height: 130px;
+  border: 1px solid #e8edf3;
+  border-top: 3px solid transparent;
+  box-shadow: none;
+  background: #fff;
+}
+
+.blue-card {
+  border-top-color: #2d9cdb;
+}
+
+.green-card {
+  border-top-color: #2ecc71;
+}
+
+.orange-card {
+  border-top-color: #f5b301;
+}
+
+.red-card {
+  border-top-color: #ea5455;
+}
+
+.card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.blue-icon {
+  background: #e8f4ff;
+  color: #2d9cdb;
+}
+
+.green-icon {
+  background: #e9f9ef;
+  color: #2ecc71;
+}
+
+.orange-icon {
+  background: #fff4de;
+  color: #d97706;
+}
+
+.red-icon {
+  background: #ffeaea;
+  color: #ea5455;
+}
+
+.card-title-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8d99ae;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.card-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1.2;
+}
+
+.bottom-section {
+  margin-top: auto;
+}
+
+.badge-success-custom,
+.badge-danger-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.badge-success-custom {
+  background: #e7f8ee;
+  color: #28c76f;
+  border: 1px solid #c7edd7;
+}
+
+.badge-danger-custom {
+  background: #ffeaea;
+  color: #ea5455;
+  border: 1px solid #f5c2c7;
+}
+
+.badge-success-custom i,
+.badge-danger-custom i {
+  font-size: 9px;
+}
+.icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
+}

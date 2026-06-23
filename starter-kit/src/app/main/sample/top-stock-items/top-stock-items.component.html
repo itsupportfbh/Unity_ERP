@@ -1,0 +1,52 @@
+<div class="card stock-card">
+  <div class="card-body">
+
+    <h5 class="mb-0 font-weight-bold">
+      Top Stock Items
+    </h5>
+
+    <small class="text-muted">
+      Highest on-hand qty
+    </small>
+
+    <div class="table-responsive mt-2">
+
+      <table class="table table-bordered mb-0">
+
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>ITEM</th>
+            <th>WH</th>
+            <th>QTY</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <tr *ngFor="let item of stockItems">
+
+            <td>{{ item.sku }}</td>
+
+            <td>{{ item.itemName }}</td>
+
+            <td>{{ item.warehouse }}</td>
+
+            <td>{{ item.qty | number:'1.0-0' }}</td>
+
+          </tr>
+
+          <tr *ngIf="stockItems.length === 0">
+            <td colspan="4" class="text-center">
+              No Records Found
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+</div>

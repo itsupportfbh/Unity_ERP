@@ -1,0 +1,82 @@
+<div class="card ar-aging-card">
+
+  <div class="card-body">
+
+    <h5 class="mb-0 font-weight-bold">
+      AR Aging
+    </h5>
+
+    <small class="text-muted">
+      Customer receivables
+    </small>
+
+    <div *ngIf="loading" class="text-center p-2">
+      Loading...
+    </div>
+
+    <div class="table-responsive mt-2" *ngIf="!loading">
+
+      <table class="table table-bordered mb-0">
+
+        <thead>
+          <tr>
+            <th>RECEIVABLES AGING</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <tr>
+            <td>0–30 days</td>
+            <td class="text-right amount">
+              {{ formatCurrency(arAging.currentAmount) }}
+            </td>
+          </tr>
+
+          <tr>
+            <td>31–60 days</td>
+            <td class="text-right amount">
+              {{ formatCurrency(arAging.days30) }}
+            </td>
+          </tr>
+
+          <tr>
+            <td>61–90 days</td>
+            <td class="text-right amount">
+              {{ formatCurrency(arAging.days60) }}
+            </td>
+          </tr>
+
+          <tr>
+            <td>>90 days</td>
+            <td class="text-right overdue">
+              {{ formatCurrency(arAging.days90) }}
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <div class="mt-2">
+
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm mr-1">
+        Open AR Invoices
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm">
+        GST Pending
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

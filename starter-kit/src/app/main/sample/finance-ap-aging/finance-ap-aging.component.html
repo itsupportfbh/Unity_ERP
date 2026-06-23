@@ -1,0 +1,55 @@
+<div class="card ap-aging-card">
+  <div class="card-body">
+
+    <h5 class="mb-0 font-weight-bold">
+      AP Aging
+    </h5>
+
+    <small class="text-muted">
+      Vendor payables
+    </small>
+
+    <div class="table-responsive mt-2">
+
+      <table class="table table-bordered mb-0">
+
+        <thead>
+          <tr>
+            <th>PAYABLES AGING</th>
+            <th class="text-right"></th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <tr *ngFor="let item of agingData">
+
+            <td>{{ item.period }}</td>
+
+            <td
+              class="text-right"
+              [class.overdue]="item.overdue"
+              [class.amount]="!item.overdue">
+
+              {{ item.amount }}
+
+            </td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <div class="mt-2">
+
+      <button class="btn btn-outline-primary btn-sm">
+        AP Aging Report
+      </button>
+
+    </div>
+
+  </div>
+</div>

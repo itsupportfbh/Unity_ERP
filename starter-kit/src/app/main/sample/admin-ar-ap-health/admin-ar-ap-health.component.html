@@ -1,0 +1,97 @@
+<div class="card health-card">
+
+  <div class="card-body">
+
+    <h5 class="card-title">
+      AR / AP Health
+    </h5>
+
+    <div class="card-subtitle">
+      Collection & payment %
+    </div>
+
+    <div class="row chart-section">
+
+      <!-- Receivables -->
+      <div class="col-md-6 text-center">
+
+        <div class="chart-heading">
+          RECEIVABLES
+        </div>
+
+        <apx-chart
+          [series]="receivableChart.series"
+          [chart]="receivableChart.chart"
+          [plotOptions]="receivableChart.plotOptions"
+          [stroke]="receivableChart.stroke"
+          [colors]="receivableChart.colors"
+          [labels]="receivableChart.labels">
+        </apx-chart>
+
+      </div>
+
+      <!-- Payables -->
+      <div class="col-md-6 text-center">
+
+        <div class="chart-heading">
+          PAYABLES
+        </div>
+
+        <apx-chart
+          [series]="payableChart.series"
+          [chart]="payableChart.chart"
+          [plotOptions]="payableChart.plotOptions"
+          [stroke]="payableChart.stroke"
+          [colors]="payableChart.colors"
+          [labels]="payableChart.labels">
+        </apx-chart>
+
+      </div>
+
+    </div>
+
+    <!-- Bottom Summary -->
+
+    <div class="row mt-1">
+
+      <div class="col-md-6">
+        <div class="summary-box">
+
+          <div class="summary-title">
+            ACTIVE USERS
+          </div>
+
+          <div class="summary-value">
+            {{ activeUsers }}
+          </div>
+
+          <div class="summary-subtitle">
+            Logged in today
+          </div>
+
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="summary-box">
+
+          <div class="summary-title">
+            PENDING APPROVALS
+          </div>
+
+          <div class="summary-value">
+            {{ pendingApprovals }}
+          </div>
+
+          <div class="summary-subtitle">
+            Across modules
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div> 

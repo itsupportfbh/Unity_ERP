@@ -1,0 +1,84 @@
+.stock-alert-card {
+  border-radius: 16px;
+  border: 1px solid #e5edf4;
+  box-shadow: none;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #16324f;
+  margin-bottom: 14px;
+}
+
+.table-wrapper {
+  border: 1px solid #dfe7ef;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.custom-table {
+  margin-bottom: 0;
+}
+
+.custom-table thead th {
+  background: #f7f9fc;
+  color: #16324f;
+  font-size: 11px;
+  font-weight: 700;
+  border-bottom: 1px solid #dfe7ef;
+  padding: 12px 10px;
+}
+
+.custom-table tbody td {
+  padding: 14px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #16324f;
+  border-top: 1px solid #edf2f7;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-warning {
+  background: #fff4de;
+  color: #d97706;
+  border: 1px solid #f5d08a;
+}
+
+.badge-danger {
+  background: #fdecec;
+  color: #ea5455;
+  border: 1px solid #f5c2c7;
+}
+
+.action-buttons {
+  margin-top: 16px;
+}
+
+.custom-btn {
+  background: #fff;
+  border: 1px solid #0f4c75;
+  color: #0f4c75;
+  border-radius: 22px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
+
+.custom-btn:hover {
+  background: #0f4c75;
+  color: #fff;
+}

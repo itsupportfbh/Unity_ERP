@@ -1,0 +1,58 @@
+<div class="card production-card">
+
+  <div class="card-body">
+
+    <h5 class="card-title">
+      Production orders
+    </h5>
+
+    <div class="table-wrapper">
+
+      <table class="table production-table">
+
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Recipe</th>
+            <th>Status</th>
+            <th class="text-right">Qty</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <tr *ngFor="let item of productionOrders">
+
+            <td>{{ item.order }}</td>
+
+            <td>{{ item.recipe }}</td>
+
+            <td>
+              <span
+                class="status-badge"
+                [ngClass]="item.class">
+                {{ item.status }}
+              </span>
+            </td>
+
+            <td class="text-right qty">
+              {{ item.qty }}
+            </td>
+
+          </tr>
+
+          <tr *ngIf="productionOrders.length === 0">
+            <td colspan="4" class="text-center">
+              No production orders
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>

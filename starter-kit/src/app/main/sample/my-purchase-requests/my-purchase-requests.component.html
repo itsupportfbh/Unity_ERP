@@ -1,0 +1,73 @@
+<div class="card purchase-card">
+  <div class="card-body">
+
+    <h5 class="mb-0 font-weight-bold">
+      My Purchase Requests
+    </h5>
+
+    <small class="text-muted">
+      Pending action
+    </small>
+
+    <div class="table-responsive mt-2">
+
+      <table class="table table-bordered mb-0">
+
+        <thead>
+          <tr>
+            <th>PR #</th>
+            <th>ITEM</th>
+            <th>QTY</th>
+            <th>STATUS</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <tr *ngFor="let item of purchaseRequests">
+            <td>{{ item.prNo }}</td>
+
+            <td>{{ item.itemName }}</td>
+
+            <td>{{ formatQty(item) }}</td>
+
+            <td>
+             <span
+  class="status-badge"
+  [ngClass]="{
+    'status-pending': item.statusText === 'Pending Approval',
+    'status-approved': item.statusText === 'Approved',
+    'status-po': item.statusText === 'PO Raised',
+    'status-draft': item.statusText === 'Draft'
+  }">
+  {{ item.statusText }}
+</span>
+            </td>
+          </tr>
+
+          <tr *ngIf="purchaseRequests.length === 0">
+            <td colspan="4" class="text-center text-muted">
+              No purchase requests found
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <div class="mt-2">
+
+      <button class="btn btn-outline-primary btn-sm mr-1">
+        New PR
+      </button>
+
+      <button class="btn btn-outline-primary btn-sm">
+        New PO
+      </button>
+
+    </div>
+
+  </div>
+</div>

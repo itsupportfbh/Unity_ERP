@@ -1,0 +1,59 @@
+<div class="card stock-alert-card">
+
+  <div class="card-body">
+
+    <h5 class="card-title">
+      Stock Alerts
+    </h5>
+
+    <div class="table-wrapper">
+
+      <table class="table custom-table mb-0">
+
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>ISSUE</th>
+            <th>QTY</th>
+          </tr>
+        </thead>
+
+        <tbody>
+  <tr *ngFor="let item of stockAlerts">
+    <td>{{ item.sku }}</td>
+
+    <td>
+      <span class="status-badge" [ngClass]="item.class">
+        {{ item.issue }}
+      </span>
+    </td>
+
+    <td>{{ item.qty }}</td>
+  </tr>
+
+  <tr *ngIf="stockAlerts.length === 0">
+    <td colspan="3" class="text-center">
+      No stock alerts
+    </td>
+  </tr>
+</tbody>
+
+      </table>
+
+    </div>
+
+    <div class="action-buttons">
+
+      <button class="custom-btn">
+        Reorder List
+      </button>
+
+      <button class="custom-btn">
+        Negative Stock
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

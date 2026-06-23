@@ -1,0 +1,46 @@
+<div class="card">
+  <div class="card-body">
+
+    <h5 class="mb-2">My Open Sales Orders</h5>
+
+    <table class="table table-bordered">
+
+      <thead>
+        <tr>
+          <th>ORDER #</th>
+          <th>CUSTOMER</th>
+          <th>DATE</th>
+          <th>AMOUNT</th>
+          <th>STATUS</th>
+          <th>DUE</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr *ngFor="let order of openSalesOrders">
+
+          <td>{{ order.salesOrderNo }}</td>
+
+          <td>{{ order.customerName }}</td>
+
+          <td>{{ order.requestedDate | date:'dd MMM' }}</td>
+
+          <td>{{ order.grandTotal | number:'1.2-2' }}</td>
+
+         <td>
+  <span class="status-text">
+    {{ order.statusText }}
+  </span>
+</td>
+
+          <td>{{ order.deliveryDate | date:'dd MMM' }}</td>
+
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </div>
+</div>

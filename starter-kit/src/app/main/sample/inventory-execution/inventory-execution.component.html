@@ -1,0 +1,87 @@
+<div class="row">
+
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card green-card">
+      <div class="card-body">
+
+        <div class="icon green-icon">
+          <i data-feather="package"></i>
+        </div>
+
+        <div class="card-title-text">
+          AVAILABLE SKUS
+        </div>
+
+        <div class="card-value">
+          {{ availableSKUs | number }}
+        </div>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="availableSkusChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ availableSkusChange >= 0 ? '↑' : '↓' }}
+            {{ absValue(availableSkusChange) }}
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card red-card">
+      <div class="card-body">
+
+        <div class="icon red-icon">
+          <i data-feather="alert-triangle"></i>
+        </div>
+
+        <div class="card-title-text">
+          BELOW MIN
+        </div>
+
+        <div class="card-value">
+          {{ belowMin }}
+        </div>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="belowMinChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ belowMinChange >= 0 ? '↑' : '↓' }}
+            {{ absValue(belowMinChange) }}
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card orange-card">
+      <div class="card-body">
+
+        <div class="icon orange-icon">
+          <i data-feather="plus"></i>
+        </div>
+
+        <div class="card-title-text">
+          NEW ITEMS
+        </div>
+
+        <div class="card-value">
+          {{ newItems }}
+        </div>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="newItemsChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            {{ newItemsChange >= 0 ? '↑' : '↓' }}
+            {{ absValue(newItemsChange) }}
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,55 @@
+.aging-card {
+  border-radius: 16px;
+  border: 1px solid #e7edf3;
+  box-shadow: none;
+  background: #fff;
+}
+
+.card-body {
+  padding: 18px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2d3d;
+  margin-bottom: 16px;
+}
+
+.aging-section {
+  border: 1px solid #dfe6ee;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.section-header {
+  background: #f7f9fc;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1f3b64;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.aging-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-top: 1px solid #edf1f5;
+  font-size: 14px;
+  font-weight: 500;
+  color: #344054;
+}
+
+.amount {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.overdue {
+  font-weight: 700;
+  color: #ef4444;
+}

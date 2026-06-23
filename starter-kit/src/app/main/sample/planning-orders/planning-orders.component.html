@@ -1,0 +1,69 @@
+<div class="card planning-card">
+
+  <div class="card-body">
+
+    <h5 class="page-title">
+      Planning Orders
+    </h5>
+
+    <div class="page-subtitle">
+      Open & Scheduled
+    </div>
+
+    <div class="table-wrapper mt-2">
+
+      <table class="table custom-table mb-0">
+
+        <thead>
+          <tr>
+            <th>ORDER #</th>
+            <th>PRODUCT</th>
+            <th>QTY</th>
+            <th>STATUS</th>
+            <th>DATE</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+  <tr *ngFor="let item of planningOrders">
+    <td>{{ item.orderNo }}</td>
+    <td>{{ item.product }}</td>
+    <td>{{ item.qty }}</td>
+
+    <td>
+      <span class="status-badge" [ngClass]="item.class">
+        {{ item.status }}
+      </span>
+    </td>
+
+    <td>{{ item.date }}</td>
+  </tr>
+
+  <tr *ngIf="planningOrders.length === 0">
+    <td colspan="5" class="text-center">
+      No planning orders
+    </td>
+  </tr>
+
+</tbody>
+
+      </table>
+
+    </div>
+
+    <div class="button-section">
+
+      <button class="action-btn">
+        New Planning Order
+      </button>
+
+      <button class="action-btn">
+        Recipe Cost
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

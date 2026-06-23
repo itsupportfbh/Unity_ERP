@@ -1,0 +1,38 @@
+.quotation-card {
+  border-radius: 1px;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  background: #eef4ff;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #5a8dee;
+  font-size: 18px;
+}
+
+.chart-container {
+  width: 10px;
+  height: 50px;
+}
+
+.growth-badge {
+  background: #d4f8d4;
+  color: #28a745;
+  border-radius: 15px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.draft-text {
+  font-size: 18px;
+  color: #8c8ca1;
+}
+
+::ng-deep .apexcharts-canvas {
+  margin-top: 1px;
+}

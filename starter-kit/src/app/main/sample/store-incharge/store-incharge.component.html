@@ -1,0 +1,96 @@
+<div class="row">
+
+  <!-- Total SKUs -->
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card green-card">
+      <div class="card-body">
+
+        <div class="icon green-icon">
+          <i class="fa fa-cubes"></i>
+        </div>
+
+        <h6 class="card-title-text">
+          TOTAL SKUS
+        </h6>
+
+        <h2 class="card-value">
+          {{ totalSkus }}
+        </h2>
+
+        <div class="bottom-section">
+          <span class="badge-success-custom">
+            Active
+          </span>
+
+          <small class="card-footer-text">
+            Active Items
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- GRN Pending -->
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card blue-card">
+      <div class="card-body">
+
+        <div class="icon blue-icon">
+          <i class="fa fa-inbox"></i>
+        </div>
+
+        <h6 class="card-title-text">
+          GRN PENDING
+        </h6>
+
+        <h2 class="card-value">
+          {{ grnPending }}
+        </h2>
+
+        <div class="bottom-section">
+          <span class="badge-danger-custom">
+            Pending
+          </span>
+
+          <small class="card-footer-text">
+            Awaiting Post
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Negative Stock -->
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card orange-card">
+      <div class="card-body">
+
+        <div class="icon orange-icon">
+          <i class="fa fa-minus-circle"></i>
+        </div>
+
+        <h6 class="card-title-text">
+          NEGATIVE STOCK
+        </h6>
+
+        <h2 class="card-value">
+          {{ negativeStock }}
+        </h2>
+
+        <div class="bottom-section">
+          <span class="badge-danger-custom">
+            Alert
+          </span>
+
+          <small class="card-footer-text">
+            Qty Below Zero
+          </small>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

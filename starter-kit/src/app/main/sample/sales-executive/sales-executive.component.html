@@ -1,0 +1,159 @@
+<div class="row">
+
+  <!-- Quotations -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card quotation-card">
+      <div class="card-body">
+
+        <div class="top-section">
+          <div class="icon blue-icon">
+            <i class="fa fa-file-text"></i>
+          </div>
+
+          <div class="chart-container">
+            <apx-chart
+              [series]="statisticsLine.series"
+              [chart]="statisticsLine.chart"
+              [stroke]="statisticsLine.stroke"
+              [colors]="['#36A2EB']"
+              [markers]="statisticsLine.markers"
+              [xaxis]="statisticsLine.xaxis"
+              [yaxis]="statisticsLine.yaxis"
+              [tooltip]="statisticsLine.tooltip">
+            </apx-chart>
+          </div>
+        </div>
+
+        <div class="card-label">QUOTATIONS</div>
+
+        <div class="card-value">
+  {{ salesExecutiveData.quotation }}
+</div>
+
+        <div class="bottom-section">
+          <span class="badge-success">↑ 12%</span>
+          <span class="footer-text">Draft+Approved</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Sales Orders -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card sales-card">
+      <div class="card-body">
+
+        <div class="top-section">
+          <div class="icon green-icon">
+            <i class="fa fa-shopping-cart"></i>
+          </div>
+
+          <div class="chart-container">
+            <apx-chart
+              [series]="statisticsLine.series"
+              [chart]="statisticsLine.chart"
+              [stroke]="statisticsLine.stroke"
+              [colors]="['#28C76F']"
+              [markers]="statisticsLine.markers"
+              [xaxis]="statisticsLine.xaxis"
+              [yaxis]="statisticsLine.yaxis"
+              [tooltip]="statisticsLine.tooltip">
+            </apx-chart>
+          </div>
+        </div>
+
+        <div class="card-label">SALES ORDERS</div>
+
+        <div class="card-value">
+  {{ salesExecutiveData.salesOrders }}
+</div>
+
+        <div class="bottom-section">
+          <span class="badge-success">↑ 8%</span>
+          <span class="footer-text">Open in range</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Deliveries -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card delivery-card">
+      <div class="card-body">
+
+        <div class="top-section">
+          <div class="icon dark-icon">
+            <i class="fa fa-truck"></i>
+          </div>
+
+          <div class="chart-container">
+            <apx-chart
+              [series]="statisticsLine.series"
+              [chart]="statisticsLine.chart"
+              [stroke]="statisticsLine.stroke"
+              [colors]="['#1F4D63']"
+              [markers]="statisticsLine.markers"
+              [xaxis]="statisticsLine.xaxis"
+              [yaxis]="statisticsLine.yaxis"
+              [tooltip]="statisticsLine.tooltip">
+            </apx-chart>
+          </div>
+        </div>
+
+        <div class="card-label">DELIVERIES</div>
+
+        <div class="card-value">
+  {{ salesExecutiveData.deliveries }}
+</div>
+
+        <div class="bottom-section">
+          <span class="badge-danger">↓ 3%</span>
+          <span class="footer-text">DOs created</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoices -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card invoice-card">
+      <div class="card-body">
+
+        <div class="top-section">
+          <div class="icon orange-icon">
+            <i class="fa fa-list-alt"></i>
+          </div>
+
+          <div class="chart-container">
+            <apx-chart
+              [series]="statisticsLine.series"
+              [chart]="statisticsLine.chart"
+              [stroke]="statisticsLine.stroke"
+              [colors]="['#F5A623']"
+              [markers]="statisticsLine.markers"
+              [xaxis]="statisticsLine.xaxis"
+              [yaxis]="statisticsLine.yaxis"
+              [tooltip]="statisticsLine.tooltip">
+            </apx-chart>
+          </div>
+        </div>
+
+        <div class="card-label">INVOICES</div>
+
+        <div class="card-value">
+  {{ salesExecutiveData.invoices }}
+</div>
+
+        <div class="bottom-section">
+          <span class="badge-success">↑ 15%</span>
+          <span class="footer-text">Posted</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

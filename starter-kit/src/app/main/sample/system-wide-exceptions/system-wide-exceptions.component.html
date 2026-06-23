@@ -1,0 +1,77 @@
+<div class="card exception-card">
+
+  <div class="card-body">
+
+    <h5 class="card-title">
+      System-Wide Exceptions
+    </h5>
+
+    <div class="table-wrapper">
+
+      <table class="table exception-table mb-0">
+
+        <thead>
+          <tr>
+            <th>SEVERITY</th>
+            <th>TYPE</th>
+            <th>MODULE</th>
+            <th>DOCUMENT</th>
+            <th>PARTY</th>
+            <th>IMPACT</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <tr *ngFor="let item of exceptions">
+
+            <td>
+              <span
+                class="status-badge"
+                [ngClass]="{
+                  'high-badge': item.level === 'high',
+                  'warn-badge': item.level === 'warn'
+                }">
+                {{ item.severity }}
+              </span>
+            </td>
+
+            <td>{{ item.type }}</td>
+            <td>{{ item.module }}</td>
+            <td>{{ item.document }}</td>
+            <td>{{ item.party }}</td>
+            <td>{{ item.impact }}</td>
+
+          </tr>
+
+          <tr *ngIf="exceptions.length === 0">
+            <td colspan="6" class="text-center">
+              No system-wide exceptions
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <div class="action-buttons">
+
+      <button class="btn exception-btn">
+        User Activity Log
+      </button>
+
+      <button class="btn exception-btn">
+        Role Management
+      </button>
+
+      <button class="btn exception-btn">
+        All Reports
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

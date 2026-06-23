@@ -1,0 +1,108 @@
+<div class="row">
+
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card blue-card">
+      <div class="card-body">
+
+        <div class="icon blue-icon">
+          <i class="fa fa-file-text-o"></i>
+        </div>
+
+        <div class="card-title-text">
+          MY OPEN PRS
+        </div>
+
+        <div class="card-value">
+          {{ myOpenPRs }}
+        </div>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="myOpenPrsChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            <i
+              class="fa"
+              [ngClass]="myOpenPrsChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'">
+            </i>
+            {{ myOpenPrsChange < 0 ? (myOpenPrsChange * -1) : myOpenPrsChange }}
+          </span>
+
+          <span class="card-footer-text">
+            Assigned to me
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card orange-card">
+      <div class="card-body">
+
+        <div class="icon orange-icon">
+          <i class="fa fa-truck"></i>
+        </div>
+
+        <div class="card-title-text">
+          PENDING GRN
+        </div>
+
+        <div class="card-value">
+          {{ pendingGRN }}
+        </div>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="pendingGrnChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            <i
+              class="fa"
+              [ngClass]="pendingGrnChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'">
+            </i>
+            {{ pendingGrnChange < 0 ? (pendingGrnChange * -1) : pendingGrnChange }}
+          </span>
+
+          <span class="card-footer-text">
+            To post
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4 col-md-6 mb-2">
+    <div class="card dashboard-card green-card">
+      <div class="card-body">
+
+        <div class="icon green-icon">
+          <i class="fa fa-money"></i>
+        </div>
+
+        <div class="card-title-text">
+          OPEN PINs
+        </div>
+
+        <div class="card-value">
+          {{ openPINs }}
+        </div>
+
+        <div class="bottom-section">
+          <span
+            [ngClass]="openPinsChange >= 0 ? 'badge-success-custom' : 'badge-danger-custom'">
+            <i
+              class="fa"
+              [ngClass]="openPinsChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'">
+            </i>
+            {{ openPinsChange < 0 ? (openPinsChange * -1) : openPinsChange }}
+          </span>
+
+          <span class="card-footer-text">
+            Supplier invoices
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

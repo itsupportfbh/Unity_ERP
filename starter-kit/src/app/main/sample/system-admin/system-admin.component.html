@@ -1,0 +1,111 @@
+<div class="row">
+
+  <!-- Total Revenue -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card blue-card">
+      <div class="card-body">
+
+        <div class="card-icon blue-icon">
+          <i class="fa fa-inr"></i>
+        </div>
+
+        <div class="card-label">
+          TOTAL REVENUE
+        </div>
+
+        <div class="card-value">
+          {{ totalRevenue }}
+        </div>
+
+        <div class="bottom-section">
+          <span class="badge-success-custom">
+            ↑ 18%
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Payables -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card orange-card">
+      <div class="card-body">
+
+        <div class="card-icon orange-icon">
+          <i class="fa fa-shopping-cart"></i>
+        </div>
+
+        <div class="card-label">
+          TOTAL PAYABLES
+        </div>
+
+        <div class="card-value">
+          {{ totalPayables }}
+        </div>
+
+        <div class="bottom-section">
+          <span class="badge-danger-custom">
+            ↓ 5%
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Total SKUs -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card green-card">
+      <div class="card-body">
+
+        <div class="card-icon green-icon">
+          <i class="fa fa-cubes"></i>
+        </div>
+
+        <div class="card-label">
+          TOTAL SKUS
+        </div>
+
+        <div class="card-value">
+  {{ totalSkus | number }}
+</div>
+
+        <div class="bottom-section">
+          <span class="badge-success-custom">
+            ↑ 3%
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- All Exceptions -->
+  <div class="col-lg-3 col-md-6 mb-2">
+    <div class="card dashboard-card red-card">
+      <div class="card-body">
+
+        <div class="card-icon red-icon">
+          <i class="fa fa-exclamation-circle"></i>
+        </div>
+
+        <div class="card-label">
+          ALL EXCEPTIONS
+        </div>
+
+        <div class="card-value">
+          {{ allExceptions }}
+        </div>
+
+        <div class="bottom-section">
+          <span class="badge-danger-custom">
+            ↓ 3
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

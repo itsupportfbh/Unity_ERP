@@ -1,0 +1,73 @@
+.inventory-card {
+  border-radius: 16px;
+  border: 1px solid #e5edf4;
+  box-shadow: none;
+  background: #fff;
+}
+
+.card-body {
+  padding: 14px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0;
+}
+
+.card-subtitle {
+  font-size: 13px;
+  color: #8d99ae;
+  margin-bottom: 12px;
+}
+
+.category-item {
+  margin-bottom: 14px;
+}
+
+.category-item:last-child {
+  margin-bottom: 0;
+}
+
+.category-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.category-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #355c7d;
+}
+
+.custom-progress {
+  height: 10px;
+  background: #edf1f5;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.custom-bar {
+  background: linear-gradient(
+    90deg,
+    #2f9e44 0%,
+    #6fdc9a 100%
+  );
+  border-radius: 20px;
+}
+
+.percentage-text {
+  font-size: 11px;
+  color: #8d99ae;
+  font-weight: 500;
+}
+.card-title {
+  margin-bottom: 8px;
+}
+
+.card-subtitle {
+  margin-bottom: 24px;
+}

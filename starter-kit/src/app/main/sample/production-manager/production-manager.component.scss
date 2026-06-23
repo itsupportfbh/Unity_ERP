@@ -1,0 +1,69 @@
+.kpi-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e9edf3;
+  box-shadow: none;
+  height: 95px;
+  position: relative;
+}
+
+.card-content {
+  padding: 12px 14px;
+}
+
+.card-title {
+  font-size: 12px;
+  color: #5e5873;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.card-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.card-footer {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.success-text {
+  color: #28c76f;
+}
+
+.danger-text {
+  color: #ea5455;
+}
+
+.normal-text {
+  color: #6e6b7b;
+}
+
+/* Top Color Borders */
+
+.blue-card {
+  border-bottom: 3px solid #2d9cdb;
+}
+
+.green-card {
+  border-bottom: 3px solid #28c76f;
+}
+
+.orange-card {
+  border-bottom: 3px solid #f4a100;
+}
+
+.purple-card {
+  border-bottom: 3px solid #7367f0;
+}
+
+.red-card {
+  border-bottom: 3px solid #ea5455;
+}
+.card-content {
+  padding: 1+px 12px;
+}

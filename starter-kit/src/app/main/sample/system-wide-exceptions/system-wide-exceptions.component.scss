@@ -1,0 +1,87 @@
+.exception-card {
+  border-radius: 18px;
+  border: 1px solid #dfe7ef;
+  background: #fff;
+  box-shadow: none;
+}
+
+.card-body {
+  padding: 14px;
+}
+
+.card-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #163a63;
+  margin-bottom: 14px;
+}
+
+.table-wrapper {
+  border: 1px solid #dfe7ef;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.exception-table {
+  margin-bottom: 0;
+}
+
+.exception-table thead th {
+  background: #f7f9fc;
+  color: #163a63;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 12px;
+  border-bottom: 1px solid #dfe7ef;
+}
+
+.exception-table tbody td {
+  padding: 11px 12px;
+  font-size: 14px;
+  color: #2c3e50;
+  border-top: 1px solid #edf2f7;
+  vertical-align: middle;
+}
+
+.status-badge {
+  display: inline-block;
+  min-width: 48px;
+  text-align: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.high-badge {
+  background: #fff1f1;
+  color: #ea5455;
+  border: 1px solid #f5c2c7;
+}
+
+.warn-badge {
+  background: #fff7ed;
+  color: #d97706;
+  border: 1px solid #f8d3a4;
+}
+
+.action-buttons {
+  margin-top: 10px;
+}
+
+.exception-btn {
+  background: #fff;
+  color: #1e5b89;
+  border: 1px solid #1e5b89;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.exception-btn:hover {
+  background: #1e5b89;
+  color: #fff;
+}

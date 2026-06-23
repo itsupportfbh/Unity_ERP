@@ -1,0 +1,103 @@
+.dashboard-card {
+  border-radius: 14px;
+  height: 120px;
+  border-top: 3px solid transparent;
+}
+
+.green-card {
+  border-top-color: #28c76f;
+}
+
+.blue-card {
+  border-top-color: #1e88e5;
+}
+
+.red-card {
+  border-top-color: #ea5455;
+}
+
+.orange-card {
+  border-top-color: #ff9f43;
+}
+
+.card-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.green-icon {
+  background: #e7f8ee;
+  color: #28c76f;
+}
+
+.blue-icon {
+  background: #e8f4ff;
+  color: #1e88e5;
+}
+
+.red-icon {
+  background: #ffeaea;
+  color: #ea5455;
+}
+
+.orange-icon {
+  background: #fff1e6;
+  color: #ff9f43;
+}
+
+.card-title-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6e6b7b;
+  margin-bottom: 2px;
+}
+
+.card-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #5e5873;
+  margin-bottom: 8px;
+}
+
+.bottom-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.badge-success-custom {
+  background: #e7f8ee;
+  color: #28c76f;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.badge-danger-custom {
+  background: #ffeaea;
+  color: #ea5455;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.card-footer-text {
+  font-size: 11px;
+  color: #8d99ae;
+  margin: 0;
+}

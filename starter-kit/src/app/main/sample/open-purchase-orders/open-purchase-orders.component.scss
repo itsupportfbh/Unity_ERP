@@ -1,0 +1,88 @@
+.purchase-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 0;
+  border: 1px solid #e4e8ef;
+  overflow: hidden;
+}
+
+.card-header-section {
+  padding: 16px 18px 10px;
+
+  h5 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+
+  span {
+    font-size: 13px;
+    color: #7c8aa5;
+  }
+}
+
+.table-wrapper {
+  padding: 0 0 14px;
+}
+
+.purchase-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.purchase-table thead tr {
+  background: #f3f6f9;
+}
+
+.purchase-table th {
+  padding: 14px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #526484;
+  text-transform: uppercase;
+  border-bottom: 1px solid #dfe5ec;
+}
+
+.purchase-table td {
+  padding: 14px;
+  font-size: 14px;
+  color: #344054;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.purchase-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.partial {
+  background: #fff3e0;
+  color: #d97706;
+  border: 1px solid #f5c27a;
+}
+
+.pending {
+  background: #eef2f7;
+  color: #526484;
+  border: 1px solid #d8dee8;
+}
+
+.done {
+  background: #e8f8ee;
+  color: #16a34a;
+  border: 1px solid #b9e6c6;
+}
+
+.overdue {
+  background: #fdecec;
+  color: #dc2626;
+  border: 1px solid #f3b3b3;
+}

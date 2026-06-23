@@ -1,0 +1,59 @@
+<div class="card ar-health-card">
+  <div class="card-body">
+
+    <h5 class="mb-0">AR / AP Health</h5>
+
+    <small class="text-muted">
+      Collection & payment %
+    </small>
+
+    <div class="row mt-2">
+
+      <div class="col-md-6 text-center">
+        <h6 class="chart-title">
+          RECEIVABLES
+        </h6>
+
+        <apx-chart
+          *ngIf="receivableChart"
+          [series]="receivableChart.series"
+          [chart]="receivableChart.chart"
+          [plotOptions]="receivableChart.plotOptions"
+          [fill]="receivableChart.fill"
+          [stroke]="receivableChart.stroke"
+          [colors]="receivableChart.colors"
+          [labels]="receivableChart.labels">
+        </apx-chart>
+      </div>
+
+      <div class="col-md-6 text-center">
+        <h6 class="chart-title">
+          PAYABLES
+        </h6>
+
+        <apx-chart
+          *ngIf="payableChart"
+          [series]="payableChart.series"
+          [chart]="payableChart.chart"
+          [plotOptions]="payableChart.plotOptions"
+          [fill]="payableChart.fill"
+          [stroke]="payableChart.stroke"
+          [colors]="payableChart.colors"
+          [labels]="payableChart.labels">
+        </apx-chart>
+      </div>
+
+    </div>
+
+    <div class="mt-2">
+      <button class="btn btn-outline-primary btn-sm mr-1">
+        AR Report
+      </button>
+
+      <button class="btn btn-outline-primary btn-sm">
+        AP Report
+      </button>
+    </div>
+
+  </div>
+</div>

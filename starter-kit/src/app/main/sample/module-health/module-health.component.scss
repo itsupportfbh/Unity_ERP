@@ -1,0 +1,54 @@
+.module-health-card {
+  border-radius: 16px;
+  border: 1px solid #e5edf4;
+  background: #fff;
+  box-shadow: none;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #17324d;
+  margin-bottom: 2px;
+}
+
+.card-subtitle {
+  font-size: 13px;
+  color: #8d99ae;
+  margin-bottom: 20px;
+}
+
+.module-item {
+  margin-bottom: 14px;
+}
+
+.module-item:last-child {
+  margin-bottom: 0;
+}
+
+.module-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.module-status {
+  font-size: 14px;
+  font-weight: 700;
+  color: #355c7d;
+}
+
+.custom-progress {
+  height: 10px;
+  background: #e8edf3;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.custom-bar {
+  border-radius: 20px;
+}

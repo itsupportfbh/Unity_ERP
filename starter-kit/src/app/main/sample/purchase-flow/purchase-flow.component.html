@@ -1,0 +1,36 @@
+<div class="card purchase-flow-card">
+  <div class="card-body">
+
+    <h5 class="mb-0 font-weight-bold">
+      Purchase Flow
+    </h5>
+
+    <small class="text-muted">
+      PR → PO → GRN → PIN
+    </small>
+
+    <div class="flow-item" *ngFor="let item of purchaseFlow">
+
+      <div class="d-flex justify-content-between mb-25">
+        <span class="flow-name">{{ item.name }}</span>
+        <span class="flow-count">{{ item.count }}</span>
+      </div>
+
+      <div class="progress">
+        <div
+          class="progress-bar purchase-bar"
+          [style.width.%]="item.percentage">
+        </div>
+      </div>
+
+    </div>
+
+    <div class="mt-3">
+      <button class="btn btn-outline-primary btn-sm mr-1">Open PR</button>
+      <button class="btn btn-outline-primary btn-sm mr-1">Open GRN</button>
+      <button class="btn btn-outline-primary btn-sm mr-1">Open PIN</button>
+      <button class="btn btn-outline-primary btn-sm">3-Way Pending</button>
+    </div>
+
+  </div>
+</div>

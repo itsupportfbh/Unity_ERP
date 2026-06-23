@@ -1,0 +1,26 @@
+<div class="card production-card">
+
+  <div class="card-body">
+
+    <h5 class="card-title">
+      Production output — last 7 days
+    </h5>
+
+    <apx-chart
+      [series]="productionChart.series"
+      [chart]="productionChart.chart"
+      [stroke]="productionChart.stroke"
+      [fill]="productionChart.fill"
+      [colors]="productionChart.colors"
+      [markers]="productionChart.markers"
+      [dataLabels]="productionChart.dataLabels"
+      [grid]="productionChart.grid"
+      [xaxis]="productionChart.xaxis"
+      [yaxis]="productionChart.yaxis"
+      [legend]="productionChart.legend"
+      [tooltip]="productionChart.tooltip">
+    </apx-chart>
+
+  </div>
+
+</div>

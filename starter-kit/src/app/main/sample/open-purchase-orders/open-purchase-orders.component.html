@@ -1,0 +1,44 @@
+<div class="purchase-card">
+
+  <div class="card-header-section">
+    <h5>Open Purchase Orders</h5>
+    <span>Awaiting delivery</span>
+  </div>
+
+  <div class="table-wrapper">
+
+    <table class="purchase-table">
+
+      <thead>
+        <tr>
+          <th>PO #</th>
+          <th>SUPPLIER</th>
+          <th>DATE</th>
+          <th>AMOUNT</th>
+          <th>DUE</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr *ngFor="let po of purchaseOrders">
+          <td>{{ po.poNo }}</td>
+          <td>{{ po.supplierName }}</td>
+          <td>{{ formatDate(po.poDate) }}</td>
+          <td>{{ formatAmount(po.amount) }}</td>
+          <td>{{ formatDate(po.dueDate) }}</td>
+        </tr>
+
+        <tr *ngIf="purchaseOrders.length === 0">
+          <td colspan="5" class="text-center">
+            No open purchase orders
+          </td>
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>

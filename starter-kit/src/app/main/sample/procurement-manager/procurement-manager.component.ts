@@ -38,7 +38,7 @@ this.openPosChange = res?.openPosChange ?? 0;
 this.pendingGrnChange = res?.pendingGrnChange ?? 0;
 this.apOutstandingChangePercent = res?.apOutstandingChangePercent ?? 0;
 
-this.apOutstanding = this.formatLakhs(res?.apOutstanding ?? 0);
+this.apOutstanding = this.formatAmount(res?.apOutstanding ?? 0);
       },
       error: (err) => {
         console.error('Purchase dashboard error:', err);
@@ -46,7 +46,17 @@ this.apOutstanding = this.formatLakhs(res?.apOutstanding ?? 0);
     });
   }
 
-  formatLakhs(value: number): string {
-    return `₹${(value / 100000).toFixed(1)}L`;
+  formatAmount(value: number): string {
+  const amount = Number(value || 0);
+
+  if (amount >= 10000000) {
+    return `₹${(amount / 10000000).toFixed(2)}Cr`;
   }
+
+  if (amount >= 100000) {
+    return `₹${(amount / 100000).toFixed(1)}L`;
+  }
+
+  return `₹${amount.toLocaleString('en-IN')}`;
+}
 }
